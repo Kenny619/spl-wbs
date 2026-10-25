@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gantt Viewer</title>
+  <link rel="stylesheet" href="/src/ui/styles.css">
+  <style>
+    #emptyState[hidden] { display: none !important; }
+    #emptyState { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: var(--panel); text-align: center; padding: 24px; }
+    #issues { margin: 4px 0 0; padding: 0; list-style: none; }
+    #issues:empty, #notice:empty, #provenance:empty { display: none; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <div class="eyebrow" id="eyebrow"></div>
+          <h1 id="title">Gantt Viewer</h1>
+          <div class="sub" id="subtitle"></div>
+          <div class="sub" id="provenance"></div>
+          <div class="sub" id="notice" role="status"></div>
+          <ul class="sub" id="issues"></ul>
+        </div>
+        <div class="top-actions">
+          <button class="small-action" id="reconnect" type="button" hidden>Reconnect file</button>
+          <button class="small-action" id="reload" type="button">Reload</button>
+          <button class="small-action" id="change" type="button">Change</button>
+          <button class="small-action" id="forget" type="button">Forget</button>
+          <button class="btn-primary" id="fitTop" type="button" title="Scale the timeline to display the entire project schedule at once">Fit entire schedule ↗</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">TOTAL TASKS</div><div class="stat-content"><span class="stat-num" id="metricTasks">—</span><span class="stat-note">WBS activities</span></div></div>
+        <div class="stat"><div class="stat-label">OVERALL PROGRESS</div><div class="stat-content"><span class="stat-num" id="metricProgress">—</span><span class="stat-note">Weighted duration</span></div></div>
+        <div class="stat"><div class="stat-label">NEEDS ATTENTION</div><div class="stat-content"><span class="stat-num" id="metricRisks">—</span><span class="stat-note negative" id="attentionBreakdown">At risk / blocked · 0 overdue</span></div></div>
+        <div class="stat"><div class="stat-label">MILESTONES</div><div class="stat-content"><span class="stat-num" id="metricMilestones">—</span><span class="stat-note">Key checkpoints</span></div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-top">
+          <div>
+            <div class="chart-title">Work breakdown & timeline</div>
+            <div class="chart-meta" id="rangeMeta">Planned project schedule · Read-only</div>
+          </div>
+          <div class="toolbar">
+            <input class="search" id="search" placeholder="⌕  Search WBS / task" aria-label="Search WBS or task">
+            <button class="tool filter-trigger" id="filterToggle" type="button" aria-expanded="false" aria-controls="filterPopover">☷ Filters <span id="filterCount" class="filter-count" hidden>0</span></button>
+            <button class="tool clear-filter" id="clearFilters" type="button" hidden>Clear all filters</button>
+            <label class="toggle inactive-toggle"><input type="checkbox" id="hideInactive" role="switch"> Hide inactive</label>
+            <button class="tool" id="columnToggle" type="button" aria-expanded="false" aria-controls="columnPopover">▥ Columns</button>
+            <label class="toggle"><input type="checkbox" id="deps"> Dependencies</label>
+            <div class="zoom-group" role="group" aria-label="Timeline granularity">
+              <button type="button" class="zoom-choice" data-zoom="day" aria-pressed="false">Day</button>
+              <button type="button" class="zoom-choice selected" data-zoom="week" aria-pressed="true">Week</button>
+              <button type="button" class="zoom-choice" data-zoom="month" aria-pressed="false">Month</button>
+              <button type="button" class="zoom-choice" data-zoom="quarter" aria-pressed="false">Quarter</button>
+            </div>
+            <button class="tool calendar-trigger" id="calendarSettings" type="button" aria-expanded="false" aria-controls="calendarPopover">▦ Calendar settings</button>
+            <button class="tool" id="today" type="button">Today</button>
+          </div>
+        </div>
+        <section class="filter-popover" id="filterPopover" aria-label="Filter tasks" hidden>
+          <div class="filter-popover-head"><div><strong>Filter tasks</strong><small>Filter by values in visible columns</small></div><button class="filter-dismiss" id="filterClose" type="button" aria-label="Close filters">×</button></div>
+          <div class="filter-groups">
+            <fieldset class="filter-group" id="statusFilterGroup"><legend>Status <span id="statusSelection"></span></legend><div id="filterStatuses" class="filter-options"></div></fieldset>
+            <fieldset class="filter-group" id="ownerFilterGroup"><legend>Owner <span id="ownerSelection"></span></legend><div id="filterOwners" class="filter-options"></div></fieldset>
+            <fieldset class="filter-group" id="typeFilterGroup" hidden><legend>Type <span id="typeSelection"></span></legend><div id="filterTypes" class="filter-options"></div></fieldset>
+            <fieldset class="filter-group" id="workstreamFilterGroup" hidden><legend>Workstream <span id="workstreamSelection"></span></legend><div id="filterWorkstreams" class="filter-options"></div></fieldset>
+          </div>
+          <div class="filter-footer"><button type="button" class="tool" id="clearInPopover">Clear all filters</button><button type="button" class="btn-primary" id="filterDone">Done</button></div>
+        </section>
+        <section class="column-popover" id="columnPopover" aria-label="Visible WBS columns" hidden>
+          <div class="filter-popover-head"><div><strong>Display columns</strong><small>Choose the fields shown in the WBS grid</small></div><button class="filter-dismiss" id="columnClose" type="button" aria-label="Close column options">×</button></div>
+          <div class="column-options" id="columnOptions"></div>
+          <div class="filter-footer"><button class="tool" type="button" id="resetColumns">Reset defaults</button><button class="btn-primary" type="button" id="columnDone">Done</button></div>
+        </section>
+        <section class="calendar-popover" id="calendarPopover" aria-label="Calendar settings" hidden>
+          <div style="display:flex;align-items:center;justify-content:space-between"><h3>Calendar settings</h3><button class="filter-dismiss" type="button" id="calendarClose" aria-label="Close calendar settings">×</button></div>
+          <p>Configure blackout dates; meeting dates are recalculated immediately.</p>
+          <label class="calendar-toggle"><input type="checkbox" id="blackoutEnabled"> Show blackout period</label>
+          <div class="cgrid"><label>Start date<input type="date" id="blackoutStart"></label><label>End date<input type="date" id="blackoutEnd"></label></div>
+          <div class="cerror" id="calendarError" role="alert"></div>
+          <div class="calendar-hint">Dates are inclusive · blackout does not change workday counts · session only</div>
+          <div class="cactions"><button class="tool" id="clearBlackout" type="button">Clear dates</button><button class="btn-primary" id="applyBlackout" type="button">Apply</button></div>
+          <div class="calendar-note" id="holidayCoverage">Holiday years loaded: 2026, 2027, 2028, 2029, 2030 · provisional offline table v17-frozen-2026-2030</div>
+        </section>
+        <div class="gantt" id="gantt">
+          <div id="emptyState">
+            <p class="chart-meta" id="emptyText">Choose an .xlsx workbook exported from the SharePoint list.</p>
+            <button class="btn-primary" id="choose" type="button">Choose workbook</button>
+          </div>
+          <div class="task-pane" id="taskPane"><div class="grid-header" id="gridHeader"></div><div class="grid-scroll" id="gridScroll"></div></div>
+          <div class="resize-handle" id="resize" title="Drag to resize WBS table"></div>
+          <div class="timeline-pane"><div class="time-head" id="timeHead"><div class="time-head-inner" id="headInner"></div></div><div class="time-scroll" id="timeScroll"><div class="time-canvas" id="timeCanvas"><div class="timeline-rows" id="timelineRows"></div></div></div></div>
+        </div>
+        <div class="bottom">
+          <div class="legend" id="workstreamLegend"></div>
+          <div class="legend calendar-legend"><span><i class="swatch" style="background:#eef3f8"></i>Weekend / holiday</span><span><i class="swatch" style="background:#9167cc"></i>PGCM</span><span><i class="swatch" style="background:#f5d8a5"></i>Blackout</span></div>
+          <span id="count">—</span>
+        </div>
+      </div>
+      <div class="mobile-note">Designed for desktop. Resize the divider between WBS and the timeline.</div>
+    </main>
+  </div>
+  <div class="panel-backdrop" id="backdrop"></div>
+  <section class="detail-panel" id="panel" role="dialog" aria-label="Task details" aria-hidden="true"><button class="close" id="close" type="button" aria-label="Close details">×</button><div id="detailContent"></div></section>
+  <input id="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

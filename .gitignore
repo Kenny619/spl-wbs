@@ -1,3 +1,7 @@
+# work files
+docs
+reference
+test-results
 # Logs
 logs
 *.log
@@ -147,3 +151,8 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/

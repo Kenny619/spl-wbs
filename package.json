@@ -1,0 +1,25 @@
+{
+  "name": "gantt-viewer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && node scripts/checksum-dist.mjs",
+    "extract:css": "node scripts/extract-baseline-css.mjs",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "typescript": "^5.9.0",
+    "vite": "^6.3.0",
+    "vite-plugin-singlefile": "^2.2.0",
+    "vitest": "^3.2.0"
+  },
+  "dependencies": {
+    "exceljs": "4.4.0",
+    "jszip": "3.10.1"
+  }
+}
