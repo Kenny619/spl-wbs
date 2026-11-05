@@ -1,3 +1,5 @@
+> **Current baseline: approved v18.** The Product Owner directive of 2026-11-05 supersedes v17 as the current UI/UX authority and authorizes implementation in PR #15. v17 references below are historical; use the pinned v18 and live product/reference tests for visual acceptance. Read-only access and all eleven Excel Managed Variant decisions remain unchanged.
+
 # Decision register and change log through UI v17
 
 - **v10:** Last pre-calendar frozen baseline; compact GanttPRO-inspired layout, bottom-aligned headers, single-screen UI.

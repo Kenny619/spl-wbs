@@ -21,33 +21,47 @@ import {
   SUMMARY_STATUS_POLICY,
 } from "../../src/config/decisions";
 
-const EXPECTED_SHA256 = "5e6f438fb3817e253984a806bb5bccd4d82f3f14e93d0d03e6eaf5ada2fb84d7";
+const V18_SHA256 = "375425fa94e41ef7d55cc4fac8fe60ad038a2c1095ad04d735bdc1656345ad83";
+const V17_SHA256 = "5e6f438fb3817e253984a806bb5bccd4d82f3f14e93d0d03e6eaf5ada2fb84d7";
 
-function extractStyle(html: string): string {
-  const start = html.indexOf("<style>");
-  const end = html.indexOf("</style>");
-  if (start < 0 || end < start) {
-    throw new Error("Frozen HTML is missing its style block.");
-  }
-  return html.slice(start + "<style>".length, end);
-}
+describe("reviewed v18 migration candidate integrity", () => {
+  const manifest = JSON.parse(readFileSync("reference/baseline-manifest.json", "utf8"));
+  const candidate = readFileSync(manifest.candidate.path);
 
-describe("frozen baseline", () => {
-  const html = readFileSync("reference/UI_BASELINE_v17_FROZEN.html");
-  const readme = readFileSync("README.md", "utf8");
-
-  it("matches the approved SHA-256 published in the README", () => {
-    const hash = createHash("sha256").update(html).digest("hex");
-    expect(readme.toLowerCase()).toContain(EXPECTED_SHA256);
-    expect(hash).toBe(EXPECTED_SHA256);
+  it("pins the exact supplied compiled viewer without claiming v17 equivalence", () => {
+    expect(manifest.candidate.sha256).toBe(V18_SHA256);
+    expect(createHash("sha256").update(candidate).digest("hex")).toBe(V18_SHA256);
+    expect(readFileSync(manifest.candidate.sourcePath).equals(candidate)).toBe(true);
+    expect(manifest.candidate.sourceCommit).toBe("f216bec4b7e5677a3c21a1d8aa16d87097790d11");
+    expect(manifest.status).toBe("approved-current-v18-baseline");
+    expect(manifest.poVisualUat.status).toBe("accepted-as-visual-target");
+    expect(manifest.poVisualUat.reviewedPackageCommit).toBe("eab90573d600e47a544269a67af7ac7aa98f7941");
   });
 
-  it("keeps the extracted stylesheet identical to the frozen style block", () => {
-    const extracted = readFileSync("src/ui/styles.css", "utf8");
-    expect(extracted).toBe(extractStyle(html.toString("utf8")));
-    expect(extracted).toContain("--row:38px");
-    expect(extracted).toContain(".pgcm-day-column");
-    expect(extracted).toContain(".row-chevron");
+  it("preserves the historical v17 approval and explicitly records unavailable integrity", () => {
+    expect(manifest.historical.sha256).toBe(V17_SHA256);
+    expect(manifest.historical.integrity).toBe("unverified-original-bytes-unavailable");
+    for (const file of ["baseline.test.ts", "calendar.test.ts", "baseline.spec.ts"]) {
+      const archived = readFileSync(`test/historical/v17/${file}`);
+      expect(archived.toString("utf8")).toContain("reference/UI_BASELINE_v17_FROZEN.html");
+      expect(createHash("sha256").update(archived).digest("hex")).toBe(manifest.historical.testSha256[file]);
+    }
+    expect(readFileSync("README.md", "utf8")).toContain(V17_SHA256);
+  });
+
+  it("guards reviewed v18 implementation CSS separately from reference identity", () => {
+    expect(createHash("sha256").update(readFileSync(manifest.productStyles.path)).digest("hex"))
+      .toBe(manifest.productStyles.sha256);
+    const styles = readFileSync(manifest.productStyles.path, "utf8");
+    expect(styles).toContain("--row:38px");
+    expect(styles).toContain(".pgcm-day-column");
+    expect(styles).toContain(".row-chevron");
+  });
+
+  it("checks the independently extracted holiday snapshot against the pinned v18 bytes", () => {
+    const literal = candidate.toString("utf8").match(/\{"2026-01-01"[^{}]*\}/)?.[0];
+    expect(literal).toBeDefined();
+    expect(JSON.parse(literal!)).toEqual(JSON.parse(readFileSync("reference/v18-holidays.json", "utf8")));
   });
 });
 

@@ -50,6 +50,17 @@ async function program() {
 }
 
 describe("workbook import", () => {
+  it("imports optional Updates as untrusted text without changing other fields", async () => {
+    const bytes = await buildWorkbook({
+      headers: ["ID", "Title", "WBSCode", "TaskType", "Updates"],
+      rows: [["1", "Rich history", "1", "Task", '<p onclick="unsafe()">Update &amp; context</p>'], ["2", "No history", "2", "Task", null]],
+    });
+    const result = await importWorkbook(bytes, { paletteStorage: null });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.tasks[0]).toMatchObject({ taskName: "Rich history", updates: '<p onclick="unsafe()">Update &amp; context</p>' });
+    expect(result.tasks[1]?.updates).toBe("");
+  });
   it("imports a three-level schedule from serials, aliases, and cached formulas", async () => {
     const result = await importWorkbook(await program(), { allowedHosts: HOSTS, paletteStorage: null });
     expect(result.ok).toBe(true);

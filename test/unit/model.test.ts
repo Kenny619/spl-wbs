@@ -19,6 +19,7 @@ function task(partial: Partial<Task> & Pick<Task, "id" | "taskType">): Task {
     priority: null,
     predecessorIds: [],
     description: "",
+    updates: "",
     modified: null,
     itemUrl: null,
     scheduled: false,
@@ -96,17 +97,23 @@ describe("tree filters", () => {
     task({ id: "4", taskType: "Task", parentId: "1", status: "Completed", owner: "A", wbsCode: "1.3", taskName: "Done", sortOrder: 1 }),
   ];
 
-  it("sorts by sort order, then numeric id", () => {
+  it("sorts by numeric WBS code, then id, regardless of SortOrder", () => {
     const rows = flattenVisible(tasks, new Set(["1", "10"]));
-    expect(rows.map((row) => row.id)).toEqual(["1", "10", "2", "4", "3"]);
+    expect(rows.map((row) => row.id)).toEqual(["1", "10", "2", "3", "4"]);
     expect(rows.find((row) => row.id === "2")?.depth).toBe(3);
+    const siblings = [
+      task({ id: "1", taskType: "Task", wbsCode: "1.10", sortOrder: 0 }),
+      task({ id: "9", taskType: "Task", wbsCode: "1.2", sortOrder: 99 }),
+      task({ id: "2", taskType: "Task", wbsCode: "1.2", sortOrder: 100 }),
+    ];
+    expect(siblings.sort(compareTasks).map(row => row.id)).toEqual(["2", "9", "1"]);
   });
 
   it("expands only depth-1 nodes for a new import", () => {
     const expanded = new Set(initialExpandedIds(tasks));
     const rows = flattenVisible(tasks, expanded);
-    expect(rows.map((row) => row.id)).toEqual(["1", "10", "4", "3"]);
-    expect(compareTasks(tasks[4]!, tasks[3]!)).toBeLessThan(0);
+    expect(rows.map((row) => row.id)).toEqual(["1", "10", "3", "4"]);
+    expect(compareTasks(tasks[4]!, tasks[3]!)).toBeGreaterThan(0);
   });
 
   it("keeps ancestors and ignores filters for hidden columns", () => {

@@ -57,7 +57,8 @@ export function renderTimeline(options: {
   const byId = new Map(options.tasks.map((task) => [task.id, task]));
   options.rowsData.forEach((task, index) => {
     const background = document.createElement("div");
-    background.className = `timeline-row level-${task.depth}${task.id === options.selectedId ? " selected" : ""}`;
+    background.className = `timeline-row level-${task.depth}${task.scheduled ? "" : " unscheduled"}${task.id === options.selectedId ? " selected" : ""}`;
+    background.dataset.taskId = task.id;
     background.style.top = `${index * 38}px`;
     background.addEventListener("click", () => options.onOpen(task.id));
     options.rows.append(background);
@@ -263,6 +264,7 @@ function appendPgcm(
     mark.className = zoom === "day" ? "pgcm-day-column" : "pgcm-marker";
     mark.style.left = `${x}px`;
     if (zoom === "day") mark.style.width = `${px}px`;
+    if (zoom === "week") mark.style.borderLeftColor = "rgba(158, 140, 184, 0.4)";
     mark.title = title;
     rows.append(mark);
     if (zoom === "day") {
@@ -277,6 +279,8 @@ function appendPgcm(
     const tag = document.createElement("div");
     tag.className = zoom === "day" ? "pgcm-tag" : "pgcm-week-tag";
     tag.textContent = "PGCM";
+    tag.style.background = "#f4f1f7";
+    tag.style.color = "#8d8798";
     tag.style.left = `${x}px`;
     if (zoom === "day") tag.style.top = "3px";
     tag.title = title;

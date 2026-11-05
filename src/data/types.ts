@@ -30,6 +30,7 @@ export type Task = {
   priority: string | null;
   predecessorIds: string[];
   description: string;
+  updates: string;
   modified: string | null;
   itemUrl: string | null;
   scheduled: boolean;

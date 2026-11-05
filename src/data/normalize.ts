@@ -35,6 +35,7 @@ type Field =
   | "priority"
   | "predecessorIds"
   | "description"
+  | "updates"
   | "modified"
   | "itemUrl";
 
@@ -63,6 +64,7 @@ const ALIASES: Record<string, Field> = {
   priority: "priority",
   predecessorids: "predecessorIds",
   description: "description",
+  updates: "updates",
   modified: "modified",
   itemurl: "itemUrl",
   "link to item": "itemUrl",
@@ -337,6 +339,7 @@ function parseRecord(
     priority: textValue(cellAt(cells, columns.priority)),
     predecessorIds: [],
     description: textValue(cellAt(cells, columns.description)) ?? "",
+    updates: textValue(cellAt(cells, columns.updates)) ?? "",
     modified: modified.value,
     itemUrl: itemUrl.value,
     scheduled: dates.scheduled,

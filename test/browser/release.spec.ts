@@ -18,7 +18,7 @@ test.beforeAll(async () => {
   schedulePath = path.join(directory, "schedule.xlsx");
   rows500 = path.join(directory, "rows-500.xlsx");
   rows2000 = path.join(directory, "rows-2000.xlsx");
-  samplePath = path.resolve("reference/data-source.xlsx");
+  samplePath = path.resolve("test/fixtures/synthetic-reference/data-source.xlsx");
   await Promise.all([
     run(process.execPath, ["test/browser/write-gantt-fixture.mjs", schedulePath]),
     run(process.execPath, ["test/browser/write-stress-fixture.mjs", rows500, "500"]),
@@ -91,7 +91,7 @@ test("keyboard, disabled links, and offline open work from the built file", asyn
   await expect.poll(async () => page.locator("#gantt").evaluate((node) => Number.parseFloat(node.style.getPropertyValue("--grid")))).toBe(before + 16);
 });
 
-test("opens the sanitized sample export offline", async ({ page }) => {
+test("opens the synthetic sample export offline", async ({ page }) => {
   await openBuilt(page, samplePath);
   await expect(page.locator("#metricTasks")).toHaveText("22");
   await expect(page.locator(".task-row")).toHaveCount(36);

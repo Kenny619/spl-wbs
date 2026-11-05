@@ -1,0 +1,6 @@
+# Preserve pinned artifact bytes across Windows/Linux checkouts; do not normalize.
+reference/UI_BASELINE_v18_CANDIDATE.html -text -diff -whitespace
+Gantt_Viewer_UI_Mock_v18_Cursor_Baseline.html -text -diff -whitespace
+test/historical/v17/* -text
+# Preserve reviewed implementation stylesheet bytes across platforms.
+src/ui/styles.css -text

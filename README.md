@@ -1,3 +1,5 @@
+> **Current baseline: approved v18.** The Product Owner directive of 2026-11-05 supersedes v17 as the current UI/UX authority and authorizes implementation in PR #15. v17 references below are historical; use the pinned v18 and live product/reference tests for visual acceptance. Read-only access and all eleven Excel Managed Variant decisions remain unchanged.
+
 # Gantt Viewer
 
 Read-only schedule viewer for one project. Open a SharePoint List `.xlsx` export and review the WBS, dates, progress, and calendar in the browser. The viewer never writes back to the workbook or to SharePoint.
@@ -135,3 +137,10 @@ npm run test:e2e
 ```
 
 `npm run build` writes one self-contained `dist/index.html` and `dist/SHA256.txt`.
+
+## Historical v17 approval
+
+Original reference: `UI_BASELINE_v17_FROZEN.html`. Approved SHA-256:
+`5e6f438fb3817e253984a806bb5bccd4d82f3f14e93d0d03e6eaf5ada2fb84d7`.
+Original bytes are unavailable; historical integrity has not been verified.
+v18 supersedes v17 for current visual acceptance. The historical v17 record is not a current acceptance gate.

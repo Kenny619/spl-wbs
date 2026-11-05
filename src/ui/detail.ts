@@ -1,3 +1,4 @@
+import { renderUpdatesSection } from "./updates";
 import type { PaletteMap, Task } from "../data/types";
 import { paletteColor } from "../model/workstreamPalette";
 import type { HolidayCalendar } from "../calendar/jpHolidays";
@@ -70,6 +71,8 @@ export function renderDetail(
   host.append(block("p", "desc", names.length ? names.map((item) => `${item.wbsCode} ${item.taskName}`).join(", ") : "None defined"));
   host.append(block("div", "section-label", "Source record"));
   host.append(sourceLink(task.itemUrl));
+  const updates = renderUpdatesSection(task.updates);
+  if (updates) host.append(updates);
 }
 
 function sourceLink(itemUrl: string | null): HTMLElement {

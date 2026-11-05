@@ -255,6 +255,7 @@ function task(id: string): Task {
     priority: null,
     predecessorIds: [],
     description: "",
+    updates: "",
     modified: "2026-10-21T00:00:00.000Z",
     itemUrl: null,
     scheduled: true,
