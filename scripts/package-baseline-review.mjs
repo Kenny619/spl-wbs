@@ -1,4 +1,4 @@
-// Diagnostic UAT bundle only. Does not deploy, release, or approve a baseline.
+// Approved-target implementation validation bundle. Does not deploy or release.
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile, copyFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
@@ -13,12 +13,12 @@ await mkdir(destination,{recursive:true});
 await writeFile(`${destination}/reference-v18.html`, reference);
 await writeFile(`${destination}/current-product.html`, product);
 execFileSync(process.execPath,['test/browser/write-gantt-fixture.mjs',`${destination}/schedule.xlsx`],{stdio:'inherit'});
-await copyFile('spike/v18-review/UAT.md',`${destination}/UAT.md`);
+await copyFile('spike/v18-review/VALIDATION.md',`${destination}/VALIDATION.md`);
 await writeFile(`${destination}/provenance.json`,JSON.stringify({
-  purpose:'UNAPPROVED REVIEW PACKAGE — not a release',
+  purpose:'APPROVED v18 TARGET / IMPLEMENTATION VALIDATION — not a release',
   sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
   candidate:manifest.candidate,
   productSha256:createHash('sha256').update(product).digest('hex'),
   status:manifest.status,
 },null,2)+'\n');
-console.log(`Prepared ${destination}: PO target UAT recorded; independent QA and product conformance still required.`);
+console.log(`Prepared ${destination}: approved v18 target and current implementation for validation; not a release.`);

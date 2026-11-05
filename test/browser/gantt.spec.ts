@@ -32,6 +32,7 @@ test.afterAll(async () => {
   await server?.close();
 });
 
+// Visual acceptance is exercised against the live approved v18 in baseline.spec.ts.
 test("draws an imported three-level schedule", async ({ page }) => {
   const requests: string[] = [];
   page.on("request", (request) => requests.push(request.url()));
@@ -101,17 +102,14 @@ test("draws an imported three-level schedule", async ({ page }) => {
   await expect(page.locator(".holiday-overlay[title='スポーツの日']")).toHaveCount(1);
   await expect(page.locator("#holidayCoverage")).toContainText("provisional offline table");
   expect(requests.some((url) => url.includes("holidays-jp.github.io") || url.includes("sharepoint.com"))).toBe(false);
-  await expect(page).toHaveScreenshot("gantt-1440.png", { fullPage: true });
   await page.setViewportSize({ width: 1024, height: 900 });
   await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-  await expect(page).toHaveScreenshot("gantt-1024.png", { fullPage: true });
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator("[data-zoom='day']").click();
   await page.locator("#fitTop").click();
   await expect(page.locator(".pgcm-day-column").first()).toBeVisible();
   await expect(page.locator(".pgcm-tag")).toHaveCount(1);
-  await expect(page).toHaveScreenshot("gantt-1440-day-pgcm.png", { fullPage: true });
 
   await page.locator("#calendarSettings").click();
   await page.locator("#blackoutStart").fill("2026-10-26");

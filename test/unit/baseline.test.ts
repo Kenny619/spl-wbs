@@ -33,7 +33,7 @@ describe("reviewed v18 migration candidate integrity", () => {
     expect(createHash("sha256").update(candidate).digest("hex")).toBe(V18_SHA256);
     expect(readFileSync(manifest.candidate.sourcePath).equals(candidate)).toBe(true);
     expect(manifest.candidate.sourceCommit).toBe("f216bec4b7e5677a3c21a1d8aa16d87097790d11");
-    expect(manifest.status).toBe("target-accepted-pending-independent-QA-and-product-conformance");
+    expect(manifest.status).toBe("approved-current-v18-baseline");
     expect(manifest.poVisualUat.status).toBe("accepted-as-visual-target");
     expect(manifest.poVisualUat.reviewedPackageCommit).toBe("eab90573d600e47a544269a67af7ac7aa98f7941");
   });
@@ -49,7 +49,7 @@ describe("reviewed v18 migration candidate integrity", () => {
     expect(readFileSync("README.md", "utf8")).toContain(V17_SHA256);
   });
 
-  it("guards unchanged product CSS separately from compiled reference CSS", () => {
+  it("guards reviewed v18 implementation CSS separately from reference identity", () => {
     expect(createHash("sha256").update(readFileSync(manifest.productStyles.path)).digest("hex"))
       .toBe(manifest.productStyles.sha256);
     const styles = readFileSync(manifest.productStyles.path, "utf8");

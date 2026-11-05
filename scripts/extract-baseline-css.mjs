@@ -1,14 +1,13 @@
+import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
-const htmlUrl = new URL("../reference/UI_BASELINE_v17_FROZEN.html", import.meta.url);
-const cssUrl = new URL("../src/ui/styles.css", import.meta.url);
-const html = readFileSync(htmlUrl, "utf8");
-const start = html.indexOf("<style>");
-const end = html.indexOf("</style>");
-if (start < 0 || end < start) {
-  throw new Error("Frozen HTML is missing its style block.");
-}
-const css = html.slice(start + "<style>".length, end);
-mkdirSync(new URL("../src/ui/", import.meta.url), { recursive: true });
-writeFileSync(cssUrl, css);
-console.log(`Wrote ${css.length} characters to src/ui/styles.css`);
+// Inspection artifact only: do not overwrite maintained production CSS or a reference.
+const manifest = JSON.parse(readFileSync(new URL("../reference/baseline-manifest.json", import.meta.url), "utf8"));
+const bytes = readFileSync(new URL(`../${manifest.candidate.path}`, import.meta.url));
+if (createHash("sha256").update(bytes).digest("hex") !== manifest.candidate.sha256) throw new Error("v18 integrity mismatch");
+const styles = [...bytes.toString("utf8").matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(match => match[1]);
+if (!styles.length) throw new Error("Approved v18 has no styles");
+const directory = new URL("../work/", import.meta.url);
+mkdirSync(directory, { recursive: true });
+writeFileSync(new URL("v18-reference-styles.css", directory), styles.join("\n"));
+console.log("Extracted approved v18 styles to work/v18-reference-styles.css for inspection.");

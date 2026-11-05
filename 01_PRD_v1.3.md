@@ -1,3 +1,5 @@
+> **Current baseline: approved v18.** The Product Owner directive of 2026-11-05 supersedes v17 as the current UI/UX authority and authorizes implementation in PR #15. v17 references below are historical; use the pinned v18 and live product/reference tests for visual acceptance. Read-only access and all eleven Excel Managed Variant decisions remain unchanged.
+
 # Gantt Viewer — Product Requirements Document v1.3
 **Status:** Approved requirements consolidated through UI v17, 2026-10-25, plus review amendments approved 2026-10-25 and 2026-10-26. **Purpose:** Corporate read-only, single-project WBS/Gantt visualization from locally selected Excel exports of a SharePoint List.
 

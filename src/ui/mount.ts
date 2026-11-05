@@ -119,6 +119,7 @@ export function mountGantt(doc: Document, controller: ImportController): void {
     syncFilters(doc, tasks, state.view, () => controller.getState().view, (patch) => controller.patchView(patch));
     syncColumnChecks(doc, state.view.columns);
     syncZoom(doc, state.view.zoom);
+    fitPaneHeight(doc);
     const hide = doc.getElementById("hideInactive");
     if (hide instanceof HTMLInputElement && doc.activeElement !== hide) hide.checked = state.view.hideInactive;
     const deps = doc.getElementById("deps");
@@ -154,6 +155,8 @@ export function mountGantt(doc: Document, controller: ImportController): void {
   };
 
   bindChrome(doc, controller, blackout, paint, timeScroll, gridScroll, headInner);
+  linkRowHover(doc);
+  window.addEventListener("resize", () => fitPaneHeight(doc));
   doc.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closePopover(doc, "filterToggle", "filterPopover");
@@ -221,7 +224,9 @@ export function mountGantt(doc: Document, controller: ImportController): void {
 function paintChrome(doc: Document, state: SessionState, tasks: readonly Task[], blackout: BlackoutInterval): void {
   doc.body.dataset.status = state.status;
   const title = doc.getElementById("title");
-  if (title) title.textContent = state.fileName ? fileTitle(state.fileName) : "Gantt Viewer";
+  const activeTitle = state.fileName ? fileTitle(state.fileName) : "Gantt Viewer";
+  if (title) title.textContent = activeTitle;
+  doc.title = activeTitle;
   const provenance = doc.getElementById("provenance");
   if (provenance) provenance.textContent = state.status === "ready" && state.loadedAt ? provenanceText(state) : "";
   const notice = doc.getElementById("notice");
@@ -561,4 +566,32 @@ function dismissOnOutside(doc: Document, target: Node, popoverId: string, button
 function setText(doc: Document, id: string, text: string): void {
   const node = doc.getElementById(id);
   if (node) node.textContent = text;
+}
+
+// Match the approved v18 pane sizing without reducing the 535px minimum.
+function fitPaneHeight(doc: Document): void {
+  const gantt = doc.getElementById("gantt");
+  const main = doc.querySelector(".main");
+  if (!(gantt instanceof HTMLElement) || !(main instanceof HTMLElement)) return;
+  const rect = gantt.getBoundingClientRect();
+  const below = main.getBoundingClientRect().bottom - rect.bottom;
+  const height = Math.max(535, Math.round(window.innerHeight - rect.top - below));
+  if (Math.abs(height - rect.height) > 1) gantt.style.height = `${height}px`;
+}
+
+function linkRowHover(doc: Document): void {
+  const gantt = doc.getElementById("gantt");
+  const highlight = (id: string | null) => {
+    doc.querySelectorAll(".hot").forEach(node => node.classList.remove("hot"));
+    if (!id) return;
+    doc.querySelectorAll(`.task-row[data-task-id="${CSS.escape(id)}"], .timeline-row[data-task-id="${CSS.escape(id)}"]`)
+      .forEach(node => node.classList.add("hot"));
+  };
+  gantt?.addEventListener("pointerover", event => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const row = target.closest<HTMLElement>(".task-row, .timeline-row, .bar");
+    highlight(row?.dataset.taskId ?? null);
+  });
+  gantt?.addEventListener("pointerleave", () => highlight(null));
 }

@@ -64,14 +64,14 @@ jobs:
         id: reviewbuild
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run build
-      - name: Prepare unapproved UAT package
+      - name: Prepare implementation validation package
         if: ${{ !cancelled() && steps.reviewbuild.outcome == 'success' }}
         run: node scripts/package-baseline-review.mjs
-      - name: UAT review package
+      - name: Implementation validation package
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: v18-unapproved-UAT-package
+          name: v18-implementation-validation-package
           path: work/v18-review/
           if-no-files-found: ignore
           retention-days: 14

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "status": "target-accepted-pending-independent-QA-and-product-conformance",
-  "authorization": "Product Owner authorized the reviewed v18 migration and subsequently reported successful visual UAT. The v18 visual target is accepted; independent QA, product conformance and technical feasibility acceptance remain outstanding.",
+  "status": "approved-current-v18-baseline",
+  "authorization": "Product Owner directive: v18 is the authoritative current UI/UX baseline and implementation in the existing application is authorized. v17 is historical only. No merge, deployment, release or managed-save implementation authorized.",
   "candidate": {
     "path": "reference/UI_BASELINE_v18_CANDIDATE.html",
     "sha256": "375425fa94e41ef7d55cc4fac8fe60ad038a2c1095ad04d735bdc1656345ad83",
@@ -23,8 +23,8 @@
   },
   "productStyles": {
     "path": "src/ui/styles.css",
-    "sha256": "13766c7c68b8f8aa8ae21b1bb7ffb7d7af2d8c3d98cb2b3dfd78bee845975d4e",
-    "role": "unchanged-product-source-integrity-only-not-v18-equivalence"
+    "sha256": "968c5cb9468f544da19baea997c26447ee836a0965063efee07c653a9b8de24c",
+    "role": "reviewed-v18-implementation-source-integrity; browser tests establish target conformance"
   },
   "holidaySnapshot": {
     "path": "reference/v18-holidays.json",
@@ -41,5 +41,11 @@
     "reviewedArtifactId": 13393112933,
     "scope": "v18 visual target only; not current-product conformance or FS-01 through FS-12",
     "environmentDetails": "not reported; no hardware/browser validation inferred"
+  },
+  "adoption": {
+    "decision": "v18 supersedes v17 for current UI/UX acceptance",
+    "reportedOn": "2026-11-05",
+    "implementation": "authorized in existing PR #15",
+    "preserved": "read-only contract and DEC-EMV-002-01 through -11"
   }
 }

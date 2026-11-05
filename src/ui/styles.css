@@ -84,3 +84,23 @@
 .taskname .chev{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;width:17px;height:22px;min-width:17px;padding:0;margin:0;line-height:1;flex:0 0 17px;}
 .taskname .row-chevron{display:block;width:15px;height:15px;flex:none;}
 .taskname strong,.taskname span{line-height:1.4;}
+
+/* Approved v18 detail and Updates styling. */
+.detail-panel{width:min(580px,calc(100vw - 28px));overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.detail-panel .detail-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 14px}
+.detail-panel .field{min-width:0;overflow-wrap:anywhere}
+.updates-section{margin-top:26px}
+.updates-section>.section-label{margin:0 0 14px;font-size:12px;font-weight:800}
+.updates-history{display:flex;flex-direction:column;gap:12px}
+.updates-date{display:flex;align-items:center;gap:12px;color:#8995a6;font-size:11px;font-weight:700;margin:8px 0 2px}
+.updates-date::before,.updates-date::after{content:"";flex:1;height:1px;background:#e4e9f1}
+.updates-entry{border:1px solid #e4e9f1;background:#f8fafd;border-radius:10px;padding:13px 15px;min-width:0}
+.updates-time{font-size:11px;font-weight:600;color:#7e8ca0;margin-bottom:9px}
+.updates-rich{color:#4c5c71;font-size:12.5px;line-height:1.7;overflow-wrap:anywhere}
+.updates-rich p,.updates-rich div{margin:0 0 8px}
+.updates-rich p:last-child,.updates-rich div:last-child{margin-bottom:0}
+.updates-rich ul,.updates-rich ol{padding-left:23px;margin:6px 0 10px;list-style-position:outside}
+.updates-rich ul{list-style-type:disc}.updates-rich ol{list-style-type:decimal}
+.updates-rich li{margin:3px 0}.updates-rich a{color:#5077b2;text-decoration:underline}
+.updates-highlight{background:#f7eb9f;border-radius:2px;padding:0 2px}
+@media(max-width:630px){.detail-panel .detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

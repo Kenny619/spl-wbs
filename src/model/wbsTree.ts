@@ -20,12 +20,8 @@ export type TaskFilter = {
 const INACTIVE: readonly TaskStatus[] = ["Completed", "Cancelled"];
 
 export function compareTasks(a: Task, b: Task): number {
-  if (a.sortOrder != null && b.sortOrder != null && a.sortOrder !== b.sortOrder) {
-    return a.sortOrder - b.sortOrder;
-  }
-  if (a.sortOrder != null && b.sortOrder == null) return -1;
-  if (a.sortOrder == null && b.sortOrder != null) return 1;
-  return a.id.localeCompare(b.id, "en", { numeric: true, sensitivity: "variant" });
+  const order = a.wbsCode.localeCompare(b.wbsCode, "en", { numeric: true, sensitivity: "variant" });
+  return order || a.id.localeCompare(b.id, "en", { numeric: true, sensitivity: "variant" });
 }
 
 export function initialExpandedIds(tasks: readonly Task[]): string[] {

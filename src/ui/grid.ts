@@ -13,7 +13,7 @@ export type ColumnDef = {
 export const COLUMN_DEFS: readonly ColumnDef[] = [
   { id: "wbs", title: "WBS", width: "49px", fixed: true },
   { id: "task", title: "Task", width: "minmax(150px,1fr)", fixed: true },
-  { id: "owner", title: "Owner", width: "82px", fixed: false },
+  { id: "owner", title: "Owner", width: "168px", fixed: false },
   { id: "status", title: "Status", width: "85px", fixed: false },
   { id: "progress", title: "Done", width: "65px", fixed: false },
   { id: "start", title: "Start", width: "98px", fixed: false },
@@ -77,7 +77,7 @@ export function renderGridRows(
   const fragment = document.createDocumentFragment();
   for (const task of rows) {
     const row = document.createElement("div");
-    row.className = `task-row level-${task.depth}${task.id === selectedId ? " selected" : ""}`;
+    row.className = `task-row level-${task.depth}${task.scheduled ? "" : " unscheduled"}${task.id === selectedId ? " selected" : ""}`;
     row.dataset.taskId = task.id;
     row.tabIndex = 0;
     row.setAttribute("aria-label", `Open details for ${task.wbsCode} ${task.taskName}`);
@@ -101,10 +101,8 @@ function cell(id: ColumnId, task: FlatTask, expanded: ReadonlySet<string>, child
   if (id === "owner") {
     const owner = document.createElement("div");
     owner.className = "owner";
-    const avatar = document.createElement("span");
-    avatar.className = "avatar";
-    avatar.textContent = task.owner.slice(0, 2) || "—";
-    owner.append(avatar);
+    owner.title = task.owner;
+    owner.textContent = task.owner || "—";
     return owner;
   }
   if (id === "status") {
