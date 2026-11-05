@@ -21,4 +21,4 @@ await writeFile(`${destination}/provenance.json`,JSON.stringify({
   productSha256:createHash('sha256').update(product).digest('hex'),
   status:manifest.status,
 },null,2)+'\n');
-console.log(`Prepared ${destination}: independent QA and PO visual UAT still required.`);
+console.log(`Prepared ${destination}: PO target UAT recorded; independent QA and product conformance still required.`);

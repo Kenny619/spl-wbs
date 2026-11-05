@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "status": "candidate-pending-independent-QA-and-PO-visual-UAT",
-  "authorization": "Product Owner authorized preparing a reviewed v18 migration in this session; acceptance is not granted.",
+  "status": "target-accepted-pending-independent-QA-and-product-conformance",
+  "authorization": "Product Owner authorized the reviewed v18 migration and subsequently reported successful visual UAT. The v18 visual target is accepted; independent QA, product conformance and technical feasibility acceptance remain outstanding.",
   "candidate": {
     "path": "reference/UI_BASELINE_v18_CANDIDATE.html",
     "sha256": "375425fa94e41ef7d55cc4fac8fe60ad038a2c1095ad04d735bdc1656345ad83",
@@ -31,5 +31,15 @@
     "provenance": "literal JSON object independently extracted from pinned compiled v18 candidate",
     "officialVerification": "still-provisional"
   },
-  "managedDecisions": "DEC-EMV-002-01 through DEC-EMV-002-11 unchanged; Issue #2 remains open"
+  "managedDecisions": "DEC-EMV-002-01 through DEC-EMV-002-11 unchanged; Issue #2 remains open",
+  "poVisualUat": {
+    "status": "accepted-as-visual-target",
+    "reportedOn": "2026-11-05",
+    "evidenceType": "Product Owner report in this conversation",
+    "statement": "UAT complete.  All working as expectged.",
+    "reviewedPackageCommit": "eab90573d600e47a544269a67af7ac7aa98f7941",
+    "reviewedArtifactId": 13393112933,
+    "scope": "v18 visual target only; not current-product conformance or FS-01 through FS-12",
+    "environmentDetails": "not reported; no hardware/browser validation inferred"
+  }
 }

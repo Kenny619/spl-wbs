@@ -1,4 +1,4 @@
-> **v18 review in preparation:** The Product Owner authorized a reviewed reference migration on 2026-11-05. The pinned candidate is not yet accepted. See [the migration review](spike/v18-review/README.md) and `reference/baseline-manifest.json`. The v17 approval/hash below remain historical records; original v17 integrity is unverified. Production source and approved snapshot images have not been changed.
+> **v18 review in preparation:** The Product Owner authorized a reviewed reference migration on 2026-11-05. The Product Owner has accepted the pinned v18 visual target after UAT; independent QA and current-product conformity remain pending. See [the migration review](spike/v18-review/README.md) and `reference/baseline-manifest.json`. The v17 approval/hash below remain historical records; original v17 integrity is unverified. Production source and approved snapshot images have not been changed.
 
 # Gantt Viewer
 
@@ -143,4 +143,4 @@ npm run test:e2e
 Original reference: `UI_BASELINE_v17_FROZEN.html`. Approved SHA-256:
 `5e6f438fb3817e253984a806bb5bccd4d82f3f14e93d0d03e6eaf5ada2fb84d7`.
 Original bytes are unavailable; historical integrity has not been verified.
-The v18 candidate is separate and is not yet visually accepted.
+The v18 reference is separate and is now accepted as the intended visual target; current-product conformity and independent QA remain pending.

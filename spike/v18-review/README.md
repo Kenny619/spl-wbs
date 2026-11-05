@@ -6,6 +6,16 @@ supersedes the test-oracle selection for migration preparation only. Independent
 QA and Product Owner visual UAT remain outstanding. No product source changes,
 managed features, merge, deployment, release or Issue #2 completion are authorized.
 
+## Product Owner UAT result
+
+On 2026-11-05 the Product Owner reported successful UAT of the package at commit
+`eab90573d600e47a544269a67af7ac7aa98f7941` (artifact `13393112933`). The pinned
+v18 is now accepted as the intended visual target. Environment details were not
+reported; no actual Windows/Edge FS coverage is inferred. Current-product visual
+conformity, independent QA, technical feasibility and release acceptance remain
+pending. This result supersedes the pending-PO-target status in the preparation
+record above, without rewriting that history.
+
 ## Reference identity
 
 - Source: main commit `f216bec4b7e5677a3c21a1d8aa16d87097790d11`,
@@ -87,6 +97,6 @@ as such. Cloud browser policy blocks file navigation; do not bypass that policy 
 claim localhost success as file:// acceptance. Windows Server/Chromium CI is not
 actual Windows 11/corporate Edge permission, Excel-lock or hardware-scaling evidence.
 
-Acceptance requires independent QA review of the differences and subsequent Product
-Owner visual UAT. A future approved update must explicitly record which candidate
+Final acceptance requires independent QA review of the differences and current-product
+conformance. The Product Owner target UAT described above is complete. A future approved update must explicitly record which candidate
 and screenshots are accepted. Do not update manifest status automatically.

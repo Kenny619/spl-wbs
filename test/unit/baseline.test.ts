@@ -33,7 +33,9 @@ describe("reviewed v18 migration candidate integrity", () => {
     expect(createHash("sha256").update(candidate).digest("hex")).toBe(V18_SHA256);
     expect(readFileSync(manifest.candidate.sourcePath).equals(candidate)).toBe(true);
     expect(manifest.candidate.sourceCommit).toBe("f216bec4b7e5677a3c21a1d8aa16d87097790d11");
-    expect(manifest.status).toBe("candidate-pending-independent-QA-and-PO-visual-UAT");
+    expect(manifest.status).toBe("target-accepted-pending-independent-QA-and-product-conformance");
+    expect(manifest.poVisualUat.status).toBe("accepted-as-visual-target");
+    expect(manifest.poVisualUat.reviewedPackageCommit).toBe("eab90573d600e47a544269a67af7ac7aa98f7941");
   });
 
   it("preserves the historical v17 approval and explicitly records unavailable integrity", () => {

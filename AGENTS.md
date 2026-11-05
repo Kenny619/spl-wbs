@@ -46,3 +46,8 @@
 - Active integrity/holiday checks may use that pinned candidate and independently extracted data. Do not compare compiled first-style text to production source CSS or execute strings to extract holiday data. Guard unchanged product CSS separately.
 - Browser review must load the same synthetic workbook into reference and current product at the fixed clock and 1440×900/1024 widths. Retain differences as failing comparisons/attachments; do not regenerate or approve snapshot images to make CI green.
 - Independent QA and Product Owner visual UAT are required before candidate acceptance. Production source, the read-only workflow, all eleven managed decisions, Issue #2's open status, and no-merge/deploy/release constraints remain unchanged.
+
+## Product Owner visual-target acceptance (2026-11-05)
+- After reviewing the package at commit `eab90573d600e47a544269a67af7ac7aa98f7941`, the Product Owner reported successful UAT. Record the pinned v18 artifact as the accepted visual target, superseding the pending-PO-target status above only.
+- This does not establish current-product conformity, independent QA, Windows/Edge file-system acceptance, or permission to implement managed features, merge or release. User-reported environment details were not supplied; do not infer hardware coverage.
+- Keep actual product/reference differences failing and all eleven managed decisions intact. Independent QA, technical feasibility and Issue #2 freeze remain open gates.
