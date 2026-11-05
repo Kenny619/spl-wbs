@@ -5,7 +5,7 @@ import { importWorkbook } from "../../src/data/normalize";
 import { overallProgress } from "../../src/model/summaryRollup";
 import { attentionCounts, flattenVisible } from "../../src/model/wbsTree";
 
-const workbookPath = path.resolve("reference/data-source.xlsx");
+const workbookPath = path.resolve("test/fixtures/synthetic-reference/data-source.xlsx");
 
 function linkHost(value: string | null): string | null {
   if (!value) return null;
@@ -14,8 +14,8 @@ function linkHost(value: string | null): string | null {
   return url.hostname;
 }
 
-describe("reference data-source workbook", () => {
-  it("loads the sample export and keeps hierarchy on parent ids", async () => {
+describe("synthetic reference data-source workbook", () => {
+  it("loads the synthetic export and keeps hierarchy on parent ids", async () => {
     const result = await importWorkbook(await readFile(workbookPath), { paletteStorage: null });
     expect(result.ok).toBe(true);
     if (!result.ok) return;

@@ -1,6 +1,8 @@
 # work files
 docs
-reference
+reference/*
+!reference/UI_BASELINE_v17_FROZEN.html
+/work/
 test-results
 # Logs
 logs
