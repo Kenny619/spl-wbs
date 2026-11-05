@@ -74,14 +74,14 @@ test("choose, failed change, and forget stay on the last good workbook", async (
   expect(requests.some((url) => url.includes("sharepoint") || (url.startsWith("http") && !url.startsWith(baseURL)))).toBe(false);
 });
 
-test("loads the sample workbook from reference/data-source.xlsx", async ({ page }) => {
+test("loads the sample workbook from test/fixtures/synthetic-reference/data-source.xlsx", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, "showOpenFilePicker", { configurable: true, value: undefined });
   });
   await page.goto(baseURL);
   const chooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Choose workbook" }).click();
-  await (await chooser).setFiles(path.resolve("reference/data-source.xlsx"));
+  await (await chooser).setFiles(path.resolve("test/fixtures/synthetic-reference/data-source.xlsx"));
   await expect(page.locator("#title")).toHaveText("data-source");
   await expect(page.locator("#provenance")).toContainText("Tasks 36");
   await expect(page.locator("#metricTasks")).toHaveText("22");
