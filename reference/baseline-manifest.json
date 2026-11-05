@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "status": "candidate-pending-independent-QA-and-PO-visual-UAT",
+  "authorization": "Product Owner authorized preparing a reviewed v18 migration in this session; acceptance is not granted.",
+  "candidate": {
+    "path": "reference/UI_BASELINE_v18_CANDIDATE.html",
+    "sha256": "375425fa94e41ef7d55cc4fac8fe60ad038a2c1095ad04d735bdc1656345ad83",
+    "sourceCommit": "f216bec4b7e5677a3c21a1d8aa16d87097790d11",
+    "sourcePath": "Gantt_Viewer_UI_Mock_v18_Cursor_Baseline.html",
+    "gitBlob": "3e1c0323ded67bff259e4da27bbb2f0f14109509"
+  },
+  "historical": {
+    "path": "reference/UI_BASELINE_v17_FROZEN.html",
+    "sha256": "5e6f438fb3817e253984a806bb5bccd4d82f3f14e93d0d03e6eaf5ada2fb84d7",
+    "integrity": "unverified-original-bytes-unavailable",
+    "tests": "test/historical/v17",
+    "role": "historical-approval-record-not-reconstructed",
+    "testSha256": {
+      "baseline.test.ts": "5b42b80906b6ce386724762c96d5bd151839796b129879107456efb1471d7383",
+      "calendar.test.ts": "d9f98ec56a4a42f42ec3e726e07c9e81af5da1dcc08fef918f7db8d1e092312b",
+      "baseline.spec.ts": "4fb418d7afc247490d582c326cc39e07e7769bb1ba0f4c804c2ab15fa51c49c9"
+    }
+  },
+  "productStyles": {
+    "path": "src/ui/styles.css",
+    "sha256": "13766c7c68b8f8aa8ae21b1bb7ffb7d7af2d8c3d98cb2b3dfd78bee845975d4e",
+    "role": "unchanged-product-source-integrity-only-not-v18-equivalence"
+  },
+  "holidaySnapshot": {
+    "path": "reference/v18-holidays.json",
+    "provenance": "literal JSON object independently extracted from pinned compiled v18 candidate",
+    "officialVerification": "still-provisional"
+  },
+  "managedDecisions": "DEC-EMV-002-01 through DEC-EMV-002-11 unchanged; Issue #2 remains open"
+}

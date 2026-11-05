@@ -18,17 +18,23 @@ failure. Vitest unit tests and Playwright browser tests are separate gates.
 The synthetic sample workbook is committed under `test/fixtures/synthetic-reference`;
 see its README for provenance and deterministic regeneration.
 
-## Frozen reference prerequisite
+## Reference migration review
 
-`reference/UI_BASELINE_v17_FROZEN.html` must contain the exact approved bytes with
-SHA-256 `5e6f438fb3817e253984a806bb5bccd4d82f3f14e93d0d03e6eaf5ada2fb84d7`.
-The original is absent from the available repository history. Until it is
-recovered and committed after provenance/sensitivity review, the frozen-HTML
-unit/calendar/browser assertions must remain red. `.gitignore` permits only that
-exact reference filename; other private reference files remain ignored.
+The Product Owner authorized preparing a v18 migration. The supplied file is pinned
+at `reference/UI_BASELINE_v18_CANDIDATE.html` with manifest provenance and pending
+QA/UAT status. Active integrity checks and independently extracted holidays use
+that candidate. Current product CSS has a separate integrity guard; passing it
+does not establish visual equivalence.
 
-Do not reconstruct an approximation, change its hash, remove assertions, create
-a synthetic UI substitute, or update snapshots to bypass the prerequisite.
+The missing original v17 and its hash remain historical, unverified records.
+Original tests are preserved unchanged under `test/historical/v17/`; they are not
+active v18 tests and are not claimed to have passed. This is an explicitly
+authorized oracle migration, not deletion of a failing gate without replacement.
+
+Active browser tests compare current product against v18 with identical synthetic
+input and clock. Differences remain failures. Existing approved PNGs and screenshot
+tolerance are unchanged. New attachments are unapproved review evidence, never
+automatically promoted snapshots. See `spike/v18-review/README.md`.
 
 ## CI and diagnosis
 

@@ -1,7 +1,9 @@
 import { defineConfig } from "@playwright/test";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   testDir: "test/browser",
+  globalSetup: fileURLToPath(new URL("./test/browser/build-product.mjs", import.meta.url)),
   fullyParallel: false,
   workers: 1,
   retries: 0,

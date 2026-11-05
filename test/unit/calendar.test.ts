@@ -24,10 +24,8 @@ function span(start: string, endInclusive: string): { start: number; end: number
 }
 
 describe("bundled Japanese holidays", () => {
-  it("copies the frozen v17 table", () => {
-    const html = readFileSync("reference/UI_BASELINE_v17_FROZEN.html", "utf8");
-    const start = html.indexOf("const holidays=");
-    const frozen = Function(`return ${html.slice(start + "const holidays=".length, html.indexOf(";", start))}`)() as Record<string, string>;
+  it("matches the independently extracted pinned v18 holiday snapshot", () => {
+    const frozen = JSON.parse(readFileSync("reference/v18-holidays.json", "utf8")) as Record<string, string>;
     expect(BUNDLED_HOLIDAYS).toEqual(frozen);
     expect(Object.keys(BUNDLED_HOLIDAYS)).toHaveLength(89);
     expect(holidayName(calendar, "2026-11-23")).toBe("勤労感謝の日");

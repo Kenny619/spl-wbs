@@ -54,11 +54,27 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install
+        id: install
         run: npm ci
       - name: Install Chromium
         run: npx playwright install chromium
       - name: Browser tests
         run: npm run test:e2e -- --reporter=list,html
+      - name: Review product build
+        id: reviewbuild
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run build
+      - name: Prepare unapproved UAT package
+        if: ${{ !cancelled() && steps.reviewbuild.outcome == 'success' }}
+        run: node scripts/package-baseline-review.mjs
+      - name: UAT review package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v18-unapproved-UAT-package
+          path: work/v18-review/
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Browser diagnostics
         if: always()
         uses: actions/upload-artifact@v4

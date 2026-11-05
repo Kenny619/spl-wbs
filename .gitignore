@@ -2,6 +2,9 @@
 docs
 reference/*
 !reference/UI_BASELINE_v17_FROZEN.html
+!reference/UI_BASELINE_v18_CANDIDATE.html
+!reference/baseline-manifest.json
+!reference/v18-holidays.json
 /work/
 test-results
 # Logs
