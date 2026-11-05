@@ -124,7 +124,7 @@ for (const [width, name] of cases) {
       await open(page, productUrl, width);
       await state(reference, name);
       await state(page, name);
-      const options = { animations: "disabled" as const, caret: "hide" as const, scale: "css" as const };
+      const options = { fullPage: true, animations: "disabled" as const, caret: "hide" as const, scale: "css" as const };
       const expected = await reference.screenshot(options);
       const actual = await page.screenshot(options);
       await testInfo.attach("approved-v18-reference", { body: expected, contentType: "image/png" });
@@ -201,7 +201,7 @@ test("v18 review capture control: same reference matches itself", async ({ page,
       await twin.setViewportSize({ width, height: 900 });
       await state(page, name);
       await state(twin, name);
-      const options = { animations: "disabled" as const, caret: "hide" as const, scale: "css" as const };
+      const options = { fullPage: true, animations: "disabled" as const, caret: "hide" as const, scale: "css" as const };
       const expected = await page.screenshot(options);
       const actual = await twin.screenshot(options);
       const comparison = compareReviewImages(expected, actual);

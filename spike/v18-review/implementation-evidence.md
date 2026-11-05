@@ -33,8 +33,8 @@ The package lock is unchanged from the independently clean-installed foundation.
 - `npm test`: exit 0, 56 tests across 11 files. Obsolete SortOrder-first
   expectations are replaced by numeric WBS/ID assertions; Updates import is tested.
 - `npm run build`: exit 0, including TypeScript checking; product SHA-256
-  `f9597e6e71c493b98a1ce4dd7aebd0b7c53620a7edfaee1dd652266df15d6c3a`.
-- Live v18 comparison suite over diagnostic localhost: 20/20 visual cases PASS
+  `1deaa2b2e9bd53df7d68377251be216e048921af75c3a22e0e9f03b791647df2`.
+- Initial viewport-capture v18 comparison suite over diagnostic localhost: 20/20 visual cases PASS
   plus same-reference control PASS. Maximum differing-pixel ratio
   `0.00006184895833333334` (0.006185%) versus unchanged `0.001` (0.1%) maximum.
   Default, expanded hierarchy, Week, Month, Quarter, applied filters and several
@@ -48,6 +48,13 @@ The package lock is unchanged from the independently clean-installed foundation.
   writes only an inspection artifact under `work/`, never production CSS.
 - `git diff --check`: PASS. Approved reference and historical tests/PNG bytes are
   verified against their pre-implementation versions.
+
+The initial implementation commit `2f6bbfe067dd6f2366fd6efe24f72b2d16b23c98`
+passed the complete Windows CI run 41989997184: 56 unit tests, build and all 33
+browser cases, including packaged file://. The final follow-up also matches the
+approved favicon and PGCM legend swatch and captures full pages to cover the
+footer. Local full-page default 1440/1024 and detail comparisons pass 3/3; the
+final complete Windows run is linked from PR #15.
 
 The earlier local `file://` administrator-policy limitation remains; no bypass
 was attempted. Windows CI runs the full packaged/browser suite on this branch.
