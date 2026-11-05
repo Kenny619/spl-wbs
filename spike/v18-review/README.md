@@ -38,9 +38,12 @@ that artifact. Under the explicit migration authorization they are replaced with
    verification remains provisional.
 4. Fourteen active browser comparisons at 1440×900 and 1024×900, using the same
    synthetic workbook and fixed Asia/Tokyo clock in supplied reference and freshly
-   built product. Each comparison attaches both images; differences fail. This is
-   an exact same-run PNG comparison and is deliberately stricter than the existing
-   0.001 screenshot threshold. No reference PNGs are generated or promoted.
+   built product. Each comparison attaches both images, a difference image and pixel metrics.
+   The existing maximum different-pixel ratio of 0.001 is preserved; every differing
+   RGBA pixel counts, stricter than perceptual color/anti-alias suppression. A
+   same-reference control exposed small rendering noise under raw PNG-byte equality,
+   so byte equality is not used as a visual oracle. No reference PNGs are generated
+   or promoted.
 
 All existing approved v17/product snapshot PNGs and the existing Gantt screenshot
 regression test remain unchanged. The historical 8,486-pixel Gantt mismatch remains
@@ -60,6 +63,9 @@ The six newly supplied v1.3 documents retain v17 authority with scoped later
 amendments, including these changes. This migration exposes the differences; it
 does not authorize implementing them or copying the compiled bundle into product
 source. Keep all DEC-EMV-002-01 through -11 intact.
+
+See [calibration-evidence.md](calibration-evidence.md) for the independent same-reference
+capture control and its explicit scope.
 
 ## Review package and execution
 

@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { SCREENSHOT_CLOCK_UTC } from "../../src/config/decisions";
+import { compareReviewImages } from "./compare-review-images.mjs";
 
 // Review comparisons, not newly approved snapshots. Historical images remain untouched.
 const diagnosticBase = process.env.BASELINE_REVIEW_LOCALHOST;
@@ -102,10 +103,39 @@ for (const [width, name] of cases) {
       const actual = await page.screenshot(options);
       await testInfo.attach("v18-reference-unapproved", { body: expected, contentType: "image/png" });
       await testInfo.attach("current-product", { body: actual, contentType: "image/png" });
-      // Exact comparison deliberately exposes differences; no baseline files are written.
-      expect(actual.equals(expected), "Product differs from the supplied v18 candidate; inspect both attachments. UAT is still required.").toBe(true);
+      const comparison = compareReviewImages(expected, actual);
+      if (comparison.diff) await testInfo.attach("v18-product-diff", { body: comparison.diff, contentType: "image/png" });
+      await testInfo.attach("comparison-metrics", { body: Buffer.from(JSON.stringify({ ...comparison, diff: undefined })), contentType: "application/json" });
+      expect(comparison.matches, `Product differs from v18: ${comparison.differentPixels} pixels, ratio ${comparison.ratio}; approved maximum 0.001. Inspect attachments; UAT remains required.`).toBe(true);
     } finally {
       await reference.close();
     }
   });
 }
+
+// Calibrate the capture path with the same artifact on both sides, including
+// detail-panel state. This checks that rendering noise stays below the unchanged
+// approved ratio before interpreting product/reference differences.
+test("v18 review capture control: same reference matches itself", async ({ page, context }, testInfo) => {
+  test.setTimeout(60_000);
+  testInfo.annotations.push({ type: "deployment", description: diagnosticBase ? "localhost calibration only" : "file:// browser CI calibration; not physical Windows acceptance" });
+  const twin = await context.newPage();
+  try {
+    await open(page, referenceUrl, 1440);
+    await open(twin, referenceUrl, 1440);
+    for (const [width, name] of [[1440,"default"],[1024,"default"],[1440,"detail-with-url"]] as Array<[number,string]>) {
+      await page.setViewportSize({ width, height: 900 });
+      await twin.setViewportSize({ width, height: 900 });
+      await state(page, name);
+      await state(twin, name);
+      const options = { animations: "disabled" as const, caret: "hide" as const, scale: "css" as const };
+      const expected = await page.screenshot(options);
+      const actual = await twin.screenshot(options);
+      const comparison = compareReviewImages(expected, actual);
+      await testInfo.attach(`control-${width}-${name}`, { body: Buffer.from(JSON.stringify({ ...comparison, diff: undefined })), contentType: "application/json" });
+      expect(comparison.matches, `Same-reference capture control differs at ${width}/${name}, ratio ${comparison.ratio}`).toBe(true);
+    }
+  } finally {
+    await twin.close();
+  }
+});
