@@ -78,7 +78,7 @@ async function writeVerified(
   }
   const handle = await dir.getFileHandle(name, { create: expectedExistingHash === null });
   const writable = await handle.createWritable();
-  await writable.write(contents);
+  await writable.write(new Uint8Array(contents));
   await writable.close();
   const observed = await sha256(await read(dir, name));
   const expected = await sha256(contents);
