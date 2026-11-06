@@ -3,7 +3,7 @@ import { boot } from "../main";
 import type { ImportController } from "../data/importController";
 import { KNOWN_STATUSES, TASK_TYPES, type Task } from "../data/types";
 import { collectTaskChanges, hasTaskChanges, initialTaskDraft, type TaskDraft } from "./draft";
-import { captureManagedSourceHash, saveManagedDirect, sha256 } from "./directSave";
+import { captureManagedSourceHash, saveManagedAsCopy, saveManagedDirect, sha256 } from "./directSave";
 import { preflightManagedWorkbook } from "./preflight";
 import type { EditableField, EditValue } from "./workbookCandidate";
 
@@ -47,6 +47,7 @@ export class ManagedEditor {
   private directory: FileSystemDirectoryHandle | null = null;
   private sourceName: string | null = null;
   private loadedHash: string | null = null;
+  private loadedBytes: Uint8Array | null = null;
   private canWrite = false;
   private names: string[] = [];
   private editing = false;
@@ -126,6 +127,7 @@ export class ManagedEditor {
         this.directory = null;
         this.sourceName = null;
         this.loadedHash = null;
+        this.loadedBytes = null;
         this.names = [];
         this.canWrite = false;
         this.clearDraft();
@@ -226,6 +228,7 @@ export class ManagedEditor {
     this.names = found;
     this.sourceName = null;
     this.loadedHash = null;
+    this.loadedBytes = null;
     this.canWrite = false;
     this.clearDraft();
     if (!found.length) {
@@ -243,6 +246,7 @@ export class ManagedEditor {
     this.busy = true;
     this.canWrite = false;
     this.loadedHash = null;
+    this.loadedBytes = null;
     this.render();
     try {
       const file = await (await this.directory.getFileHandle(name)).getFile();
@@ -259,6 +263,7 @@ export class ManagedEditor {
       }
       this.sourceName = name;
       this.loadedHash = hash;
+      this.loadedBytes = bytes;
       this.canWrite = eligible;
       this.clearDraft();
       try { localStorage.setItem(STORAGE_PREFIX + this.directory.name, name); } catch { /* best effort */ }
@@ -300,23 +305,99 @@ export class ManagedEditor {
         this.message = "No changes; no file write or history append.";
         return true;
       }
-      this.loadedHash = result.sourceHash;
-      this.clearDraft();
       const view = this.controller.getState().view;
       const file = await (await this.directory.getFileHandle(this.sourceName)).getFile();
+      const verified = new Uint8Array(await file.arrayBuffer());
+      if (await sha256(verified) !== result.sourceHash) {
+        throw new Error("Source changed after Save confirmation; do not retry without inspection.");
+      }
       await this.controller.chooseFile(file);
-      const updated = this.controller.getState();
-      if (!updated.tasks || updated.loadError) {
-        this.loadedHash = null;
-        this.message = "Workbook bytes saved, but screen refresh failed. Inspect the workbook; do not retry.";
+      const reloaded = this.controller.getState();
+      if (!reloaded.tasks || reloaded.loadError) {
+        this.message = "Workbook bytes saved, but screen refresh failed. Draft retained; inspect the workbook before retrying.";
         return false;
       }
+      this.loadedHash = result.sourceHash;
+      this.loadedBytes = verified;
+      this.clearDraft();
       this.controller.patchView({ ...view, selectedId: taskId });
       this.message = "Verified Save: task and UpdateHistory persisted; predecessor backup retained.";
       return true;
     } catch (error) {
       this.message = "Save NOT verified: " + errorMessage(error) +
-        ". Draft retained; inspect recovery files before attempting another Save.";
+        ". Draft retained. If the source changed externally, use Save As to make a copy from the last loaded version; Reload requires discarding edits.";
+      return false;
+    } finally {
+      this.busy = false;
+      this.render();
+    }
+  }
+
+
+  /**
+   * Safe Save As creates a new same-folder workbook from the loaded snapshot,
+   * never from a potentially externally changed source. Target collisions
+   * are rejected, and the current file stays active until readback and import.
+   */
+  private async saveAs(): Promise<boolean> {
+    if (this.busy || !this.directory || !this.sourceName || !this.loadedHash ||
+      !this.loadedBytes || !this.canWrite || !this.initial || !this.draft ||
+      !this.selectedId) return false;
+    const proposed = this.sourceName.replace(/\.xlsx$/i, "-copy.xlsx");
+    const reply = window.prompt("Save As — NEW .xlsx name in the selected project folder (existing files cannot be overwritten):", proposed);
+    if (reply === null) return false;
+    const name = reply.trim();
+    if (!/^[^\/\\]+\.xlsx$/i.test(name) || name.startsWith("~$") ||
+      /\.(?:backup|stage)\.xlsx$/i.test(name)) {
+      this.message = "Choose a new .xlsx filename without folders or recovery-file suffixes.";
+      this.render();
+      return false;
+    }
+    if (!window.confirm(
+      "Save As creates a new workbook from the version last loaded in this app plus your pending edits. " +
+      "It does NOT merge changes made in Excel or elsewhere. The original remains untouched. Continue?"
+    )) return false;
+
+    const directory = this.directory;
+    const sourceName = this.sourceName;
+    const snapshot = this.loadedBytes;
+    const previousHash = this.loadedHash;
+    const taskId = this.selectedId;
+    const changes = collectTaskChanges(this.initial, this.draft);
+    this.busy = true;
+    this.message = "Writing a separate copy and verifying readback…";
+    this.render();
+    try {
+      const saved = await saveManagedAsCopy({
+        directory, sourceName, destinationName: name,
+        loadedBytes: snapshot, loadedHash: previousHash, taskId, changes,
+        appVersion: APP_VERSION,
+      });
+      // A writer may alter the file after close; verify this exact active copy.
+      const file = await (await directory.getFileHandle(name)).getFile();
+      const verified = new Uint8Array(await file.arrayBuffer());
+      if (await sha256(verified) !== saved.destinationHash) {
+        throw new Error("Save As destination changed after verification; original remains active.");
+      }
+      const view = this.controller.getState().view;
+      await this.controller.chooseFile(file);
+      const state = this.controller.getState();
+      if (!state.tasks || state.fileName !== name || state.loadError) {
+        throw new Error("Save As bytes were written, but the new workbook could not be reloaded; original remains active.");
+      }
+      this.sourceName = name;
+      this.loadedHash = saved.destinationHash;
+      this.loadedBytes = verified;
+      this.names = [...new Set([...this.names, name])].sort((a, b) => a.localeCompare(b));
+      this.clearDraft();
+      this.controller.patchView({ ...view, selectedId: taskId });
+      try { localStorage.setItem(STORAGE_PREFIX + directory.name, name); } catch { /* best effort */ }
+      this.message = "Save As verified: " + name + " is now active. Original " + sourceName +
+        " was not modified; future direct Saves target " + name + ".";
+      return true;
+    } catch (error) {
+      this.message = "Save As NOT confirmed: " + errorMessage(error) +
+        ". The original remains the active source; pending edits retained. Inspect any destination staging files before retrying.";
       return false;
     } finally {
       this.busy = false;
@@ -425,11 +506,15 @@ export class ManagedEditor {
     saveButton.type = "button";
     saveButton.disabled = this.busy || !this.isDirty();
     saveButton.addEventListener("click", () => { void this.save(); });
+    const saveAsButton = element(this.doc, "button", "managed-action", "Save As…");
+    saveAsButton.type = "button";
+    saveAsButton.disabled = this.busy;
+    saveAsButton.addEventListener("click", () => { void this.saveAs(); });
     const discard = element(this.doc, "button", "managed-action", "Discard");
     discard.type = "button";
     discard.disabled = this.busy;
     discard.addEventListener("click", () => { this.clearDraft(); this.render(); });
-    actions.append(saveButton, discard, indicator);
+    actions.append(saveButton, saveAsButton, discard, indicator);
     this.slot.append(actions);
   }
 }
