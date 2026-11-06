@@ -213,3 +213,69 @@ export async function saveManagedDirect(input: DirectSaveInput): Promise<DirectS
   await directory.removeEntry(names.transaction);
   return { kind: "saved", sourceHash: after, backupHash: before, changeSetId: candidate.changeSetId };
 }
+
+/**
+ * Save As v1: create a NEW workbook in the user-selected directory.
+ *
+ * Candidate always derives from the bytes captured when the user loaded the
+ * original, not whatever external writers may have changed in the original
+ * since then. The caller must disclose this provenance when saving a conflict.
+ * No write is ever made to sourceName here; target must not already exist.
+ * Saving a new copy starts a NEW backup lifecycle for future direct Saves.
+ */
+export type SaveAsManagedInput = Omit<CandidateInput, "source"> & {
+  directory: FileSystemDirectoryHandle;
+  sourceName: string;
+  destinationName: string;
+  loadedBytes: Uint8Array;
+  loadedHash: string;
+};
+export type SaveAsManagedResult = {
+  kind: "saved-copy";
+  sourceName: string;
+  destinationName: string;
+  destinationHash: string;
+  changeSetId: string | null;
+};
+
+export async function saveManagedAsCopy(input: SaveAsManagedInput): Promise<SaveAsManagedResult> {
+  const { directory, sourceName, destinationName, loadedBytes, loadedHash, ...edits } = input;
+  const target = managedFileNames(destinationName);
+  managedFileNames(sourceName);
+  if (destinationName.toLowerCase() === sourceName.toLowerCase()) {
+    stop("SAME_DESTINATION", "Save As requires a new workbook name; the original must remain untouched.");
+  }
+  if (!isHash(loadedHash) || await sha256(loadedBytes) !== loadedHash) {
+    stop("INVALID_LOAD_SNAPSHOT", "Loaded workbook bytes and initial fingerprint do not match.");
+  }
+
+  // The selected destination cannot carry any existing source, recovery, or
+  // owner state. This also prevents confusing a stale interrupted copy with
+  // a new clean Save As.
+  for (const name of Object.values(target)) {
+    if (await exists(directory, name)) {
+      stop("FILE_COLLISION", "Save As refuses existing destination or recovery file: " + name);
+    }
+  }
+
+  const candidate = await buildManagedCandidate({ ...edits, source: loadedBytes });
+  const bytes = candidate.kind === "candidate" ? candidate.bytes : loadedBytes;
+  const expected = await sha256(bytes);
+
+  // Stage the complete new workbook before creating the final destination.
+  // An error preserves staging evidence; no false success or active-source
+  // switch is allowed. Do not auto-retry uncertain files.
+  await writeVerified(directory, target.stage, bytes, null);
+  await writeVerified(directory, target.source, bytes, null);
+  if (await sha256(await read(directory, target.source)) !== expected) {
+    stop("READBACK_FAILED", "Save As destination changed after write; staging retained.");
+  }
+  await directory.removeEntry(target.stage);
+  return {
+    kind: "saved-copy",
+    sourceName,
+    destinationName,
+    destinationHash: expected,
+    changeSetId: candidate.kind === "candidate" ? candidate.changeSetId : null,
+  };
+}
