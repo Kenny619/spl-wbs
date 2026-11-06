@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/checksum-dist.mjs",
+    "build:managed": "node scripts/prepare-managed-html.mjs && tsc --noEmit && vite build --config vite.managed.config.ts",
     "extract:css": "node scripts/extract-baseline-css.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
