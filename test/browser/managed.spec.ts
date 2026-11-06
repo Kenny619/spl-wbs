@@ -208,7 +208,7 @@ test("Change History is read-only, grouped and filtered, with task entry and saf
   await expect(history.locator("pre")).toContainText("<img src=x onerror=alert('x')>");
   await history.getByLabel("History field filter").selectOption("Title");
   await expect(history.getByText(/1 field change\(s\)/)).toBeVisible();
-  await expect(history.getByText("Title", { exact: false }).first()).toBeVisible();
+  await expect(history.locator(".managed-history-row strong")).toContainText("Title");
   await history.getByLabel("History end date").fill("2000-01-01");
   await expect(history.getByText("No changes match these filters.")).toBeVisible();
   await history.getByRole("button", { name: "Close" }).click();
