@@ -74,6 +74,13 @@ export class ManagedEditor {
     this.dialog = element(doc, "dialog", "managed-dialog");
     this.dialog.setAttribute("aria-label", "Unsaved changes");
     doc.body.append(this.dialog);
+    doc.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && this.dialog.open) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        this.resolvePending(false);
+      }
+    }, { capture: true });
 
     const reconnect = doc.getElementById("reconnect");
     if (reconnect) reconnect.style.display = "none";
