@@ -63,18 +63,18 @@ async function verifyContentTypes(zip: JSZip): Promise<void> {
     throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unsupported or inconsistent XLSX content type declarations.");
   };
   const file = zip.file("[Content_Types].xml");
-  if (!file) reject();
+  if (!file) return reject();
   const raw = (await file.async("string")).trim()
     .replace(/^<\?xml\s+[^?]*\?>\s*/i, "");
   const root = /^<Types\s+xmlns=["']http:\/\/schemas\.openxmlformats\.org\/package\/2006\/content-types["']>([\s\S]*)<\/Types>$/.exec(raw);
-  if (!root) reject();
+  if (!root) return reject();
   const declarations = root[1].match(/<(?:Default|Override)\s+[^<>]*\/>/g) ?? [];
-  if (root[1].replace(/<(?:Default|Override)\s+[^<>]*\/>/g, "").trim()) reject();
+  if (root[1].replace(/<(?:Default|Override)\s+[^<>]*\/>/g, "").trim()) return reject();
   const defaults = new Map<string, string>();
   const overrides = new Map<string, string>();
   for (const declaration of declarations) {
     const kind = /^<(Default|Override)\s+/.exec(declaration)?.[1];
-    if (!kind) reject();
+    if (!kind) return reject();
     const attrText = declaration.slice(kind.length + 1, -2);
     const attributes = new Map<string, string>();
     const attribute = /\s+([A-Za-z][A-Za-z0-9]*)\s*=\s*(["'])([^"'<>]*)\2/y;
@@ -82,37 +82,37 @@ async function verifyContentTypes(zip: JSZip): Promise<void> {
     while (offset < attrText.length && attrText.slice(offset).trim()) {
       attribute.lastIndex = offset;
       const found = attribute.exec(attrText);
-      if (!found || attributes.has(found[1]) || /[&]/.test(found[3])) reject();
+      if (!found || attributes.has(found[1]) || /[&]/.test(found[3])) return reject();
       attributes.set(found[1], found[3]);
       offset = attribute.lastIndex;
     }
-    if (attrText.slice(offset).trim() || attributes.size !== 2) reject();
+    if (attrText.slice(offset).trim() || attributes.size !== 2) return reject();
     const mime = attributes.get("ContentType");
-    if (!mime) reject();
+    if (!mime) return reject();
     if (kind === "Default") {
       const ext = attributes.get("Extension");
       if (!ext || defaults.has(ext) ||
           !["xml", "rels", "vml"].includes(ext) ||
           mime !== (ext === "xml" ? "application/xml" :
             ext === "rels" ? "application/vnd.openxmlformats-package.relationships+xml" :
-            "application/vnd.openxmlformats-officedocument.vmlDrawing")) reject();
+            "application/vnd.openxmlformats-officedocument.vmlDrawing")) return reject();
       // ExcelJS emits an unused VML default. ZIP VML parts remain prohibited
       // by ALLOWED_FILES; do not treat this as permission to preserve drawings.
       defaults.set(ext, mime);
     } else {
       const part = attributes.get("PartName");
-      if (!part?.startsWith("/") || overrides.has(part)) reject();
+      if (!part?.startsWith("/") || overrides.has(part)) return reject();
       const name = part.slice(1);
-      if (!zip.file(name) || expectedPartType(name) !== mime) reject();
+      if (!zip.file(name) || expectedPartType(name) !== mime) return reject();
       overrides.set(part, mime);
     }
   }
   if ((defaults.size !== 2 && defaults.size !== 3) || defaults.get("rels") !== "application/vnd.openxmlformats-package.relationships+xml" ||
-      defaults.get("xml") !== "application/xml") reject();
+      defaults.get("xml") !== "application/xml") return reject();
   for (const name of Object.keys(zip.files)) {
     if (zip.files[name].dir || name === "[Content_Types].xml" || name.endsWith(".rels")) continue;
     const expected = expectedPartType(name);
-    if (!expected || overrides.get("/" + name) !== expected) reject();
+    if (!expected || overrides.get("/" + name) !== expected) return reject();
   }
 }
 
