@@ -401,12 +401,30 @@ export class ManagedEditor {
     }
   }
 
-  private async saveAs(): Promise<boolean> {
+  private async saveAs(otherFolder = false): Promise<boolean> {
     if (this.busy || !this.directory || !this.sourceName || !this.loadedHash ||
       !this.loadedBytes || !this.canWrite || !this.initial || !this.draft ||
       !this.selectedId) return false;
+    // Call picker directly from the user click, before any prompt/await that
+    // could consume Edge's transient user activation.
+    let directory = this.directory;
+    if (otherFolder) {
+      const picker = (globalThis as PickerHost).showDirectoryPicker;
+      if (typeof picker !== "function") {
+        this.message = "This browser cannot select another folder for Save As.";
+        this.render();
+        return false;
+      }
+      try { directory = await picker({ mode: "readwrite" }); }
+      catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return false;
+        this.message = "Save As destination folder not selected: " + errorMessage(error);
+        this.render();
+        return false;
+      }
+    }
     const proposed = this.sourceName.replace(/\.xlsx$/i, "-copy.xlsx");
-    const reply = window.prompt("Save As — NEW .xlsx name in the selected project folder (existing files cannot be overwritten):", proposed);
+    const reply = window.prompt("Save As — NEW .xlsx name in destination folder \"" + directory.name + "\" (existing files cannot be overwritten):", proposed);
     if (reply === null) return false;
     const name = reply.trim();
     if (!/^[^\/\\]+\.xlsx$/i.test(name) || name.startsWith("~$") ||
@@ -417,10 +435,9 @@ export class ManagedEditor {
     }
     if (!window.confirm(
       "Save As creates a new workbook from the version last loaded in this app plus your pending edits. " +
-      "It does NOT merge changes made in Excel or elsewhere. The original remains untouched. Continue?"
+      "It does NOT merge changes made in Excel or elsewhere. The original remains untouched. Destination folder: " + directory.name + ". Continue?"
     )) return false;
 
-    const directory = this.directory;
     const sourceName = this.sourceName;
     const snapshot = this.loadedBytes;
     const previousHash = this.loadedHash;
@@ -447,17 +464,26 @@ export class ManagedEditor {
       if (!state.tasks || state.fileName !== name || state.loadError) {
         throw new Error("Save As bytes were written, but the new workbook could not be reloaded; original remains active.");
       }
+      // Newly verified copy is the active project, including its owning folder.
+      this.directory = directory;
       this.sourceName = name;
       this.inspectionName = name;
       this.recoveryHold = false;
       this.loadedHash = saved.destinationHash;
       this.loadedBytes = verified;
-      this.names = [...new Set([...this.names, name])].sort((a, b) => a.localeCompare(b));
+      const targetNames = new Set<string>([name]);
+      try {
+        for await (const [foundName, handle] of (directory as DirectoryWithEntries).entries()) {
+          if (handle.kind === "file" && /\.xlsx$/i.test(foundName) &&
+              !/\.(backup|stage)\.xlsx$/i.test(foundName)) targetNames.add(foundName);
+        }
+      } catch { /* only the confirmed active destination is required */ }
+      this.names = [...targetNames].sort((a, b) => a.localeCompare(b));
       this.clearDraft();
       this.controller.patchView({ ...view, selectedId: taskId });
       try { localStorage.setItem(STORAGE_PREFIX + directory.name, name); } catch { /* best effort */ }
-      this.message = "Save As verified: " + name + " is now active. Original " + sourceName +
-        " was not modified; future direct Saves target " + name + ".";
+      this.message = "Save As verified: " + name + " is now active in " + directory.name + ". Original " + sourceName +
+        " was not modified; future direct Saves target " + name + " in the destination folder.";
       return true;
     } catch (error) {
       this.message = "Save As NOT confirmed: " + errorMessage(error) +
@@ -581,6 +607,10 @@ export class ManagedEditor {
     saveAsButton.type = "button";
     saveAsButton.disabled = this.busy;
     saveAsButton.addEventListener("click", () => { void this.saveAs(); });
+    const saveOtherFolder = element(this.doc, "button", "managed-action", "Save As to folder…");
+    saveOtherFolder.type = "button";
+    saveOtherFolder.disabled = this.busy;
+    saveOtherFolder.addEventListener("click", () => { void this.saveAs(true); });
     const discard = element(this.doc, "button", "managed-action", "Discard");
     discard.type = "button";
     discard.disabled = this.busy;
@@ -589,7 +619,7 @@ export class ManagedEditor {
     report.type = "button";
     report.disabled = this.busy;
     report.addEventListener("click", () => this.reports.open());
-    actions.append(saveButton, saveAsButton, discard, report, indicator);
+    actions.append(saveButton, saveAsButton, saveOtherFolder, discard, report, indicator);
     this.slot.append(actions);
   }
 }
