@@ -183,6 +183,8 @@ test("Save As refuses an existing destination and retains the unsaved edit and a
 test("Change History is read-only, grouped and filtered, with task entry and safe untrusted text", async ({ page }) => {
   page.on("dialog", async (dialog) => { await dialog.accept(); });
   await openManaged(page);
+  // Global toolbar is behind the task-detail overlay; close details first.
+  await page.locator("#close").click();
 
   await page.getByRole("button", { name: "History", exact: true }).click();
   let history = page.getByRole("dialog", { name: "Change History" });
