@@ -91,10 +91,13 @@ async function verifyContentTypes(zip: JSZip): Promise<void> {
     if (!mime) reject();
     if (kind === "Default") {
       const ext = attributes.get("Extension");
-      if (!ext || defaults.has(ext) || !["xml", "rels"].includes(ext) ||
-          mime !== (ext === "xml" ? "application/xml" : "application/vnd.openxmlformats-package.relationships+xml")) {
-        throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unsupported default content-type declaration: " + ext + " / " + mime);
-      }
+      if (!ext || defaults.has(ext) ||
+          !["xml", "rels", "vml"].includes(ext) ||
+          mime !== (ext === "xml" ? "application/xml" :
+            ext === "rels" ? "application/vnd.openxmlformats-package.relationships+xml" :
+            "application/vnd.openxmlformats-officedocument.vmlDrawing")) reject();
+      // ExcelJS emits an unused VML default. ZIP VML parts remain prohibited
+      // by ALLOWED_FILES; do not treat this as permission to preserve drawings.
       defaults.set(ext, mime);
     } else {
       const part = attributes.get("PartName");
@@ -104,7 +107,7 @@ async function verifyContentTypes(zip: JSZip): Promise<void> {
       overrides.set(part, mime);
     }
   }
-  if (defaults.size !== 2 || defaults.get("rels") !== "application/vnd.openxmlformats-package.relationships+xml" ||
+  if ((defaults.size !== 2 && defaults.size !== 3) || defaults.get("rels") !== "application/vnd.openxmlformats-package.relationships+xml" ||
       defaults.get("xml") !== "application/xml") reject();
   for (const name of Object.keys(zip.files)) {
     if (zip.files[name].dir || name === "[Content_Types].xml" || name.endsWith(".rels")) continue;
