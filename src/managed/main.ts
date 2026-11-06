@@ -3,7 +3,7 @@ import { boot } from "../main";
 import type { ImportController } from "../data/importController";
 import { KNOWN_STATUSES, TASK_TYPES, type Task } from "../data/types";
 import { collectTaskChanges, hasTaskChanges, initialTaskDraft, type TaskDraft } from "./draft";
-import { captureManagedSourceHash, saveManagedDirect } from "./directSave";
+import { captureManagedSourceHash, saveManagedDirect, sha256 } from "./directSave";
 import { preflightManagedWorkbook } from "./preflight";
 import type { EditableField, EditValue } from "./workbookCandidate";
 
@@ -241,6 +241,9 @@ export class ManagedEditor {
       const file = await (await this.directory.getFileHandle(name)).getFile();
       const bytes = new Uint8Array(await file.arrayBuffer());
       const hash = await captureManagedSourceHash(this.directory, name);
+      if (hash !== await sha256(bytes)) {
+        throw new Error("Workbook changed while loading; reload before editing.");
+      }
       const eligible = await preflightManagedWorkbook(bytes).then(() => true).catch(() => false);
       await this.controller.chooseFile(file);
       const loaded = this.controller.getState();
