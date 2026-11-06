@@ -457,3 +457,94 @@ test("Stage A orphan recovery file blocks direct Save and inspector preserves al
   expect(names.source).toEqual(source);
   expect(names.stage).toBe("unowned recovery evidence");
 });
+
+
+test("Save As to selected other folder switches active directory only after verified copy, then backs up there", async ({ page }) => {
+  page.on("dialog", async (dialog) => {
+    if (dialog.type() === "prompt") await dialog.accept("other-folder-copy.xlsx");
+    else await dialog.accept();
+  });
+  await openManaged(page);
+  const original = await page.evaluate(() => {
+    const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    return Array.from(files.get("synthetic-demo.xlsx")!);
+  });
+  await page.evaluate(() => {
+    const files = new Map<string, Uint8Array>();
+    const directory = {
+      kind: "directory", name: "other-disposable-folder",
+      async getFileHandle(name: string, opts?: { create?: boolean }) {
+        if (!files.has(name)) {
+          if (!opts?.create) throw new DOMException("not found", "NotFoundError");
+          files.set(name, new Uint8Array());
+        }
+        return {
+          kind: "file", name,
+          async getFile() {
+            return new File([new Uint8Array(files.get(name)!)], name, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          },
+          async createWritable() {
+            let contents = new Uint8Array();
+            return {
+              async write(chunk: Uint8Array) { contents = new Uint8Array(chunk); },
+              async close() { files.set(name, contents); },
+            };
+          },
+        };
+      },
+      async *entries() { for (const name of files.keys()) yield [name, { kind: "file", name }]; },
+      async removeEntry(name: string) { files.delete(name); },
+    };
+    Object.defineProperty(window, "__managedOtherFiles", { configurable: true, value: files });
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true, value: async () => directory,
+    });
+  });
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Saved to second folder");
+  await page.getByRole("button", { name: "Save As to folder…" }).click();
+  await expect(page.getByLabel("Active Excel workbook")).toHaveValue("other-folder-copy.xlsx");
+  await expect(page.getByText(/Save As verified: other-folder-copy.xlsx is now active in other-disposable-folder/)).toBeVisible();
+  const bytes = await page.evaluate(() => {
+    const originalFiles = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    const otherFiles = (window as unknown as { __managedOtherFiles: Map<string, Uint8Array> }).__managedOtherFiles;
+    return {
+      oldBytes: Array.from(originalFiles.get("synthetic-demo.xlsx")!),
+      originalNames: [...originalFiles.keys()],
+      copy: Array.from(otherFiles.get("other-folder-copy.xlsx")!),
+      otherNames: [...otherFiles.keys()],
+    };
+  });
+  expect(bytes.oldBytes).toEqual(original);
+  expect(bytes.originalNames).toEqual(["synthetic-demo.xlsx"]);
+  expect(bytes.otherNames).toEqual(["other-folder-copy.xlsx"]);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(Uint8Array.from(bytes.copy) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  expect(workbook.getWorksheet("ProjectWBS")?.getCell("B2").value).toBe("Saved to second folder");
+
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Second folder edited directly");
+  await page.getByRole("button", { name: "Save to workbook" }).click();
+  await expect(page.getByText(/Verified Save: task and UpdateHistory persisted/)).toBeVisible();
+  const after = await page.evaluate(() => ({
+    originalNames: [...(window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles.keys()],
+    otherNames: [...(window as unknown as { __managedOtherFiles: Map<string, Uint8Array> }).__managedOtherFiles.keys()],
+  }));
+  expect(after.originalNames).toEqual(["synthetic-demo.xlsx"]);
+  expect(after.otherNames).toContain("other-folder-copy.backup.xlsx");
+});
+
+test("Save As other folder denied leaves original project and unsaved draft intact", async ({ page }) => {
+  await openManaged(page);
+  await page.evaluate(() => {
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true, value: async () => { throw new DOMException("Denied", "NotAllowedError"); },
+    });
+  });
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Uncommitted on denied destination");
+  await page.getByRole("button", { name: "Save As to folder…" }).click();
+  await expect(page.getByText(/Save As destination folder not selected: Denied/)).toBeVisible();
+  await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
+  await expect(page.getByLabel("Task title")).toHaveValue("Uncommitted on denied destination");
+});
