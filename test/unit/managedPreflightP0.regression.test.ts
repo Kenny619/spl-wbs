@@ -31,7 +31,34 @@ async function rejectsWithoutMutation(source: Uint8Array, code = "UNSUPPORTED_PA
   expect(source).toEqual(original);
 }
 
+
+async function mutateContentTypes(transform: (xml: string) => string): Promise<Uint8Array> {
+  const zip = await JSZip.loadAsync(await workbook());
+  const name = "[Content_Types].xml";
+  const part = zip.file(name);
+  if (!part) throw new Error("Missing content types");
+  zip.file(name, transform(await part.async("string")));
+  return zip.generateAsync({ type: "uint8array" });
+}
+
 describe("P0: fail closed on unsupported OOXML relationships", () => {
+
+  it("rejects content-type declarations for unknown package parts", async () => {
+    await rejectsWithoutMutation(await mutateContentTypes(xml => xml.replace(
+      "</Types>", '<Override PartName="/customXml/item1.xml" ContentType="application/xml"/></Types>'
+    )));
+  });
+  it("rejects missing required worksheet content-type declarations", async () => {
+    await rejectsWithoutMutation(await mutateContentTypes(xml =>
+      xml.replace(/<Override\s+[^>]*PartName="\/xl\/worksheets\/sheet1\.xml"[^>]*\/>/, "")
+    ));
+  });
+  it("rejects an incorrect workbook content-type declaration", async () => {
+    await rejectsWithoutMutation(await mutateContentTypes(xml =>
+      xml.replace("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")
+    ));
+  });
   it("accepts an ordinary ExcelJS workbook", async () => {
     await expect(preflightManagedWorkbook(await workbook())).resolves.toBeUndefined();
   });
