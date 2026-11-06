@@ -54,6 +54,7 @@ async function openManaged(page: import("@playwright/test").Page) {
       },
       async removeEntry(name: string) { files.delete(name); },
     };
+    Object.defineProperty(window, "__managedFixtureFiles", { configurable: true, value: files });
     Object.defineProperty(window, "showDirectoryPicker", {
       configurable: true, value: async () => dir,
     });
@@ -96,4 +97,84 @@ test("managed preview explicit Save updates task and history without changing re
   await expect(page.getByText(/Verified Save: task and UpdateHistory persisted/)).toBeVisible({ timeout: 15000 });
   await expect(page.locator(".panel-title")).toContainText("Committed title");
   await expect(page.getByRole("button", { name: "Edit task" })).toBeVisible();
+});
+
+
+test("Save As creates verified new active workbook, keeps original unchanged, and next Save backs up the copy", async ({ page }) => {
+  page.on("dialog", async (dialog) => {
+    if (dialog.type() === "prompt") await dialog.accept("working-copy.xlsx");
+    else await dialog.accept();
+  });
+  await openManaged(page);
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Copied milestone");
+  await page.getByRole("button", { name: "Save As…" }).click();
+  await expect(page.locator("#title")).toHaveText("working-copy");
+  await expect(page.getByLabel("Active Excel workbook")).toHaveValue("working-copy.xlsx");
+  await expect(page.getByText(/Save As verified: working-copy.xlsx is now active/)).toBeVisible();
+  const sourceAndCopy = await page.evaluate(() => {
+    const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    return { original: Array.from(files.get("synthetic-demo.xlsx")!),
+      copy: Array.from(files.get("working-copy.xlsx")!) };
+  });
+  const originalBook = new ExcelJS.Workbook();
+  await originalBook.xlsx.load(Uint8Array.from(sourceAndCopy.original) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  expect(originalBook.getWorksheet("ProjectWBS")?.getCell("B2").value).toBe("Synthetic milestone");
+  expect(originalBook.getWorksheet("UpdateHistory")).toBeUndefined();
+  const copiedBook = new ExcelJS.Workbook();
+  await copiedBook.xlsx.load(Uint8Array.from(sourceAndCopy.copy) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  expect(copiedBook.getWorksheet("ProjectWBS")?.getCell("B2").value).toBe("Copied milestone");
+  expect(copiedBook.getWorksheet("UpdateHistory")?.rowCount).toBe(2);
+
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Second saved edit");
+  await page.getByRole("button", { name: "Save to workbook" }).click();
+  await expect(page.getByText(/Verified Save: task and UpdateHistory persisted/)).toBeVisible();
+  const names = await page.evaluate(() =>
+    [...(window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles.keys()]);
+  expect(names).toContain("working-copy.backup.xlsx");
+  expect(names).not.toContain("synthetic-demo.backup.xlsx");
+});
+
+test("Save As after external source change preserves outside edits and uses loaded baseline, without false merge", async ({ page }) => {
+  page.on("dialog", async (dialog) => {
+    if (dialog.type() === "prompt") await dialog.accept("conflict-copy.xlsx");
+    else await dialog.accept();
+  });
+  await openManaged(page);
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("From original baseline");
+  await page.evaluate(() => {
+    const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    files.set("synthetic-demo.xlsx", new TextEncoder().encode("EXTERNAL EXCEL MODIFICATION"));
+  });
+  await page.getByRole("button", { name: "Save to workbook" }).click();
+  await expect(page.getByText(/Save NOT verified:.*changed since it was loaded/)).toBeVisible();
+  await expect(page.getByLabel("Task title")).toHaveValue("From original baseline");
+
+  await page.getByRole("button", { name: "Save As…" }).click();
+  await expect(page.getByLabel("Active Excel workbook")).toHaveValue("conflict-copy.xlsx");
+  const files = await page.evaluate(() => {
+    const map = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    return { original: new TextDecoder().decode(map.get("synthetic-demo.xlsx")),
+      copy: Array.from(map.get("conflict-copy.xlsx")!) };
+  });
+  expect(files.original).toBe("EXTERNAL EXCEL MODIFICATION");
+  const copy = new ExcelJS.Workbook();
+  await copy.xlsx.load(Uint8Array.from(files.copy) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  expect(copy.getWorksheet("ProjectWBS")?.getCell("B2").value).toBe("From original baseline");
+});
+
+test("Save As refuses an existing destination and retains the unsaved edit and active source", async ({ page }) => {
+  page.on("dialog", async (dialog) => {
+    if (dialog.type() === "prompt") await dialog.accept("synthetic-demo.xlsx");
+    else await dialog.accept();
+  });
+  await openManaged(page);
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Keep my draft");
+  await page.getByRole("button", { name: "Save As…" }).click();
+  await expect(page.getByText(/Save As NOT confirmed:/)).toBeVisible();
+  await expect(page.getByLabel("Task title")).toHaveValue("Keep my draft");
+  await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
 });
