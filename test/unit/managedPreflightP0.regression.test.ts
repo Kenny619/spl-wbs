@@ -59,6 +59,23 @@ describe("P0: fail closed on unsupported OOXML relationships", () => {
         "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")
     ));
   });
+  it("rejects a relationship whose worksheet target does not exist", async () => {
+    await rejectsWithoutMutation(await mutateRels(xml =>
+      xml.replace('Target="worksheets/sheet1.xml"', 'Target="worksheets/sheet999.xml"')
+    ));
+  });
+  it("rejects a worksheet relationship targeting the workbook itself", async () => {
+    await rejectsWithoutMutation(await mutateRels(xml =>
+      xml.replace('Target="worksheets/sheet1.xml"', 'Target="workbook.xml"')
+    ));
+  });
+  it("rejects a relationship whose type does not agree with its target part", async () => {
+    const worksheet = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet";
+    const styles = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles";
+    await rejectsWithoutMutation(await mutateRels(xml =>
+      xml.replace('Type="' + worksheet + '"', 'Type="' + styles + '"')
+    ));
+  });
   it("accepts an ordinary ExcelJS workbook", async () => {
     await expect(preflightManagedWorkbook(await workbook())).resolves.toBeUndefined();
   });
