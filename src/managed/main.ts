@@ -7,6 +7,7 @@ import { captureManagedSourceHash, saveManagedAsCopy, saveManagedDirect, sha256 
 import { preflightManagedWorkbook } from "./preflight";
 import { openManagedHistory } from "./historyUi";
 import { ManagedSettings } from "./settingsUi";
+import { ManagedReports } from "./reportsUi";
 import type { EditableField, EditValue } from "./workbookCandidate";
 
 type DirectoryWithEntries = FileSystemDirectoryHandle & {
@@ -64,6 +65,7 @@ export class ManagedEditor {
   private readonly fileSelect: HTMLSelectElement;
   private readonly dialog: HTMLDialogElement;
   private readonly settings: ManagedSettings;
+  private readonly reports: ManagedReports;
 
   constructor(private readonly doc: Document, private readonly controller: ImportController) {
     doc.body.classList.add("spt-managed");
@@ -156,6 +158,13 @@ export class ManagedEditor {
       originalPatch(patch);
     };
     this.settings = new ManagedSettings(doc, controller, (action) => this.guard(action));
+    this.reports = new ManagedReports(doc, () => ({
+      fileName: this.sourceName,
+      tasks: this.busy ? null : this.controller.getState().tasks,
+      workbook: this.loadedBytes,
+      timeZone: this.settings.getTimeZone(),
+      hasUnsavedDraft: this.isDirty(),
+    }));
     controller.subscribe(() => this.render());
     doc.defaultView?.addEventListener("beforeunload", (event) => {
       if (!this.isDirty()) return;
@@ -545,7 +554,11 @@ export class ManagedEditor {
     discard.type = "button";
     discard.disabled = this.busy;
     discard.addEventListener("click", () => { this.clearDraft(); this.render(); });
-    actions.append(saveButton, saveAsButton, discard, indicator);
+    const report = element(this.doc, "button", "managed-action", "Output Reports");
+    report.type = "button";
+    report.disabled = this.busy;
+    report.addEventListener("click", () => this.reports.open());
+    actions.append(saveButton, saveAsButton, discard, report, indicator);
     this.slot.append(actions);
   }
 }
