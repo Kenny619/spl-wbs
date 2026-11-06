@@ -65,3 +65,112 @@ body.spt-managed .source-record { display:none !important; }
   .managed-history-filters { grid-template-columns:1fr 1fr; }
   .managed-history-values { grid-template-columns:1fr; }
 }
+
+
+/* Settings lives exclusively in the Excel Managed variant. */
+body.spt-managed #columnToggle { display:none !important; }
+.managed-settings { width:min(640px, 94vw); max-height:88vh; overflow-y:auto; border:1px solid #cad5e0;
+  border-radius:9px; padding:19px 22px 21px; background:var(--panel); color:var(--ink);
+  box-shadow:0 18px 55px #102b4050; font:13px/1.5 system-ui,sans-serif; }
+.managed-settings::backdrop { background:#0a22378c; }
+.managed-settings-head { display:flex; justify-content:space-between; align-items:center; gap:15px; }
+.managed-settings-head h2 { margin:0; font-size:19px; font-weight:750; }
+.managed-settings-section { padding:15px 0; border-bottom:1px solid var(--line); }
+.managed-settings-section h3 { margin:0 0 6px; font-size:14px; font-weight:750; }
+.managed-settings-hint { font-size:12px; color:var(--muted); margin:2px 0 10px; }
+.managed-settings-label { display:flex; flex-direction:column; gap:6px; max-width:360px; font-size:12px; font-weight:650; }
+.managed-settings-label select { min-width:0; width:100%; padding:8px 11px; background:var(--panel);
+  color:var(--ink); border:1px solid var(--line); border-radius:6px; }
+.managed-settings .column-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px 10px; max-height:none; overflow:visible; padding:0; }
+.managed-settings .filter-option { border-radius:5px; padding:7px 9px; }
+.managed-settings .filter-option input { accent-color:#5075d2; }
+.managed-settings-appearance { border:0; margin:0; padding:0; display:flex; gap:15px; flex-wrap:wrap; }
+.managed-settings-appearance legend { font-size:0; margin:0; padding:0; }
+.managed-settings-radio { display:flex; align-items:center; gap:7px; padding:6px 8px;
+  cursor:pointer; border-radius:5px; }
+.managed-settings-radio input { accent-color:#426bd1; }
+.managed-settings-footer { display:flex; flex-wrap:wrap; gap:12px; align-items:center;
+  justify-content:space-between; padding-top:15px; }
+.managed-settings-footer .managed-settings-hint { margin:0; }
+@media(max-width:560px) {
+  .managed-settings .column-options { grid-template-columns:1fr; }
+  .managed-settings-appearance { gap:7px; }
+}
+
+/*
+ * Dark scheme overrides literal light-only styles from the frozen v18 markup.
+ * Scoped to managed variant: cannot alter existing read-only SharePoint viewer.
+ * Existing workstream hues remain intact; their bars gain contrast boundaries.
+ */
+body.spt-managed[data-managed-theme="dark"] {
+  color-scheme:dark;
+  --bg:#121b2a; --panel:#1c293b; --line:#33445a; --ink:#e4edf9; --muted:#aabbd0;
+  --blue:#668ff3; --shadow:0 5px 22px #040d1c55;
+  background:var(--bg); color:var(--ink);
+}
+body.spt-managed[data-managed-theme="dark"] :is(
+  .stat,.chart-card,.small-action,.tool,.search,.select,.zoom-group,.grid-header,.time-head,
+  .task-row,.timeline-rows,.timeline-row,.detail-panel,.managed-dialog,.managed-editor,
+  .managed-history,.managed-history-event,.managed-settings,.calendar-popover,.filter-popover,
+  .column-popover,.filter-dismiss,.header-expand,.close,.managed-action,.updates-entry,.updates-rich,
+  .managed-field input,.managed-field select,.managed-field textarea,.managed-chooser select
+) { background-color:var(--panel); color:var(--ink); border-color:var(--line); }
+body.spt-managed[data-managed-theme="dark"] :is(
+  .task-row.level-1,.timeline-row.level-1,.zoom-choice,.filter-option:hover,.filter-option,
+  .managed-history-results,.managed-settings-radio,.month-strip,.week-strip,.source-record
+) { background-color:#233249; color:var(--ink); }
+body.spt-managed[data-managed-theme="dark"] :is(
+  .task-row:hover,.task-row.selected,.task-row.hot,.timeline-row:hover,.timeline-row.selected,
+  .task-row.level-1:hover,.task-row.level-1.selected,.timeline-row.level-1:hover,.timeline-row.level-1.selected,
+  .task-row.unscheduled:hover,.timeline-row.unscheduled:hover
+) { background-color:#304467; }
+body.spt-managed[data-managed-theme="dark"] .task-row.unscheduled,
+body.spt-managed[data-managed-theme="dark"] .timeline-row.unscheduled { background:#40372a; }
+body.spt-managed[data-managed-theme="dark"] .grid-header span,
+body.spt-managed[data-managed-theme="dark"] .stat-label,
+body.spt-managed[data-managed-theme="dark"] .sub,
+body.spt-managed[data-managed-theme="dark"] .chart-meta,
+body.spt-managed[data-managed-theme="dark"] .stat-note,
+body.spt-managed[data-managed-theme="dark"] .owner,
+body.spt-managed[data-managed-theme="dark"] .wbs,
+body.spt-managed[data-managed-theme="dark"] .percent,
+body.spt-managed[data-managed-theme="dark"] .field label,
+body.spt-managed[data-managed-theme="dark"] .desc,
+body.spt-managed[data-managed-theme="dark"] .updates-time,
+body.spt-managed[data-managed-theme="dark"] .updates-date,
+body.spt-managed[data-managed-theme="dark"] .time-label,
+body.spt-managed[data-managed-theme="dark"] .managed-history-note,
+body.spt-managed[data-managed-theme="dark"] .managed-settings-hint { color:var(--muted); }
+body.spt-managed[data-managed-theme="dark"] :is(
+  .grid-header,.time-head,.task-row,.timeline-row,.month-strip,.week-strip,.vertical-line,
+  .managed-history-row,.managed-settings-section,.updates-entry,.filter-footer
+) { border-color:var(--line); }
+body.spt-managed[data-managed-theme="dark"] .weekend { background:#28394f; opacity:.8; }
+body.spt-managed[data-managed-theme="dark"] :is(.resize-handle,.avatar,.progress-bg) { background:#3c516a; }
+body.spt-managed[data-managed-theme="dark"] .bar { outline:1px solid #b3c6e4; outline-offset:1px; }
+body.spt-managed[data-managed-theme="dark"] .zoom-choice.selected,
+body.spt-managed[data-managed-theme="dark"] .managed-action.primary,
+body.spt-managed[data-managed-theme="dark"] .btn-primary { background:#426bc1; color:#fff; }
+body.spt-managed[data-managed-theme="dark"] .managed-banner {
+  background:#203c59; color:#e4edf9; border-color:#4a7194;
+}
+body.spt-managed[data-managed-theme="dark"] .managed-history-values,
+body.spt-managed[data-managed-theme="dark"] .managed-history-row,
+body.spt-managed[data-managed-theme="dark"] .filter-option,
+body.spt-managed[data-managed-theme="dark"] .managed-field { color:var(--ink); }
+body.spt-managed[data-managed-theme="dark"] :is(
+  .managed-settings-label select,.managed-history-filter select,.managed-history-filter input,
+  .managed-history-values details,.managed-settings-footer,.managed-history-results pre
+) { background:var(--panel); color:var(--ink); border-color:var(--line); }
+body.spt-managed[data-managed-theme="dark"] :is(.pill.done,.pill.progress,.pill.risk,.pill.blocked,.pill.todo) {
+  background:#314663; color:#e3f0ff; border:1px solid #607895;
+}
+body.spt-managed[data-managed-theme="dark"] :is(
+  .managed-dialog,.managed-settings,.managed-history,.filter-popover,.calendar-popover
+)::backdrop { background:#020c18b0; }
+body.spt-managed[data-managed-theme="dark"] button:focus-visible,
+body.spt-managed[data-managed-theme="dark"] select:focus-visible,
+body.spt-managed[data-managed-theme="dark"] input:focus-visible {
+  outline:2px solid #9fc1ff; outline-offset:2px;
+}
