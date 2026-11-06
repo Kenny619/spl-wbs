@@ -178,3 +178,35 @@ test("Save As refuses an existing destination and retains the unsaved edit and a
   await expect(page.getByLabel("Task title")).toHaveValue("Keep my draft");
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
 });
+
+
+test("Change History is read-only, grouped and filtered, with task entry and safe untrusted text", async ({ page }) => {
+  page.on("dialog", async (dialog) => { await dialog.accept(); });
+  await openManaged(page);
+
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  let history = page.getByRole("dialog", { name: "Change History" });
+  await expect(history.getByText("This workbook has no saved Change History yet.")).toBeVisible();
+  await history.getByRole("button", { name: "Close" }).click();
+
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("History target");
+  await page.getByLabel("Append update").fill("<img src=x onerror=alert('x')>");
+  await page.getByRole("button", { name: "Save to workbook" }).click();
+  await expect(page.getByText(/Verified Save: task and UpdateHistory persisted/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Task history" }).click();
+  history = page.getByRole("dialog", { name: "Change History" });
+  await expect(history.getByText("1 saved change event(s)")).toBeVisible();
+  await expect(history.getByText(/2 field change\(s\)/)).toBeVisible();
+  await expect(history.getByLabel("History task filter")).toHaveValue("501");
+  expect(await history.locator("img").count()).toBe(0);
+  await history.getByText("Expand full before / after").click();
+  await expect(history.locator("pre")).toContainText("<img src=x onerror=alert('x')>");
+  await history.getByLabel("History field filter").selectOption("Title");
+  await expect(history.getByText(/1 field change\(s\)/)).toBeVisible();
+  await expect(history.getByText("Title", { exact: false }).first()).toBeVisible();
+  await history.getByLabel("History end date").fill("2000-01-01");
+  await expect(history.getByText("No changes match these filters.")).toBeVisible();
+  await history.getByRole("button", { name: "Close" }).click();
+});
