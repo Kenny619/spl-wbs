@@ -557,7 +557,8 @@ test("Failed workbook selection keeps previous verified source, editable state a
     const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
     files.set("unreadable.xlsx", new TextEncoder().encode("corrupt ZIP bytes"));
   });
-  await page.getByRole("button", { name: "Choose project folder" }).click();
+  // After a folder has been loaded, the toolbar control is named Change folder.
+  await page.getByRole("button", { name: "Change folder" }).click();
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
   await page.getByLabel("Active Excel workbook").selectOption("unreadable.xlsx");
   await expect(page.getByText(/Managed workbook unavailable:.*Previous verified workbook remains active/)).toBeVisible();
