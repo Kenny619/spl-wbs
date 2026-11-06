@@ -67,7 +67,7 @@ test('SAFE: successful Save requires an explicitly refreshed load fingerprint fo
  d.m.set(N.candidate,b('PK next source version C'));
  await assert.rejects(saveTest(d,{loadedFingerprint:first}),/STALE_LOADED_SOURCE/);
  const second=await logged(d);const result=await saveTest(d,{loadedFingerprint:second});
- assert.equal(result.before,first.sha256===result.before?'wrong':second.sha256);assert.equal((await inspect(d)).status,'READY');
+ assert.equal(result.before,second.sha256);assert.notEqual(result.before,first.sha256);assert.equal((await inspect(d)).status,'READY');
 });
 test('RESIDUAL GAP: late source modification at writable-close is overwritten in the mock',async()=>{
  const d=await fresh();const snap=await logged(d);const external=b('PK - competing source just before close');let ran=false;
