@@ -78,12 +78,31 @@ export async function preflightManagedWorkbook(source: ArrayBuffer | Uint8Array)
       if (/TargetMode\s*=\s*["']External["']/i.test(xml)) {
         throw new ManagedWorkbookError("EXTERNAL_RELATIONSHIP", "External Excel relationship in " + name + " is unsafe to write.");
       }
-      const relationships = xml.match(/<Relationship\b[^>]*\/>/g) ?? [];
+      // Only the canonical ExcelJS subset is supported. Never skip unknown
+      // relationship markup or malformed XML: reject the whole package.
+      const envelope = xml.trim()
+        .replace(/^<\?xml\s+[^?]*\?>\s*/i, "")
+        .match(/^<Relationships\s+xmlns=["']http:\/\/schemas\.openxmlformats\.org\/package\/2006\/relationships["']>([\s\S]*)<\/Relationships>$/);
+      if (!envelope) {
+        throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unsupported relationships root in " + name + ".");
+      }
+      const relationships = envelope[1].match(/<Relationship\s+[^<>]*\/>/g) ?? [];
+      const residue = envelope[1].replace(/<Relationship\s+[^<>]*\/>/g, "").trim();
+      if (residue || relationships.length === 0) {
+        throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unrecognized relationship XML in " + name + ".");
+      }
+      const ids = new Set<string>();
       for (const relationship of relationships) {
-        const kind = /\bType\s*=\s*["']([^"']+)["']/.exec(relationship)?.[1];
-        if (!kind || !ALLOWED_RELATIONSHIPS.has(kind)) {
+        const fields = [...relationship.matchAll(/\b(Id|Type|Target)\s*=\s*["']([^"'<>]*)["']/g)];
+        const id = fields.find((field) => field[1] === "Id")?.[2];
+        const kind = fields.find((field) => field[1] === "Type")?.[2];
+        const target = fields.find((field) => field[1] === "Target")?.[2];
+        if (fields.length !== 3 || !id || !kind || !target ||
+          ids.has(id) || /[&]/.test(id + kind + target) ||
+          !ALLOWED_RELATIONSHIPS.has(kind)) {
           throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unsupported Excel relationship in " + name + ".");
         }
+        ids.add(id);
       }
     }
     if (/^xl\/worksheets\/sheet\d+\.xml$/.test(name)) {
