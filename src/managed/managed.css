@@ -209,3 +209,23 @@ body.spt-managed[data-managed-theme="dark"] .managed-report-preview textarea { b
   .managed-reports-controls { grid-template-columns:1fr; }
   .managed-reports-period { grid-template-columns:1fr; }
 }
+
+
+/* Fail-closed read-only recovery inspector — never exposes mutation controls. */
+.managed-recovery { width:min(680px,94vw); max-height:86vh; overflow:auto;
+  background:var(--panel); color:var(--ink); border:1px solid var(--line);
+  border-radius:9px; padding:20px 22px; box-shadow:0 20px 60px #071e3750;
+  font:13px/1.52 system-ui,sans-serif; }
+.managed-recovery::backdrop { background:#081b3099; }
+.managed-recovery h2 { margin:0 0 10px; font-size:18px; }
+.managed-recovery h3 { font-size:13px; margin:16px 0 8px; }
+.managed-recovery-state { font-weight:750; color:var(--ink); }
+.managed-recovery-warning { border:1px solid #bc985a; border-radius:6px;
+  background:#fdf2dd; padding:10px; color:#644517; }
+.managed-recovery-files { display:grid; grid-template-columns:minmax(0,1fr);
+  gap:4px; padding:9px 12px; border:1px solid var(--line); border-radius:6px; }
+.managed-recovery-files dt { font-weight:650; overflow-wrap:anywhere; }
+.managed-recovery-files dd { margin:0 0 7px; font:11px/1.4 ui-monospace,Consolas,monospace;
+  color:var(--muted); overflow-wrap:anywhere; }
+body.spt-managed[data-managed-theme="dark"] .managed-recovery-warning {
+  background:#4e3c22; color:#ffdfad; border-color:#ad8954; }
