@@ -3,6 +3,8 @@ name: Security dependency lockfile candidate
 on:
   push:
     branches: [feature/security-vitest-lockfile-candidate]
+  pull_request:
+    branches: [feature/excel-managed-v1]
 
 permissions:
   contents: write
