@@ -1,4 +1,4 @@
-name: Security dependency lockfile candidate
+name: Security lockfile candidate verification
 
 on:
   push:
@@ -7,104 +7,76 @@ on:
     branches: [feature/excel-managed-v1]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: security-vitest-lockfile-candidate
-  cancel-in-progress: false
+  group: security-lockfile-verification-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  generate-verify:
-    if: ${{ !contains(github.event.head_commit.message, '[candidate-generated]') }}
+  linux-verification:
+    name: Clean install, unit/build and audit
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    outputs:
-      candidate_sha: ${{ steps.publish.outputs.candidate_sha }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Preserve approved parser dependency, update dev-tool version
-        shell: bash
+      - name: Verify approved versions in candidate lockfile
         run: |
-          npm pkg set 'devDependencies.vitest=4.1.12'
-          rm -rf node_modules
-          npm install --package-lock-only --ignore-scripts --legacy-peer-deps
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          import {execFileSync} from 'node:child_process';
-          const baseline = JSON.parse(execFileSync('git',['show','HEAD:package-lock.json'],{encoding:'utf8'}));
-          const after = JSON.parse(fs.readFileSync('package-lock.json','utf8'));
-          const manifest = JSON.parse(fs.readFileSync('package.json','utf8'));
-          const old = (n) => baseline.packages['node_modules/'+n]?.version;
-          const current = (n) => after.packages['node_modules/'+n]?.version;
-          if (manifest.dependencies.exceljs !== '4.4.0' || current('exceljs') !== '4.4.0') throw Error('ExcelJS changed');
-          if (current('uuid') !== old('uuid')) throw Error('Locked uuid changed; separate decision required');
-          if (current('vite') !== old('vite')) throw Error('Vite baseline changed');
-          if (current('vitest') !== '4.1.12') throw Error('Wrong Vitest candidate');
-          console.log(JSON.stringify({vitest:current('vitest'),vite:current('vite'),exceljs:current('exceljs'),uuid:current('uuid'),tinypool:current('tinypool')??'absent'},null,2));
+          const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          const ver = (name) => lock.packages['node_modules/'+name]?.version;
+          if (p.devDependencies.vitest !== '4.1.12' || ver('vitest') !== '4.1.12' ||
+              ver('vite') !== '6.4.5' || ver('exceljs') !== '4.4.0' ||
+              ver('uuid') !== '8.3.2' || ver('tinypool')) {
+            throw Error('Dependency candidate differs from evaluated constraints');
+          }
+          console.log(JSON.stringify({vitest:ver('vitest'),vite:ver('vite'),
+            exceljs:ver('exceljs'),uuid:ver('uuid'),tinypool:ver('tinypool')??'absent'}));
           NODE
-      - name: Prove reproducible npm ci without compatibility flags
-        run: |
-          rm -rf node_modules
-          npm ci
-          npm ls vitest vite tinypool --all
-      - name: Unit suite (candidate lockfile)
+      - name: Clean reproducible install — no legacy overrides
+        run: npm ci
+      - name: Unit tests
         run: npm test
-      - name: Original read-only build
+      - name: Read-only production build
         run: npm run build
-      - name: Managed HTML build
+      - name: Managed production build
         run: npm run build:managed
-      - name: Record audit without blanket automated fixes
+      - name: Collect audit without applying automatic fixes
         if: always()
         shell: bash
         run: |
           mkdir -p work/security-candidate
+          npm ls vitest vite tinypool --all > work/security-candidate/dependency-tree.txt 2>&1 || true
           npm audit --json > work/security-candidate/audit-full.json || true
           npm audit --omit=dev --json > work/security-candidate/audit-production.json || true
-          git diff --stat -- package.json package-lock.json > work/security-candidate/diff-summary.txt
-      - name: Diagnostic artifacts
+      - name: Candidate audit artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: security-lockfile-candidate-audit
+          name: candidate-lockfile-audit
           path: work/security-candidate/
           if-no-files-found: ignore
           retention-days: 14
-      - name: Commit verified candidate to isolated branch
-        id: publish
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package.json package-lock.json
-          git diff --cached --quiet && { echo 'No candidate changes' >&2; exit 1; }
-          git commit -m 'chore(security): Vitest 4.1.12 lockfile candidate [candidate-generated]'
-          git push origin HEAD:feature/security-vitest-lockfile-candidate
-          echo "candidate_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-  windows-validation:
-    needs: generate-verify
-    if: ${{ needs.generate-verify.result == 'success' }}
+  windows-regression:
+    name: Windows Chromium regression on clean lockfile
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.generate-verify.outputs.candidate_sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Clean locked install without overrides
+      - name: Clean reproducible install
         run: npm ci
-      - name: Install browser
+      - name: Install Chromium
         run: npx playwright install chromium
-      - name: Full Windows browser tests
+      - name: Browser tests
         run: npm run test:e2e -- --reporter=list
-      - name: Confirm candidate SHA
-        run: git rev-parse HEAD
