@@ -93,16 +93,32 @@ export async function preflightManagedWorkbook(source: ArrayBuffer | Uint8Array)
       }
       const ids = new Set<string>();
       for (const relationship of relationships) {
-        const fields = [...relationship.matchAll(/\b(Id|Type|Target)\s*=\s*["']([^"'<>]*)["']/g)];
-        const id = fields.find((field) => field[1] === "Id")?.[2];
-        const kind = fields.find((field) => field[1] === "Type")?.[2];
-        const target = fields.find((field) => field[1] === "Target")?.[2];
-        if (fields.length !== 3 || !id || !kind || !target ||
-          ids.has(id) || /[&]/.test(id + kind + target) ||
-          !ALLOWED_RELATIONSHIPS.has(kind)) {
+        // Validate the entire attribute text rather than searching for three
+        // known attributes while silently ignoring everything else.
+        const content = relationship.slice("<Relationship".length, -2);
+        const fields: Record<string, string> = {};
+        const attribute = /\s+([A-Za-z][A-Za-z0-9]*)\s*=\s*(["'])([^"'<>]*)\2/y;
+        let offset = 0;
+        while (offset < content.length && content.slice(offset).trim()) {
+          attribute.lastIndex = offset;
+          const matched = attribute.exec(content);
+          if (!matched || !["Id", "Type", "Target"].includes(matched[1]) ||
+              Object.prototype.hasOwnProperty.call(fields, matched[1])) {
+            throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Invalid relationship attributes in " + name + ".");
+          }
+          fields[matched[1]] = matched[3];
+          offset = attribute.lastIndex;
+        }
+        if (content.slice(offset).trim() || Object.keys(fields).length !== 3 ||
+            !fields.Id || !fields.Type || !fields.Target ||
+            ids.has(fields.Id) ||
+            /[&\\]/.test(fields.Id + fields.Type + fields.Target) ||
+            /^(?:\/|[a-z]+:)/i.test(fields.Target) ||
+            fields.Target.split("/").some((part) => !part || part === "." || part === "..") ||
+            !ALLOWED_RELATIONSHIPS.has(fields.Type)) {
           throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unsupported Excel relationship in " + name + ".");
         }
-        ids.add(id);
+        ids.add(fields.Id);
       }
     }
     if (/^xl\/worksheets\/sheet\d+\.xml$/.test(name)) {
