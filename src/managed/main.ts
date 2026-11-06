@@ -5,6 +5,7 @@ import { KNOWN_STATUSES, TASK_TYPES, type Task } from "../data/types";
 import { collectTaskChanges, hasTaskChanges, initialTaskDraft, type TaskDraft } from "./draft";
 import { captureManagedSourceHash, saveManagedAsCopy, saveManagedDirect, sha256 } from "./directSave";
 import { preflightManagedWorkbook } from "./preflight";
+import { openManagedHistory } from "./historyUi";
 import type { EditableField, EditValue } from "./workbookCandidate";
 
 type DirectoryWithEntries = FileSystemDirectoryHandle & {
@@ -103,6 +104,12 @@ export class ManagedEditor {
     label.append(this.fileSelect);
     wrap.append(label);
     actions.prepend(wrap);
+    const historyButton = element(doc, "button", "managed-action", "History");
+    historyButton.type = "button";
+    historyButton.addEventListener("click", () => {
+      this.guard(() => { void this.showHistory(); });
+    });
+    actions.prepend(historyButton);
     this.fileSelect.addEventListener("change", () => {
       const next = this.fileSelect.value;
       this.fileSelect.value = this.sourceName ?? "";
@@ -339,6 +346,24 @@ export class ManagedEditor {
    * never from a potentially externally changed source. Target collisions
    * are rejected, and the current file stays active until readback and import.
    */
+  private async showHistory(taskId?: string): Promise<void> {
+    if (!this.loadedBytes) {
+      this.message = "Choose a workbook to view Change History.";
+      this.render();
+      return;
+    }
+    const timeZone = (() => {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; }
+      catch { return "UTC"; }
+    })();
+    try {
+      await openManagedHistory(this.doc, this.loadedBytes, { taskId, timeZone });
+    } catch (error) {
+      this.message = "Unable to open Change History: " + errorMessage(error);
+      this.render();
+    }
+  }
+
   private async saveAs(): Promise<boolean> {
     if (this.busy || !this.directory || !this.sourceName || !this.loadedHash ||
       !this.loadedBytes || !this.canWrite || !this.initial || !this.draft ||
@@ -448,6 +473,12 @@ export class ManagedEditor {
       edit.addEventListener("click", () => { this.editing = true; this.render(); });
       const actions = element(this.doc, "div", "managed-actions");
       actions.append(edit);
+      const taskHistory = element(this.doc, "button", "managed-action", "Task history");
+      taskHistory.type = "button";
+      taskHistory.addEventListener("click", () => {
+        this.guard(() => { void this.showHistory(task.id); });
+      });
+      actions.append(taskHistory);
       this.slot.append(actions);
       if (!this.canWrite) this.slot.append(element(this.doc, "p", "managed-editor-message",
         "Editing is blocked until this workbook passes the restricted XLSX compatibility check."));
