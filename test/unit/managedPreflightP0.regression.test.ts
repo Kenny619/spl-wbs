@@ -66,6 +66,34 @@ describe("P0: fail closed on unsupported OOXML relationships", () => {
       xml, '<Relationship Id="rIdMissingType" Target="worksheets/sheet1.xml"/>'
     )));
   });
+  it("rejects unrecognized relationship attributes", async () => {
+    const standard = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet";
+    await rejectsWithoutMutation(await mutateRels(xml => append(xml,
+      bad.replace("urn:spt-wbs:unsupported", standard)
+        .replace("/>", ' CustomAttribute="unrecognized"/>')
+    )));
+  });
+  it("rejects repeated Type attributes even when one is allowlisted", async () => {
+    const standard = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet";
+    await rejectsWithoutMutation(await mutateRels(xml => append(xml,
+      bad.replace("urn:spt-wbs:unsupported", standard)
+        .replace(' Target="', ' Type="urn:spt-wbs:other" Target="')
+    )));
+  });
+  it("rejects relationship attributes with an unrecognized namespace prefix", async () => {
+    const standard = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet";
+    await rejectsWithoutMutation(await mutateRels(xml => append(xml,
+      bad.replace("urn:spt-wbs:unsupported", standard)
+        .replace("/>", ' custom:Flag="true"/>')
+    )));
+  });
+  it("rejects unsafe relative internal paths", async () => {
+    const standard = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet";
+    await rejectsWithoutMutation(await mutateRels(xml => append(xml,
+      bad.replace("urn:spt-wbs:unsupported", standard)
+        .replace('worksheets/sheet1.xml', '../../outside.xml')
+    )));
+  });
   it("rejects duplicate relationship Id values", async () => {
     await rejectsWithoutMutation(await mutateRels(xml => {
       const first = /\bId="([^"]+)"/.exec(xml)?.[1];
