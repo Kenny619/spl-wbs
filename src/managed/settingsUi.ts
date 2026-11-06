@@ -1,7 +1,7 @@
 import type { ImportController } from "../data/importController";
 import {
   DEFAULT_COLUMNS, defaultPreferences, effectiveAppearance, loadPreferences,
-  persistPreferences, supportedTimeZones, type Appearance, type ManagedPreferences,
+  persistPreferences, supportedTimeZones, type ManagedPreferences,
   type PreferenceStorage,
 } from "./settings";
 
