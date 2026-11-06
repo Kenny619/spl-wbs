@@ -88,4 +88,5 @@ function picker(host: PickerHost): (() => Promise<FileSystemFileHandle[]>) | und
     });
 }
 
-if (typeof document !== "undefined" && document.getElementById("gantt")) boot();
+if (typeof document !== "undefined" && document.getElementById("gantt") &&
+  document.body?.dataset.sptVariant !== "managed") boot();
