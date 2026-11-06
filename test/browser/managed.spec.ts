@@ -213,3 +213,95 @@ test("Change History is read-only, grouped and filtered, with task entry and saf
   await expect(history.getByText("No changes match these filters.")).toBeVisible();
   await history.getByRole("button", { name: "Close" }).click();
 });
+
+
+test("Settings relocates existing v18 columns, persists timezone and dark theme locally", async ({ page }) => {
+  await openManaged(page);
+  await page.locator("#close").click();
+  await expect(page.locator("#columnToggle")).toBeHidden();
+  await expect(page.locator("#calendarSettings")).toBeVisible();
+  await page.getByRole("button", { name: "Settings" }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await expect(settings).toBeVisible();
+  await expect(settings.locator("#columnOptions input")).toHaveCount(9);
+  await expect(settings.locator("#columnOptions input[data-column='wbs']")).toBeDisabled();
+  await expect(settings.locator("#columnOptions input[data-column='task']")).toBeDisabled();
+  await settings.locator("#columnOptions input[data-column='owner']").uncheck();
+  await settings.locator("#columnOptions input[data-column='workstream']").check();
+  await expect(page.locator("#gridHeader")).not.toContainText("Owner");
+  await expect(page.locator("#gridHeader")).toContainText("Workstream");
+
+  await settings.getByLabel("Display timezone").selectOption("Asia/Tokyo");
+  await settings.getByRole("radio", { name: "Dark" }).check();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "dark");
+  await expect(settings.getByLabel("Display timezone")).toHaveValue("Asia/Tokyo");
+  await settings.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("button", { name: "Settings" })).toBeFocused();
+
+  await page.reload();
+  await page.getByRole("button", { name: "Settings" }).click();
+  const restored = page.getByRole("dialog", { name: "Settings" });
+  await expect(restored.getByLabel("Display timezone")).toHaveValue("Asia/Tokyo");
+  await expect(restored.getByRole("radio", { name: "Dark" })).toBeChecked();
+  await expect(restored.locator("#columnOptions input[data-column='owner']")).not.toBeChecked();
+  await expect(restored.locator("#columnOptions input[data-column='workstream']")).toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "dark");
+});
+
+test("Settings System appearance follows device and Reset requires confirmation; workbook remains unchanged", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await openManaged(page);
+  await page.locator("#close").click();
+  const original = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.getByRole("button", { name: "Settings" }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await expect(settings.getByRole("radio", { name: /System/ })).toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "light");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "dark");
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "light");
+  await settings.getByRole("radio", { name: "Dark" }).check();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "dark");
+
+  await settings.getByLabel("Display timezone").selectOption("UTC");
+  await settings.locator("#columnOptions input[data-column='status']").uncheck();
+
+  page.once("dialog", (dialog) => void dialog.dismiss());
+  await settings.getByRole("button", { name: "Reset to defaults" }).click();
+  await expect(settings.getByRole("radio", { name: "Dark" })).toBeChecked();
+  await expect(settings.locator("#columnOptions input[data-column='status']")).not.toBeChecked();
+
+  page.once("dialog", (dialog) => void dialog.accept());
+  await settings.getByRole("button", { name: "Reset to defaults" }).click();
+  await expect(settings.getByRole("radio", { name: /System/ })).toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "light");
+  await expect(settings.locator("#columnOptions input[data-column='status']")).toBeChecked();
+  const detected = await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+  await expect(settings.getByLabel("Display timezone")).toHaveValue(detected);
+  await expect(page.locator("#calendarSettings")).toBeVisible();
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(original);
+});
+
+test("Change History uses the Settings timezone without mutating saved UTC audit values", async ({ page }) => {
+  page.on("dialog", async (dialog) => { await dialog.accept(); });
+  await openManaged(page);
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Committed with timezone");
+  await page.getByRole("button", { name: "Save to workbook" }).click();
+  await expect(page.getByText(/Verified Save: task and UpdateHistory persisted/)).toBeVisible();
+  await page.locator("#close").click();
+  await page.getByRole("button", { name: "Settings" }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByLabel("Display timezone").selectOption("Asia/Tokyo");
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  const history = page.getByRole("dialog", { name: "Change History" });
+  await expect(history.getByText(/Times are displayed in Asia\/Tokyo/)).toBeVisible();
+  await expect(history.getByText(/1 saved change event/)).toBeVisible();
+});
