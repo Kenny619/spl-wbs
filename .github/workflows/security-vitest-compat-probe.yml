@@ -23,7 +23,7 @@ jobs:
       - name: Install locked baseline
         run: npm ci
       - name: Install candidate without modifying manifest or lockfile
-        run: npm install --prefix .compat-probe --no-save --ignore-scripts vitest@4.1.12
+        run: npm install --prefix .compat-probe --no-save --ignore-scripts --legacy-peer-deps vitest@4.1.12
       - name: Report exact selected tooling and verify locked files unchanged
         shell: bash
         run: |
@@ -60,7 +60,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install candidate without modifying lockfile
-        run: npm install --prefix .compat-probe --no-save --ignore-scripts vitest@4.1.12
+        run: npm install --prefix .compat-probe --no-save --ignore-scripts --legacy-peer-deps vitest@4.1.12
       - name: Verify package and lockfile remain frozen
         run: git diff --exit-code -- package.json package-lock.json
       - name: Install Chromium
