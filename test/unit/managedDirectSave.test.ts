@@ -127,6 +127,57 @@ describe("managed Save: File System Access API adapter with disposable handles",
     expect(dir.files.has(managedFileNames(SOURCE_NAME).stage)).toBe(true);
   });
 
+  it("rotating backup interruption verifies predecessor but rejects forged or corrupt owner metadata", async () => {
+    const dir = await fixture();
+    const firstHash = await captureManagedSourceHash(dir.asHandle(), SOURCE_NAME);
+    const first = await run(dir, firstHash, "First committed");
+    expect(first.kind).toBe("saved");
+    if (first.kind !== "saved") return;
+    const names = managedFileNames(SOURCE_NAME);
+    const oldOwner = Uint8Array.from(dir.files.get(names.owner)!);
+
+    dir.failAfterClose = names.backup;
+    await expect(run(dir, first.sourceHash, "Second incomplete")).rejects.toThrow("Synthetic file close failure");
+    expect((await inspectManagedSave(dir.asHandle(), SOURCE_NAME)).status).toBe("BACKUP_VERIFIED");
+    expect(dir.files.get(names.owner)).toEqual(oldOwner); // valid old ownership is expected mid-rotation
+
+    const corrupted = new TextEncoder().encode(JSON.stringify({
+      protocol: "spt-wbs-managed-v1", source: SOURCE_NAME, backupHash: "e".repeat(64),
+    }));
+    dir.files.set(names.owner, corrupted);
+    const inspection = await inspectManagedSave(dir.asHandle(), SOURCE_NAME);
+    expect(inspection.status).toBe("STOP");
+    expect(inspection.reason).toMatch(/ownership/i);
+    await expect(run(dir, first.sourceHash, "Must not retry")).rejects.toMatchObject({
+      code: "UNRESOLVED_SAVE",
+    });
+    expect(dir.files.has(names.stage)).toBe(true);
+    expect(dir.files.has(names.transaction)).toBe(true);
+  });
+
+  it("pending recovery detects a missing prior owner and tampered transaction lineage", async () => {
+    const dir = await fixture();
+    const original = await captureManagedSourceHash(dir.asHandle(), SOURCE_NAME);
+    const first = await run(dir, original, "First committed");
+    expect(first.kind).toBe("saved");
+    if (first.kind !== "saved") return;
+    const names = managedFileNames(SOURCE_NAME);
+    dir.failAfterClose = SOURCE_NAME;
+    await expect(run(dir, first.sourceHash, "Second incomplete")).rejects.toThrow("Synthetic file close failure");
+    expect((await inspectManagedSave(dir.asHandle(), SOURCE_NAME)).status).toBe("NEEDS_BACKUP");
+    const owner = dir.files.get(names.owner)!;
+    dir.files.delete(names.owner);
+    expect((await inspectManagedSave(dir.asHandle(), SOURCE_NAME)).status).toBe("STOP");
+    dir.files.set(names.owner, owner);
+
+    const pending = JSON.parse(new TextDecoder().decode(dir.files.get(names.transaction)!)) as {
+      priorBackup: string | null;
+    };
+    pending.priorBackup = "f".repeat(64);
+    dir.files.set(names.transaction, new TextEncoder().encode(JSON.stringify(pending)));
+    expect((await inspectManagedSave(dir.asHandle(), SOURCE_NAME)).status).toBe("STOP");
+  });
+
   it("refuses recovery artifacts as active workbook names", () => {
     expect(() => managedFileNames("../Other.xlsx")).toThrow();
     expect(() => managedFileNames("Plan.backup.xlsx")).toThrow();
