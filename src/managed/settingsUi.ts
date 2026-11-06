@@ -1,7 +1,7 @@
 import type { ImportController } from "../data/importController";
 import {
   DEFAULT_COLUMNS, defaultPreferences, effectiveAppearance, loadPreferences,
-  persistPreferences, supportedTimeZones, type ManagedPreferences,
+  persistPreferences, supportedTimeZones, validateColumns, type ManagedPreferences,
   type PreferenceStorage,
 } from "./settings";
 
@@ -136,13 +136,24 @@ export class ManagedSettings {
     footer.append(reset, this.saveNote);
     this.dialog.append(footer);
 
-    this.controller.patchView({ columns: [...this.preferences.columns] });
-    // Monitor all column changes, including existing v18 input handlers.
-    this.controller.subscribe(() => {
-      const columnsNow = this.controller.getState().view.columns;
-      if (JSON.stringify(columnsNow) === JSON.stringify(this.preferences.columns)) return;
-      this.preferences = { ...this.preferences, columns: [...columnsNow] };
-      this.persist();
+    // The importer recreates its ViewState on start() and workbook changes.
+    // Persist column changes only when *the user* calls patchView(columns);
+    // restore browser preferences when a newly imported ViewState is published.
+    // This avoids interpreting a workbook-load default as a user preference.
+    const originalPatch = controller.patchView.bind(controller);
+    originalPatch({ columns: [...this.preferences.columns] });
+    controller.patchView = (patch) => {
+      if (patch.columns !== undefined) {
+        this.preferences = { ...this.preferences, columns: validateColumns(patch.columns) };
+        this.persist();
+      }
+      originalPatch(patch);
+    };
+    controller.subscribe(() => {
+      const columnsNow = controller.getState().view.columns;
+      if (JSON.stringify(columnsNow) !== JSON.stringify(this.preferences.columns)) {
+        originalPatch({ columns: [...this.preferences.columns] });
+      }
     });
     this.applyAppearance();
   }
