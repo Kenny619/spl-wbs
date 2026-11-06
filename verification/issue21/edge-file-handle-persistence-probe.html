@@ -71,6 +71,21 @@ async function transact(mode, write) {
     });
   } finally { db.close(); }
 }
+let remembered = null;
+let permissionAtLoad = "unknown";
+async function preloadRemembered() {
+  const button = document.getElementById("reopen");
+  button.disabled = true;
+  try {
+    remembered = await transact("readonly",store => store.get(KEY));
+    if (remembered && remembered.handle) {
+      permissionAtLoad = await remembered.handle.queryPermission({mode:"readwrite"});
+      say("STORED HANDLE FOUND: " + remembered.name + " / permission: " + permissionAtLoad);
+    } else say("NO HANDLE: click Remember folder first.");
+  } catch(error) {
+    say("PERSISTENCE UNAVAILABLE: " + describe(error) + ". Use folder picker.");
+  } finally { button.disabled = false; }
+}
 async function remember() {
   if (typeof window.showDirectoryPicker !== "function") {
     say("UNSUPPORTED: showDirectoryPicker is unavailable in this file:// context.");
@@ -79,27 +94,29 @@ async function remember() {
   try {
     const directory = await showDirectoryPicker({mode:"readwrite"});
     // Browser's structured-clone of FileSystemDirectoryHandle is the actual requirement.
-    await transact("readwrite", store => store.put({
-      handle:directory, name:directory.name, accessedAt:new Date().toISOString(),
-    }, KEY));
+    remembered = {handle:directory, name:directory.name, accessedAt:new Date().toISOString()};
+    await transact("readwrite",store => store.put(remembered,KEY));
     say("STORED: folder label = " + directory.name);
     say("STORED: serialized directory handle in IndexedDB. Reload this same page now.");
   } catch (error) { say("STORE FAILED: " + describe(error)); }
 }
 async function reopen() {
+  const entry = remembered; // Loaded BEFORE the user gesture, not awaited in this handler.
+  if (!entry || !entry.handle) { say("NO HANDLE: choose Remember folder first."); return; }
+  const handle = entry.handle;
+  if (typeof handle.requestPermission !== "function") {
+    say("UNSUPPORTED: recovered value lacks FileSystemHandle permission API.");
+    return;
+  }
+  // Start the permission request BEFORE any awaited IndexedDB operations.
+  // requestPermission requires transient user activation in a real click.
+  let request;
+  try { request = handle.requestPermission({mode:"readwrite"}); }
+  catch(error) { say("PERMISSION REQUEST FAILED: " + describe(error)); return; }
   try {
-    const entry = await transact("readonly",store => store.get(KEY));
-    if (!entry || !entry.handle) { say("NO HANDLE: choose Remember folder first."); return; }
+    const after = await request;
     say("RETRIEVED: " + entry.name + " / stored at " + entry.accessedAt);
-    const handle = entry.handle;
-    if (typeof handle.queryPermission !== "function" || typeof handle.requestPermission !== "function") {
-      say("UNSUPPORTED: recovered value lacks FileSystemHandle permission APIs.");
-      return;
-    }
-    const query = await handle.queryPermission({mode:"readwrite"});
-    say("PERMISSION BEFORE RENEWAL: " + query);
-    const after = query === "granted" ? query :
-      await handle.requestPermission({mode:"readwrite"}); // direct button user gesture
+    say("PERMISSION AT PAGE LOAD: " + permissionAtLoad);
     say("PERMISSION AFTER USER ACTION: " + after);
     if (after !== "granted") {
       say("SAFE FALLBACK: ask the user to choose project folder again. Do not auto-open.");
@@ -110,13 +127,17 @@ async function reopen() {
   } catch (error) { say("REOPEN FAILED: " + describe(error) + "; use folder-picker fallback."); }
 }
 async function forget() {
-  try { await transact("readwrite",store => store.delete(KEY)); say("CLEARED: test handle removed."); }
-  catch(error) { say("CLEAR FAILED: " + describe(error)); }
+  try {
+    await transact("readwrite",store => store.delete(KEY));
+    remembered = null;
+    say("CLEARED: test handle removed.");
+  } catch(error) { say("CLEAR FAILED: " + describe(error)); }
 }
 document.getElementById("remember").addEventListener("click",() => { void remember(); });
 document.getElementById("reopen").addEventListener("click",() => { void reopen(); });
 document.getElementById("forget").addEventListener("click",() => { void forget(); });
 say("READY. Origin: " + location.protocol + " | Browser: " + navigator.userAgent);
+void preloadRemembered();
 </script>
 </body>
 </html>
