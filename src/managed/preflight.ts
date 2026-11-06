@@ -92,7 +92,9 @@ async function verifyContentTypes(zip: JSZip): Promise<void> {
     if (kind === "Default") {
       const ext = attributes.get("Extension");
       if (!ext || defaults.has(ext) || !["xml", "rels"].includes(ext) ||
-          mime !== (ext === "xml" ? "application/xml" : "application/vnd.openxmlformats-package.relationships+xml")) reject();
+          mime !== (ext === "xml" ? "application/xml" : "application/vnd.openxmlformats-package.relationships+xml")) {
+        throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unsupported default content-type declaration: " + ext + " / " + mime);
+      }
       defaults.set(ext, mime);
     } else {
       const part = attributes.get("PartName");
