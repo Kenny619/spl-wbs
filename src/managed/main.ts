@@ -262,37 +262,33 @@ export class ManagedEditor {
       return;
     }
     found.sort((a, b) => a.localeCompare(b));
-    this.directory = dir;
-    this.names = found;
-    this.sourceName = null;
-    this.loadedHash = null;
-    this.loadedBytes = null;
-    this.inspectionName = null;
-    this.recoveryHold = false;
-    this.canWrite = false;
-    this.clearDraft();
     if (!found.length) {
-      this.message = "No eligible XLSX workbooks found in this folder.";
+      // A failed folder choice must not disconnect a previously verified file.
+      this.message = "No eligible XLSX workbooks in " + dir.name +
+        ". The previous active workbook was retained.";
       this.render();
       return;
     }
     let remembered: string | null = null;
     try { remembered = localStorage.getItem(STORAGE_PREFIX + dir.name); } catch { /* local-only best effort */ }
-    await this.openWorkbook(remembered && found.includes(remembered) ? remembered : found[0]);
+    await this.openWorkbook(remembered && found.includes(remembered) ? remembered : found[0], dir, found);
   }
 
-  private async openWorkbook(name: string): Promise<void> {
-    if (!this.directory || !this.names.includes(name) || this.busy) return;
-    this.inspectionName = name;
+  private async openWorkbook(
+    name: string,
+    targetDir: FileSystemDirectoryHandle | null = this.directory,
+    targetNames: readonly string[] = this.names,
+  ): Promise<void> {
+    if (!targetDir || !targetNames.includes(name) || this.busy) return;
+    // Keep the last verified workbook/directory/fingerprint untouched until
+    // inspection, import and source hash all succeed for the new selection.
     this.busy = true;
-    this.canWrite = false;
-    this.loadedHash = null;
-    this.loadedBytes = null;
+    this.message = "Validating " + name + " before switching the active workbook…";
     this.render();
     try {
-      const file = await (await this.directory.getFileHandle(name)).getFile();
+      const file = await (await targetDir.getFileHandle(name)).getFile();
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const hash = await captureManagedSourceHash(this.directory, name);
+      const hash = await captureManagedSourceHash(targetDir, name);
       if (hash !== await sha256(bytes)) {
         throw new Error("Workbook changed while loading; reload before editing.");
       }
@@ -302,18 +298,31 @@ export class ManagedEditor {
       if (!loaded.tasks || loaded.fileName !== name || loaded.loadError) {
         throw new Error("Workbook import failed; see the import errors.");
       }
+      // Commit the new selection in one step, after its real import succeeds.
+      this.directory = targetDir;
+      this.names = [...targetNames];
       this.sourceName = name;
+      this.inspectionName = name;
       this.loadedHash = hash;
       this.loadedBytes = bytes;
       this.canWrite = eligible;
       this.recoveryHold = false;
       this.clearDraft();
-      try { localStorage.setItem(STORAGE_PREFIX + this.directory.name, name); } catch { /* best effort */ }
+      try { localStorage.setItem(STORAGE_PREFIX + targetDir.name, name); } catch { /* best effort */ }
       this.message = eligible
         ? "Workbook ready. Select a task. Save only disposable copies in this development build."
         : "Viewing allowed, but Save blocked: this workbook uses unsupported Excel features.";
     } catch (error) {
-      this.message = "Managed workbook unavailable: " + errorMessage(error);
+      if (!this.directory && !this.sourceName) {
+        // No last-good workbook exists. Keep this folder available to pick
+        // another workbook, while preventing editing and direct Save.
+        this.directory = targetDir;
+        this.names = [...targetNames];
+        this.inspectionName = name;
+      }
+      this.message = "Managed workbook unavailable: " + errorMessage(error) +
+        (this.sourceName ? ". Previous verified workbook remains active." :
+          ". Choose a different workbook in this folder.");
     } finally {
       this.busy = false;
       this.render();
