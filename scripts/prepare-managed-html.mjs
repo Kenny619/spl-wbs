@@ -9,6 +9,7 @@ const original = '<script type="module" src="/src/main.ts"></script>';
 if (!source.includes(original)) throw new Error("Read-only entrypoint marker changed");
 const managed = source
   .replace(/<title>Gantt Viewer<\/title>/, "<title>SPT-WBS · Excel Managed</title>")
+  .replace("<body>", '<body data-spt-variant="managed">')
   .replace(original, '<script type="module" src="/src/managed/main.ts"></script>');
 await writeFile("managed.html", managed, "utf8");
 console.log("Prepared managed.html from current approved viewer markup");
