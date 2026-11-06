@@ -32,3 +32,36 @@ body.spt-managed .source-record { display:none !important; }
 .managed-dialog-actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:16px; }
 @media (max-width:680px) { .managed-banner {flex-direction:column;align-items:flex-start}
   .managed-fields {grid-template-columns:1fr} }
+
+
+/* Compact read-only Change History workspace. Only managed variant imports it. */
+.managed-history { width:min(820px, 94vw); max-height:85vh; overflow:auto; border:1px solid #bbcbd8;
+  border-radius:9px; background:#fff; color:#203448; box-shadow:0 22px 70px #132a3f54;
+  padding:18px 21px; font:13px/1.45 system-ui,sans-serif; }
+.managed-history::backdrop { background:#061e358a; }
+.managed-history-head { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.managed-history-head h2 { margin:0; font-size:19px; }
+.managed-history-filters { display:grid; grid-template-columns:minmax(130px,2fr) minmax(100px,1fr) repeat(2,minmax(112px,1fr));
+  gap:9px; margin-top:15px; }
+.managed-history-filter { display:flex; flex-direction:column; gap:5px; min-width:0; color:#465d6e; font-size:12px; }
+.managed-history-filter select, .managed-history-filter input { width:100%; min-width:0; box-sizing:border-box;
+  border-radius:5px; border:1px solid #bdcbd7; background:white; color:#203448; padding:7px 6px; font:inherit; }
+.managed-history-note { font-size:12px; color:#536777; margin:10px 0; }
+.managed-history-error { color:#a63b30; font-weight:600; }
+.managed-history-empty { margin:20px 0; color:#516477; }
+.managed-history-results { max-height:52vh; overflow:auto; }
+.managed-history-event { border:1px solid #d9e3ec; border-radius:7px; padding:12px 13px; margin:11px 0;
+  background:#f8fbfd; }
+.managed-history-event h3 { font-size:13px; color:#1b4b6d; margin:0 0 3px; }
+.managed-history-event small { font-size:10px; color:#607688; }
+.managed-history-row { border-top:1px solid #e1e8ee; padding:10px 0 3px; }
+.managed-history-row strong { display:block; font-size:12px; }
+.managed-history-values { display:grid; grid-template-columns:1fr 1fr; gap:8px; color:#3c5367; margin-top:5px; }
+.managed-history-values p, .managed-history-values details { grid-column:1/-1; margin:0; }
+.managed-history-values details { border-radius:5px; border:1px solid #d2dfe8; padding:6px 8px; }
+.managed-history-values summary { cursor:pointer; color:#145d93; }
+.managed-history-values pre { white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.5 system-ui,sans-serif; }
+@media(max-width:760px) {
+  .managed-history-filters { grid-template-columns:1fr 1fr; }
+  .managed-history-values { grid-template-columns:1fr; }
+}
