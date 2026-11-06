@@ -190,6 +190,7 @@ test("Change History is read-only, grouped and filtered, with task entry and saf
   let history = page.getByRole("dialog", { name: "Change History" });
   await expect(history.getByText("This workbook has no saved Change History yet.")).toBeVisible();
   await history.getByRole("button", { name: "Close" }).click();
+  await page.locator(".task-row").first().click();
 
   await page.getByRole("button", { name: "Edit task" }).click();
   await page.getByLabel("Task title").fill("History target");
