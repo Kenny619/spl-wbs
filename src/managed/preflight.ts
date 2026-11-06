@@ -37,6 +37,80 @@ const ALLOWED_RELATIONSHIPS = new Set([
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
 ]);
 
+
+const MIME = {
+  workbook: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+  worksheet: "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
+  styles: "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml",
+  sharedStrings: "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml",
+  theme: "application/vnd.openxmlformats-officedocument.theme+xml",
+  core: "application/vnd.openxmlformats-package.core-properties+xml",
+  app: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
+};
+function expectedPartType(name: string): string | null {
+  if (name === "xl/workbook.xml") return MIME.workbook;
+  if (/^xl\/worksheets\/sheet\d+\.xml$/.test(name)) return MIME.worksheet;
+  if (name === "xl/styles.xml") return MIME.styles;
+  if (name === "xl/sharedStrings.xml") return MIME.sharedStrings;
+  if (/^xl\/theme\/theme\d+\.xml$/.test(name)) return MIME.theme;
+  if (name === "docProps/core.xml") return MIME.core;
+  if (name === "docProps/app.xml") return MIME.app;
+  return null;
+}
+/** Content-type declarations must agree exactly with the restricted ZIP subset. */
+async function verifyContentTypes(zip: JSZip): Promise<void> {
+  const reject = (): never => {
+    throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unsupported or inconsistent XLSX content type declarations.");
+  };
+  const file = zip.file("[Content_Types].xml");
+  if (!file) reject();
+  const raw = (await file.async("string")).trim()
+    .replace(/^<\?xml\s+[^?]*\?>\s*/i, "");
+  const root = /^<Types\s+xmlns=["']http:\/\/schemas\.openxmlformats\.org\/package\/2006\/content-types["']>([\s\S]*)<\/Types>$/.exec(raw);
+  if (!root) reject();
+  const declarations = root[1].match(/<(?:Default|Override)\s+[^<>]*\/>/g) ?? [];
+  if (root[1].replace(/<(?:Default|Override)\s+[^<>]*\/>/g, "").trim()) reject();
+  const defaults = new Map<string, string>();
+  const overrides = new Map<string, string>();
+  for (const declaration of declarations) {
+    const kind = /^<(Default|Override)\s+/.exec(declaration)?.[1];
+    if (!kind) reject();
+    const attrText = declaration.slice(kind.length + 1, -2);
+    const attributes = new Map<string, string>();
+    const attribute = /\s+([A-Za-z][A-Za-z0-9]*)\s*=\s*(["'])([^"'<>]*)\2/y;
+    let offset = 0;
+    while (offset < attrText.length && attrText.slice(offset).trim()) {
+      attribute.lastIndex = offset;
+      const found = attribute.exec(attrText);
+      if (!found || attributes.has(found[1]) || /[&]/.test(found[3])) reject();
+      attributes.set(found[1], found[3]);
+      offset = attribute.lastIndex;
+    }
+    if (attrText.slice(offset).trim() || attributes.size !== 2) reject();
+    const mime = attributes.get("ContentType");
+    if (!mime) reject();
+    if (kind === "Default") {
+      const ext = attributes.get("Extension");
+      if (!ext || defaults.has(ext) || !["xml", "rels"].includes(ext) ||
+          mime !== (ext === "xml" ? "application/xml" : "application/vnd.openxmlformats-package.relationships+xml")) reject();
+      defaults.set(ext, mime);
+    } else {
+      const part = attributes.get("PartName");
+      if (!part?.startsWith("/") || overrides.has(part)) reject();
+      const name = part.slice(1);
+      if (!zip.file(name) || expectedPartType(name) !== mime) reject();
+      overrides.set(part, mime);
+    }
+  }
+  if (defaults.size !== 2 || defaults.get("rels") !== "application/vnd.openxmlformats-package.relationships+xml" ||
+      defaults.get("xml") !== "application/xml") reject();
+  for (const name of Object.keys(zip.files)) {
+    if (zip.files[name].dir || name === "[Content_Types].xml" || name.endsWith(".rels")) continue;
+    const expected = expectedPartType(name);
+    if (!expected || overrides.get("/" + name) !== expected) reject();
+  }
+}
+
 const UNSUPPORTED_SHEET_FEATURE =
   /<(?:[\w-]+:)?(?:f|drawing|legacyDrawing|tableParts|pivotTable|extLst|oleObjects|controls|sheetProtection|conditionalFormatting|dataValidations|hyperlinks|mergeCells|autoFilter|protectedRanges|customSheetViews|scenarios)\b/i;
 
@@ -59,6 +133,8 @@ export async function preflightManagedWorkbook(source: ArrayBuffer | Uint8Array)
       throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Required XLSX package part is missing: " + name);
     }
   }
+
+  await verifyContentTypes(zip);
 
   const worksheetNames = Object.keys(zip.files).filter((name) => /^xl\/worksheets\/sheet\d+\.xml$/.test(name));
   if (worksheetNames.length === 0) {
