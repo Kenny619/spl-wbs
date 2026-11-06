@@ -548,3 +548,51 @@ test("Save As other folder denied leaves original project and unsaved draft inta
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
   await expect(page.getByLabel("Task title")).toHaveValue("Uncommitted on denied destination");
 });
+
+
+test("Failed workbook selection keeps previous verified source, editable state and fingerprint", async ({ page }) => {
+  await openManaged(page);
+  await page.locator("#close").click();
+  await page.evaluate(() => {
+    const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    files.set("unreadable.xlsx", new TextEncoder().encode("corrupt ZIP bytes"));
+  });
+  await page.getByRole("button", { name: "Choose project folder" }).click();
+  await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
+  await page.getByLabel("Active Excel workbook").selectOption("unreadable.xlsx");
+  await expect(page.getByText(/Managed workbook unavailable:.*Previous verified workbook remains active/)).toBeVisible();
+  await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await page.locator(".task-row").first().click();
+  await expect(page.getByRole("button", { name: "Edit task" })).toBeEnabled();
+});
+
+test("Failed new-folder import does not half-switch active directory or lose last-good edits", async ({ page }) => {
+  await openManaged(page);
+  await page.locator("#close").click();
+  await page.evaluate(() => {
+    const invalidDir = {
+      kind: "directory", name: "unreadable-folder",
+      async *entries() { yield ["unreadable.xlsx", { kind: "file", name: "unreadable.xlsx" }]; },
+      async getFileHandle(name: string) {
+        if (name !== "unreadable.xlsx") throw new DOMException("Missing file", "NotFoundError");
+        return {
+          name,
+          async getFile() {
+            return new File([new TextEncoder().encode("not an XLSX")], name);
+          },
+        };
+      },
+    };
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true, value: async () => invalidDir,
+    });
+  });
+  await page.getByRole("button", { name: "Change folder" }).click();
+  await expect(page.getByText(/Previous verified workbook remains active/)).toBeVisible();
+  await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
+  await page.locator(".task-row").first().click();
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Still editing last-good workbook");
+  await expect(page.getByLabel("Task title")).toHaveValue("Still editing last-good workbook");
+});
