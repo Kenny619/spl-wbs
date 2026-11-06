@@ -404,3 +404,56 @@ test("Output Report clipboard denied shows accurate failure and keeps snapshot a
   await expect(report.getByText(/Copy failed: Denied/)).toBeVisible();
   await expect(preview).toHaveValue(original);
 });
+
+
+test("Stage A inspector shows READY state without modifying any workbook bytes", async ({ page }) => {
+  await openManaged(page);
+  const source = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.locator("#close").click();
+  await page.getByRole("button", { name: "Inspect Save State" }).click();
+  const dialog = page.getByRole("dialog", { name: "Inspect Save State" });
+  await expect(dialog.getByText("Inspection: READY")).toBeVisible();
+  await expect(dialog.getByText(/does not prove that the workbook is unchanged/)).toBeVisible();
+  await expect(dialog.getByText(/synthetic-demo.xlsx/).first()).toBeVisible();
+  await dialog.getByRole("button", { name: "Close" }).click();
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(source);
+});
+
+test("Stage A orphan recovery file blocks direct Save and inspector preserves all evidence", async ({ page }) => {
+  page.on("dialog", async (dialog) => { await dialog.accept(); });
+  await openManaged(page);
+  const source = await page.evaluate(() => {
+    const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    files.set("synthetic-demo.stage.xlsx", new TextEncoder().encode("unowned recovery evidence"));
+    return Array.from(files.get("synthetic-demo.xlsx")!);
+  });
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Do not overwrite");
+  await page.getByRole("button", { name: "Save to workbook" }).click();
+  await expect(page.getByText(/Save blocked — inspect recovery files/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save to workbook" })).toBeDisabled();
+  await expect(page.getByLabel("Task title")).toHaveValue("Do not overwrite");
+
+  await page.locator("#close").click();
+  await page.getByRole("dialog", { name: "Unsaved changes" })
+    .getByRole("button", { name: "Discard" }).click();
+  await page.getByRole("button", { name: "Inspect Save State" }).click();
+  const dialog = page.getByRole("dialog", { name: "Inspect Save State" });
+  await expect(dialog.getByText("Inspection: STOP")).toBeVisible();
+  await expect(dialog.getByText(/Unrecognized orphan staging file/)).toBeVisible();
+  await expect(dialog.getByText(/Do not save, overwrite, delete or rename/)).toBeVisible();
+  const names = await page.evaluate(() => {
+    const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    return {
+      source: Array.from(files.get("synthetic-demo.xlsx")!),
+      stage: new TextDecoder().decode(files.get("synthetic-demo.stage.xlsx")!),
+    };
+  });
+  expect(names.source).toEqual(source);
+  expect(names.stage).toBe("unowned recovery evidence");
+});
