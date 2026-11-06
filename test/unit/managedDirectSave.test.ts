@@ -1,7 +1,7 @@
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
 import {
-  captureManagedSourceHash, inspectManagedSave, managedFileNames, saveManagedDirect, sha256,
+  captureManagedSourceHash, inspectManagedSave, managedFileNames, saveManagedDirect, saveManagedAsCopy, sha256,
 } from "../../src/managed/directSave";
 
 const SOURCE_NAME = "Plan.xlsx";
@@ -132,4 +132,109 @@ describe("managed Save: File System Access API adapter with disposable handles",
     expect(() => managedFileNames("Plan.backup.xlsx")).toThrow();
     expect(() => managedFileNames("Plan.stage.xlsx")).toThrow();
   });
+  it("Save As from loaded baseline creates a new copy, preserves source and switches future backup lifecycle", async () => {
+    const dir = await fixture();
+    const original = Uint8Array.from(dir.files.get(SOURCE_NAME)!);
+    const loadedHash = await sha256(original);
+    const saved = await saveManagedAsCopy({
+      directory: dir.asHandle(), sourceName: SOURCE_NAME, destinationName: "Plan-copy.xlsx",
+      loadedBytes: original, loadedHash, taskId: "1", changes: { Title: "Copied title" },
+      appVersion: "0.1.0", timestampUTC: TIME, changeSetId: ID,
+    });
+    expect(saved).toMatchObject({
+      kind: "saved-copy", sourceName: SOURCE_NAME, destinationName: "Plan-copy.xlsx", changeSetId: ID,
+    });
+    expect(dir.files.get(SOURCE_NAME)).toEqual(original);
+    const newNames = managedFileNames("Plan-copy.xlsx");
+    expect(dir.files.has(newNames.stage)).toBe(false);
+    expect(dir.files.has(newNames.backup)).toBe(false);
+    expect(await captureManagedSourceHash(dir.asHandle(), "Plan-copy.xlsx")).toBe(saved.destinationHash);
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(dir.files.get(newNames.source)! as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+    expect(book.getWorksheet("ProjectWBS")?.getCell("B2").value).toBe("Copied title");
+    expect(book.getWorksheet("UpdateHistory")?.rowCount).toBe(2);
+
+    const second = await saveManagedDirect({
+      directory: dir.asHandle(), sourceName: "Plan-copy.xlsx",
+      loadedHash: saved.destinationHash, taskId: "1", changes: { Title: "Next change" },
+      appVersion: "0.1.0", timestampUTC: TIME,
+    });
+    expect(second.kind).toBe("saved");
+    expect(await sha256(dir.files.get(newNames.backup)!)).toBe(saved.destinationHash);
+    expect(dir.files.get(SOURCE_NAME)).toEqual(original);
+  });
+
+  it("Save As blocks destination, sidecar collisions, and same source name before writing", async () => {
+    const dir = await fixture();
+    const snapshot = Uint8Array.from(dir.files.get(SOURCE_NAME)!);
+    const loadedHash = await sha256(snapshot);
+    const input = {
+      directory: dir.asHandle(), sourceName: SOURCE_NAME, destinationName: "New.xlsx",
+      loadedBytes: snapshot, loadedHash, taskId: "1", changes: { Title: "Copy" },
+      appVersion: "0.1.0", timestampUTC: TIME,
+    };
+    await expect(saveManagedAsCopy({ ...input, destinationName: SOURCE_NAME }))
+      .rejects.toMatchObject({ code: "SAME_DESTINATION" });
+    dir.files.set("New.xlsx", new TextEncoder().encode("unrelated user bytes"));
+    await expect(saveManagedAsCopy(input)).rejects.toMatchObject({ code: "FILE_COLLISION" });
+    expect(new TextDecoder().decode(dir.files.get("New.xlsx"))).toBe("unrelated user bytes");
+    dir.files.delete("New.xlsx");
+    dir.files.set("New.stage.xlsx", new TextEncoder().encode("unknown staging"));
+    await expect(saveManagedAsCopy(input)).rejects.toMatchObject({ code: "FILE_COLLISION" });
+    expect(dir.files.get(SOURCE_NAME)).toEqual(snapshot);
+  });
+
+  it("Save As conflict uses last loaded baseline and does not overwrite changed external source", async () => {
+    const dir = await fixture();
+    const original = Uint8Array.from(dir.files.get(SOURCE_NAME)!);
+    const loadedHash = await sha256(original);
+    const changed = new TextEncoder().encode("EXTERNAL MODIFICATION");
+    dir.files.set(SOURCE_NAME, changed);
+    const result = await saveManagedAsCopy({
+      directory: dir.asHandle(), sourceName: SOURCE_NAME,
+      destinationName: "Conflict-copy.xlsx", loadedBytes: original, loadedHash,
+      taskId: "1", changes: { Title: "From loaded snapshot" }, appVersion: "0.1.0",
+      timestampUTC: TIME, changeSetId: ID,
+    });
+    expect(result.destinationName).toBe("Conflict-copy.xlsx");
+    expect(dir.files.get(SOURCE_NAME)).toEqual(changed);
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(dir.files.get("Conflict-copy.xlsx")! as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+    expect(book.getWorksheet("ProjectWBS")?.getCell("B2").value).toBe("From loaded snapshot");
+    await expect(saveManagedAsCopy({
+      directory: dir.asHandle(), sourceName: SOURCE_NAME, destinationName: "Other.xlsx",
+      loadedBytes: original, loadedHash: "a".repeat(64), taskId: "1",
+      changes: {}, appVersion: "0.1.0",
+    })).rejects.toMatchObject({ code: "INVALID_LOAD_SNAPSHOT" });
+  });
+
+  it("Save As close failure retains staging and does not falsely report new workbook active", async () => {
+    const dir = await fixture();
+    const original = Uint8Array.from(dir.files.get(SOURCE_NAME)!);
+    dir.failAfterClose = "Interrupted.xlsx";
+    await expect(saveManagedAsCopy({
+      directory: dir.asHandle(), sourceName: SOURCE_NAME, destinationName: "Interrupted.xlsx",
+      loadedBytes: original, loadedHash: await sha256(original), taskId: "1",
+      changes: { Title: "Uncertain" }, appVersion: "0.1.0",
+      timestampUTC: TIME, changeSetId: ID,
+    })).rejects.toThrow("Synthetic file close failure");
+    const names = managedFileNames("Interrupted.xlsx");
+    expect(dir.files.has(names.stage)).toBe(true);
+    expect((await inspectManagedSave(dir.asHandle(), names.source)).status).toBe("STOP");
+    expect(dir.files.get(SOURCE_NAME)).toEqual(original);
+  });
+
+  it("Save As with no edits copies the baseline without inventing history", async () => {
+    const dir = await fixture();
+    const snapshot = Uint8Array.from(dir.files.get(SOURCE_NAME)!);
+    const out = await saveManagedAsCopy({
+      directory: dir.asHandle(), sourceName: SOURCE_NAME, destinationName: "Unchanged.xlsx",
+      loadedBytes: snapshot, loadedHash: await sha256(snapshot), taskId: "1",
+      changes: {}, appVersion: "0.1.0",
+    });
+    expect(out.changeSetId).toBeNull();
+    expect(await sha256(dir.files.get("Unchanged.xlsx")!)).toBe(await sha256(snapshot));
+    expect(dir.files.get(SOURCE_NAME)).toEqual(snapshot);
+  });
+
 });
