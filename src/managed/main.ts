@@ -3,11 +3,12 @@ import { boot } from "../main";
 import type { ImportController } from "../data/importController";
 import { KNOWN_STATUSES, TASK_TYPES, type Task } from "../data/types";
 import { collectTaskChanges, hasTaskChanges, initialTaskDraft, type TaskDraft } from "./draft";
-import { captureManagedSourceHash, saveManagedAsCopy, saveManagedDirect, sha256 } from "./directSave";
+import { captureManagedSourceHash, inspectManagedSave, saveManagedAsCopy, saveManagedDirect, sha256 } from "./directSave";
 import { preflightManagedWorkbook } from "./preflight";
 import { openManagedHistory } from "./historyUi";
 import { ManagedSettings } from "./settingsUi";
 import { ManagedReports } from "./reportsUi";
+import { openManagedRecovery } from "./recoveryUi";
 import type { EditableField, EditValue } from "./workbookCandidate";
 
 type DirectoryWithEntries = FileSystemDirectoryHandle & {
@@ -52,6 +53,8 @@ export class ManagedEditor {
   private loadedHash: string | null = null;
   private loadedBytes: Uint8Array | null = null;
   private canWrite = false;
+  private recoveryHold = false;
+  private inspectionName: string | null = null;
   private names: string[] = [];
   private editing = false;
   private busy = false;
@@ -114,6 +117,20 @@ export class ManagedEditor {
       this.guard(() => { void this.showHistory(); });
     });
     actions.prepend(historyButton);
+    const inspectButton = element(doc, "button", "managed-action", "Inspect Save State");
+    inspectButton.type = "button";
+    inspectButton.addEventListener("click", () => {
+      if (!this.directory || !this.inspectionName) {
+        this.message = "Select a project folder and workbook to inspect its save state.";
+        this.render();
+        return;
+      }
+      void openManagedRecovery(doc, this.directory, this.inspectionName).catch((error: unknown) => {
+        this.message = "Save-state inspection unavailable: " + errorMessage(error) + ". No files were changed.";
+        this.render();
+      });
+    });
+    actions.prepend(inspectButton);
     this.fileSelect.addEventListener("change", () => {
       const next = this.fileSelect.value;
       this.fileSelect.value = this.sourceName ?? "";
@@ -139,6 +156,8 @@ export class ManagedEditor {
         this.sourceName = null;
         this.loadedHash = null;
         this.loadedBytes = null;
+        this.inspectionName = null;
+        this.recoveryHold = false;
         this.names = [];
         this.canWrite = false;
         this.clearDraft();
@@ -248,6 +267,8 @@ export class ManagedEditor {
     this.sourceName = null;
     this.loadedHash = null;
     this.loadedBytes = null;
+    this.inspectionName = null;
+    this.recoveryHold = false;
     this.canWrite = false;
     this.clearDraft();
     if (!found.length) {
@@ -262,6 +283,7 @@ export class ManagedEditor {
 
   private async openWorkbook(name: string): Promise<void> {
     if (!this.directory || !this.names.includes(name) || this.busy) return;
+    this.inspectionName = name;
     this.busy = true;
     this.canWrite = false;
     this.loadedHash = null;
@@ -284,6 +306,7 @@ export class ManagedEditor {
       this.loadedHash = hash;
       this.loadedBytes = bytes;
       this.canWrite = eligible;
+      this.recoveryHold = false;
       this.clearDraft();
       try { localStorage.setItem(STORAGE_PREFIX + this.directory.name, name); } catch { /* best effort */ }
       this.message = eligible
@@ -298,7 +321,7 @@ export class ManagedEditor {
   }
 
   private async save(): Promise<boolean> {
-    if (this.busy || !this.directory || !this.sourceName || !this.loadedHash || !this.canWrite ||
+    if (this.busy || this.recoveryHold || !this.directory || !this.sourceName || !this.loadedHash || !this.canWrite ||
       !this.initial || !this.draft || !this.selectedId) return false;
     const changes = collectTaskChanges(this.initial, this.draft);
     if (!Object.keys(changes).length) {
@@ -343,6 +366,11 @@ export class ManagedEditor {
       this.message = "Verified Save: task and UpdateHistory persisted; predecessor backup retained.";
       return true;
     } catch (error) {
+      if (this.directory && this.sourceName) {
+        try {
+          this.recoveryHold = (await inspectManagedSave(this.directory, this.sourceName)).status !== "READY";
+        } catch { this.recoveryHold = true; } // Fail closed if diagnosis itself fails.
+      }
       this.message = "Save NOT verified: " + errorMessage(error) +
         ". Draft retained. If the source changed externally, use Save As to make a copy from the last loaded version; Reload requires discarding edits.";
       return false;
@@ -420,6 +448,8 @@ export class ManagedEditor {
         throw new Error("Save As bytes were written, but the new workbook could not be reloaded; original remains active.");
       }
       this.sourceName = name;
+      this.inspectionName = name;
+      this.recoveryHold = false;
       this.loadedHash = saved.destinationHash;
       this.loadedBytes = verified;
       this.names = [...new Set([...this.names, name])].sort((a, b) => a.localeCompare(b));
@@ -444,8 +474,9 @@ export class ManagedEditor {
     const intro = element(this.doc, "span");
     intro.append(element(this.doc, "strong", "", "EXCEL MANAGED · DEVELOPMENT PREVIEW"));
     intro.append(this.doc.createTextNode("  ·  Approved v18 viewer · Use disposable XLSX copies"));
-    const status = element(this.doc, "span", this.canWrite ? "" : "managed-alert",
-      this.message || (this.sourceName ? "View only" : "Choose project folder"));
+    const status = element(this.doc, "span", this.canWrite && !this.recoveryHold ? "" : "managed-alert",
+      (this.recoveryHold ? "Save blocked — inspect recovery files. " : "") +
+      (this.message || (this.sourceName ? "View only" : "Choose project folder")));
     this.banner.append(intro, status);
 
     this.fileSelect.replaceChildren();
@@ -535,7 +566,7 @@ export class ManagedEditor {
         else if (field === "ParentTaskID") value = control.value || null;
         else value = control.value;
         draft[field] = value;
-        saveButton.disabled = this.busy || !this.isDirty();
+        saveButton.disabled = this.busy || this.recoveryHold || !this.isDirty();
         indicator.textContent = this.isDirty() ? "Unsaved changes" : "No unsaved changes";
       });
       wrapper.append(control);
@@ -544,7 +575,7 @@ export class ManagedEditor {
     this.slot.append(fields);
     const actions = element(this.doc, "div", "managed-actions");
     saveButton.type = "button";
-    saveButton.disabled = this.busy || !this.isDirty();
+    saveButton.disabled = this.busy || this.recoveryHold || !this.isDirty();
     saveButton.addEventListener("click", () => { void this.save(); });
     const saveAsButton = element(this.doc, "button", "managed-action", "Save As…");
     saveAsButton.type = "button";
