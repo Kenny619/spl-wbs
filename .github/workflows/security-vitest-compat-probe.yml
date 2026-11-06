@@ -3,6 +3,8 @@ name: Isolated Vitest 4.1 compatibility probe
 on:
   push:
     branches: [feature/security-vitest-compat-probe]
+  pull_request:
+    branches: [feature/excel-managed-v1]
 
 permissions:
   contents: read
