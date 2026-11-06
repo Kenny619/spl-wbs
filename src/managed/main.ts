@@ -6,6 +6,7 @@ import { collectTaskChanges, hasTaskChanges, initialTaskDraft, type TaskDraft } 
 import { captureManagedSourceHash, saveManagedAsCopy, saveManagedDirect, sha256 } from "./directSave";
 import { preflightManagedWorkbook } from "./preflight";
 import { openManagedHistory } from "./historyUi";
+import { ManagedSettings } from "./settingsUi";
 import type { EditableField, EditValue } from "./workbookCandidate";
 
 type DirectoryWithEntries = FileSystemDirectoryHandle & {
@@ -62,6 +63,7 @@ export class ManagedEditor {
   private readonly banner: HTMLDivElement;
   private readonly fileSelect: HTMLSelectElement;
   private readonly dialog: HTMLDialogElement;
+  private readonly settings: ManagedSettings;
 
   constructor(private readonly doc: Document, private readonly controller: ImportController) {
     doc.body.classList.add("spt-managed");
@@ -153,6 +155,7 @@ export class ManagedEditor {
       }
       originalPatch(patch);
     };
+    this.settings = new ManagedSettings(doc, controller, (action) => this.guard(action));
     controller.subscribe(() => this.render());
     doc.defaultView?.addEventListener("beforeunload", (event) => {
       if (!this.isDirty()) return;
@@ -352,10 +355,7 @@ export class ManagedEditor {
       this.render();
       return;
     }
-    const timeZone = (() => {
-      try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; }
-      catch { return "UTC"; }
-    })();
+    const timeZone = this.settings.getTimeZone();
     try {
       await openManagedHistory(this.doc, this.loadedBytes, { taskId, timeZone });
     } catch (error) {
