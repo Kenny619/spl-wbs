@@ -2,6 +2,7 @@
 // Demonstrates serializer behavior; does NOT implement the managed save workflow.
 import ExcelJS from "exceljs";
 import JSZip from "jszip";
+import { mkdir, writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 const HEADERS = [
@@ -48,7 +49,10 @@ describe("Issue #11: minimum ExcelJS fidelity gate (synthetic only)", () => {
     history.addRow([ID, WHEN, 501, "1.2", "Synthetic milestone", "Progress", "20", "45", "Web UI", "test"]);
     history.addRow([ID, WHEN, 501, "1.2", "Synthetic milestone", "Updates", "Initial update", "Initial update\nFollow-up", "Web UI", "test"]);
 
-    const roundTrip = await reload(await book.xlsx.writeBuffer());
+    const exportBytes = await book.xlsx.writeBuffer();
+    const roundTrip = await reload(exportBytes);
+    await mkdir("work/ci", { recursive: true });
+    await writeFile("work/ci/issue11-exceljs-roundtrip.xlsx", new Uint8Array(exportBytes));
     const t = roundTrip.getWorksheet("ProjectWBS")!;
     expect(t.getCell("D2").value).toBe(45);
     expect(t.getCell("E2").value).toBe("Initial update\nFollow-up");
