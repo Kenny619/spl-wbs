@@ -1,0 +1,67 @@
+name: Isolated Vitest 4.1 compatibility probe
+
+on:
+  push:
+    branches: [feature/security-vitest-compat-probe]
+
+permissions:
+  contents: read
+
+jobs:
+  vitest-linux:
+    name: Vitest 4.1 candidate / Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked baseline
+        run: npm ci
+      - name: Install candidate without modifying manifest or lockfile
+        run: npm install --no-save --package-lock=false --ignore-scripts vitest@4.1.12
+      - name: Report exact selected tooling and verify locked files unchanged
+        shell: bash
+        run: |
+          npm ls vitest tinypool vite --depth=1 || true
+          git diff --exit-code -- package.json package-lock.json
+      - name: Candidate unit regressions
+        run: npm test
+      - name: Frozen read-only production build
+        run: npm run build
+      - name: Managed variant build
+        run: npm run build:managed
+      - name: Record dependency audit, no automated fixes
+        if: always()
+        continue-on-error: true
+        run: npm audit --json > audit-probe.json
+      - name: Probe diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-compat-audit-probe
+          path: audit-probe.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  browser-windows:
+    name: Vitest 4.1 candidate / Windows browser
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install candidate without modifying lockfile
+        run: npm install --no-save --package-lock=false --ignore-scripts vitest@4.1.12
+      - name: Verify package and lockfile remain frozen
+        run: git diff --exit-code -- package.json package-lock.json
+      - name: Install Chromium
+        run: npx playwright install chromium
+      - name: Windows Chromium regression
+        run: npm run test:e2e -- --reporter=list
