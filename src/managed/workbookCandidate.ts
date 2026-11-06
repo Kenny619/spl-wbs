@@ -49,7 +49,7 @@ const HEADER_ALIASES: Record<string, string> = {
   priority: "Priority", description: "Description", updates: "Updates", workstream: "Workstream",
 };
 
-const fail = (code: string, message: string): never => { throw new ManagedWorkbookError(code, message); };
+function fail(code: string, message: string): never { throw new ManagedWorkbookError(code, message); }
 const key = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const utc = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
@@ -108,9 +108,10 @@ export async function buildManagedCandidate(input: CandidateInput): Promise<Cand
   const currentType = cellText(row.getCell(columns.TaskType!));
   const typeChange = proposed.find((change) => change.field === "TaskType");
   const nextType = String(typeChange?.newValue ?? currentType);
-  const hasChildren = (taskSheet.getRows(2, Math.max(0, taskSheet.rowCount - 1)) ?? []).some(
-    (other) => cellText(other.getCell(columns.ParentTaskID ?? -1)) === input.taskId,
-  );
+  const hasChildren = columns.ParentTaskID !== undefined &&
+    (taskSheet.getRows(2, Math.max(0, taskSheet.rowCount - 1)) ?? []).some(
+      (other) => cellText(other.getCell(columns.ParentTaskID!)) === input.taskId,
+    );
   if (nextType === "Summary" && proposed.some((change) =>
     ["Progress", "PlannedStart", "PlannedEnd"].includes(change.field))) {
     fail("INVALID_SUMMARY_EDIT", "Derived Summary progress and dates cannot be edited.");
@@ -236,16 +237,17 @@ function isPercentFormat(format: string | undefined): boolean {
 }
 
 function canonicalValue(cell: ExcelJS.Cell, field: EditableField): EditValue {
-  if (cell.value == null) return null;
+  const value = cell.value;
+  if (value == null) return null;
   if (field === "Progress") {
-    if (typeof cell.value !== "number") fail("UNSUPPORTED_CELL", "Progress must be a numeric cell for editing.");
-    return isPercentFormat(cell.numFmt) ? cell.value * 100 : cell.value;
+    if (typeof value !== "number") fail("UNSUPPORTED_CELL", "Progress must be a numeric cell for editing.");
+    return isPercentFormat(cell.numFmt) ? value * 100 : value;
   }
-  if (cell.value instanceof Date && (field === "PlannedStart" || field === "PlannedEnd")) {
-    return cell.value.toISOString().slice(0, 10);
+  if (value instanceof Date && (field === "PlannedStart" || field === "PlannedEnd")) {
+    return value.toISOString().slice(0, 10);
   }
-  if (typeof cell.value === "string" || typeof cell.value === "number") {
-    return String(cell.value);
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
   }
   return fail("UNSUPPORTED_CELL", "The edited cell has an unsupported type for " + field + ".");
 }
