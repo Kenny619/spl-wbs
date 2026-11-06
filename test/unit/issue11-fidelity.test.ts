@@ -54,10 +54,10 @@ describe("Issue #11: minimum ExcelJS fidelity gate (synthetic only)", () => {
     expect(t.getCell("E2").value).toBe("Initial update\nFollow-up");
     expect(t.getCell("D2").numFmt).toBe('0"%"');
     const h = roundTrip.getWorksheet("UpdateHistory")!;
-    expect(h.getRow(1).values.slice(1)).toEqual(HEADERS);
-    expect(h.getRow(2).values.slice(1)).toEqual(["historic", "2026-11-05T00:00:00.000Z", 501, "1.2", "Synthetic milestone", "Progress", "0", "20", "Web UI", "0.0-test"]);
-    expect(h.getRow(3).values.slice(1)).toEqual([ID, WHEN, 501, "1.2", "Synthetic milestone", "Progress", "20", "45", "Web UI", "test"]);
-    expect(h.getRow(4).values.slice(1)).toEqual([ID, WHEN, 501, "1.2", "Synthetic milestone", "Updates", "Initial update", "Initial update\nFollow-up", "Web UI", "test"]);
+    expect(rowCells(h.getRow(1))).toEqual(HEADERS);
+    expect(rowCells(h.getRow(2))).toEqual(["historic", "2026-11-05T00:00:00.000Z", 501, "1.2", "Synthetic milestone", "Progress", "0", "20", "Web UI", "0.0-test"]);
+    expect(rowCells(h.getRow(3))).toEqual([ID, WHEN, 501, "1.2", "Synthetic milestone", "Progress", "20", "45", "Web UI", "test"]);
+    expect(rowCells(h.getRow(4))).toEqual([ID, WHEN, 501, "1.2", "Synthetic milestone", "Updates", "Initial update", "Initial update\nFollow-up", "Web UI", "test"]);
     expect(roundTrip.getWorksheet("Reference")!.getCell("A1").value).toBe("Do not discard this worksheet");
     expect(roundTrip.getWorksheet("Reference")!.getCell("A1").font.bold).toBe(true);
   });
