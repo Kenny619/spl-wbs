@@ -125,21 +125,45 @@ export async function inspectManagedSave(
     try {
       const pending = parseJson<Pending>(await read(dir, names.transaction));
       if (pending.protocol !== PROTOCOL || pending.source !== sourceName ||
-        !isHash(pending.before) || !isHash(pending.after) || hashes.stage !== pending.before) {
+        !isHash(pending.before) || !isHash(pending.after) ||
+        (pending.priorBackup !== null && !isHash(pending.priorBackup)) ||
+        !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(pending.changeSetId) ||
+        hashes.stage !== pending.before) {
         return { status: "STOP", reason: "Unrecognized pending transaction or invalid stage.", hashes };
       }
-      const own = await (async () => {
-        try { return await verifiedOwner(dir, names); } catch { return null; }
-      })();
-      const trustedBackup = (!hashes.backup && !hashes.owner) ||
-        (own !== null && hashes.backup === own.owner.backupHash);
-      if (hashes.source === pending.before && trustedBackup) {
+
+      // The prior backup ownership is recorded BEFORE a replacement begins.
+      // During backup rotation the backup bytes may already be the predecessor
+      // while the ownership record still describes the old backup. Both phases
+      // are legitimate, but an unknown/malformed/mismatched owner never is.
+      let ownerHash: string | null = null;
+      if (hashes.owner) {
+        let owner: Owner;
+        try { owner = parseJson<Owner>(await read(dir, names.owner)); }
+        catch { return { status: "STOP", reason: "Pending backup owner metadata cannot be parsed.", hashes }; }
+        if (owner.protocol !== PROTOCOL || owner.source !== sourceName ||
+            !isHash(owner.backupHash) ||
+            (owner.backupHash !== pending.priorBackup && owner.backupHash !== pending.before)) {
+          return { status: "STOP", reason: "Pending backup ownership does not match this transaction.", hashes };
+        }
+        ownerHash = owner.backupHash;
+      } else if (pending.priorBackup !== null) {
+        return { status: "STOP", reason: "Previously managed backup ownership has disappeared.", hashes };
+      }
+
+      const oldBackupTrusted = pending.priorBackup === null
+        ? !hashes.backup && !hashes.owner
+        : ownerHash === pending.priorBackup && hashes.backup === pending.priorBackup;
+      if (hashes.source === pending.before && oldBackupTrusted) {
         return { status: "BEFORE_WRITE", reason: "Original source and verified stage retained; manual reconciliation required.", hashes };
       }
-      if (hashes.source === pending.after && hashes.backup === pending.before) {
+      if (hashes.source === pending.after && hashes.backup === pending.before &&
+          (ownerHash === null && pending.priorBackup === null ||
+           ownerHash === pending.priorBackup ||
+           ownerHash === pending.before)) {
         return { status: "BACKUP_VERIFIED", reason: "Source and predecessor backup verified; cleanup not yet confirmed.", hashes };
       }
-      if (hashes.source === pending.after && trustedBackup) {
+      if (hashes.source === pending.after && oldBackupTrusted) {
         return { status: "NEEDS_BACKUP", reason: "New source and staged predecessor verified; backup incomplete, do not retry.", hashes };
       }
       return { status: "STOP", reason: "Unexpected or externally changed source/backup; preserve recovery files.", hashes };
