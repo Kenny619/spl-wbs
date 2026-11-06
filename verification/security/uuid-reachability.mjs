@@ -33,6 +33,6 @@ const report = {
   hits: results,
   conclusion: "STATIC_SCREEN_ONLY; no proof of bundled code reachability or exploit absence",
 };
-fs.mkdirSync("work/security-candidate", { recursive: true });
-fs.writeFileSync("work/security-candidate/uuid-reachability.json", JSON.stringify(report, null, 2));
+fs.mkdirSync("work/ci", { recursive: true });
+fs.writeFileSync("work/ci/uuid-reachability.json", JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
