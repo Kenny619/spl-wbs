@@ -199,6 +199,23 @@ export async function preflightManagedWorkbook(source: ArrayBuffer | Uint8Array)
             !ALLOWED_RELATIONSHIPS.has(fields.Type)) {
           throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unsupported Excel relationship in " + name + ".");
         }
+        // Match the relationship role to the actual supported package part.
+        // A syntactically valid relationship to a missing or different part
+        // cannot be safely round-tripped through ExcelJS.
+        const rootRelationship = name === "_rels/.rels";
+        const targetName = (rootRelationship ? "" : "xl/") + fields.Target;
+        const expectedRole = targetName === "xl/workbook.xml" ? "officeDocument" :
+          targetName === "docProps/core.xml" ? "core-properties" :
+          targetName === "docProps/app.xml" ? "extended-properties" :
+          /^xl\/worksheets\/sheet\d+\.xml$/.test(targetName) ? "worksheet" :
+          targetName === "xl/styles.xml" ? "styles" :
+          targetName === "xl/sharedStrings.xml" ? "sharedStrings" :
+          /^xl\/theme\/theme\d+\.xml$/.test(targetName) ? "theme" : null;
+        const role = fields.Type.slice(fields.Type.lastIndexOf("/") + 1);
+        if (!zip.file(targetName) || !expectedRole || role !== expectedRole ||
+            (rootRelationship !== ["officeDocument", "core-properties", "extended-properties"].includes(role))) {
+          throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unsupported relationship target in " + name + ".");
+        }
         ids.add(fields.Id);
       }
     }
