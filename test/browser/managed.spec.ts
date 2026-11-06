@@ -82,7 +82,7 @@ test("managed v18 detail editor protects unsaved changes on task-panel close", a
   await expect(page.getByLabel("Task title")).toHaveValue("Unsaved title");
 
   await page.locator("#close").click();
-  await page.getByRole("button", { name: "Discard" }).click();
+  await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Discard" }).click();
   await expect(page.locator("#panel")).not.toHaveClass(/open/);
 });
 
