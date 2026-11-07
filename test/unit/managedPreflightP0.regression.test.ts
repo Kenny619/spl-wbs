@@ -116,6 +116,17 @@ describe("P0: fail closed on unsupported OOXML relationships", () => {
       '" Target="worksheets/sheet1.xml"/>'
     )));
   });
+  it("accepts a normal multi-sheet ExcelJS workbook with distinct relationships", async () => {
+    const book = new ExcelJS.Workbook();
+    const first = book.addWorksheet("ProjectWBS");
+    first.addRow(["ID", "Title", "WBSCode", "TaskType"]);
+    first.addRow([1, "Synthetic", "1", "Task"]);
+    const reference = book.addWorksheet("Reference");
+    reference.addRow(["Code", "Description"]);
+    reference.addRow(["A", "Unchanged reference"]);
+    await expect(preflightManagedWorkbook(new Uint8Array(await book.xlsx.writeBuffer())))
+      .resolves.toBeUndefined();
+  });
   it("accepts an ordinary ExcelJS workbook", async () => {
     await expect(preflightManagedWorkbook(await workbook())).resolves.toBeUndefined();
   });
