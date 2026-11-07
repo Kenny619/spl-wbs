@@ -1,4 +1,6 @@
-# DES-001 — Holistic UI Concept Comparison (proposed 0.1)
+# DES-001 — Holistic UI Concept Comparison (historical, proposed 0.1)
+
+> **Superseded for current visual critique by [DES-002](../../design/concepts/DES-002-consolidated-review-and-reports.html), 2026-11-08.** This document intentionally preserves the initial comparison and owner critiques. Current proposed direction: report-linked presentation, no standalone Integrity stage, one inline-edit meeting task panel, due-date and working-days emphasis. See [DES-002 design record](07_DES002_OWNER_FEEDBACK.md). DES-001 remains an immutable design reference, not the current recommendation.
 
 **Created:** 2026-11-07 JST · **State:** D1 / divergence, PROPOSED · **Controlling:** [Issue #25](https://github.com/Kenny619/spl-wbs/issues/25) · **Draft discussion:** [PR #29](https://github.com/Kenny619/spl-wbs/pull/29)
 
