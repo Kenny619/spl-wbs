@@ -1,4 +1,4 @@
-# SPT-WBS Office Meetings: Workflows, Display Targets & Information Budget — proposed 0.2
+# SPT-WBS Office Meetings: Workflows, Display Targets & Information Budget — proposed 0.3
 
 **Date:** 2026-11-07 JST · **State:** PROPOSED / not approved · **Controlling:** Issue #25, PR #29 · **Source:** Product Owner office-meeting workflow feedback in design discussion.
 
@@ -14,7 +14,7 @@
 
 **Candidate capabilities, not implementation authorization:**
 - **Two complementary navigation paths, one underlying project model:** a prioritized cross-workstream Exception Review queue and a workstream-organized WBS Review. After exceptions, preserve native WBS hierarchy inside each workstream; provide selected task focus, clear Gantt context and predictable next/previous navigation within the active phase.
-- **Pre-meeting preparation** (proposed interaction, not an approved feature): show flagged exceptions and allow prioritization before the call. The *definition of a flag* and how it is entered remain an open question. Existing 'Needs Attention' data (At Risk/Blocked and overdue) is an initial source of candidates, but it must not be conflated automatically with the user's curated meeting exceptions or risk prioritization.
+- **Pre-meeting preparation** (proposed interaction, not an approved feature): exception signals originate from both **automatically detected timeline-impact risks** and **manually entered contextual/stakeholder risks**. An entity placed **Under Watch** persists across meetings until all active risk sources resolve and delivery health returns to Green. Meeting priority, meeting discussion state and actual TaskStatus are separate dimensions. See [Persistent Risk Watch Model](05_RISK_WATCH_MODEL.md) for the lifecycle and unresolved data-contract questions. Existing 'Needs Attention' counts are candidate signals but do not fully define risk or curated priority.
 - **Exception Review stage:** allocate early meeting time to prepared, cross-workstream exceptions. Show task identity, its workstream/parent path, reason for flag and discussion priority; drill into the same selected-task panel as the routine WBS review.
 - **Workstream Review stage:** move through workstreams and their hierarchical WBS tasks; identify tasks already discussed during Exception Review to avoid repetition, but leave them accessible for further updates.
 - **Integrity & Closure stage:** check missing or inconsistent owner, status, dates, progress and update history, and verify explicit save/unsaved states. Define actual integrity rules against the product's data contract, not by inventing arbitrary defaults.
@@ -78,7 +78,7 @@ Resolution should be treated as **effective application content viewport**, not 
 6. **Accessibility**: test browser text resize/zoom (WCAG 2.2 AA), keyboard operation, focus restoration and a zoomed data grid. Non-grid content should reflow; the grid/timeline has a documented two-dimensional-layout exception where needed.
 
 ## Design questions for next dialogue
-- **What exactly qualifies as a pre-meeting exception flag and how is it recorded today?** Determine whether flags are manual, based on statuses/due dates, or a combination before introducing any new field or queue.
+- **What constitutes Green?** The current workbook has no separate Green delivery-health field. Validate whether clearing a manual contextual risk requires explicit acknowledgement and whether schedule health is derived from defined checks. Keep independent risk sources and persistence semantics separate from the pre-meeting priority queue.
 - For live changes, should we optimize for frequent individual saves (current explicit Save contract) or introduce a later separately specified meeting session? **No behavior change is assumed.**
 - Which leadership questions are repeatedly asked (missed commitments, upcoming deadlines, blockers, program-level changes), and which numbers or date windows best answer them?
 
