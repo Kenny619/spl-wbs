@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 0.3
+# SPT-WBS UI Guideline — draft 0.4
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -7,6 +7,8 @@
 - Keep context through filter, edit and detail transitions; never obscure the selected task and its place in the hierarchy without a compelling reason.
 - Cluster commands by user job and frequency: navigation, finding/filtering, scheduling/inspection, editing, and system/project settings. Avoid the all-controls-at-once header pattern.
 - Promote alerts that result in action. “Needs attention” should expose affected tasks with a one-action filter or direct navigation, not merely a static number (Issue #17).
+- **Weekly meeting structure:** prepare and prioritize exceptions *before* the call; discuss across all workstreams at the beginning, then follow workstream-grouped WBS hierarchy for routine progress and data integrity. Present these as complementary navigation paths into the **same underlying tasks**, not separate task repositories. Do not silently equate calculated 'Needs Attention' with curated meeting flags.
+- Discussion/review status is distinct from actual task status. If concepts such as 'discussed this meeting' or saved agenda are proposed, they must not silently write new workbook fields or alter TaskStatus without a separately approved functional contract.
 - Do not reserve large permanent screen area for low-action-value KPIs. The schedule should have the largest useful working region at common desktop viewports.
 
 ## 2. Text, spacing and density — candidate design tokens
@@ -19,7 +21,7 @@
 - Evaluate **whole-screen readability**: whether hierarchy, column width, dates, task titles, bars, action hierarchy and simultaneous edit states work *together*. Judge layout in situ; type-size adequacy cannot be decided from a table of token values alone.
 
 ## 3. Corporate-office viewing contexts — requirements to validate
-**Owner workflow evidence:** weekly status calls commonly edit existing tasks (append Updates; change dates, status, owner) while progressing entity by entity. Leadership calls mainly present progress, next milestones and flagged risks. Task creation is generally deferred until after the meeting, based on separate notes. See [meeting workflows / viewport study](04_MEETING_WORKFLOWS_AND_VIEWPORTS.md).
+**Owner workflow evidence:** weekly status calls begin with pre-flagged, prioritized exceptions across workstreams, then proceed by workstream/WBS to review updates and record integrity. Calls commonly edit existing tasks (append Updates; change dates, status, owner) while progressing entity by entity. Leadership calls mainly present progress, next milestones and flagged risks. Task creation is generally deferred until after the meeting, based on separate notes. See [meeting workflows / viewport study](04_MEETING_WORKFLOWS_AND_VIEWPORTS.md).
 - **Laptop work/edit:** favor space-efficient scanning, persistent WBS/Gantt synchronization, task context, keyboard shortcuts and visible save/conflict feedback. Avoid gratuitous empty space or oversized surfaces that squeeze actual schedule content.
 - **Same-screen discussion:** make a referenced task and the corresponding bar/row easy to follow as attention shifts between participants; controls should not compete with the schedule.
 - **Conference-room monitor:** validate at representative audience viewing distances, including whether dates, task names, milestone labels, alerts and focused items can be read without zooming the whole desktop.
