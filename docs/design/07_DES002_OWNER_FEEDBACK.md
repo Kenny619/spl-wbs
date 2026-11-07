@@ -1,4 +1,6 @@
-# DES-002 — Owner feedback remediation and report-linked presentation (proposed 0.1)
+# DES-002 — Owner feedback remediation and report-linked presentation (historical proposed 0.1)
+
+> **Superseded for current visual review by [DES-003](../../design/concepts/DES-003-filtered-meeting-and-weekly-report.html), 2026-11-08.** DES-002 is retained to trace the second round of design feedback. See [DES-003 decision study](08_DES003_FILTERS_DEPENDENCIES_REPORTING.md).
 
 **Date:** 2026-11-08 JST · **Stage:** D1 / iterative concept critique · **Owner disposition:** four substantive issues raised; addressed in proposed mock, not visually accepted or frozen.
 
