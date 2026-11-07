@@ -23,14 +23,14 @@
 
 ## Prototype/reporting fidelity
 
-DES-002 deliberately uses one `reportSnapshots` record per report mode, and both **Present** and **Plain-text Preview** read the same fixed snapshot. **Generate / Refresh demo** explicitly replaces it. Subsequent changes to synthetic task records do not silently mutate the existing report snapshot.
+DES-002 deliberately uses one `reportSnapshots` record per report mode, and both **Present** and **Plain-text Preview** read the same fixed snapshot. **Generate / Refresh demo** explicitly replaces it. Subsequent changes to synthetic task records do not silently mutate the existing report snapshot. **Copy report text** attempts to copy that exact fixed snapshot string via the browser clipboard, with explicit success/failure messaging; clipboard may be unavailable when the local HTML is opened under restricted browser permissions.
 
 The Latest Status fixture demonstrates workstream-grouped Needs Attention and upcoming milestones from sample statuses; the Update Report fixture is generated from separate illustrative **synthetic UpdateHistory Save events**, NOT the task's free-text Updates field. Shared synthetic `SV-0142` Save IDs are preserved across workstream headings. This approximates important frozen #7 semantics, but is not a full implementation of period filters, source validation, clipboard parity, progress rollups or history chronology.
 
 ## Functional source-level smoke evidence (not browser visual QA)
 
 - Inline JavaScript syntax **PASS**.
-- Source-mocked UI execution **PASS** for A Schedule Canvas, B Meeting Guide, exceptions/workstreams, Edit task and Cancel, blocked navigation during demo editing, Output Reports Latest Status/Update, Present/Text-preview toggling and fixed-snapshot Refresh.
+- Source-mocked UI execution **PASS** for A Schedule Canvas, B Meeting Guide, exceptions/workstreams, Edit task and Cancel, blocked navigation during demo editing, Output Reports Latest Status/Update, Present/Text-preview toggling and fixed-snapshot Refresh. Clipboard code is syntactically validated but not independently browser-tested.
 - Synthetic editing **PASS**: owner/status/finish/progress and Updates demo state can change without workbook access; report snapshot stays fixed until Refresh.
 - Workday date examples checked against November 2026 sample calendar. The project-settings and blackout calendar are not implemented.
 - **NOT YET TESTED:** actual Chromium/Edge rendered layout at 1366×768 and 1280×720, video-call downscaling, keyboard accessibility of all forms, screen-reader behavior, real workbook transactions, Report copy/clipboard, production calendar consistency. No screenshot or UAT acceptance claim.
