@@ -11,6 +11,26 @@ async function workbook(): Promise<Uint8Array> {
   return new Uint8Array(await book.xlsx.writeBuffer());
 }
 
+async function mutateWorkbookXml(transform: (xml: string) => string): Promise<Uint8Array> {
+  const zip = await JSZip.loadAsync(await workbook());
+  const name = "xl/workbook.xml";
+  const xml = await zip.file(name)!.async("string");
+  zip.file(name, transform(xml));
+  return zip.generateAsync({ type: "uint8array" });
+}
+
+async function orphanSheet(): Promise<Uint8Array> {
+  const zip = await JSZip.loadAsync(await workbook());
+  const sheet = await zip.file("xl/worksheets/sheet1.xml")!.async("string");
+  zip.file("xl/worksheets/sheet2.xml", sheet);
+  const name = "[Content_Types].xml";
+  const types = await zip.file(name)!.async("string");
+  const original = /<Override\s+[^>]*PartName="\/xl\/worksheets\/sheet1\.xml"[^>]*\/>/.exec(types)?.[0];
+  if (!original) throw new Error("Missing worksheet content type");
+  zip.file(name, types.replace("</Types>", original.replace("sheet1.xml", "sheet2.xml") + "</Types>"));
+  return zip.generateAsync({ type: "uint8array" });
+}
+
 async function mutateRels(transform: (xml: string) => string): Promise<Uint8Array> {
   const zip = await JSZip.loadAsync(await workbook());
   const path = "xl/_rels/workbook.xml.rels";
@@ -75,6 +95,26 @@ describe("P0: fail closed on unsupported OOXML relationships", () => {
     await rejectsWithoutMutation(await mutateRels(xml =>
       xml.replace('Type="' + worksheet + '"', 'Type="' + styles + '"')
     ));
+  });
+  it("rejects a workbook sheet referencing an absent relationship ID", async () => {
+    await rejectsWithoutMutation(await mutateWorkbookXml(xml =>
+      xml.replace(/r:id="[^"]+"/, 'r:id="missingId"')
+    ));
+  });
+  it("rejects a workbook sheet lacking its relationship reference", async () => {
+    await rejectsWithoutMutation(await mutateWorkbookXml(xml =>
+      xml.replace(/\s+r:id="[^"]+"/, "")
+    ));
+  });
+  it("rejects an orphaned physical worksheet despite valid content types", async () => {
+    await rejectsWithoutMutation(await orphanSheet());
+  });
+  it("rejects duplicate worksheet relationships to the same part", async () => {
+    const worksheetType = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet";
+    await rejectsWithoutMutation(await mutateRels(xml => append(
+      xml, '<Relationship Id="orphanSheetRelationship" Type="' + worksheetType +
+      '" Target="worksheets/sheet1.xml"/>'
+    )));
   });
   it("accepts an ordinary ExcelJS workbook", async () => {
     await expect(preflightManagedWorkbook(await workbook())).resolves.toBeUndefined();
