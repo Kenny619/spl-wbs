@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** PROPOSED v1.0 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** PROPOSED v1.1 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -21,7 +21,9 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [06 — DES-001 holistic concept comparison](06_CONCEPT_COMPARISON.md): two complete weekly-review alternatives and leadership briefing, annotated decision matrix and owner review scenarios.
 - [DES-001 historical prototype](../../design/concepts/DES-001-holistic-meeting-concepts.html): original concept A/B/Leadership comparison (superseded for current owner critique, retained for provenance).
 - [07 — DES-002 owner feedback, design decisions and validation](07_DES002_OWNER_FEEDBACK.md): report/presentation convergence, no separate integrity view, single-panel meeting edit, deadline/workdays visibility.
-- [DES-002 current interactive design prototype](../../design/concepts/DES-002-consolidated-review-and-reports.html): consolidated two-column meeting discussion and an illustrative presentation view within Output Reports. Browser-memory edits and synthetic report snapshots only.
+- [DES-002 historical prototype](../../design/concepts/DES-002-consolidated-review-and-reports.html): consolidated meeting discussion and report presentation (superseded for current critique, preserved).
+- [08 — DES-003 filters, dependencies and report-contract implications](08_DES003_FILTERS_DEPENDENCIES_REPORTING.md): owner feedback and design change impacts, calendar/business-day definitions, event-source gaps, and acceptance scenarios.
+- [DES-003 current interactive design prototype](../../design/concepts/DES-003-filtered-meeting-and-weekly-report.html): larger filterable task list + compact selected detail with predecessor/successor navigation, holiday/blackout-aware working-day fixture, and synthetic 7-day stakeholder Update Report.
 
 ## Boundaries and change control
 - **No design implementation, pixel-baseline replacement, issue acceptance, merge, release or approval is implied by these drafts.**
@@ -84,6 +86,15 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - **Meeting layout simplified:** agenda + one prominent selected-task panel. An **Edit task** action reveals fields and update composer inline; remove duplicate Active Discussion versus Task Detail panels.
 - **Deadline clarity over decorative progress:** emphasize finish date and *remaining working days* in the selected-task view, schedule rows and report presentation. Gantt bars convey schedule spans, never fabricated percent complete. The demo fixes its date to Nov 08 2026 and excludes sample JP holiday Nov 23, **not** project blackouts or custom calendars.
 - Current review artifact: [DES-002](../../design/concepts/DES-002-consolidated-review-and-reports.html). Source-level behavior smoke passes; visual, device, accessibility and owner acceptance still pending. See [full decision record](07_DES002_OWNER_FEEDBACK.md).
+
+## Owner feedback incorporated in DES-003 / proposed v1.1 (2026-11-08)
+- Reallocate Meeting Guide surface area toward an information-rich task list; the selected detail remains compact and supports inline editing.
+- Make the agenda area actionable **filters**, not large summary counts: Exceptions, Workstreams/All, Due Today, Due in <5 working days, plus Workstream and Owner (including Unassigned). Source tasks remain unique; selection and linked-task navigation are preserved.
+- Show both **predecessor** (what a task depends on) and **successor** (tasks that depend on it) records, with clickable ID-based task links. No invented external SharePoint URLs.
+- Working-day simulation now excludes Japan's official November 2026 holidays **and project-specific sample blackout dates**. Count semantics/fixture are documented, while actual persistent project-owned calendar remains proposed in Issue #20.
+- Proposal for future weekly **Update Report**: default inclusive last seven calendar dates; highlight completed/added tasks, new risks and released watches, other meaningful changes, with no stakeholder-facing Save-event count. **Frozen #7 still expressly requires Save counts and only UpdateHistory**; new lifecycle sources and requirement-change approval are not yet granted.
+- **Latest Status** task lists show Workstream headings and Owner per task without redundant bracketed workstream prefixes.
+- DES-003 is a design prototype, not an authorized change to v18, Excel Managed contracts, task creation, risk engine, settings, or product code. See [decision study](08_DES003_FILTERS_DEPENDENCIES_REPORTING.md).
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
