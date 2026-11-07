@@ -134,10 +134,11 @@ var events=[
 {date:"2026-11-07",kind:"released",id:"L2",title:"Readiness communications",group:groups[2],owner:"T. Oda",detail:"Legal sign-off received; all known watch reasons cleared.",source:"Proposed watch-release event (not in frozen workbook)"},
 {date:"2026-11-06",kind:"changed",id:"P2",title:"Environment provisioning",group:groups[0],owner:"A. Tanaka",detail:"Planned finish changed Nov 12 → Nov 14; impact still under review.",source:"UpdateHistory date change (fixture)"}
 ];
-var state={view:"b",stage:"exception",filter:"exceptions",workstream:"all",owner:"all",selected:"D1",editing:false,demoEntries:[],reportMode:"latest",reportDisplay:"present",reportSnapshots:{latest:null,updates:null},periodStart:"2026-11-03",periodEnd:"2026-11-09",dirty:false};
+var state={view:"b",stage:"exception",filter:"exceptions",workstream:"all",owner:"all",selected:"D1",editing:false,demoEntries:[],reportMode:"latest",reportDisplay:"present",reportSnapshots:{latest:null,updates:null},periodStart:"2026-11-03",periodEnd:"2026-11-09",dirty:false,periodTouched:false};
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function utc(iso){if(!/^\d{4}-\d{2}-\d{2}$/.test(iso||""))return null;var d=new Date(iso+"T00:00:00Z");return Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==iso?null:d}
 function dayIso(d){return d.toISOString().slice(0,10)}
+function shiftDate(iso,days){var d=utc(iso);return d?dayIso(new Date(d.getTime()+days*86400000)):iso}
 function displayDate(s){var d=utc(s);return d?d.toLocaleDateString("en-US",{month:"short",day:"2-digit",timeZone:"UTC"}):"Unknown"}
 function isWorking(s){var d=utc(s);return !!d&&calendar.weekdays.includes(d.getUTCDay())&&!calendar.holidays[s]&&!calendar.blackouts[s]}
 function workdayCount(from,to){var a=utc(from),b=utc(to);if(!a||!b)return null;if(a.getTime()===b.getTime())return 0;var forward=b>a,low=forward?a:b,high=forward?b:a,n=0;
@@ -250,15 +251,15 @@ document.querySelectorAll("[data-link-task]").forEach(function(el){el.addEventLi
 document.querySelectorAll("[data-filter]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.filter=el.dataset.filter;ensureSelection();render()})});
 var fw=document.getElementById("filterWorkstream");if(fw)fw.addEventListener("change",function(){if(!allowNavigate()){render();return}state.workstream=fw.value;ensureSelection();render()});
 var fo=document.getElementById("filterOwner");if(fo)fo.addEventListener("change",function(){if(!allowNavigate()){render();return}state.owner=fo.value;ensureSelection();render()});
-var md=document.getElementById("meetingDate");if(md)md.addEventListener("change",function(){if(!allowNavigate()){render();return}if(!utc(md.value)){alert("Choose a valid meeting date.");render();return}calendar.asOf=md.value;ensureSelection();render()});
+var md=document.getElementById("meetingDate");if(md)md.addEventListener("change",function(){if(!allowNavigate()){render();return}if(!utc(md.value)){alert("Choose a valid meeting date.");render();return}calendar.asOf=md.value;if(!state.periodTouched){state.periodStart=shiftDate(md.value,-6);state.periodEnd=md.value;state.dirty=true}ensureSelection();render()});
 var clear=document.getElementById("clearFilters");if(clear)clear.addEventListener("click",function(){state.filter="all";state.owner="all";state.workstream="all";ensureSelection();render()});
 var edit=document.getElementById("meetingEdit");if(edit)edit.addEventListener("click",function(){state.editing=true;render()});
 var cancel=document.getElementById("cancelEdit");if(cancel)cancel.addEventListener("click",function(){state.editing=false;render()});
 var save=document.getElementById("demoSave");if(save)save.addEventListener("click",demoSave);
 document.querySelectorAll("[data-report]").forEach(function(el){el.addEventListener("click",function(){state.reportMode=el.dataset.report;render()})});
 document.querySelectorAll("[data-display]").forEach(function(el){el.addEventListener("click",function(){state.reportDisplay=el.dataset.display;render()})});
-var ps=document.getElementById("periodStart");if(ps)ps.addEventListener("change",function(){state.periodStart=ps.value;state.dirty=true;render()});
-var pe=document.getElementById("periodEnd");if(pe)pe.addEventListener("change",function(){state.periodEnd=pe.value;state.dirty=true;render()});
+var ps=document.getElementById("periodStart");if(ps)ps.addEventListener("change",function(){state.periodStart=ps.value;state.periodTouched=true;state.dirty=true;render()});
+var pe=document.getElementById("periodEnd");if(pe)pe.addEventListener("change",function(){state.periodEnd=pe.value;state.periodTouched=true;state.dirty=true;render()});
 var ref=document.getElementById("refreshReport");if(ref)ref.addEventListener("click",function(){if(state.reportMode==="updates"&&(!utc(state.periodStart)||!utc(state.periodEnd)||state.periodStart>state.periodEnd)){alert("Please select a valid reporting period.");return}state.reportSnapshots[state.reportMode]=buildReport(state.reportMode);state.dirty=false;render()});
 var copy=document.getElementById("copyReport");if(copy)copy.addEventListener("click",function(){var snap=state.reportSnapshots[state.reportMode];if(!snap){alert("Generate a report first.");return}if(typeof navigator==="undefined"||!navigator.clipboard||!navigator.clipboard.writeText){alert("Clipboard unavailable here. Copy from plain-text preview manually.");return}navigator.clipboard.writeText(snap.text).then(function(){alert("Copied the exact displayed snapshot text.")},function(){alert("Clipboard copy failed. Use the plain-text preview.")})});
 }
@@ -266,7 +267,7 @@ function allowNavigate(){if(state.editing){alert("Demo edit open: Simulate save 
 function demoSave(){var t=current();if(!t)return;var owner=document.getElementById("owner").value.trim(),finish=document.getElementById("finish").value,status=document.getElementById("status").value,pct=Number(document.getElementById("pct").value),update=document.getElementById("updateText").value.trim();
 if(!utc(finish)||!Number.isFinite(pct)||pct<0||pct>100){alert("Invalid date/progress in simulated editor.");return}
 t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update)state.demoEntries.push({id:t.id,text:"Demo edit · "+update});state.editing=false;render()}
-document.querySelectorAll("[data-view]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.view=el.dataset.view;render()})});
+document.querySelectorAll("[data-view]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.view=el.dataset.view;if(state.view==="b")ensureSelection();render()})});
 document.querySelectorAll("[data-stage]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.stage=el.dataset.stage;render()})});
 ensureSelection();render();
 })();
