@@ -1,4 +1,4 @@
-# SPT-WBS UI Design Review & Change Control — draft 0.2
+# SPT-WBS UI Design Review & Change Control — draft 0.3
 
 **State:** PROPOSED, 2026-11-07. **Controlling issue:** [#25](https://github.com/Kenny619/spl-wbs/issues/25). This is the **future overhaul review process**, not a new approval gate for current feature iterations.
 
@@ -14,7 +14,7 @@
 - Do not require UI-director participation or sign-off for each routine change in active managed feature delivery. Record emerging user-facing requirements from existing backlog when convenient, without blocking work.
 
 ## Gates after explicit UI-overhaul kickoff
-**D0 / Understand:** inventory current live product + approved UI reference; define key personas/jobs, task scenarios, constraints, baseline measurements and known issues. Explicitly cover laptop editing, same-screen discussion, conference-room monitor viewing and video-call screen sharing. Output: reviewed problem statement and journey map.
+**D0 / Understand:** inventory current live product + approved UI reference; define key personas/jobs, task scenarios, constraints, baseline measurements and known issues. Explicitly cover laptop editing, same-screen discussion, conference-room monitor viewing and video-call screen sharing. Capture distinct **weekly task-by-task status updates (live date/status/owner editing and Update entries)** and **management/leadership presentation (progress, milestones, risk)**; see [meeting-workflow study](04_MEETING_WORKFLOWS_AND_VIEWPORTS.md). Output: reviewed problem statement and journey map.
 
 **D1 / Diverge:** create at least two materially different annotated layouts, initially low fidelity. Explain hierarchy, navigation, task/context preservation and disadvantages. Output: wireframes with scenario paths and critique; no premature visual freeze.
 
