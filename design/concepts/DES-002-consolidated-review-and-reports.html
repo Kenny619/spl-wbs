@@ -40,9 +40,9 @@ button:disabled{cursor:default;opacity:.5}.tiny{font-size:11px;color:var(--muted
  <div class="context"><div><div class="kicker" id="conceptKicker">Concept A / dual-pane working review</div><h1 id="mainTitle">Northstar Service Rollout</h1><p id="mainDescription">Exception-first weekly review · 3 workstreams · sample project for UX discussion</p></div><div class="phase-controls" id="phases" aria-label="Review stage"><button data-stage="exception" class="active">01 Exceptions</button><button data-stage="workstream">02 Workstreams</button></div></div>
  <div id="app" aria-live="polite"></div>
  <div class="comparison">
- <div class="compbox"><b>A · Schedule canvas</b><p>Highest WBS/Gantt visibility; familiar grid mental model, but selected-task editing and video-call legibility may compete for space.</p></div>
- <div class="compbox"><b>B · Meeting guide</b><p>Exception agenda and selected task lead the experience. Faster narrated review and larger focus, but less simultaneous schedule context.</p></div>
- <div class="compbox"><b>Leadership briefing</b><p>Designed around milestone/risk communication, not live editing. Must offer a predictable drill-down to the underlying schedule.</p></div>
+ <div class="compbox"><b>A · Schedule canvas</b><p>Full WBS/Gantt context for editing. Bars indicate planned time spans; task finish and working days are explicit.</p></div>
+ <div class="compbox"><b>B · Meeting guide</b><p>One selected-task panel: discussion by default, inline editing only when Edit task is chosen. Exceptions and workstreams remain the two navigation phases.</p></div>
+ <div class="compbox"><b>Reports · Present</b><p>Presentation and plain-text preview reuse a fixed synthetic report snapshot. Latest Status and Update Report are not separate presentation engines.</p></div>
  </div>
 </main>
 <script>
@@ -151,15 +151,30 @@ return '<div class="reportbar"><div><strong>Output Reports · '+(state.reportMod
 '<div class="lead-foot">DES–002 · Presentation and preview derive from one fixed synthetic report snapshot. EMV-REPORT-1.0 specifies plain-text output; a formatted presentation view remains a future design proposal.</div></div>'
 }
 
-function render(){document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.dataset.view===state.view)});document.querySelectorAll("[data-stage]").forEach(function(el){el.classList.toggle("active",el.dataset.stage===state.stage)});
-var lead=state.view==="l";document.getElementById("phases").classList.toggle("hide",lead);document.getElementById("conceptKicker").textContent=lead?"Presentation experience / communication-first":state.view==="a"?"Concept A / schedule-centered working review":"Concept B / guided working review";document.getElementById("mainDescription").textContent=lead?"Audience-readable summary: progress, milestones and unresolved risks · synthetic data":"Weekly status call: exceptions first, then workstreams, followed by integrity checks · synthetic data";
-document.getElementById("app").innerHTML=lead?lScreen():state.view==="a"?aScreen():bScreen();
-document.querySelectorAll("[data-task]").forEach(function(el){el.addEventListener("click",function(){state.selected=el.dataset.task;render()});el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();state.selected=el.dataset.task;render()}})});
+
+function render(){
+document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.dataset.view===state.view)});
+document.querySelectorAll("[data-stage]").forEach(function(el){el.classList.toggle("active",el.dataset.stage===state.stage)});
+var reports=state.view==="l";document.getElementById("phases").classList.toggle("hide",reports);
+document.getElementById("conceptKicker").textContent=reports?"Reports workspace / optional presentation":state.view==="a"?"Concept A / schedule-centered workspace":"Concept B / unified meeting discussion";
+document.getElementById("mainDescription").textContent=reports?"Frozen Output Reports: plain-text preview/copy; formatted presentation is a proposed companion view.":"Weekly status call: exceptions first, then workstreams · synthetic data";
+document.getElementById("app").innerHTML=reports?lScreen():state.view==="a"?aScreen():bScreen();
+document.querySelectorAll("[data-task]").forEach(function(el){function select(){if(!allowNavigate())return;state.selected=el.dataset.task;render()}el.addEventListener("click",select);el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();select()}})});
+var edit=document.getElementById("meetingEdit");if(edit)edit.addEventListener("click",function(){state.editing=true;render()});
+var cancel=document.getElementById("meetingCancel");if(cancel)cancel.addEventListener("click",function(){state.editing=false;render()});
 var save=document.getElementById("demoSave");if(save)save.addEventListener("click",demoSave);
+document.querySelectorAll("[data-report]").forEach(function(el){el.addEventListener("click",function(){state.reportMode=el.dataset.report;render()})});
+document.querySelectorAll("[data-display]").forEach(function(el){el.addEventListener("click",function(){state.reportDisplay=el.dataset.display;render()})});
+var refresh=document.getElementById("refreshReport");if(refresh)refresh.addEventListener("click",function(){state.reportSnapshots[state.reportMode]=buildReport(state.reportMode);render()});
 }
-function demoSave(){var t=curr();var owner=document.getElementById("owner").value.trim();var finish=document.getElementById("finish").value.trim();var status=document.getElementById("status").value;var pct=Number(document.getElementById("pct").value);var update=document.getElementById("updateText").value.trim();if(!finish||!Number.isFinite(pct)||pct<0||pct>100){alert("Demo validation: enter a finish label and progress between 0 and 100.");return;}t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update){state.demoEntries.push({id:t.id,text:"Demo entry · "+update})}render();var btn=document.getElementById("demoSave");if(btn){btn.textContent="Demo state updated";btn.style.background="#287f5d"}}
-document.querySelectorAll("[data-view]").forEach(function(el){el.addEventListener("click",function(){state.view=el.dataset.view;render()})});
-document.querySelectorAll("[data-stage]").forEach(function(el){el.addEventListener("click",function(){state.stage=el.dataset.stage;state.selected=rows()[0].id;render()})});
+function allowNavigate(){if(state.editing){alert("Demo editor is open. Simulate save or Cancel edit before switching tasks/views. The actual app requires Save / Discard / Cancel protections.");return false}return true}
+function demoSave(){var t=curr();var owner=document.getElementById("owner").value.trim();var finish=document.getElementById("finish").value.trim();var status=document.getElementById("status").value;var pct=Number(document.getElementById("pct").value);var update=document.getElementById("updateText").value.trim();
+if(!dateValue(finish)||!Number.isFinite(pct)||pct<0||pct>100){alert("Demo validation: enter a Nov DD date and progress between 0 and 100.");return}
+t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update){state.demoEntries.push({id:t.id,text:"Demo entry · "+update})}state.editing=false;render()
+}
+document.querySelectorAll("[data-view]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.view=el.dataset.view;render()})});
+document.querySelectorAll("[data-stage]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.stage=el.dataset.stage;state.selected=rows()[0].id;render()})});
+
 render();
 })();
 </script>
