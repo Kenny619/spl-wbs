@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** PROPOSED v0.8 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** PROPOSED v0.9 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -18,6 +18,8 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [03 — Design review and change-control process](03_REVIEW_PROCESS.md): future concept, approval and validation gates **plus post-release feedback, change request and UI issue management**.
 - [04 — Meeting workflows and display targets](04_MEETING_WORKFLOWS_AND_VIEWPORTS.md): evidence of weekly live editing versus leadership briefing, provisional resolution/type/density budgets, and scenarios for holistic testing.
 - [05 — Persistent risk watch model](05_RISK_WATCH_MODEL.md): hybrid automatic timeline and manual contextual signals, cross-meeting persistence, Green/health ambiguity and separation from meeting priority.
+- [06 — DES-001 holistic concept comparison](06_CONCEPT_COMPARISON.md): two complete weekly-review alternatives and leadership briefing, annotated decision matrix and owner review scenarios.
+- [Interactive HTML design prototype DES-001](../../design/concepts/DES-001-holistic-meeting-concepts.html): compare Schedule Canvas, Meeting Guide and Leadership Briefing (illustrative synthetic data and simulated edits; no workbook persistence).
 
 ## Boundaries and change control
 - **No design implementation, pixel-baseline replacement, issue acceptance, merge, release or approval is implied by these drafts.**
@@ -68,6 +70,11 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - When approval is pending, retain a meaningful impact/Under Watch state; cleared historical variance alone should not keep a task permanently watched.
 - Minimize administration with contextual inline impact acknowledgement rather than a separate approval workflow/modal for every task edit.
 - Details such as materiality, external evidence, audit fields, authority and data model **are not frozen/authorized**. See [Persistent Risk Watch Model v0.4](05_RISK_WATCH_MODEL.md).
+
+## D1 concept exploration started in v0.9 (2026-11-07)
+- Created [DES-001](../../design/concepts/DES-001-holistic-meeting-concepts.html), a standalone, editable HTML design **simulator** comparing **Schedule Canvas A**, **Meeting Guide B**, and **Leadership Briefing**. Synthetic project data only; simulated Save does not write Excel.
+- Recorded an [annotated, scenario-led comparison](06_CONCEPT_COMPARISON.md), including trade-offs and unresolved integration concerns (retaining WBS context versus video-call comprehensibility).
+- This is **not implementation or rendered visual acceptance**. Visual QA at relevant laptop and presentation viewports, accessibility evaluation and user concept selection are pending. No numeric UI tokens or new feature contract frozen.
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
