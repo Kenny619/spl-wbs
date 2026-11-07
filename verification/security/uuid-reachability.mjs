@@ -4,7 +4,7 @@ import path from "node:path";
 const root = path.resolve(process.env.UUID_SCAN_ROOT ?? "node_modules/exceljs/lib");
 const reportPath = path.resolve(process.env.UUID_REPORT_PATH ?? "work/ci/uuid-reachability.json");
 if (!fs.existsSync(root)) throw new Error("ExcelJS library directory not installed");
-const importPattern = /require\s*\(\s*["']uuid["']\s*\)|\bfrom\s*["']uuid["']/g;
+const importPattern = /require\s*\(\s*["']uuid["']\s*\)|\bfrom\s*["']uuid["']|\bimport\s*\(\s*["']uuid["']\s*\)/g;
 const apiPattern = /\b(?:uuid|UUID)\s*(?:\.\s*v[356]\b|\[\s*["']v[356]["']\s*\])|\b(?:uuidv[356]|uuidV[356])\s*\(/g;
 const results = [];
 const violations = [];
