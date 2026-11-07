@@ -46,7 +46,48 @@ function duplicateCentralRecord(input: Uint8Array, target: string): Uint8Array {
   return result;
 }
 
+function mismatchLocalWorksheetName(input: Uint8Array): Uint8Array {
+  const out = Uint8Array.from(input);
+  const view = new DataView(out.buffer);
+  const u16 = (offset: number) => view.getUint16(offset, true);
+  const u32 = (offset: number) => view.getUint32(offset, true);
+  let eocd = -1;
+  for (let p = out.length - 22; p >= Math.max(0, out.length - 65557); p--) {
+    if (u32(p) === 0x06054b50 && p + 22 + u16(p + 20) === out.length) {
+      eocd = p; break;
+    }
+  }
+  if (eocd < 0) throw new Error("EOCD not found");
+  let cursor = u32(eocd + 16);
+  const end = cursor + u32(eocd + 12);
+  while (cursor < end) {
+    if (u32(cursor) !== 0x02014b50) throw new Error("Invalid central record");
+    const nameLength = u16(cursor + 28);
+    const name = new TextDecoder().decode(out.subarray(cursor + 46, cursor + 46 + nameLength));
+    if (name === "xl/worksheets/sheet1.xml") {
+      const localOffset = u32(cursor + 42);
+      const localNameStart = localOffset + 30;
+      const localName = new TextDecoder().decode(out.subarray(localNameStart, localNameStart + u16(localOffset + 26)));
+      if (localName !== name) throw new Error("Unexpected local name");
+      const index = localNameStart + localName.lastIndexOf("sheet1.xml") + 5;
+      out[index] = "2".charCodeAt(0);
+      return out;
+    }
+    cursor += 46 + nameLength + u16(cursor + 30) + u16(cursor + 32);
+  }
+  throw new Error("Worksheet entry not found");
+}
+
 describe("Stage A raw ZIP central-directory duplicate characterization", () => {
+  it("rejects inconsistent local and central worksheet names", async () => {
+    const workbook = new ExcelJS.Workbook();
+    workbook.addWorksheet("ProjectWBS").addRow(["ID", "Title"]);
+    const source = mismatchLocalWorksheetName(new Uint8Array(await workbook.xlsx.writeBuffer()));
+    const original = Uint8Array.from(source);
+    await expect(preflightManagedWorkbook(source)).rejects.toMatchObject({ code: "UNSUPPORTED_PACKAGE" });
+    expect(source).toEqual(original);
+  });
+
   it("rejects two raw records for the same worksheet even when JSZip materializes one key", async () => {
     const workbook = new ExcelJS.Workbook();
     workbook.addWorksheet("ProjectWBS").addRow(["ID", "Title"]);
