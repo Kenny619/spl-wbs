@@ -1,4 +1,4 @@
-# Persistent Risk Watch — Working Review Concept (proposed 0.3)
+# Persistent Risk Watch — Working Review Concept (proposed 0.4)
 
 **Date:** 2026-11-07 JST · **State:** PROPOSED / product-design discovery, NOT an approved functional specification · **Controlling:** [UI overhaul Issue #25](https://github.com/Kenny619/spl-wbs/issues/25), [draft PR #29](https://github.com/Kenny619/spl-wbs/pull/29).
 
@@ -146,8 +146,33 @@ The task's active health is derived from **current, sufficiently reliable risk s
 7. A task without an agreed reference or reliable evaluation is not falsely reported Green or shown as having an approved benchmark.
 8. A date edit that shifts a dependent milestone is not falsely marked harmless; actual impact inference must be supported by an approved and verified dependency/forecast model.
 
-### Open decision requiring Product Owner input
-**What constitutes acceptance of a revised commitment?** Possible models: (A) the project operator can confirm an accepted change during a weekly working review, with a concise reason; (B) an explicit external approval must be recorded as a reference before the watch clears; (C) hybrid, based on impact severity. This is separate from routine Save and must not imply unauthorized role approval.
+## Design direction selected by Product Owner — proportional commitment acceptance (2026-11-07)
+**Disposition: ACCEPTED AS A DESIGN DIRECTION FOR EXPLORATION, NOT A FROZEN PRODUCT REQUIREMENT.** The Product Owner chose the proposed **hybrid/proportional model**.
+
+### Proposed acceptance paths
+1. **Routine replanning, low material impact:** the project operator can record the revised commitment as accepted when appropriate, preferably in the existing editing context, with concise reason/provenance rather than an extra approval ceremony. Routine task date editing alone must not silently be described as an accepted stakeholder commitment.
+2. **Material commitment impact:** changes affecting agreed major milestones, consequential workstream dependencies, delivery obligations, a material change to the agreed project outcome, or another explicitly defined material criterion require evidence of an appropriate stakeholder/decision-maker's acceptance. The operator may **record** that decision and its source, but the software must not imply that recording it grants approval authority.
+3. **Pending external decision:** task date editing can still follow the currently approved explicit-Save workflow; the affected commitment remains `Pending acceptance / Under Watch` until the relevant decision and active consequences are resolved. Preserve old commitment and current-plan distinction.
+4. **Already resolved/recovered:** once an adverse variance is genuinely mitigated and the revised commitment appropriately accepted, the historical slippage remains auditable but stops being an active reason for Under Watch. Other automatic/manual risk reasons remain independently active.
+5. **No fixed day-count shortcut:** materiality should be defined by dependency, milestone, obligation and stakeholder consequence, not simply the number of calendar days shifted.
+
+### Administrative-effort and UI controls to explore
+- Avoid requiring multiple approvals or a separate workflow for every task's harmless date adjustment.
+- The minimum viable concept is **one clear contextual impact/acceptance decision** only when an actual commitment is being changed or materially affected. Prefer inline disclosure over another modal.
+- Capture who recorded the decision, when, the before/after reference commitment and a succinct decision explanation/source reference where suitable. These are potential new audit fields; do not treat `Updates` alone as authoritative approval evidence.
+- Never create a fictional stakeholder approval or automatically treat the project operator's acknowledgement as proof that the stakeholder agreed.
+- Present `Planned End` separately from `Accepted Commitment`. When the latter is pending or unknown, explain the uncertainty without declaring Green.
+- Retain the option to revisit, correct or supersede a recorded commitment decision with traceability; do not silently erase historical decisions.
+
+### Implementation boundary and unresolved specification details
+The following **remain open**, requiring later impact review and express Product Owner specification approval: what counts as material; what exact evidence qualifies as external acceptance; who is permitted to record a commitment decision; whether confirmation needs a reason and under which conditions; versioned storage in Excel / other approved architecture; interactions with existing `UpdateHistory`, baseline/forecast computations, cross-task dependency propagation, and acceptance test scenarios. Do not implement from this document alone.
+
+**Working interpretation for design mocks:** `Save revised date` is not the same as `Accept revised commitment`; the UI must make this distinction legible without slowing normal weekly review work.
+
+## Remaining design questions
+- Define the **materiality matrix and practical evidence threshold** after reviewing actual example projects and stakeholder conventions.
+- Validate the inline impact-review UI at laptop/video-share sizes using realistic multi-workstream change scenarios.
+- Determine suitable workbook/storage and approval traceability contracts under existing managed-variant governance.
 
 ## Change-control boundary
 Exploration only. Existing v18 baseline, Excel workbook schema, TaskStatus enum, frozen managed requirements, and authorized delivery activities remain unchanged. No implementation, merge, release or additional mandatory UI review triggered by this concept.
