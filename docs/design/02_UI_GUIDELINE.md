@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 0.5
+# SPT-WBS UI Guideline — draft 0.6
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -7,7 +7,7 @@
 - Keep context through filter, edit and detail transitions; never obscure the selected task and its place in the hierarchy without a compelling reason.
 - Cluster commands by user job and frequency: navigation, finding/filtering, scheduling/inspection, editing, and system/project settings. Avoid the all-controls-at-once header pattern.
 - Promote alerts that result in action. “Needs attention” should expose affected tasks with a one-action filter or direct navigation, not merely a static number (Issue #17).
-- **Weekly meeting structure:** prepare and prioritize exceptions *before* the call; discuss across all workstreams at the beginning, then follow workstream-grouped WBS hierarchy for routine progress and data integrity. Present these as complementary navigation paths into the **same underlying tasks**, not separate task repositories. Do not silently equate calculated 'Needs Attention' with curated meeting flags.
+- **Weekly meeting structure:** prepare and prioritize exceptions *before* the call; discuss across all workstreams at the beginning, then follow workstream-grouped WBS hierarchy for routine progress **including relevant field/data-quality checks inline**. **No separate Integrity view** unless a materially different workflow is evidenced. Present complementary Exception/Workstream navigation paths into the **same underlying tasks**, not separate task repositories. Do not silently equate calculated 'Needs Attention' with curated meeting flags.
 - Discussion/review status is distinct from actual task status. If concepts such as 'discussed this meeting' or saved agenda are proposed, they must not silently write new workbook fields or alter TaskStatus without a separately approved functional contract.
 - **Persistent risk monitoring:** show automatically detected schedule risks and manually flagged contextual risks as independent sources. Under Watch must survive meetings and discussion; it may clear only once all active sources resolve and delivery health is Green (exact health definition pending approval). A task with green-looking dates is not necessarily healthy when a contextual risk remains; the UI must never imply otherwise. See [Risk Watch Model](05_RISK_WATCH_MODEL.md).
 - **Replan and commitment distinction:** routine task Save is not proof that a revised external commitment was accepted. Compare agreed vs planned dates contextually; offer proportional acceptance flows (operator records routine acceptance, material changes need evidence of an authorized stakeholder decision) with no extra modal for ordinary editing. Pending commitment acceptance should remain visible without pretending Save failed. All materiality and evidence rules remain proposed until a separate functional contract is approved.
@@ -28,8 +28,14 @@
 - **Same-screen discussion:** make a referenced task and the corresponding bar/row easy to follow as attention shifts between participants; controls should not compete with the schedule.
 - **Conference-room monitor:** validate at representative audience viewing distances, including whether dates, task names, milestone labels, alerts and focused items can be read without zooming the whole desktop.
 - **Video-call screen share:** validate at constrained remote-window sizes, common video-call downscaling and compressed imagery. Don't depend on fine hairlines, subtle hue differences, tiny labels, hovering, or precise cursor position to communicate meaning; support an obvious discussion/focus state.
-- **Mode hypothesis, not adopted feature:** compare (A) one responsive layout with adjustable density, (B) a lightweight dedicated presentation/review view, and (C) a hybrid focus capability. The strongest initial hypothesis is a **Working Review** view for live updates and a **Leadership Briefing** view for larger milestone/risk communication. Choose only after holistic mock evaluations. Full-screen mode alone is not evidence of better audience comprehension.
+- **Current concept comparison:** (A) schedule-centered workbench, (B) two-column Meeting Guide (agenda + one selected-task surface, **Edit task** reveals fields inline), and (C) a **Present** reading treatment inside the existing Output Reports concept. Leadership presentation should **not** become another independent report engine. EMV-REPORT-1.0's **plain-text preview/copy** remains frozen; any presentation treatment is a proposed future UI enhancement to be scoped separately. Choose only after holistic mock evaluations. Full-screen mode alone is not evidence of better comprehension.
 - For shared-screen scenarios, evaluate the visibility and control of editing affordances; do not assume the presenter needs to change tasks while the audience watches. Any display adaptation must be reversible, discoverable and must not silently modify workbook content.
+
+### Date and working-day semantics (DES-002 exploration)
+- For meetings and reports, emphasize **planned finish date and working days remaining**; this is calendar time to deadline, **not outstanding effort or task completion**.
+- Reuse one defined project working calendar for countdown, Gantt holidays, blackout dates and schedule-risk signals once its contract is approved. Do not confidently show an unqualified number if calendar/holiday/blackout context is unknown.
+- Use Gantt bars for actual **scheduled span**, not fabricated progress fill. Render progress completion only from an eligible, trustworthy source and label its meaning.
+- The fixed DES-002 sample calendar excludes Mon–Fri weekends and Japan's 2026 Nov 23 holiday, **but not project blackout dates**. These demo numbers are not approved implementation rules; project blackout persistence is a future issue (#20).
 
 ## 4. Typography, color and meaning
 - Text contrast: WCAG 2.2 AA **4.5:1** for normal text, **3:1** for large text; meaningful UI graphic contrast **3:1** where applicable.
