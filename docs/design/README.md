@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** PROPOSED v0.9 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** PROPOSED v1.0 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -19,7 +19,9 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [04 — Meeting workflows and display targets](04_MEETING_WORKFLOWS_AND_VIEWPORTS.md): evidence of weekly live editing versus leadership briefing, provisional resolution/type/density budgets, and scenarios for holistic testing.
 - [05 — Persistent risk watch model](05_RISK_WATCH_MODEL.md): hybrid automatic timeline and manual contextual signals, cross-meeting persistence, Green/health ambiguity and separation from meeting priority.
 - [06 — DES-001 holistic concept comparison](06_CONCEPT_COMPARISON.md): two complete weekly-review alternatives and leadership briefing, annotated decision matrix and owner review scenarios.
-- [Interactive HTML design prototype DES-001](../../design/concepts/DES-001-holistic-meeting-concepts.html): compare Schedule Canvas, Meeting Guide and Leadership Briefing (illustrative synthetic data and simulated edits; no workbook persistence).
+- [DES-001 historical prototype](../../design/concepts/DES-001-holistic-meeting-concepts.html): original concept A/B/Leadership comparison (superseded for current owner critique, retained for provenance).
+- [07 — DES-002 owner feedback, design decisions and validation](07_DES002_OWNER_FEEDBACK.md): report/presentation convergence, no separate integrity view, single-panel meeting edit, deadline/workdays visibility.
+- [DES-002 current interactive design prototype](../../design/concepts/DES-002-consolidated-review-and-reports.html): consolidated two-column meeting discussion and an illustrative presentation view within Output Reports. Browser-memory edits and synthetic report snapshots only.
 
 ## Boundaries and change control
 - **No design implementation, pixel-baseline replacement, issue acceptance, merge, release or approval is implied by these drafts.**
@@ -75,6 +77,13 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - Created [DES-001](../../design/concepts/DES-001-holistic-meeting-concepts.html), a standalone, editable HTML design **simulator** comparing **Schedule Canvas A**, **Meeting Guide B**, and **Leadership Briefing**. Synthetic project data only; simulated Save does not write Excel.
 - Recorded an [annotated, scenario-led comparison](06_CONCEPT_COMPARISON.md), including trade-offs and unresolved integration concerns (retaining WBS context versus video-call comprehensibility).
 - This is **not implementation or rendered visual acceptance**. Visual QA at relevant laptop and presentation viewports, accessibility evaluation and user concept selection are pending. No numeric UI tokens or new feature contract frozen.
+
+## Owner prototype feedback addressed in proposed v1.0 (2026-11-08)
+- **Report/presentation convergence:** Leadership presentation now explored as **Present**, an optional reading experience of Output Reports' Latest Status / Update Report content; frozen EMV-REPORT-1.0 **still specifies plain-text output**, exact copy/preview parity and committed source data. Rich presentation is not authorized by the frozen contract.
+- **No distinct Integrity stage** in weekly review; incomplete fields, if relevant, should remain discoverable within ordinary workstream review.
+- **Meeting layout simplified:** agenda + one prominent selected-task panel. An **Edit task** action reveals fields and update composer inline; remove duplicate Active Discussion versus Task Detail panels.
+- **Deadline clarity over decorative progress:** emphasize finish date and *remaining working days* in the selected-task view, schedule rows and report presentation. Gantt bars convey schedule spans, never fabricated percent complete. The demo fixes its date to Nov 08 2026 and excludes sample JP holiday Nov 23, **not** project blackouts or custom calendars.
+- Current review artifact: [DES-002](../../design/concepts/DES-002-consolidated-review-and-reports.html). Source-level behavior smoke passes; visual, device, accessibility and owner acceptance still pending. See [full decision record](07_DES002_OWNER_FEEDBACK.md).
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
