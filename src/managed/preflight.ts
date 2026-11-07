@@ -146,6 +146,8 @@ export async function preflightManagedWorkbook(source: ArrayBuffer | Uint8Array)
     throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "No ordinary worksheet was found.");
   }
 
+  const workbookWorksheetRels = new Map<string, string>();
+  const workbookWorksheetTargets = new Set<string>();
   for (const [name, entry] of Object.entries(zip.files)) {
     if (entry.dir) continue;
     if (!ALLOWED_FILES.some((pattern) => pattern.test(name))) {
@@ -216,6 +218,13 @@ export async function preflightManagedWorkbook(source: ArrayBuffer | Uint8Array)
             (rootRelationship !== ["officeDocument", "core-properties", "extended-properties"].includes(role))) {
           throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Unsupported relationship target in " + name + ".");
         }
+        if (name === "xl/_rels/workbook.xml.rels" && role === "worksheet") {
+          if (workbookWorksheetTargets.has(targetName)) {
+            throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Multiple worksheet relationships point to " + targetName + ".");
+          }
+          workbookWorksheetRels.set(fields.Id, targetName);
+          workbookWorksheetTargets.add(targetName);
+        }
         ids.add(fields.Id);
       }
     }
@@ -231,6 +240,29 @@ export async function preflightManagedWorkbook(source: ArrayBuffer | Uint8Array)
     }
   }
   const workbookXml = await zip.file("xl/workbook.xml")!.async("string");
+  // A physically valid sheet is unsafe if workbook.xml cannot reach it, or
+  // if a sheet references an absent/mismatched relationship. ExcelJS may
+  // otherwise omit sheets silently during write-back.
+  const sheetTags = workbookXml.match(/<sheet\b[^<>]*\/>/g) ?? [];
+  if (sheetTags.length !== worksheetNames.length ||
+      workbookWorksheetRels.size !== sheetTags.length) {
+    throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Workbook worksheet count does not agree with relationships and package parts.");
+  }
+  const referencedIds = new Set<string>();
+  const referencedTargets = new Set<string>();
+  for (const tag of sheetTags) {
+    const ref = /\br:id\s*=\s*(["'])([^"'<>]+)\1/.exec(tag)?.[2];
+    const target = ref ? workbookWorksheetRels.get(ref) : null;
+    if (!ref || !target || referencedIds.has(ref) || referencedTargets.has(target)) {
+      throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Workbook contains an unresolvable or duplicate worksheet reference.");
+    }
+    referencedIds.add(ref);
+    referencedTargets.add(target);
+  }
+  if (worksheetNames.some((name) => !referencedTargets.has(name))) {
+    throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "A physical worksheet has no workbook relationship.");
+  }
+
   if (/<(?:[\w-]+:)?(?:externalReferences|definedNames|pivotCaches|extLst)\b/i.test(workbookXml)) {
     throw new ManagedWorkbookError("UNSUPPORTED_WORKBOOK_FEATURE", "This workbook contains features outside the v1 safety allowlist.");
   }
