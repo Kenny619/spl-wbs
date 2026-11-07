@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** PROPOSED v0.4 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** PROPOSED v0.5 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -17,6 +17,7 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [02 — UI guideline](02_UI_GUIDELINE.md): initial rules, tokens and testable expectations.
 - [03 — Design review and change-control process](03_REVIEW_PROCESS.md): future concept, approval and validation gates **plus post-release feedback, change request and UI issue management**.
 - [04 — Meeting workflows and display targets](04_MEETING_WORKFLOWS_AND_VIEWPORTS.md): evidence of weekly live editing versus leadership briefing, provisional resolution/type/density budgets, and scenarios for holistic testing.
+- [05 — Persistent risk watch model](05_RISK_WATCH_MODEL.md): hybrid automatic timeline and manual contextual signals, cross-meeting persistence, Green/health ambiguity and separation from meeting priority.
 
 ## Boundaries and change control
 - **No design implementation, pixel-baseline replacement, issue acceptance, merge, release or approval is implied by these drafts.**
@@ -42,6 +43,11 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - The same task appears in both exception and workstream navigation contexts; any meeting-only reviewed marker must not mutate real task status.
 - Flag-source semantics are still a design question; existing risk/overdue indicators are candidate signals, not automatic equivalents of pre-meeting curated flags.
 - Added to the [meeting workflow study](04_MEETING_WORKFLOWS_AND_VIEWPORTS.md) and [UI guideline](02_UI_GUIDELINE.md) without approving meeting-session features or save-contract changes.
+
+## Additional owner risk-monitoring feedback incorporated in v0.5 (2026-11-07)
+- Flagging is hybrid: timeline-impacting risks automatically detected; contextual risks from stakeholder communication manually flagged by the project operator.
+- Once Under Watch, a task remains flagged across meetings until it returns to Green. Multiple active sources must not cancel one another silently.
+- Proposed design separates TaskStatus, delivery health, persistent watch and meeting priority/review markers. Current TaskStatus contract does not contain a Green state; formal Green definition and persistence architecture remain open product questions. See [risk watch model](05_RISK_WATCH_MODEL.md). No implementation approval implied.
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
