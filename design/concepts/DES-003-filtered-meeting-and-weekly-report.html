@@ -96,7 +96,7 @@ button:disabled{cursor:default;opacity:.5}.tiny{font-size:11px;color:var(--muted
 <body>
 <header class="top">
  <div class="brand"><div class="mark">W</div><div><div class="brandtitle">SPT–WBS <span class="pill blue">DES–003</span></div><div class="brandmeta">Holistic concept exploration · Synthetic data</div></div></div>
- <nav class="concept-controls" aria-label="Choose design concept"><button id="navA" data-view="a">A · Schedule canvas</button><button id="navB" class="active" data-view="b">B · Meeting guide</button><button id="navL" data-view="l">Reports · Present</button></nav>
+ <nav class="concept-controls" aria-label="Choose design concept"><button id="navA" data-view="a">A · Schedule canvas</button><button id="navB" class="active" data-view="b">B · Task review</button><button id="navL" data-view="l">Reports · Present</button></nav>
  <div class="topright"><b>DESIGN PROPOSAL · NOT PRODUCT</b>Simulated edits only · No workbook access</div>
 </header>
 <main class="canvas">
@@ -111,136 +111,166 @@ button:disabled{cursor:default;opacity:.5}.tiny{font-size:11px;color:var(--muted
 <script>
 (function(){
 "use strict";
+var project="Northstar Service Rollout",groups=["Platform Readiness","Data Migration","Launch Enablement"];
+var calendar={asOf:"2026-11-09",holidays:{"2026-11-03":"Culture Day","2026-11-23":"Labour Thanksgiving Day"},blackouts:{"2026-11-12":"Environment freeze","2026-11-20":"Deployment blackout"},weekdays:[1,2,3,4,5]};
 var tasks=[
-{id:"P1",group:"Platform Readiness",wbs:"1.1",title:"Confirm API vendor access",owner:"M. Sato",status:"Blocked",end:"Nov 12",pct:40,start:20,len:30,auto:false,manual:true,critical:true,milestone:false,notes:"Vendor requested an updated security addendum. Legal review is pending.",update:"Nov 06 · Procurement follow-up sent; waiting on vendor response.",risk:"Vendor contract sign-off is outstanding and threatens the integration gate."},
-{id:"P2",group:"Platform Readiness",wbs:"1.2",title:"Environment provisioning",owner:"A. Tanaka",status:"At Risk",end:"Nov 14",pct:72,start:9,len:40,auto:true,manual:false,critical:false,milestone:false,notes:"Test environment is expected to slip beyond the agreed handover date.",update:"Nov 05 · Infrastructure team escalated capacity shortage.",risk:"Planned handover moved beyond the agreed commitment; impact not accepted."},
-{id:"P3",group:"Platform Readiness",wbs:"1.3",title:"Security readiness gate",owner:"R. Mori",status:"In Progress",end:"Nov 18",pct:55,start:34,len:27,auto:false,manual:false,critical:false,milestone:true,notes:"Checkpoint for security sign-off.",update:"Nov 04 · Draft evidence pack shared.",risk:""},
-{id:"D1",group:"Data Migration",wbs:"2.1",title:"Data reconciliation",owner:"K. Yamada",status:"At Risk",end:"Nov 17",pct:58,start:25,len:32,auto:true,manual:true,critical:true,milestone:false,notes:"Source file mismatch and late upstream data are both unresolved.",update:"Nov 06 · Three unmatched account groups remain; migration team investigating.",risk:"Schedule exposure and unresolved source-system ownership question."},
-{id:"D2",group:"Data Migration",wbs:"2.2",title:"Dry-run migration",owner:"S. Ito",status:"In Progress",end:"Nov 20",pct:30,start:47,len:32,auto:false,manual:false,critical:false,milestone:false,notes:"Dry run starts after reconciliation.",update:"Nov 03 · Preparation checklist reviewed.",risk:""},
-{id:"D3",group:"Data Migration",wbs:"2.3",title:"Migration acceptance",owner:"K. Yamada",status:"Not Started",end:"Nov 25",pct:0,start:76,len:12,auto:false,manual:false,critical:false,milestone:true,notes:"Decision gate for launch readiness.",update:"Oct 30 · Draft acceptance criteria circulated.",risk:""},
-{id:"L1",group:"Launch Enablement",wbs:"3.1",title:"Support-team training",owner:"N. Fuji",status:"In Progress",end:"Nov 19",pct:66,start:42,len:27,auto:false,manual:false,critical:false,milestone:false,notes:"Trainer materials signed off.",update:"Nov 05 · Session one completed.",risk:""},
-{id:"L2",group:"Launch Enablement",wbs:"3.2",title:"Readiness communications",owner:"T. Oda",status:"In Progress",end:"Nov 23",pct:48,start:53,len:25,auto:false,manual:false,critical:false,milestone:false,notes:"Internal communication release plan.",update:"Nov 05 · Messaging sent for legal review.",risk:""},
-{id:"L3",group:"Launch Enablement",wbs:"3.3",title:"Go / no-go decision",owner:"",status:"Not Started",end:"Nov 27",pct:0,start:91,len:8,auto:false,manual:false,critical:false,milestone:true,notes:"Owner still to be assigned.",update:"Nov 02 · Meeting calendar placeholder created.",risk:""},
-{id:"L4",group:"Launch Enablement",wbs:"3.4",title:"Operational handover",owner:"N. Fuji",status:"Not Started",end:"Nov 30",pct:0,start:93,len:6,auto:false,manual:false,critical:false,milestone:false,notes:"Handover checklist under preparation.",update:"Nov 03 · Support queue mapping drafted.",risk:""}
+{id:"P1",group:groups[0],wbs:"1.1",title:"Confirm API vendor access",owner:"M. Sato",status:"Blocked",end:"2026-11-12",pct:40,start:10,len:23,auto:false,manual:true,critical:true,milestone:false,pred:[],update:"Nov 06 · Procurement follow-up sent. Vendor response pending.",risk:"Vendor contract sign-off is outstanding and threatens integration."},
+{id:"P2",group:groups[0],wbs:"1.2",title:"Environment provisioning",owner:"A. Tanaka",status:"At Risk",end:"2026-11-14",pct:72,start:12,len:31,auto:true,manual:false,critical:false,milestone:false,pred:[],update:"Nov 06 · Infrastructure capacity escalated.",risk:"Planned handover differs from the reference commitment; impact pending."},
+{id:"P3",group:groups[0],wbs:"1.3",title:"Security readiness gate",owner:"R. Mori",status:"In Progress",end:"2026-11-18",pct:55,start:30,len:25,auto:false,manual:false,critical:false,milestone:true,pred:["P1","P2"],update:"Nov 04 · Draft sign-off pack shared.",risk:""},
+{id:"P4",group:groups[0],wbs:"1.4",title:"API smoke test checklist",owner:"A. Tanaka",status:"In Progress",end:"2026-11-09",pct:30,start:8,len:10,auto:false,manual:false,critical:false,milestone:false,pred:[],update:"Nov 07 · Checklist prepared for weekly review.",risk:""},
+{id:"D1",group:groups[1],wbs:"2.1",title:"Data reconciliation",owner:"K. Yamada",status:"At Risk",end:"2026-11-17",pct:58,start:25,len:34,auto:true,manual:true,critical:true,milestone:false,pred:[],update:"Nov 06 · Three unmatched account groups under investigation.",risk:"Schedule exposure and unresolved source-system ownership."},
+{id:"D2",group:groups[1],wbs:"2.2",title:"Dry-run migration",owner:"S. Ito",status:"In Progress",end:"2026-11-20",pct:30,start:45,len:33,auto:false,manual:false,critical:false,milestone:false,pred:["D1","P2"],update:"Nov 03 · Preparation checklist reviewed.",risk:""},
+{id:"D3",group:groups[1],wbs:"2.3",title:"Migration acceptance",owner:"K. Yamada",status:"Not Started",end:"2026-11-25",pct:0,start:78,len:11,auto:false,manual:false,critical:false,milestone:true,pred:["D2","P3"],update:"Oct 30 · Draft acceptance criteria circulated.",risk:""},
+{id:"L1",group:groups[2],wbs:"3.1",title:"Support-team training",owner:"N. Fuji",status:"Completed",end:"2026-11-19",pct:100,start:47,len:23,auto:false,manual:false,critical:false,milestone:false,pred:[],update:"Nov 06 · Final training completed and signed off.",risk:""},
+{id:"L2",group:groups[2],wbs:"3.2",title:"Readiness communications",owner:"T. Oda",status:"In Progress",end:"2026-11-23",pct:48,start:53,len:30,auto:false,manual:false,critical:false,milestone:false,pred:[],update:"Nov 07 · Legal cleared communications; Under Watch released.",risk:""},
+{id:"L3",group:groups[2],wbs:"3.3",title:"Go / no-go decision",owner:"",status:"Not Started",end:"2026-11-27",pct:0,start:88,len:10,auto:false,manual:false,critical:false,milestone:true,pred:["D3","L1","L2"],update:"Nov 02 · Leadership meeting placeholder created.",risk:""},
+{id:"L4",group:groups[2],wbs:"3.4",title:"Operational handover",owner:"N. Fuji",status:"Not Started",end:"2026-11-30",pct:0,start:93,len:7,auto:false,manual:false,critical:false,milestone:false,pred:["L3"],update:"Nov 03 · Support queue mapping drafted.",risk:""}
 ];
-var groups=["Platform Readiness","Data Migration","Launch Enablement"];
-var state={view:"a",stage:"exception",selected:"D1",demoEntries:[],editing:false,reportMode:"latest",reportDisplay:"present",reportSnapshots:{latest:null,updates:null}};
-function esc(x){return String(x==null?"":x).replace(/[&<>"']/g,function(ch){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]})}
-function curr(){return tasks.find(function(t){return t.id===state.selected})||tasks[0]}
-function flagged(){return tasks.filter(function(t){return t.auto||t.manual})}
-function phaseLabel(){return state.stage==="exception"?"Priority exceptions":"Workstream WBS"}
-function statusClass(t){return t.status==="Blocked"?"risk":t.status==="At Risk"?"warn": t.status==="Completed"?"ok":""}
-function riskCount(t){return (t.auto?1:0)+(t.manual?1:0)}
-function statusPill(t){return '<span class="pill '+statusClass(t)+'">'+esc(t.status)+'</span>'}
-function dotClass(t){return t.critical?"red":riskCount(t)?"":"ok"}
-
-var AS_OF="2026-11-08",SAMPLE_JP_HOLIDAYS={"2026-11-23":true};
-function dateValue(label){var m=/^Nov (\d{1,2})$/.exec(label||"");if(!m)return null;var day=Number(m[1]);if(day<1||day>30)return null;return new Date(Date.UTC(2026,10,day))}
-function isoDate(d){return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0")}
-function isBusiness(d){var w=d.getUTCDay();return w!==0&&w!==6&&!SAMPLE_JP_HOLIDAYS[isoDate(d)]}
-function workdaysTo(endLabel){var end=dateValue(endLabel);if(!end)return null;var asOf=new Date("2026-11-08T00:00:00Z"),sign=end>=asOf?1:-1,a=sign>0?asOf:end,b=sign>0?end:asOf,n=0;for(var dt=new Date(a.getTime()+86400000);dt<=b;dt=new Date(dt.getTime()+86400000)){if(isBusiness(dt))n++}return n*sign}
-function workdaysText(label){var n=workdaysTo(label);return n===null?"Workdays unavailable":n<0?Math.abs(n)+" workdays overdue":n===0?"Due now / nonworking finish":n+" working days left"}
-function taskButton(t,compact){return '<button type="button" class="taskrow '+(state.selected===t.id?"selected":"")+'" data-task="'+t.id+'" aria-label="Review '+esc(t.title)+'">'+
-'<span class="riskdot '+dotClass(t)+'"></span><span class="num">'+esc(t.wbs)+'</span><span class="ellipsis" style="flex:1"><span class="tasklabel">'+esc(t.title)+'</span><span class="rowmeta">'+(compact?esc(t.group)+' · ':'')+esc(t.owner||"Owner missing")+' · Due '+esc(t.end)+' · '+esc(workdaysText(t.end))+'</span></span>'+
-(riskCount(t)?'<span class="pill warn">'+riskCount(t)+' risk</span>':'')+'</button>'}
-
-function exceptionQueue(){return flagged().map(function(t){return taskButton(t,true)}).join("")}
-function workstreamQueue(){return groups.map(function(g){var group=tasks.filter(function(t){return t.group===g});return '<div class="workhead">'+esc(g)+' <span class="badgecount">'+group.length+' entities</span></div>'+group.map(function(t){return taskButton(t,false)}).join("")}).join("")}
-function rows(){if(state.stage==="exception")return flagged();return tasks}
-
-function groupRows(){var active=rows(),html='';if(state.stage==="workstream"){groups.forEach(function(g){html+='<div class="groupbar">'+esc(g)+'</div>'+active.filter(function(t){return t.group===g}).map(scheduleRow).join("")});return html}return active.map(scheduleRow).join("")}
-function scheduleRow(t){var width=t.milestone?13:t.len;return '<div class="schedule-row '+(state.selected===t.id?"selected":"")+'" data-task="'+t.id+'" role="button" tabindex="0" aria-label="Review '+esc(t.title)+'"><div class="titlecell"><span class="riskdot '+dotClass(t)+'"></span><div class="ellipsis"><div class="rowtitle">'+esc(t.wbs)+' · '+esc(t.title)+'</div><div class="rowdetail">'+(state.stage==="workstream"?"":esc(t.group)+' · ')+'Due '+esc(t.end)+' · '+esc(workdaysText(t.end))+'</div></div></div><div class="small ellipsis">'+esc(t.owner||"Unassigned")+'</div><div>'+statusPill(t)+'</div><div class="timeline"><div title="Scheduled duration, not percent complete. Finish '+esc(t.end)+'" class="bar '+(t.critical?"red":riskCount(t)?"risk":"green")+(t.milestone?" milestone":"")+'" style="left:'+t.start+'%;width:'+width+'%"></div></div></div>'}
-function gantt(){return '<div class="panel"><div class="panelhead"><div><h2>'+phaseLabel()+'</h2><div class="tiny">Select a task · bars show scheduled span, not percent complete</div></div><div class="panel-actions"><span class="pill blue">'+rows().length+' visible</span></div></div><div class="schedule"><div class="schedule-head"><div>WBS / task</div><div>Owner</div><div>Status</div><div class="timeline-head"><span>W1</span><span>W2</span><span>W3</span><span>W4</span></div></div>'+groupRows()+'</div></div>'}
-function topNotes(t){return riskCount(t)?'<div class="riskbox"><strong>'+riskCount(t)+' active watch reason'+(riskCount(t)>1?"s":"")+'</strong>'+ (t.auto?'<div class="riskitem">◷ Schedule commitment exposure (automatic signal, illustrative)</div>':'')+(t.manual?'<div class="riskitem">⚑ Stakeholder/contextual risk (manual flag)</div>':'')+'<div class="tiny" style="margin-top:8px">'+esc(t.risk)+'</div></div>':'<div class="riskbox" style="background:#f0faf6;border-color:#d3ecdf"><strong>No active watch reason in this sample</strong><div class="tiny">Green requires validated, current checks in a real product.</div></div>'}
-function editor(compact){var t=curr();return '<section class="panel '+(compact?"b-editor":"")+'"><div class="panelhead"><h2>Task detail & live updates</h2><span class="pill blue">Prototype only</span></div><div class="panelbody"><div class="kicker">'+esc(t.group)+' / '+esc(t.wbs)+'</div><div class="inspector-title">'+esc(t.title)+'</div><div class="rowflex"><span>'+statusPill(t)+'</span><span class="tiny">Selected entity · '+esc(t.id)+'</span></div>'+topNotes(t)+
-'<div class="fieldgrid"><div class="field"><label for="owner">Owner</label><input id="owner" value="'+esc(t.owner)+'" autocomplete="off"></div><div class="field"><label for="status">Task status</label><select id="status">'+["Not Started","In Progress","At Risk","Blocked","Completed","Cancelled"].map(function(v){return '<option '+(t.status===v?"selected":"")+'>'+v+'</option>'}).join("")+'</select></div><div class="field"><label for="finish">Planned finish (demo text)</label><input id="finish" value="'+esc(t.end)+'"></div><div class="field"><label for="pct">Progress %</label><input id="pct" type="number" min="0" max="100" value="'+t.pct+'"></div></div>'+
-'<div class="sectionlabel">Updates · append only</div><div class="history">'+esc(t.update)+'</div><div id="extraUpdates">'+state.demoEntries.filter(function(a){return a.id===t.id}).map(function(a){return '<div class="history">'+esc(a.text)+' <span class="pill blue">demo</span></div>'}).join("")+'</div><div class="composer"><label class="kicker" for="updateText">New update</label><textarea id="updateText" placeholder="Add an update from the status discussion…"></textarea></div></div><div class="savebar"><span class="tiny">No file or audit record will be written.</span><button type="button" class="solid" id="demoSave">Simulate save</button></div></section>'}
-function aScreen(){return '<div class="main a-layout">'+gantt()+editor(false)+'</div>'}
-
-function bQueue(){return '<section class="panel"><div class="panelhead"><div><h2>Meeting agenda</h2><div class="tiny">Select the active discussion task</div></div></div><div class="review-sidebar"><div class="sidephase '+(state.stage==="exception"?"active":"")+'"><span>01 · Exceptions first</span><span>'+flagged().length+'</span></div><div class="sidephase '+(state.stage==="workstream"?"active":"")+'"><span>02 · Workstreams / WBS</span><span>'+groups.length+'</span></div><div class="sectionlabel">'+phaseLabel()+'</div></div><div class="tasklist">'+(state.stage==="exception"?exceptionQueue():workstreamQueue())+'</div></section>'}
-function editFields(t){return '<div class="fieldgrid"><div class="field"><label for="owner">Owner</label><input id="owner" value="'+esc(t.owner)+'" autocomplete="off"></div><div class="field"><label for="status">Task status</label><select id="status">'+["Not Started","In Progress","At Risk","Blocked","Completed","Cancelled"].map(function(v){return '<option '+(t.status===v?"selected":"")+'>'+v+'</option>'}).join("")+'</select></div><div class="field"><label for="finish">Planned finish (Nov DD)</label><input id="finish" value="'+esc(t.end)+'"></div><div class="field"><label for="pct">Recorded progress %</label><input id="pct" type="number" min="0" max="100" value="'+t.pct+'"></div></div>'+
-'<div class="sectionlabel">Append meeting update</div><div class="composer"><label class="kicker" for="updateText">New update (demo only)</label><textarea id="updateText" placeholder="Record the outcome of this discussion…"></textarea></div>'+
-'<div class="inlinewarning">Simulation only: no workbook, ChangeSetID or UpdateHistory is written. Actual Save / Discard / Cancel protections are governed by the frozen editor contract.</div>'+
-'<div class="savebar"><button type="button" class="ghost" id="meetingCancel">Cancel edit</button><button type="button" class="solid" id="demoSave">Simulate save</button></div>'}
-function focus(){
-var t=curr(),editing=state.editing;
-var head='<div class="panelhead"><div><h2>Active discussion · '+(editing?"Edit task":"Task overview")+'</h2><div class="tiny">One selected-task surface; editing appears in place</div></div>'+(editing?'<span class="pill blue">Editing demo</span>':'<button type="button" class="solid" id="meetingEdit">Edit task</button>')+'</div>';
-var body='<div class="step">'+esc(t.group)+' · '+esc(t.wbs)+'</div><div class="focus-title">'+esc(t.title)+'</div>';
-if(editing){body+='<div class="sectionlabel">Edit fields in place</div>'+editFields(t)}
-else{var days=workdaysTo(t.end);
-body+='<div class="focusfacts"><div class="focusfact"><label>Status</label><b>'+esc(t.status)+'</b></div><div class="focusfact"><label>Owner</label><b>'+esc(t.owner||"Unassigned")+'</b></div><div class="focusfact"><label>Finish date</label><b>'+esc(t.end)+'</b></div><div class="focusfact"><label>Workdays left</label><b>'+esc(workdaysText(t.end))+'</b></div></div>'+
-'<div class="deadline-hero"><div><div class="kicker">Scheduled finish</div><strong>'+esc(t.end)+', 2026</strong><div class="tiny">Date-only plan, not a progress bar or forecast</div></div><div class="deadline-count"><strong>'+esc(days===null?"—":days)+'</strong><span>working days left</span></div></div>'+
-'<div class="calendar-caption">As of Sun Nov 08, 2026 · Mon–Fri, excluding illustrative Japan holiday Nov 23 · Project blackout days not modeled.</div>'}
-body+='<div class="sectionlabel">What needs attention</div>'+topNotes(t)+'<div class="sectionlabel">Latest saved update (synthetic)</div><div class="big-update">'+esc(t.update)+'</div>'+
-state.demoEntries.filter(function(a){return a.id===t.id}).map(function(a){return '<div class="big-update">'+esc(a.text)+' <span class="pill blue">demo</span></div>'}).join("");
-return '<section class="panel">'+head+'<div class="panelbody">'+body+'</div></section>'}
-function bScreen(){return '<div class="main b-layout">'+bQueue()+focus()+'</div>'}
-
-
-function reportFixtureHistory(){return [
-{group:"Platform Readiness",task:"Environment provisioning",when:"Nov 06 14:10",save:"SV-0142",field:"PlannedEnd",old:"Nov 12",value:"Nov 14"},
-{group:"Data Migration",task:"Data reconciliation",when:"Nov 06 14:10",save:"SV-0142",field:"TaskStatus",old:"In Progress",value:"At Risk"},
-{group:"Data Migration",task:"Data reconciliation",when:"Nov 05 10:45",save:"SV-0141",field:"AssignedTo",old:"Unassigned",value:"K. Yamada"}]}
-function buildReport(mode){
-var title="Northstar Service Rollout",generated="Nov 08 2026 07:00 JST (fixed synthetic snapshot)",data={},lines=[title+" — "+(mode==="latest"?"Latest Status Report":"Update Report"),"Generated: "+generated,"Source: SAMPLE PROJECT — no real workbook"];
-if(mode==="latest"){
-var attention=tasks.filter(function(t){return t.status==="Blocked"||t.status==="At Risk"}),milestones=tasks.filter(function(t){return t.milestone});
-data={attention:attention.map(function(t){return Object.assign({},t)}),milestones:milestones.map(function(t){return Object.assign({},t)}),counts:{total:tasks.length,blocked:tasks.filter(function(t){return t.status==="Blocked"}).length,atRisk:tasks.filter(function(t){return t.status==="At Risk"}).length}};
-lines.push("","Executive snapshot","Overall progress: illustrative placeholder; production must reuse verified project rollup","Task count: "+data.counts.total+" · Blocked: "+data.counts.blocked+" · At Risk: "+data.counts.atRisk,"","Needs Attention");
-groups.forEach(function(g){var ts=attention.filter(function(t){return t.group===g});if(!ts.length)return;lines.push(g);ts.forEach(function(t){lines.push("- "+t.title+" — "+t.status+" (Due "+t.end+")")})});
+var events=[
+{date:"2026-11-06",kind:"completed",id:"L1",title:"Support-team training",group:groups[2],owner:"N. Fuji",detail:"Completed; final training signed off.",source:"UpdateHistory status transition (fixture)"},
+{date:"2026-11-04",kind:"added",id:"P4",title:"API smoke test checklist",group:groups[0],owner:"A. Tanaka",detail:"New checklist added ahead of the integration review.",source:"Proposed creation event (not guaranteed by current contract)"},
+{date:"2026-11-05",kind:"riskNew",id:"P1",title:"Confirm API vendor access",group:groups[0],owner:"M. Sato",detail:"Manual stakeholder watch opened: vendor approval unresolved.",source:"Proposed watch event (not in frozen workbook)"},
+{date:"2026-11-06",kind:"riskNew",id:"D1",title:"Data reconciliation",group:groups[1],owner:"K. Yamada",detail:"New schedule and contextual delivery-risk signals.",source:"Proposed watch event (not in frozen workbook)"},
+{date:"2026-11-07",kind:"released",id:"L2",title:"Readiness communications",group:groups[2],owner:"T. Oda",detail:"Legal sign-off received; all known watch reasons cleared.",source:"Proposed watch-release event (not in frozen workbook)"},
+{date:"2026-11-06",kind:"changed",id:"P2",title:"Environment provisioning",group:groups[0],owner:"A. Tanaka",detail:"Planned finish changed Nov 12 → Nov 14; impact still under review.",source:"UpdateHistory date change (fixture)"}
+];
+var state={view:"b",stage:"exception",filter:"exceptions",workstream:"all",owner:"all",selected:"D1",editing:false,demoEntries:[],reportMode:"latest",reportDisplay:"present",reportSnapshots:{latest:null,updates:null},periodStart:"2026-11-03",periodEnd:"2026-11-09",dirty:false};
+function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function utc(iso){if(!/^\d{4}-\d{2}-\d{2}$/.test(iso||""))return null;var d=new Date(iso+"T00:00:00Z");return Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==iso?null:d}
+function dayIso(d){return d.toISOString().slice(0,10)}
+function displayDate(s){var d=utc(s);return d?d.toLocaleDateString("en-US",{month:"short",day:"2-digit",timeZone:"UTC"}):"Unknown"}
+function isWorking(s){var d=utc(s);return !!d&&calendar.weekdays.includes(d.getUTCDay())&&!calendar.holidays[s]&&!calendar.blackouts[s]}
+function workdayCount(from,to){var a=utc(from),b=utc(to);if(!a||!b)return null;if(a.getTime()===b.getTime())return 0;var forward=b>a,low=forward?a:b,high=forward?b:a,n=0;
+for(var ms=low.getTime()+86400000;ms<=high.getTime();ms+=86400000){if(isWorking(dayIso(new Date(ms))))n++}return forward?n:-n}
+function remaining(s){return workdayCount(calendar.asOf,s)}
+function remainingLabel(s){var n=remaining(s);return n===null?"Date unavailable":s===calendar.asOf?"Due today":n<0?Math.abs(n)+" workdays overdue":n===0?"0 working days left":n+" workdays left"}
+function finishFlag(s){return calendar.holidays[s]?"Holiday finish":calendar.blackouts[s]?"Blackout finish":!isWorking(s)?"Weekend finish":""}
+function current(){return tasks.find(function(t){return t.id===state.selected})||null}
+function related(t,upstream){return upstream?t.pred.map(function(id){return tasks.find(function(x){return x.id===id})}).filter(Boolean):tasks.filter(function(x){return x.pred.includes(t.id)})}
+function riskCount(t){return Number(t.auto)+Number(t.manual)}
+function watched(t){return riskCount(t)>0}
+function flagged(){return tasks.filter(watched)}
+function pill(s,kind){return '<span class="pill '+(kind||"")+'">'+esc(s)+'</span>'}
+function statusPill(t){return pill(t.status,t.status==="Blocked"?"risk":t.status==="At Risk"?"warn":t.status==="Completed"?"ok":"")}
+function filterTasks(){var arr=tasks.filter(function(t){var days=remaining(t.end);if(state.filter==="exceptions"&&!watched(t))return false;if(state.filter==="today"&&t.end!==calendar.asOf)return false;if(state.filter==="due5"&&!(t.end>=calendar.asOf&&days!==null&&days>=0&&days<5))return false;if(state.owner!=="all"&&t.owner!==state.owner)return false;if(state.workstream!=="all"&&t.group!==state.workstream)return false;return true});
+return arr.sort(function(a,b){if(state.filter==="exceptions"){if(a.critical!==b.critical)return a.critical?-1:1;if(riskCount(a)!==riskCount(b))return riskCount(b)-riskCount(a)}if(state.filter==="all"){var d=groups.indexOf(a.group)-groups.indexOf(b.group);if(d)return d;return a.wbs.localeCompare(b.wbs,undefined,{numeric:true})}return a.end.localeCompare(b.end)||a.wbs.localeCompare(b.wbs,undefined,{numeric:true})})}
+function ensureSelection(){var arr=filterTasks();if(!arr.some(function(t){return t.id===state.selected}))state.selected=arr.length?arr[0].id:null}
+function options(vals,sel){return vals.map(function(v){return '<option value="'+esc(v)+'"'+(v===sel?" selected":"")+'>'+esc(v==="all"?"All":v)+'</option>'}).join("")}
+function listItem(t){var cls=t.id===state.selected?" selected":"";var work=(state.filter==="all")?"":t.group+" · ";
+return '<button type="button" class="meeting-item'+cls+'" data-task="'+esc(t.id)+'" aria-label="Show '+esc(t.title)+' detail">'+
+'<div><div class="entrytitle">'+esc(t.wbs)+' · '+esc(t.title)+'</div><div class="entrymeta">'+esc(work)+esc(t.owner||"Unassigned")+(watched(t)?" · Under Watch":"")+'</div></div>'+
+'<div class="cell">'+esc(t.owner||"Unassigned")+'</div><div class="cell">'+statusPill(t)+'</div><div class="cell">'+esc(displayDate(t.end))+'</div><div class="cell">'+esc(remainingLabel(t.end))+'</div></button>'}
+function listMarkup(arr){if(!arr.length)return '<div class="zero-match">No tasks match these filters.<div style="margin-top:10px"><button type="button" class="ghost" id="clearFilters">Clear filters</button></div></div>';
+if(state.filter==="all"){return groups.map(function(g){var subset=arr.filter(function(t){return t.group===g});if(!subset.length)return "";return '<div class="meeting-group">'+esc(g)+'</div>'+subset.map(listItem).join("")}).join("")}
+return arr.map(listItem).join("")}
+function bQueue(){var arr=filterTasks(),owners=Array.from(new Set(tasks.map(function(t){return t.owner}).filter(Boolean))).sort();return '<section class="panel meeting-list"><div class="panelhead"><div><h2>Tasks · Meeting Review</h2><div class="tiny">Filter the same WBS records, not separate lists</div></div>'+pill("Synthetic data","blue")+'</div>'+
+'<div class="filter-zone"><div class="filter-pills" role="group" aria-label="Task list filters">'+
+[["exceptions","Exceptions"],["all","All · Workstreams"],["today","Due today"],["due5","Next <5 workdays"]].map(function(v){return '<button type="button" data-filter="'+v[0]+'" class="filter-pill'+(state.filter===v[0]?" active":"")+'" aria-pressed="'+(state.filter===v[0])+'">'+esc(v[1])+'</button>'}).join("")+'</div>'+
+'<div class="filter-selects"><label>Workstream<select id="filterWorkstream">'+options(["all"].concat(groups),state.workstream)+'</select></label>'+
+'<label>Owner<select id="filterOwner">'+options(["all"].concat(owners),state.owner)+'</select></label>'+
+'<label>Meeting date<input type="date" id="meetingDate" value="'+esc(calendar.asOf)+'"></label></div>'+
+'<div class="filter-caption">“Today” uses the selected meeting date. Next <5 includes today plus the next 1–4 working days; blackouts and public holidays are excluded.</div></div>'+
+'<div class="meeting-columns"><div>WBS / task</div><div>Owner</div><div>Status</div><div>Finish</div><div>Working time</div></div>'+
+'<div class="meeting-data">'+listMarkup(arr)+'</div></section>'}
+function linkGroup(t,upstream){var xs=related(t,upstream);return '<div class="dep-group"><div class="depheader">'+(upstream?"Depends on · predecessors":"Dependent tasks · successors")+'</div>'+
+(xs.length?xs.map(function(x){return '<button type="button" class="dep-link" data-link-task="'+esc(x.id)+'" title="Open linked WBS task">'+esc(x.wbs)+' · '+esc(x.title)+'<span>Finish-to-start example · Due '+esc(displayDate(x.end))+'</span></button>'}).join(""):'<span class="dep-empty">No '+(upstream?"predecessors":"successors")+' in this sample</span>')+'</div>'}
+function riskBox(t){if(!watched(t))return '<div class="inlinewarning" style="background:#eff9f4;border-color:#d8ebe1;color:#386d54">No active watch reasons in this static fixture; production health requires current checks.</div>';
+return '<div class="riskbox"><strong>Under Watch · '+riskCount(t)+' reason'+(riskCount(t)===1?"":"s")+'</strong>'+
+(t.auto?'<div class="riskitem">Schedule impact signal (illustrative)</div>':'')+
+(t.manual?'<div class="riskitem">Stakeholder/context flag (manually captured)</div>':'')+
+'<div class="tiny" style="margin-top:6px">'+esc(t.risk)+'</div></div>'}
+function editFields(t){return '<div class="compact-editor"><div class="fieldgrid"><div class="field"><label for="owner">Owner</label><input id="owner" value="'+esc(t.owner)+'"></div><div class="field"><label for="status">Status</label><select id="status">'+["Not Started","In Progress","At Risk","Blocked","Completed","Cancelled"].map(function(s){return '<option'+(s===t.status?" selected":"")+'>'+s+'</option>'}).join("")+'</select></div><div class="field"><label for="finish">Planned finish</label><input id="finish" type="date" value="'+esc(t.end)+'"></div><div class="field"><label for="pct">Recorded progress (%)</label><input id="pct" type="number" min="0" max="100" value="'+esc(t.pct)+'"></div></div>'+
+'<div class="sectionlabel">Append update</div><div class="composer"><label class="kicker" for="updateText">Meeting note (demo)</label><textarea id="updateText" placeholder="Record an update from the discussion…"></textarea></div>'+
+'<div class="savebar"><span class="tiny">Simulation only; no Excel write.</span><div><button type="button" class="ghost" id="cancelEdit">Cancel</button> <button type="button" class="solid" id="demoSave">Simulate save</button></div></div></div>'}
+function compactDetail(){var t=current();if(!t)return '<section class="panel detail-compact"><div class="panelhead"><h2>Task detail</h2></div><div class="zero-match">No selected task. Adjust task filters.</div></section>';
+var editing=state.editing;var fields=editing?editFields(t):'<div class="detail-facts"><div class="detail-fact"><div class="key">Status</div><div class="val">'+esc(t.status)+'</div></div>'+
+'<div class="detail-fact"><div class="key">Owner</div><div class="val">'+esc(t.owner||"Unassigned")+'</div></div>'+
+'<div class="detail-fact due"><div class="key">Planned finish</div><div class="val">'+esc(displayDate(t.end))+'</div></div>'+
+'<div class="detail-fact due"><div class="key">Working days left</div><div class="val">'+esc(remainingLabel(t.end))+'</div></div></div>'+
+(finishFlag(t.end)?'<div class="inlinewarning">Finish falls on a nonworking date: '+esc(finishFlag(t.end))+'</div>':'')+
+'<div class="detail-sub">From '+esc(displayDate(calendar.asOf))+' (simulation) · weekdays, Japan holidays and project blackouts excluded</div>';
+return '<section class="panel detail-compact"><div class="panelhead"><div><h2>Selected task'+(editing?" · Editing":"")+'</h2><div class="tiny">'+esc(t.group)+' · WBS '+esc(t.wbs)+'</div></div>'+
+(editing?pill("Draft · demo","blue"):'<button type="button" class="solid" id="meetingEdit">Edit task</button>')+'</div>'+
+'<div class="panelbody"><div class="focus-title">'+esc(t.title)+'</div>'+fields+
+'<div class="sectionlabel">Task relationships</div><div class="dependencies">'+linkGroup(t,true)+linkGroup(t,false)+'</div>'+
+'<div class="sectionlabel">Risk / watch context</div>'+riskBox(t)+
+'<div class="sectionlabel">Latest update</div><div class="big-update">'+esc(t.update)+'</div>'+
+state.demoEntries.filter(function(e){return e.id===t.id}).map(function(e){return '<div class="big-update">'+esc(e.text)+' '+pill("demo","blue")+'</div>'}).join("")+'</div></section>'}
+function bScreen(){return '<div class="main b-layout">'+bQueue()+compactDetail()+'</div>'}
+function aRow(t){return '<div class="schedule-row'+(t.id===state.selected?" selected":"")+'" data-task="'+esc(t.id)+'" role="button" tabindex="0" aria-label="Inspect '+esc(t.title)+'"><div class="titlecell"><div class="ellipsis"><div class="rowtitle">'+esc(t.wbs)+' · '+esc(t.title)+'</div><div class="rowdetail">'+esc(t.group)+' · '+esc(displayDate(t.end))+'</div></div></div><div class="small ellipsis">'+esc(t.owner||"Unassigned")+'</div><div>'+statusPill(t)+'</div><div class="timeline"><div class="bar '+(t.critical?"red":watched(t)?"risk":"green")+(t.milestone?" milestone":"")+'" style="left:'+t.start+'%;width:'+(t.milestone?13:t.len)+'%" title="Illustrative scheduled time span, not progress"></div></div></div>'}
+function aScreen(){var arr=state.stage==="exception"?flagged():tasks;return '<div class="main a-layout"><section class="panel"><div class="panelhead"><div><h2>WBS / Gantt schedule</h2><div class="tiny">Duration bars are illustrative · no completion fill</div></div></div><div class="schedule"><div class="schedule-head"><div>Task</div><div>Owner</div><div>Status</div><div class="timeline-head"><span>W1</span><span>W2</span><span>W3</span><span>W4</span></div></div>'+
+arr.map(aRow).join("")+'</div></section>'+compactDetail()+'</div>'}
+function eventCategory(k){return {completed:"Completed tasks",added:"Added tasks",riskNew:"New risks identified",released:"Under Watch released",changed:"Other material updates"}[k]||"Other"}
+function eventsForPeriod(){return events.filter(function(e){return e.date>=state.periodStart&&e.date<=state.periodEnd})}
+function statusAttention(t){return t.status==="At Risk"||t.status==="Blocked"}
+function groupedText(lines,items,format){if(!items.length){lines.push("No qualifying tasks.");return}groups.forEach(function(g){var xs=items.filter(function(t){return t.group===g});if(!xs.length)return;lines.push(g);xs.forEach(function(t){lines.push("- "+format(t))})})}
+function buildReport(mode){var generated="Nov 09 2026 09:00 JST (fixed demo)",data={},lines=[project+" — "+(mode==="latest"?"Latest Status Report":"Weekly Update Report (proposed)"),"Generated: "+generated,"Source: synthetic fixture, not an imported workbook",""];
+if(mode==="latest"){var attention=tasks.filter(statusAttention),mile=tasks.filter(function(t){return t.milestone}),near=tasks.filter(function(t){return !t.milestone&&t.status!=="Completed"&&t.end>=calendar.asOf&&remaining(t.end)<=4});
+data={attention:attention.map(function(t){return Object.assign({},t)}),milestones:mile.map(function(t){return Object.assign({},t)}),near:near.map(function(t){return Object.assign({},t)}),counts:{tasks:tasks.length,blocked:tasks.filter(function(t){return t.status==="Blocked"}).length,atRisk:tasks.filter(function(t){return t.status==="At Risk"}).length}};
+lines.push("Executive snapshot","Current tasks: "+tasks.length+" · Blocked: "+data.counts.blocked+" · At Risk: "+data.counts.atRisk,"Overall progress: not calculated by this design simulator","","Needs Attention");
+groupedText(lines,attention,function(t){return t.title+" — "+t.status+" · Owner: "+(t.owner||"Unassigned")+" · Finish: "+displayDate(t.end)});
 lines.push("","Upcoming milestones");
-groups.forEach(function(g){var ts=milestones.filter(function(t){return t.group===g});if(!ts.length)return;lines.push(g);ts.forEach(function(t){lines.push("- "+t.title+" — "+t.end)})});
-lines.push("","Task / status highlights","All figures are synthetic; no workbook status or risk engine evaluated.");
-}else{
-var hist=reportFixtureHistory();data={history:hist.map(function(x){return Object.assign({},x)})};
-lines.push("Period: Nov 05–Nov 08, 2026 (inclusive, sample)","Timezone: Asia/Tokyo","Summary: 2 distinct tasks · 2 Save events · 3 field changes","","Saved changes — synthetic UpdateHistory sample (not task Updates journal)");
-groups.forEach(function(g){var rows=hist.filter(function(x){return x.group===g});if(!rows.length)return;lines.push(g);rows.forEach(function(v){lines.push("- "+v.task+" · "+v.when+" JST · Save "+v.save+" · "+v.field+": "+v.old+" → "+v.value)})});
+groupedText(lines,mile,function(t){return t.title+" — "+displayDate(t.end)+" · Owner: "+(t.owner||"Unassigned")});
+lines.push("","Near-term tasks");
+groupedText(lines,near,function(t){return t.title+" · Owner: "+(t.owner||"Unassigned")+" · Finish: "+displayDate(t.end)+" · "+remainingLabel(t.end)});
+lines.push("","Calendar: meeting-date fixture Nov 09; weekends, Japan holidays, sample project blackouts excluded for working-day figures.");
+}else{var list=eventsForPeriod();data={events:list.map(function(e){return Object.assign({},e)}),start:state.periodStart,end:state.periodEnd,summary:{}};
+lines.push("Reporting period: "+state.periodStart+" to "+state.periodEnd+" inclusive","Default: last 7 calendar dates ending on simulated meeting date","","Weekly changes — stakeholder-facing proposal");
+["completed","added","riskNew","released","changed"].forEach(function(kind){var items=list.filter(function(e){return e.kind===kind});data.summary[kind]=items.length;lines.push("",eventCategory(kind));groupedText(lines,items,function(e){return e.title+" · Owner: "+(e.owner||"Unassigned")+" · "+e.detail+" ("+e.date+")"})});
+lines.push("","Proposed lifecycle entries (creation/watch/release) require new reliable source events; they are NOT available from the frozen UpdateHistory alone.");
 }
-return {mode:mode,generated:generated,title:title,data:data,text:lines.join("\n")}}
-function renderReportPresent(snap){
-var d=snap.data;
-if(snap.mode==="updates"){return '<div class="lead-main" style="grid-template-columns:1fr"><div class="lead-metrics"><div class="metric"><span class="kicker">Affected tasks</span><b>2</b></div><div class="metric"><span class="kicker">Save events</span><b>2</b></div><div class="metric"><span class="kicker">Field changes</span><b>3</b></div></div><section class="lead-section"><h3>Update Report · Nov 05–08</h3><p class="note">Synthetic saved history. Separate from free-text task Updates. Shared Save IDs remain visible.</p>'+
-groups.map(function(g){var entries=d.history.filter(function(x){return x.group===g});if(!entries.length)return "";return '<div class="sectionlabel">'+esc(g)+'</div>'+entries.map(function(e){return '<div class="milestone-row"><span class="datechip">'+esc(e.when.substring(0,6))+'</span><div><strong>'+esc(e.task)+'</strong><div class="note">'+esc(e.field)+': '+esc(e.old)+' → '+esc(e.value)+'</div><div class="tiny">Save '+esc(e.save)+'</div></div></div>'}).join("")}).join("")+'</section></div>'}
-return '<div class="lead-main"><div class="lead-metrics"><div class="metric"><span class="kicker">Current tasks (sample)</span><b>'+d.counts.total+'</b><span class="small muted">Overall progress needs verified rollup</span></div><div class="metric"><span class="kicker">Needs Attention</span><b>'+d.attention.length+'</b><span class="small muted">Blocked / At Risk</span></div><div class="metric"><span class="kicker">Upcoming milestones</span><b>'+d.milestones.length+'</b><span class="small muted">Dated commitments</span></div></div>'+
-'<section class="lead-section"><h3>Upcoming milestones</h3>'+d.milestones.map(function(t){return '<div class="milestone-row"><span class="datechip">'+esc(t.end)+'</span><div style="flex:1"><strong>'+esc(t.title)+'</strong><div class="small muted">'+esc(t.group)+' · '+esc(workdaysText(t.end))+'</div></div></div>'}).join("")+
-'<div class="calendar-caption">Working-day examples as of Nov 08, 2026: Mon–Fri excluding demo JP holiday Nov 23. Project blackout days are not modeled.</div></section>'+
-'<section class="lead-section"><h3>Needs Attention</h3>'+d.attention.map(function(t){return '<div class="lead-risk"><strong>'+esc(t.title)+'</strong><p>'+esc(t.group)+' · Finish '+esc(t.end)+' · '+esc(workdaysText(t.end))+'</p>'+statusPill(t)+'</div>'}).join("")+'</section></div>'}
-function lScreen(){
-var snap=state.reportSnapshots[state.reportMode];if(!snap){snap=buildReport(state.reportMode);state.reportSnapshots[state.reportMode]=snap}
-var preview=state.reportDisplay==="preview";
-return '<div class="reportbar"><div><strong>Output Reports · '+(state.reportMode==="latest"?"Latest Status":"Update Report")+'</strong><div class="tiny">Presentation is an optional view of the same snapshot; not a new output format.</div></div><div class="report-actions"><button type="button" class="ghost '+(state.reportMode==="latest"?"choiceactive":"")+'" data-report="latest">Latest Status</button><button type="button" class="ghost '+(state.reportMode==="updates"?"choiceactive":"")+'" data-report="updates">Update Report</button><button type="button" class="ghost" id="refreshReport">Generate / Refresh demo</button><button type="button" class="ghost" id="copyReport">Copy report text</button><button type="button" class="ghost '+(preview?"choiceactive":"")+'" data-display="preview">Plain-text preview</button><button type="button" class="ghost '+(!preview?"choiceactive":"")+'" data-display="present">Present</button></div></div>'+
-'<div class="lead-wrap"><div class="lead-head"><div><div class="kicker">Report snapshot · '+esc(snap.generated)+'</div><h2>'+esc(snap.title)+'</h2><p>'+(state.reportMode==="latest"?"Current status, milestones and issues":"Historical saved changes and Save associations")+'</p></div><span class="pill blue">'+(preview?"Text preview":"Presentation view")+'</span></div>'+
-(preview?'<div class="preview-shell"><h3>Plain-text report preview (synthetic)</h3><pre>'+esc(snap.text)+'</pre><p class="note">Frozen Output Reports must maintain exact preview/copy parity, committed workbook data, and explicit Generate/Refresh. This simulator does not read a workbook or access clipboard.</p></div>':renderReportPresent(snap))+
-'<div class="lead-foot">DES–003 · Presentation and preview derive from one fixed synthetic report snapshot. EMV-REPORT-1.0 specifies plain-text output; a formatted presentation view remains a future design proposal.</div></div>'
-}
-
-
+return {mode:mode,title:project,generated:generated,data:data,text:lines.join("\n")}}
+function reportItem(t){return '<div class="storyrow"><strong>'+esc(t.title)+'</strong><p>Owner: '+esc(t.owner||"Unassigned")+' · Finish '+esc(displayDate(t.end))+' · '+esc(remainingLabel(t.end))+'</p>'+(t.status?statusPill(t):'')+'</div>'}
+function reportGroup(items,format){if(!items.length)return '<div class="note">No qualifying items.</div>';return groups.map(function(g){var arr=items.filter(function(t){return t.group===g});if(!arr.length)return "";return '<div class="sectionlabel">'+esc(g)+'</div>'+arr.map(format).join("")}).join("")}
+function presentReport(s){if(s.mode==="latest"){var d=s.data;return '<div class="lead-main"><div class="lead-metrics"><div class="metric"><span class="kicker">Tasks · fixture</span><b>'+d.counts.tasks+'</b><span class="small muted">Not summary double-counted</span></div><div class="metric"><span class="kicker">Needs attention</span><b>'+d.attention.length+'</b><span class="small muted">Blocked or At Risk</span></div><div class="metric"><span class="kicker">Upcoming milestones</span><b>'+d.milestones.length+'</b><span class="small muted">Finish dates shown below</span></div></div><section class="lead-section"><h3>Milestones & deadlines</h3>'+reportGroup(d.milestones,reportItem)+'</section><section class="lead-section"><h3>Needs Attention</h3>'+reportGroup(d.attention,reportItem)+'</section></div>'+
+'<div class="lead-main" style="padding-top:0;grid-template-columns:1fr"><section class="lead-section"><h3>Near-term tasks</h3>'+reportGroup(d.near,reportItem)+'</section></div>'}
+return '<div class="lead-main" style="grid-template-columns:1fr"><div class="lead-metrics">'+["completed","added","riskNew","released"].map(function(k){return '<div class="metric"><span class="kicker">'+esc(eventCategory(k))+'</span><b>'+s.data.summary[k]+'</b><span class="small muted">Synthetic period entries</span></div>'}).join("")+'</div>'+
+'<div class="report-proposed">Proposed enhanced Update Report: added-task and watch lifecycle events require a separately approved data contract. No administrative Save-event counts appear in this stakeholder-facing concept.</div>'+
+["completed","added","riskNew","released","changed"].map(function(k){var entries=s.data.events.filter(function(e){return e.kind===k});return '<section class="lead-section storysection"><h3>'+esc(eventCategory(k))+'</h3>'+reportGroup(entries,function(e){return '<div class="storyrow"><strong>'+esc(e.title)+'</strong><p>Owner: '+esc(e.owner||"Unassigned")+' · '+esc(e.date)+'</p><div class="note">'+esc(e.detail)+'</div></div>'})+'</section>'}).join("")+'</div>'}
+function lScreen(){var snap=state.reportSnapshots[state.reportMode];if(!snap){snap=buildReport(state.reportMode);state.reportSnapshots[state.reportMode]=snap}var preview=state.reportDisplay==="preview";
+return '<div class="reportbar"><div><strong>Output Reports · '+(state.reportMode==="latest"?"Latest Status":"Update Report")+'</strong><div class="tiny">'+(state.reportMode==="updates"?"Proposed weekly summary extension · current frozen UpdateHistory report remains unchanged":"Latest Status with owner/workstream context")+'</div></div><div class="report-actions">'+
+'<button type="button" class="ghost '+(state.reportMode==="latest"?"choiceactive":"")+'" data-report="latest">Latest Status</button>'+
+'<button type="button" class="ghost '+(state.reportMode==="updates"?"choiceactive":"")+'" data-report="updates">Update Report</button>'+
+'<button type="button" class="ghost '+(preview?"choiceactive":"")+'" data-display="preview">Plain-text preview</button>'+
+'<button type="button" class="ghost '+(!preview?"choiceactive":"")+'" data-display="present">Present</button>'+
+'<button type="button" class="ghost" id="refreshReport">Generate / Refresh demo</button><button type="button" class="ghost" id="copyReport">Copy report text</button></div></div>'+
+(state.reportMode==="updates"?'<div class="reportbar"><div class="report-period"><label>From (inclusive)<input type="date" id="periodStart" value="'+esc(state.periodStart)+'"></label><label>Through (inclusive)<input type="date" id="periodEnd" value="'+esc(state.periodEnd)+'"></label></div><span class="tiny">'+(state.dirty?"Period edited · select Generate / Refresh to update snapshot":"Default: 7 calendar dates including meeting date")+'</span></div>':'')+
+'<div class="lead-wrap"><div class="lead-head"><div><div class="kicker">Fixed report snapshot · '+esc(snap.generated)+'</div><h2>'+esc(snap.title)+'</h2><p>'+(state.reportMode==="updates"?"Completed, added, new risk, released watch and significant changes":"Project status, milestones and next deadlines")+'</p></div>'+pill(preview?"Text preview":"Presentation view","blue")+'</div>'+
+(preview?'<div class="preview-shell"><h3>Plain-text preview · Synthetic</h3><pre>'+esc(snap.text)+'</pre></div>':presentReport(snap))+
+'<div class="lead-foot">DES-003 design fixture only. V1 frozen Update Report requires field-level UpdateHistory and Save associations; this enhanced weekly change summary is a future proposal. Presentation and preview use one fixed simulated snapshot.</div></div>'}
 function render(){
 document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.dataset.view===state.view)});
 document.querySelectorAll("[data-stage]").forEach(function(el){el.classList.toggle("active",el.dataset.stage===state.stage)});
-var reports=state.view==="l";document.getElementById("phases").classList.toggle("hide",reports);
-document.getElementById("conceptKicker").textContent=reports?"Reports workspace / optional presentation":state.view==="a"?"Concept A / schedule-centered workspace":"Concept B / unified meeting discussion";
-document.getElementById("mainDescription").textContent=reports?"Frozen Output Reports: plain-text preview/copy; formatted presentation is a proposed companion view.":"Weekly status call: exceptions first, then workstreams · synthetic data";
-document.getElementById("app").innerHTML=reports?lScreen():state.view==="a"?aScreen():bScreen();
-document.querySelectorAll("[data-task]").forEach(function(el){function select(){if(!allowNavigate())return;state.selected=el.dataset.task;render()}el.addEventListener("click",select);el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();select()}})});
+document.getElementById("phases").classList.toggle("hide",state.view!=="a");
+document.getElementById("conceptKicker").textContent=state.view==="l"?"Reports workspace / weekly status presentation":state.view==="a"?"Concept A / schedule-focused workbench":"Concept B / filtered task review";
+document.getElementById("mainDescription").textContent=state.view==="l"?"Latest Status and proposed weekly Update Report presentation · synthetic data only": "Synthetic meeting: "+displayDate(calendar.asOf)+" · filters use holidays and project blackout calendar";
+document.getElementById("app").innerHTML=state.view==="l"?lScreen():state.view==="a"?aScreen():bScreen();
+document.querySelectorAll("[data-task]").forEach(function(el){function action(){if(!allowNavigate())return;state.selected=el.dataset.task;render()}el.addEventListener("click",action);el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();action()}})});
+document.querySelectorAll("[data-link-task]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.selected=el.dataset.linkTask;state.filter="all";state.workstream="all";state.owner="all";state.stage="workstream";render()})});
+document.querySelectorAll("[data-filter]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.filter=el.dataset.filter;ensureSelection();render()})});
+var fw=document.getElementById("filterWorkstream");if(fw)fw.addEventListener("change",function(){if(!allowNavigate()){render();return}state.workstream=fw.value;ensureSelection();render()});
+var fo=document.getElementById("filterOwner");if(fo)fo.addEventListener("change",function(){if(!allowNavigate()){render();return}state.owner=fo.value;ensureSelection();render()});
+var md=document.getElementById("meetingDate");if(md)md.addEventListener("change",function(){if(!allowNavigate()){render();return}if(!utc(md.value)){alert("Choose a valid meeting date.");render();return}calendar.asOf=md.value;ensureSelection();render()});
+var clear=document.getElementById("clearFilters");if(clear)clear.addEventListener("click",function(){state.filter="all";state.owner="all";state.workstream="all";ensureSelection();render()});
 var edit=document.getElementById("meetingEdit");if(edit)edit.addEventListener("click",function(){state.editing=true;render()});
-var cancel=document.getElementById("meetingCancel");if(cancel)cancel.addEventListener("click",function(){state.editing=false;render()});
+var cancel=document.getElementById("cancelEdit");if(cancel)cancel.addEventListener("click",function(){state.editing=false;render()});
 var save=document.getElementById("demoSave");if(save)save.addEventListener("click",demoSave);
 document.querySelectorAll("[data-report]").forEach(function(el){el.addEventListener("click",function(){state.reportMode=el.dataset.report;render()})});
 document.querySelectorAll("[data-display]").forEach(function(el){el.addEventListener("click",function(){state.reportDisplay=el.dataset.display;render()})});
-var refresh=document.getElementById("refreshReport");if(refresh)refresh.addEventListener("click",function(){state.reportSnapshots[state.reportMode]=buildReport(state.reportMode);render()});
-var copy=document.getElementById("copyReport");if(copy)copy.addEventListener("click",function(){var snap=state.reportSnapshots[state.reportMode];if(!snap){alert("No generated sample report available.");return}if(typeof navigator==="undefined"||!navigator.clipboard||!navigator.clipboard.writeText){alert("Clipboard is unavailable in this browser context. Open the plain-text preview to copy manually.");return}navigator.clipboard.writeText(snap.text).then(function(){alert("Copied the exact fixed sample report text.")},function(){alert("Clipboard copy failed. Open the plain-text preview to copy manually.")})});
+var ps=document.getElementById("periodStart");if(ps)ps.addEventListener("change",function(){state.periodStart=ps.value;state.dirty=true;render()});
+var pe=document.getElementById("periodEnd");if(pe)pe.addEventListener("change",function(){state.periodEnd=pe.value;state.dirty=true;render()});
+var ref=document.getElementById("refreshReport");if(ref)ref.addEventListener("click",function(){if(state.reportMode==="updates"&&(!utc(state.periodStart)||!utc(state.periodEnd)||state.periodStart>state.periodEnd)){alert("Please select a valid reporting period.");return}state.reportSnapshots[state.reportMode]=buildReport(state.reportMode);state.dirty=false;render()});
+var copy=document.getElementById("copyReport");if(copy)copy.addEventListener("click",function(){var snap=state.reportSnapshots[state.reportMode];if(!snap){alert("Generate a report first.");return}if(typeof navigator==="undefined"||!navigator.clipboard||!navigator.clipboard.writeText){alert("Clipboard unavailable here. Copy from plain-text preview manually.");return}navigator.clipboard.writeText(snap.text).then(function(){alert("Copied the exact displayed snapshot text.")},function(){alert("Clipboard copy failed. Use the plain-text preview.")})});
 }
-function allowNavigate(){if(state.editing){alert("Demo editor is open. Simulate save or Cancel edit before switching tasks/views. The actual app requires Save / Discard / Cancel protections.");return false}return true}
-function demoSave(){var t=curr();var owner=document.getElementById("owner").value.trim();var finish=document.getElementById("finish").value.trim();var status=document.getElementById("status").value;var pct=Number(document.getElementById("pct").value);var update=document.getElementById("updateText").value.trim();
-if(!dateValue(finish)||!Number.isFinite(pct)||pct<0||pct>100){alert("Demo validation: enter a Nov DD date and progress between 0 and 100.");return}
-t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update){state.demoEntries.push({id:t.id,text:"Demo entry · "+update})}state.editing=false;render()
-}
+function allowNavigate(){if(state.editing){alert("Demo edit open: Simulate save or Cancel before navigating. Production uses frozen Save/Discard/Cancel.");return false}return true}
+function demoSave(){var t=current();if(!t)return;var owner=document.getElementById("owner").value.trim(),finish=document.getElementById("finish").value,status=document.getElementById("status").value,pct=Number(document.getElementById("pct").value),update=document.getElementById("updateText").value.trim();
+if(!utc(finish)||!Number.isFinite(pct)||pct<0||pct>100){alert("Invalid date/progress in simulated editor.");return}
+t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update)state.demoEntries.push({id:t.id,text:"Demo edit · "+update});state.editing=false;render()}
 document.querySelectorAll("[data-view]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.view=el.dataset.view;render()})});
-document.querySelectorAll("[data-stage]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.stage=el.dataset.stage;state.selected=rows()[0].id;render()})});
-
-render();
+document.querySelectorAll("[data-stage]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.stage=el.dataset.stage;render()})});
+ensureSelection();render();
 })();
+
 </script>
 </body>
 </html>
