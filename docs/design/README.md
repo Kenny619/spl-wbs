@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** PROPOSED v0.5 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** PROPOSED v0.6 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -48,6 +48,12 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - Flagging is hybrid: timeline-impacting risks automatically detected; contextual risks from stakeholder communication manually flagged by the project operator.
 - Once Under Watch, a task remains flagged across meetings until it returns to Green. Multiple active sources must not cancel one another silently.
 - Proposed design separates TaskStatus, delivery health, persistent watch and meeting priority/review markers. Current TaskStatus contract does not contain a Green state; formal Green definition and persistence architecture remain open product questions. See [risk watch model](05_RISK_WATCH_MODEL.md). No implementation approval implied.
+
+## Additional owner direction explored in v0.6 (2026-11-07)
+- Preferred direction for discussion: **derived / risk-driven Green**, instead of manually assigning Green as a direct task health input.
+- Green requires current/reliable automatic checks with no active schedule risks **and** explicit resolution of all outstanding manually flagged contextual risks. Amber/Red thresholds are still open. Unknown risk state must not be displayed as Green.
+- Important unresolved case: extending planned dates can erase calculated overdue conditions but not necessarily undo the impact on the original commitment. Documented in [Risk Watch Model](05_RISK_WATCH_MODEL.md) as a high-priority design question.
+- This is **exploratory owner preference**, not acceptance of any risk algorithm, new workbook data structure, or delivery implementation.
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
