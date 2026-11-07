@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 0.6
+# SPT-WBS UI Guideline — draft 0.7
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -31,11 +31,19 @@
 - **Current concept comparison:** (A) schedule-centered workbench, (B) two-column Meeting Guide (agenda + one selected-task surface, **Edit task** reveals fields inline), and (C) a **Present** reading treatment inside the existing Output Reports concept. Leadership presentation should **not** become another independent report engine. EMV-REPORT-1.0's **plain-text preview/copy** remains frozen; any presentation treatment is a proposed future UI enhancement to be scoped separately. Choose only after holistic mock evaluations. Full-screen mode alone is not evidence of better comprehension.
 - For shared-screen scenarios, evaluate the visibility and control of editing affordances; do not assume the presenter needs to change tasks while the audience watches. Any display adaptation must be reversible, discoverable and must not silently modify workbook content.
 
-### Date and working-day semantics (DES-002 exploration)
+### Date and working-day semantics (DES-003 exploration)
 - For meetings and reports, emphasize **planned finish date and working days remaining**; this is calendar time to deadline, **not outstanding effort or task completion**.
 - Reuse one defined project working calendar for countdown, Gantt holidays, blackout dates and schedule-risk signals once its contract is approved. Do not confidently show an unqualified number if calendar/holiday/blackout context is unknown.
 - Use Gantt bars for actual **scheduled span**, not fabricated progress fill. Render progress completion only from an eligible, trustworthy source and label its meaning.
-- The fixed DES-002 sample calendar excludes Mon–Fri weekends and Japan's 2026 Nov 23 holiday, **but not project blackout dates**. These demo numbers are not approved implementation rules; project blackout persistence is a future issue (#20).
+- The DES-003 date-only sample calendar excludes weekends, **official Japan Nov 03 and Nov 23, 2026 holidays**, and explicitly configured synthetic project blackouts **Nov 12 and Nov 20**; the meeting date defaults to simulated Nov 09. These are demo assumptions, not a complete production calendar engine or an approved project-settings schema. Project blackout persistence is a future Issue #20.
+
+### Meeting and reporting information hierarchy — proposed DES-003 rules
+- Give more horizontal area to an **actionable task list** (task/WBS, workstream, owner, status, finish, working days) while keeping the selected detail compact and edit-in-place.
+- Filters should reflect the operator's immediate question: Exceptions / All workstreams / Due Today / Next <5 working days; intersect with workstream and owner. Preserve true task identity and avoid meaningless count widgets as navigation.
+- Show both **predecessors and dependent successors**, with descriptive clickable links to the corresponding task; distinguish navigation from editing a dependency relationship. Follow stable ID relations, not name matching.
+- For stakeholder reports, prioritize **what changed** and decision-relevant dates. A proposed weekly report may surface completed, added, new risk and cleared watch lifecycle events over a default seven-date period; do not imply those event sources exist under the currently frozen History contract.
+- Latest Status task lists should group by workstream and show owner beside each task; preserve nonredundant Workstream heading format required by Issue #7.
+- Explicitly separate **proposal versus frozen requirement** where stakeholders request changing the approved Output Report contract, especially Save-count removal and lifecycle events absent from current History schema.
 
 ## 4. Typography, color and meaning
 - Text contrast: WCAG 2.2 AA **4.5:1** for normal text, **3:1** for large text; meaningful UI graphic contrast **3:1** where applicable.
