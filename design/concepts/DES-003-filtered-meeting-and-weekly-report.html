@@ -81,7 +81,7 @@ button:disabled{cursor:default;opacity:.5}.tiny{font-size:11px;color:var(--muted
 .report-period input{height:33px;border:1px solid #dbe4ea;border-radius:7px;padding:6px;font-size:12px;color:#304b62;background:white}
 .report-tags{font-size:11px;color:#6b7f90;margin-top:6px}
 .report-proposed{background:#f0f8fc;border:1px solid #cce2f0;border-radius:8px;padding:10px 12px;font-size:11px;color:#426780;margin:12px 0}
-.storyrow{padding:10px 0;border-bottom:1px solid #edf0f4}
+.update-summary{grid-template-columns:repeat(4,minmax(0,1fr))}.storyrow{padding:10px 0;border-bottom:1px solid #edf0f4}
 .storyrow:last-child{border-bottom:0}
 .storyrow strong{font-size:13px}
 .storyrow p{font-size:11px;margin:4px 0;color:#687a8c}
@@ -89,7 +89,7 @@ button:disabled{cursor:default;opacity:.5}.tiny{font-size:11px;color:var(--muted
 .storysection{margin:14px 0 17px}
 .storysection h3{margin:0 0 8px;font-size:16px}
 @media(max-width:1200px){.b-layout{grid-template-columns:minmax(470px,1.32fr) minmax(330px,1fr)}.meeting-columns,.meeting-item{grid-template-columns:minmax(145px,2fr) 70px 65px 59px 72px;gap:5px}.meeting-columns,.meeting-item{padding-left:10px;padding-right:10px}}
-@media(max-width:970px){.b-layout{grid-template-columns:1fr}.meeting-data{max-height:420px}.filter-selects{grid-template-columns:1fr 1fr 140px}.detail-compact .focus-title{font-size:20px}}
+@media(max-width:970px){.update-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.b-layout{grid-template-columns:1fr}.meeting-data{max-height:420px}.filter-selects{grid-template-columns:1fr 1fr 140px}.detail-compact .focus-title{font-size:20px}}
 @media(max-width:600px){.meeting-columns,.meeting-item{grid-template-columns:minmax(150px,2fr) 72px 62px 71px}.meeting-columns>*:nth-child(2),.meeting-item>*:nth-child(2){display:none}.filter-selects{grid-template-columns:1fr 1fr}.filter-selects label:last-child{grid-column:1/-1}.dependencies{grid-template-columns:1fr}.reportbar{overflow:auto}}
 </style>
 </head>
@@ -152,10 +152,10 @@ function watched(t){return riskCount(t)>0}
 function flagged(){return tasks.filter(watched)}
 function pill(s,kind){return '<span class="pill '+(kind||"")+'">'+esc(s)+'</span>'}
 function statusPill(t){return pill(t.status,t.status==="Blocked"?"risk":t.status==="At Risk"?"warn":t.status==="Completed"?"ok":"")}
-function filterTasks(){var arr=tasks.filter(function(t){var days=remaining(t.end);if(state.filter==="exceptions"&&!watched(t))return false;if(state.filter==="today"&&t.end!==calendar.asOf)return false;if(state.filter==="due5"&&!(t.end>=calendar.asOf&&days!==null&&days>=0&&days<5))return false;if(state.owner!=="all"&&t.owner!==state.owner)return false;if(state.workstream!=="all"&&t.group!==state.workstream)return false;return true});
+function filterTasks(){var arr=tasks.filter(function(t){var days=remaining(t.end);if(state.filter==="exceptions"&&!watched(t))return false;if(state.filter==="today"&&t.end!==calendar.asOf)return false;if(state.filter==="due5"&&!(t.end>=calendar.asOf&&days!==null&&days>=0&&days<5))return false;if(state.owner==="__unassigned__"&&!!t.owner)return false;if(state.owner!=="all"&&state.owner!=="__unassigned__"&&t.owner!==state.owner)return false;if(state.workstream!=="all"&&t.group!==state.workstream)return false;return true});
 return arr.sort(function(a,b){if(state.filter==="exceptions"){if(a.critical!==b.critical)return a.critical?-1:1;if(riskCount(a)!==riskCount(b))return riskCount(b)-riskCount(a)}if(state.filter==="all"){var d=groups.indexOf(a.group)-groups.indexOf(b.group);if(d)return d;return a.wbs.localeCompare(b.wbs,undefined,{numeric:true})}return a.end.localeCompare(b.end)||a.wbs.localeCompare(b.wbs,undefined,{numeric:true})})}
 function ensureSelection(){var arr=filterTasks();if(!arr.some(function(t){return t.id===state.selected}))state.selected=arr.length?arr[0].id:null}
-function options(vals,sel){return vals.map(function(v){return '<option value="'+esc(v)+'"'+(v===sel?" selected":"")+'>'+esc(v==="all"?"All":v)+'</option>'}).join("")}
+function options(vals,sel){return vals.map(function(v){return '<option value="'+esc(v)+'"'+(v===sel?" selected":"")+'>'+esc(v==="all"?"All":v==="__unassigned__"?"Unassigned":v)+'</option>'}).join("")}
 function listItem(t){var cls=t.id===state.selected?" selected":"";var work=(state.filter==="all")?"":t.group+" · ";
 return '<button type="button" class="meeting-item'+cls+'" data-task="'+esc(t.id)+'" aria-label="Show '+esc(t.title)+' detail">'+
 '<div><div class="entrytitle">'+esc(t.wbs)+' · '+esc(t.title)+'</div><div class="entrymeta">'+esc(work)+esc(t.owner||"Unassigned")+(watched(t)?" · Under Watch":"")+'</div></div>'+
@@ -167,9 +167,9 @@ function bQueue(){var arr=filterTasks(),owners=Array.from(new Set(tasks.map(func
 '<div class="filter-zone"><div class="filter-pills" role="group" aria-label="Task list filters">'+
 [["exceptions","Exceptions"],["all","All · Workstreams"],["today","Due today"],["due5","Next <5 workdays"]].map(function(v){return '<button type="button" data-filter="'+v[0]+'" class="filter-pill'+(state.filter===v[0]?" active":"")+'" aria-pressed="'+(state.filter===v[0])+'">'+esc(v[1])+'</button>'}).join("")+'</div>'+
 '<div class="filter-selects"><label>Workstream<select id="filterWorkstream">'+options(["all"].concat(groups),state.workstream)+'</select></label>'+
-'<label>Owner<select id="filterOwner">'+options(["all"].concat(owners),state.owner)+'</select></label>'+
+'<label>Owner<select id="filterOwner">'+options(["all"].concat(owners).concat(["__unassigned__"]),state.owner)+'</select></label>'+
 '<label>Meeting date<input type="date" id="meetingDate" value="'+esc(calendar.asOf)+'"></label></div>'+
-'<div class="filter-caption">“Today” uses the selected meeting date. Next <5 includes today plus the next 1–4 working days; blackouts and public holidays are excluded.</div></div>'+
+'<div class="filter-caption">“Today” uses the selected meeting date. Next &lt;5 includes today plus the next 1–4 working days.</div><details class="calendar-legend"><summary>Working calendar used by filters and countdowns</summary><div>Working week: Mon–Fri. Japan holidays: Nov 03 and Nov 23, 2026. Project blackout dates: Nov 12 (environment freeze), Nov 20 (deployment blackout). Both holiday and blackout dates are excluded. Sample only; future project-owned configuration is not yet implemented.</div></details></div>'+
 '<div class="meeting-columns"><div>WBS / task</div><div>Owner</div><div>Status</div><div>Finish</div><div>Working time</div></div>'+
 '<div class="meeting-data">'+listMarkup(arr)+'</div></section>'}
 function linkGroup(t,upstream){var xs=related(t,upstream);return '<div class="dep-group"><div class="depheader">'+(upstream?"Depends on · predecessors":"Dependent tasks · successors")+'</div>'+
@@ -202,7 +202,7 @@ function aScreen(){var arr=state.stage==="exception"?flagged():tasks;return '<di
 arr.map(aRow).join("")+'</div></section>'+compactDetail()+'</div>'}
 function eventCategory(k){return {completed:"Completed tasks",added:"Added tasks",riskNew:"New risks identified",released:"Under Watch released",changed:"Other material updates"}[k]||"Other"}
 function eventsForPeriod(){return events.filter(function(e){return e.date>=state.periodStart&&e.date<=state.periodEnd})}
-function statusAttention(t){return t.status==="At Risk"||t.status==="Blocked"}
+function statusAttention(t){return t.status==="At Risk"||t.status==="Blocked"||(t.status!=="Completed"&&t.status!=="Cancelled"&&t.end<calendar.asOf)}
 function groupedText(lines,items,format){if(!items.length){lines.push("No qualifying tasks.");return}groups.forEach(function(g){var xs=items.filter(function(t){return t.group===g});if(!xs.length)return;lines.push(g);xs.forEach(function(t){lines.push("- "+format(t))})})}
 function buildReport(mode){var generated="Nov 09 2026 09:00 JST (fixed demo)",data={},lines=[project+" — "+(mode==="latest"?"Latest Status Report":"Weekly Update Report (proposed)"),"Generated: "+generated,"Source: synthetic fixture, not an imported workbook",""];
 if(mode==="latest"){var attention=tasks.filter(statusAttention),mile=tasks.filter(function(t){return t.milestone}),near=tasks.filter(function(t){return !t.milestone&&t.status!=="Completed"&&t.end>=calendar.asOf&&remaining(t.end)<=4});
@@ -224,7 +224,7 @@ function reportItem(t){return '<div class="storyrow"><strong>'+esc(t.title)+'</s
 function reportGroup(items,format){if(!items.length)return '<div class="note">No qualifying items.</div>';return groups.map(function(g){var arr=items.filter(function(t){return t.group===g});if(!arr.length)return "";return '<div class="sectionlabel">'+esc(g)+'</div>'+arr.map(format).join("")}).join("")}
 function presentReport(s){if(s.mode==="latest"){var d=s.data;return '<div class="lead-main"><div class="lead-metrics"><div class="metric"><span class="kicker">Tasks · fixture</span><b>'+d.counts.tasks+'</b><span class="small muted">Not summary double-counted</span></div><div class="metric"><span class="kicker">Needs attention</span><b>'+d.attention.length+'</b><span class="small muted">Blocked or At Risk</span></div><div class="metric"><span class="kicker">Upcoming milestones</span><b>'+d.milestones.length+'</b><span class="small muted">Finish dates shown below</span></div></div><section class="lead-section"><h3>Milestones & deadlines</h3>'+reportGroup(d.milestones,reportItem)+'</section><section class="lead-section"><h3>Needs Attention</h3>'+reportGroup(d.attention,reportItem)+'</section></div>'+
 '<div class="lead-main" style="padding-top:0;grid-template-columns:1fr"><section class="lead-section"><h3>Near-term tasks</h3>'+reportGroup(d.near,reportItem)+'</section></div>'}
-return '<div class="lead-main" style="grid-template-columns:1fr"><div class="lead-metrics">'+["completed","added","riskNew","released"].map(function(k){return '<div class="metric"><span class="kicker">'+esc(eventCategory(k))+'</span><b>'+s.data.summary[k]+'</b><span class="small muted">Synthetic period entries</span></div>'}).join("")+'</div>'+
+return '<div class="lead-main" style="grid-template-columns:1fr"><div class="lead-metrics update-summary">'+["completed","added","riskNew","released"].map(function(k){return '<div class="metric"><span class="kicker">'+esc(eventCategory(k))+'</span><b>'+s.data.summary[k]+'</b><span class="small muted">Synthetic period entries</span></div>'}).join("")+'</div>'+
 '<div class="report-proposed">Proposed enhanced Update Report: added-task and watch lifecycle events require a separately approved data contract. No administrative Save-event counts appear in this stakeholder-facing concept.</div>'+
 ["completed","added","riskNew","released","changed"].map(function(k){var entries=s.data.events.filter(function(e){return e.kind===k});return '<section class="lead-section storysection"><h3>'+esc(eventCategory(k))+'</h3>'+reportGroup(entries,function(e){return '<div class="storyrow"><strong>'+esc(e.title)+'</strong><p>Owner: '+esc(e.owner||"Unassigned")+' · '+esc(e.date)+'</p><div class="note">'+esc(e.detail)+'</div></div>'})+'</section>'}).join("")+'</div>'}
 function lScreen(){var snap=state.reportSnapshots[state.reportMode];if(!snap){snap=buildReport(state.reportMode);state.reportSnapshots[state.reportMode]=snap}var preview=state.reportDisplay==="preview";
