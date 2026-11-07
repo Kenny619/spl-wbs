@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import { preflightManagedWorkbook } from "../../src/managed/preflight";
+import { saveManagedDirect, saveManagedAsCopy, sha256 } from "../../src/managed/directSave";
 
 /**
  * Byte-level central-directory duplicate probe. Unlike JSZip.file() mutations,
@@ -78,7 +79,57 @@ function mismatchLocalWorksheetName(input: Uint8Array): Uint8Array {
   throw new Error("Worksheet entry not found");
 }
 
+class DisposableRawDirectory {
+  readonly files = new Map<string, Uint8Array>();
+  writes = 0;
+  async getFileHandle(name: string, options: { create?: boolean } = {}) {
+    if (!this.files.has(name)) {
+      if (!options.create) throw Object.assign(new Error("Missing file"), { name: "NotFoundError" });
+      this.writes++;
+      this.files.set(name, new Uint8Array());
+    }
+    const dir = this;
+    return {
+      async getFile() {
+        return { async arrayBuffer() { return Uint8Array.from(dir.files.get(name)!).buffer; } };
+      },
+      async createWritable() {
+        let data = new Uint8Array();
+        return {
+          async write(value: Uint8Array) { data = Uint8Array.from(value); },
+          async close() { dir.writes++; dir.files.set(name, data); },
+        };
+      },
+    };
+  }
+  async removeEntry(name: string) { this.files.delete(name); }
+  asHandle(): FileSystemDirectoryHandle { return this as unknown as FileSystemDirectoryHandle; }
+}
+
 describe("Stage A raw ZIP central-directory duplicate characterization", () => {
+  it("blocks direct Save and Save As before writing any files for ambiguous raw ZIP", async () => {
+    const book = new ExcelJS.Workbook();
+    book.addWorksheet("ProjectWBS").addRow(["ID", "Title"]);
+    const bytes = duplicateCentralRecord(
+      new Uint8Array(await book.xlsx.writeBuffer()), "xl/worksheets/sheet1.xml",
+    );
+    const dir = new DisposableRawDirectory();
+    dir.files.set("Plan.xlsx", Uint8Array.from(bytes));
+    const before = Uint8Array.from(bytes);
+    const loadedHash = await sha256(bytes);
+    const edits = { taskId: "1", changes: { Title: "Changed" }, appVersion: "0.1.0" };
+    await expect(saveManagedDirect({
+      directory: dir.asHandle(), sourceName: "Plan.xlsx", loadedHash, ...edits,
+    })).rejects.toMatchObject({ code: "UNSUPPORTED_PACKAGE" });
+    await expect(saveManagedAsCopy({
+      directory: dir.asHandle(), sourceName: "Plan.xlsx",
+      destinationName: "Copy.xlsx", loadedBytes: bytes, loadedHash, ...edits,
+    })).rejects.toMatchObject({ code: "UNSUPPORTED_PACKAGE" });
+    expect(dir.writes).toBe(0);
+    expect([...dir.files.keys()]).toEqual(["Plan.xlsx"]);
+    expect(dir.files.get("Plan.xlsx")).toEqual(before);
+  });
+
   it("rejects inconsistent local and central worksheet names", async () => {
     const workbook = new ExcelJS.Workbook();
     workbook.addWorksheet("ProjectWBS").addRow(["ID", "Title"]);
