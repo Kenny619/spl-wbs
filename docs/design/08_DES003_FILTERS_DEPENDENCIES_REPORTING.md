@@ -55,7 +55,8 @@ Default proposed period: **the seven calendar dates ending on the user's current
 
 ## Mock test scenarios and evidence
 - HTML/JS source is versioned on the design branch. No workbook writes, SharePoint accesses, external communication scanning, backend reporting or persistent browser state.
-- Script parser/source-mocked behavior: verify mode navigation, filter composition, unassigned owners, due-today and <5-working-day inclusion, holiday/blackout arithmetic, dependency link navigation, inline Edit/Cancel and blocked navigation while editing, fixed report snapshots and explicit refresh, Latest owner/workstream formatting, and four weekly update event headings.
+- **Automated source-level validation: PASS (24/24 mocked-DOM assertions)** on DES-003 source Git blob `5c0acc557396cd30c85d4b80ea7255044d587afc`. Verified initial Meeting screen, four filter controls, calendar basis, due-today selection, less-than-five workdays inclusion and blackout counts, owner/workstream intersection with empty state, all 11 sample rows, predecessor and successor links, dependency drill-down, inline Edit/Cancel, blocked navigation during edit, Latest Status owner/workstream, copy-equivalent plain-text snapshot, four weekly lifecycle categories, default seven calendar dates, snapshot immutability until Generate/Refresh, extended event-source warnings, Unassigned owner filter and meeting-date change. Script compiled without syntax errors.
+- **Not equivalent to browser testing:** assertions run with a simulated DOM, not actual Chromium. Exact visual layout, clipboard behavior, screen-reader and pointer/keyboard ergonomics remain unverified.
 - **Still required:** real Edge/Chromium rendering at 1366×768 and reduced video-call sizes; cross-device typography/overflow audit; keyboard focus/ARIA review; real workbook calendar fidelity; owner visual acceptance. No unverified WCAG/visual QA claims.
 
 ## Next UI critique priorities
