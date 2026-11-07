@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** PROPOSED v0.7 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** PROPOSED v0.8 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -61,6 +61,13 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - Propose contextual inline impact review only for material/adverse commitment changes; ordinary edits keep the approved explicit Save flow. Replan acceptance does not erase the prior target or clear unrelated risks.
 - Pending key decision: who/what can accept a revised commitment (operator confirmation vs recorded external approval vs impact-based hybrid)? See [Persistent Risk Watch Model](05_RISK_WATCH_MODEL.md).
 - No baseline data field, replan workflow, approval authority or forecasting functionality authorized by this exploration.
+
+## Product Owner design-direction decision incorporated in v0.8 (2026-11-07)
+- **Proportional commitment acceptance selected as design direction:** for low-impact routine replanning, the project operator may record an accepted revised commitment; for materially consequential revisions, capture evidence of the appropriate stakeholder/decision-maker's agreement.
+- Merely saving a new planned finish does **not** constitute accepting or authorizing a changed commitment. Preserve planned/current vs agreed/accepted dates and previous commitment history.
+- When approval is pending, retain a meaningful impact/Under Watch state; cleared historical variance alone should not keep a task permanently watched.
+- Minimize administration with contextual inline impact acknowledgement rather than a separate approval workflow/modal for every task edit.
+- Details such as materiality, external evidence, audit fields, authority and data model **are not frozen/authorized**. See [Persistent Risk Watch Model v0.4](05_RISK_WATCH_MODEL.md).
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
