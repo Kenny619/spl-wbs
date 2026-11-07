@@ -159,7 +159,7 @@ function ensureSelection(){var arr=filterTasks();if(!arr.some(function(t){return
 function options(vals,sel){return vals.map(function(v){return '<option value="'+esc(v)+'"'+(v===sel?" selected":"")+'>'+esc(v==="all"?"All":v==="__unassigned__"?"Unassigned":v)+'</option>'}).join("")}
 function listItem(t){var cls=t.id===state.selected?" selected":"";var work=(state.filter==="all")?"":t.group+" · ";
 return '<button type="button" class="meeting-item'+cls+'" data-task="'+esc(t.id)+'" aria-label="Show '+esc(t.title)+' detail">'+
-'<div><div class="entrytitle">'+esc(t.wbs)+' · '+esc(t.title)+'</div><div class="entrymeta">'+esc(work)+esc(t.owner||"Unassigned")+(watched(t)?" · Under Watch":"")+'</div></div>'+
+'<div><div class="entrytitle">'+esc(t.wbs)+' · '+esc(t.title)+'</div><div class="entrymeta">'+esc(work)+(watched(t)?"Under Watch":t.milestone?"Milestone":"Task")+'</div></div>'+
 '<div class="cell">'+esc(t.owner||"Unassigned")+'</div><div class="cell">'+statusPill(t)+'</div><div class="cell">'+esc(displayDate(t.end))+'</div><div class="cell">'+esc(remainingLabel(t.end))+'</div></button>'}
 function listMarkup(arr){if(!arr.length)return '<div class="zero-match">No tasks match these filters.<div style="margin-top:10px"><button type="button" class="ghost" id="clearFilters">Clear filters</button></div></div>';
 if(state.filter==="all"){return groups.map(function(g){var subset=arr.filter(function(t){return t.group===g});if(!subset.length)return "";return '<div class="meeting-group">'+esc(g)+'</div>'+subset.map(listItem).join("")}).join("")}
@@ -206,7 +206,7 @@ function eventsForPeriod(){return events.filter(function(e){return e.date>=state
 function statusAttention(t){return t.status==="At Risk"||t.status==="Blocked"||(t.status!=="Completed"&&t.status!=="Cancelled"&&t.end<calendar.asOf)}
 function groupedText(lines,items,format){if(!items.length){lines.push("No qualifying tasks.");return}groups.forEach(function(g){var xs=items.filter(function(t){return t.group===g});if(!xs.length)return;lines.push(g);xs.forEach(function(t){lines.push("- "+format(t))})})}
 function buildReport(mode){var generated="Nov 09 2026 09:00 JST (fixed demo)",data={},lines=[project+" — "+(mode==="latest"?"Latest Status Report":"Weekly Update Report (proposed)"),"Generated: "+generated,"Source: synthetic fixture, not an imported workbook",""];
-if(mode==="latest"){var attention=tasks.filter(statusAttention),mile=tasks.filter(function(t){return t.milestone}),near=tasks.filter(function(t){return !t.milestone&&t.status!=="Completed"&&t.end>=calendar.asOf&&remaining(t.end)<=4});
+if(mode==="latest"){var attention=tasks.filter(statusAttention),mile=tasks.filter(function(t){return t.milestone}),near=tasks.filter(function(t){return !t.milestone&&t.status!=="Completed"&&!statusAttention(t)&&t.end>=calendar.asOf&&remaining(t.end)<=4});
 data={attention:attention.map(function(t){return Object.assign({},t)}),milestones:mile.map(function(t){return Object.assign({},t)}),near:near.map(function(t){return Object.assign({},t)}),counts:{tasks:tasks.length,blocked:tasks.filter(function(t){return t.status==="Blocked"}).length,atRisk:tasks.filter(function(t){return t.status==="At Risk"}).length}};
 lines.push("Executive snapshot","Current tasks: "+tasks.length+" · Blocked: "+data.counts.blocked+" · At Risk: "+data.counts.atRisk,"Overall progress: not calculated by this design simulator","","Needs Attention");
 groupedText(lines,attention,function(t){return t.title+" — "+t.status+" · Owner: "+(t.owner||"Unassigned")+" · Finish: "+displayDate(t.end)});
@@ -266,7 +266,7 @@ var copy=document.getElementById("copyReport");if(copy)copy.addEventListener("cl
 function allowNavigate(){if(state.editing){alert("Demo edit open: Simulate save or Cancel before navigating. Production uses frozen Save/Discard/Cancel.");return false}return true}
 function demoSave(){var t=current();if(!t)return;var owner=document.getElementById("owner").value.trim(),finish=document.getElementById("finish").value,status=document.getElementById("status").value,pct=Number(document.getElementById("pct").value),update=document.getElementById("updateText").value.trim();
 if(!utc(finish)||!Number.isFinite(pct)||pct<0||pct>100){alert("Invalid date/progress in simulated editor.");return}
-t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update)state.demoEntries.push({id:t.id,text:"Demo edit · "+update});state.editing=false;render()}
+t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update)state.demoEntries.push({id:t.id,text:"Demo edit · "+update});state.editing=false;if(!filterTasks().some(function(x){return x.id===t.id})){state.filter="all";state.owner="all";state.workstream="all"}render()}
 document.querySelectorAll("[data-view]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.view=el.dataset.view;if(state.view==="b")ensureSelection();render()})});
 document.querySelectorAll("[data-stage]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.stage=el.dataset.stage;render()})});
 ensureSelection();render();
