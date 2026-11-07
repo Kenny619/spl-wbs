@@ -1,4 +1,4 @@
-# SPT-WBS Office Meetings: Workflows, Display Targets & Information Budget — proposed 0.3
+# SPT-WBS Office Meetings: Workflows, Display Targets & Information Budget — proposed 0.4
 
 **Date:** 2026-11-07 JST · **State:** PROPOSED / not approved · **Controlling:** Issue #25, PR #29 · **Source:** Product Owner office-meeting workflow feedback in design discussion.
 
@@ -17,7 +17,7 @@
 - **Pre-meeting preparation** (proposed interaction, not an approved feature): exception signals originate from both **automatically detected timeline-impact risks** and **manually entered contextual/stakeholder risks**. An entity placed **Under Watch** persists across meetings until all active risk sources resolve and delivery health returns to Green. Meeting priority, meeting discussion state and actual TaskStatus are separate dimensions. See [Persistent Risk Watch Model](05_RISK_WATCH_MODEL.md) for the lifecycle and unresolved data-contract questions. Existing 'Needs Attention' counts are candidate signals but do not fully define risk or curated priority.
 - **Exception Review stage:** allocate early meeting time to prepared, cross-workstream exceptions. Show task identity, its workstream/parent path, reason for flag and discussion priority; drill into the same selected-task panel as the routine WBS review.
 - **Workstream Review stage:** move through workstreams and their hierarchical WBS tasks; identify tasks already discussed during Exception Review to avoid repetition, but leave them accessible for further updates.
-- **Integrity & Closure stage:** check missing or inconsistent owner, status, dates, progress and update history, and verify explicit save/unsaved states. Define actual integrity rules against the product's data contract, not by inventing arbitrary defaults.
+- **Inline quality and meeting closure:** while reviewing each workstream, surface missing or inconsistent owner, status, dates, progress or update history in context and verify saved/unsaved states. **Do not add a separate Integrity view** without evidence of a materially distinct task. Define actual validation rules against the product contract, not by inventing arbitrary defaults.
 - **Distinguish schedule status and meeting review state.** 'Reviewed in this meeting' is not 'Completed' and must not overwrite TaskStatus. Meeting-only progress may be temporary UI state or a separately approved data contract—not automatically a new persisted Excel column.
 - An immediately usable selected-task panel emphasizing **append update**, **status**, **planned dates**, **owner** and **visible save state**. Long historic updates readable without swamping editing space.
 - A contextual timeline rather than necessarily a full simultaneous dense grid, Gantt and editor at every viewport. Consider docked detail pane / resizing / focus mode concepts.
@@ -34,11 +34,11 @@
 - Drill down from a highlighted risk/milestone to the associated task without losing the leadership context. The capability to edit remains obtainable but is not visually dominant.
 - Compare a separate presentation/review focus with adaptable density in a shared workspace; a mere browser fullscreen toggle is not the entire solution.
 
-## Recommended three-stage weekly review choreography — **design hypothesis**
+## Updated weekly review choreography — **design hypothesis (DES-002)**
 1. **Before the call:** flag candidates, verify which items are true exceptions, order high-impact topics first, and prepare the meeting agenda.
 2. **Start of call — exceptions:** review prioritized cross-workstream items first; save updates to the same underlying task records. An issue remains in its normal workstream position.
 3. **Regular call — workstreams:** review entities grouped by their existing WBS workstream structure, with previously discussed items visibly distinguishable but not hidden without the user's choice.
-4. **Closure — integrity:** review record accuracy/completeness and any pending unsaved work; capture post-meeting tasks as external notes unless and until a new capture feature is approved.
+4. **Closure — without a separate Integrity stage:** resolve outstanding save state and note any remaining incomplete records within the workstream context; capture post-meeting tasks as external notes unless and until a capture feature is approved.
 
 A 'reviewed in this meeting' marker, agenda queue and per-meeting persistence are **concepts requiring separate product decisions**, not an assumed part of the Excel workbook or audit history.
 
