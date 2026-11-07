@@ -1,4 +1,4 @@
-# SPT-WBS Product Experience Principles — draft 0.1
+# SPT-WBS Product Experience Principles — draft 0.2
 
 **State:** PROPOSED, 2026-11-07. No Product Owner design freeze.
 
@@ -28,8 +28,12 @@ Hierarchy is not dependency; task status is not workstream identity; date-only s
 ### P7. Be dense with information, not dense with friction
 Enterprise users need high information throughput. Maintain aligned columns, readable labels and efficient navigation without forcing tiny text, low-contrast metadata or precision clicking. Allow adaptable density after evidence, not a single permanently cramped layout.
 
-### P8. Accessibility and resilience are core quality
-Target WCAG 2.2 AA; keyboard-operable grid, dialogs and splitter; perceivable focus; reduced motion; readable light/dark themes; resize/reflow; usable keyboard and mouse paths. An offline local-workbook application must communicate its local/offline and permission states calmly and accurately.
+### P8. Accessibility, office ergonomics, and shared-screen readability are core quality
+Target WCAG 2.2 AA; keyboard-operable grid, dialogs and splitter; perceivable focus; reduced motion; readable light/dark themes; resize/reflow; usable keyboard and mouse paths. Design for **two materially different corporate-office contexts**:
+1. **Work / edit on a laptop:** the operator is near the screen and needs high information density, precise task editing, dependable keyboard/mouse control, error prevention and a clear save state, often in limited vertical space.
+2. **Review / communicate on a shared display:** the audience sees the schedule on the same laptop, a conference-room monitor or through video-call screen sharing. Legibility must survive viewing distance, scaling, resolution reduction, video compression and missing hover affordances. Important dates, progress, status and the current discussion focus must remain recognizable without requiring the audience to decipher the entire editor.
+
+**Trade-off rule:** don't force one cramped high-density editing layout to serve distant viewers, nor permanently inflate the editing layout to presentation dimensions. Evaluate adaptive layout, adjustable density and a distinct *present/review focus* as alternative concepts before deciding. Sharing should be intentional and safe; not every viewer should need edit controls. An offline local-workbook application must communicate its local/offline and permission states calmly and accurately.
 
 ### P9. Let user evidence outrank trends
 “Modern 2026” is not a style recipe. Reuse familiar enterprise conventions when they decrease learning; create novel patterns only when they improve actual scenarios. Test before freezing design.
@@ -41,7 +45,7 @@ Target WCAG 2.2 AA; keyboard-operable grid, dialogs and splitter; perceivable fo
 - **“Dashboard = modern”**: four tall KPI cards are only justified if they deliver decisions or drilldowns proportional to their area. Favor task-oriented, action-linked summaries.
 
 ## Provisional success framework
-Before freezing concepts, define 5–8 representative tasks and baseline them against the current implementation. Proposed measures: task success without assistance, median and P90 completion time, error/undo frequency, time to identify a blocked/late task, time to edit and verify a save, and subjective confidence. Numeric targets must be based on baselining, not invented in advance.
+Before freezing concepts, define representative **editing and shared-screen review scenarios** and baseline them against the current implementation. Proposed measures: task success without assistance, median and P90 completion time, error/undo frequency, time to identify a blocked/late task, time to edit and verify a save, subjective confidence, and whether distant/video-call viewers can identify the referenced task, status, milestone and date without verbal UI-navigation instructions. Numeric targets must be based on baselining, not invented in advance.
 
 ## Standards and design references
 - [W3C WCAG 2.2](https://www.w3.org/TR/WCAG22/)
