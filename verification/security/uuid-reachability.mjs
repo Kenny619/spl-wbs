@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const root = path.resolve("node_modules/exceljs/lib");
+const root = path.resolve(process.env.UUID_SCAN_ROOT ?? "node_modules/exceljs/lib");
+const reportPath = path.resolve(process.env.UUID_REPORT_PATH ?? "work/ci/uuid-reachability.json");
 if (!fs.existsSync(root)) throw new Error("ExcelJS library directory not installed");
 const importPattern = /require\s*\(\s*["']uuid["']\s*\)|\bfrom\s*["']uuid["']/g;
 const apiPattern = /\b(?:uuid|UUID)\s*(?:\.\s*v[356]\b|\[\s*["']v[356]["']\s*\])|\b(?:uuidv[356]|uuidV[356])\s*\(/g;
@@ -48,8 +49,8 @@ const report = {
   gate: violations.length === 0 && uuidImports === 1 ? "PASS_BOUNDED_SOURCE_GATE" : "BLOCKED_REVIEW_REQUIRED",
   conclusion: "STATIC_SCREEN_ONLY; no proof of bundled code reachability or exploit absence",
 };
-fs.mkdirSync("work/ci", { recursive: true });
-fs.writeFileSync("work/ci/uuid-reachability.json", JSON.stringify(report, null, 2));
+fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
 if (report.gate !== "PASS_BOUNDED_SOURCE_GATE") {
   console.error("Unreviewed UUID import/call shape or missing expected v4 import; CI source screen blocked.");
