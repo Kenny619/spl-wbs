@@ -23,8 +23,9 @@ try {
   run("approved-v4", "const {v4: uuidv4} = require('uuid');\nconst value = uuidv4();", "PASS_BOUNDED_SOURCE_GATE");
   run("unexpected-v3", "const {v3: make} = require('uuid');\nconst value = make('x', 'y', new Uint8Array(1), 0);", "BLOCKED_REVIEW_REQUIRED");
   run("unexpected-namespace", "const uuid = require('uuid');\nconst value = uuid.v5('x', 'y');", "BLOCKED_REVIEW_REQUIRED");
+  run("dynamic-import", "const {v4: uuidv4} = require('uuid');\nconst x = import('uuid');", "BLOCKED_REVIEW_REQUIRED");
   run("missing-uuid", "const value = 'no import';", "BLOCKED_REVIEW_REQUIRED");
-  console.log("UUID source-screen negative/positive fixtures: 4 PASS");
+  console.log("UUID source-screen negative/positive fixtures: 5 PASS");
 } finally {
   fs.rmSync(dir, { recursive: true, force: true });
 }
