@@ -1,4 +1,4 @@
-# Persistent Risk Watch — Working Review Concept (proposed 0.1)
+# Persistent Risk Watch — Working Review Concept (proposed 0.2)
 
 **Date:** 2026-11-07 JST · **State:** PROPOSED / product-design discovery, NOT an approved functional specification · **Controlling:** [UI overhaul Issue #25](https://github.com/Kenny619/spl-wbs/issues/25), [draft PR #29](https://github.com/Kenny619/spl-wbs/pull/29).
 
@@ -55,6 +55,49 @@ The existing current workbook has a `TaskStatus` enum including **Not Started, I
 1. **Meaning of Green:** Is it an explicit RAG-style delivery-health assessment separate from TaskStatus, or should Green be derived solely from defined risk checks plus explicit manual-context resolution?
 2. **Who confirms context resolution?** Can the operator mark a manual risk resolved in one quick action with a reason, or is some other evidence/approval needed?
 3. **Watch storage and audit:** persistent flag state requires an approved workbook/data architecture; no assumption that the existing Excel Managed Variant already contains it.
+
+## Owner direction for health derivation (2026-11-07; exploration, not final approval)
+The Product Owner selected **risk-driven delivery health for exploration** rather than manually setting a single Green/Amber/Red judgment. Core intention: **Green when all relevant automatic risk conditions have cleared AND each outstanding manually entered contextual risk has been explicitly resolved.** This selects a concept direction, not an authorized schema change, formula, threshold, save workflow or UI implementation.
+
+### Proposed deterministic health semantics
+| Health presentation | Candidate underlying logic | Under Watch |
+| --- | --- | --- |
+| **Green / Clear** | Risk checks are current, data is sufficiently trustworthy, **zero active automatic signals** and **zero unresolved manual contextual risks** | No |
+| **Amber / At Risk** | One or more credible unresolved signals, but no defined critical-impact condition | Yes |
+| **Red / Critical** | One or more signals meet a separately approved material-impact / criticality rule | Yes |
+| **Unknown / Needs verification** | Source data or risk evaluation is missing, stale, invalid or otherwise cannot establish Green | Preserve prior watch; do not falsely mark Green |
+
+*Amber/Red classification criteria remain unapproved*. Avoid a made-up overall risk score or artificial automatic severity. A 'Blocked' task or explicit At Risk status may be a signal input, but whether and how it maps to Amber/Red requires a separate rule. Completed and Cancelled have task-lifecycle semantics, not automatic proof of contextual risk resolution.
+
+**Conservative Green predicate, for design discussion only:**
+
+`Green = checksCompleteAndCurrent AND automaticActiveRisks.length === 0 AND manualUnresolvedRisks.length === 0`
+
+**Key consequence:** a manually flagged stakeholder dependency is not cleared simply because the planned finish is in the future or a date has been moved. Manual contextual risk closure requires an explicit action with auditable rationale. If another source remains active, watch persists. A task can be `In Progress` and Green, Amber, Red or Unknown; this is separate from its `TaskStatus`.
+
+### Automatic schedule signal integrity
+An especially important ambiguity exists when a user moves a deadline. **Recalculating against the new planned date alone can incorrectly make a slipping task Green.** Explore preservation of original commitments / baselines, effective date-change history, and an impact/resolution acknowledgment. The present Excel Managed Variant does **not** automatically support a forecast engine or immutable project schedule baseline; do not present them as existing functionality. Prioritize discussion of this problem before specifying any date-impact algorithm.
+
+### Reason-based watch history
+Keep the watch at the **task level**, but maintain **independent reason-level state** with source (automatic vs manually flagged), explanation, opened/updated/cleared timestamps, author/action, and link to relevant schedule/source change when supported. Multiple manual reasons can coexist. One cleared signal must not collapse others. Clearing the final reason may transition health to Green only after reliable evaluation. Record prior watch episodes and reopen on new risk, avoiding uncontrolled oscillation or lost history. Data storage and audit semantics require explicit Product Owner approval.
+
+### Concrete edge cases to test
+1. Schedule is late; health Amber/Red under an approved severity rule, even with no manual flag.
+2. Schedule is healthy, but stakeholder risk unresolved; **not Green**.
+3. Both risk types active; schedule recovers; **still watched**.
+4. Final manual risk explicitly resolved, schedule checks current and clear; **Green; Watch cleared with historical record**.
+5. Planned finish moved out, yet commitment missed; **do not silently clear watch without evaluating baseline impact**.
+6. Risk check unavailable because Excel/source data is incomplete; **Unknown / retain prior watch**, not artificially Green.
+7. A discussed agenda item remains watched; meeting discussion status must not alter risk lifecycle.
+
+### UI behavior implications for later mock concepts
+- An exception row communicates **which risk reasons remain**, not only an unexplained red/amber badge.
+- The selected task detail offers an explicit **Resolve context risk** interaction (if future data/permission contract is approved), never a direct magical 'Set Green' control.
+- In leadership presentations, show the most consequential active risks with a readable reason and target impact; do not visually treat 'Under Watch' as 'Priority this week.'
+- If Risk Health is Unknown, distinguish it clearly from Green while avoiding needless alarm.
+
+### Next major unresolved design choice
+When changing a planned finish date removes an apparent automatic delay, should historical commitment/slippage remain under watch until the change is reviewed, or should recalculated current-plan health alone clear the signal? Recommend **preserving commitment-impact evidence** to avoid a misleading Green. Owner input requested before design freeze.
 
 ## Change-control boundary
 Exploration only. Existing v18 baseline, Excel workbook schema, TaskStatus enum, frozen managed requirements, and authorized delivery activities remain unchanged. No implementation, merge, release or additional mandatory UI review triggered by this concept.
