@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 0.4
+# SPT-WBS UI Guideline — draft 0.5
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -9,6 +9,7 @@
 - Promote alerts that result in action. “Needs attention” should expose affected tasks with a one-action filter or direct navigation, not merely a static number (Issue #17).
 - **Weekly meeting structure:** prepare and prioritize exceptions *before* the call; discuss across all workstreams at the beginning, then follow workstream-grouped WBS hierarchy for routine progress and data integrity. Present these as complementary navigation paths into the **same underlying tasks**, not separate task repositories. Do not silently equate calculated 'Needs Attention' with curated meeting flags.
 - Discussion/review status is distinct from actual task status. If concepts such as 'discussed this meeting' or saved agenda are proposed, they must not silently write new workbook fields or alter TaskStatus without a separately approved functional contract.
+- **Persistent risk monitoring:** show automatically detected schedule risks and manually flagged contextual risks as independent sources. Under Watch must survive meetings and discussion; it may clear only once all active sources resolve and delivery health is Green (exact health definition pending approval). A task with green-looking dates is not necessarily healthy when a contextual risk remains; the UI must never imply otherwise. See [Risk Watch Model](05_RISK_WATCH_MODEL.md).
 - Do not reserve large permanent screen area for low-action-value KPIs. The schedule should have the largest useful working region at common desktop viewports.
 
 ## 2. Text, spacing and density — candidate design tokens
