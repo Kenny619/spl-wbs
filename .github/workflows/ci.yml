@@ -29,6 +29,10 @@ jobs:
       - name: Install
         id: install
         run: npm ci
+      - name: UUID scanner positive and negative fixtures
+        run: node verification/security/test-uuid-reachability.mjs
+      - name: Bounded ExcelJS UUID reachability screening
+        run: node verification/security/uuid-reachability.mjs
       - name: Unit tests
         run: npm test -- --reporter=default --reporter=json --outputFile=work/ci/unit.json
       - name: Production build
