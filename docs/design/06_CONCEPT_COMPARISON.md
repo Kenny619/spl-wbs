@@ -2,7 +2,7 @@
 
 **Created:** 2026-11-07 JST · **State:** D1 / divergence, PROPOSED · **Controlling:** [Issue #25](https://github.com/Kenny619/spl-wbs/issues/25) · **Draft discussion:** [PR #29](https://github.com/Kenny619/spl-wbs/pull/29)
 
-**Editable prototype:** [DES-001-holistic-meeting-concepts.html](../../design/concepts/DES-001-holistic-meeting-concepts.html). View as an HTML file locally in a browser; GitHub's source-code preview does not execute HTML.
+**Editable prototype:** [DES-001-holistic-meeting-concepts.html](../../design/concepts/DES-001-holistic-meeting-concepts.html) · Git blob SHA `0250c0d1a427116f20a1a92982c66577491ff4e7`. View as an HTML file locally in a browser (GitHub → Raw → save as `.html` → open with Edge); GitHub's source-code preview does not execute HTML.
 
 ## Intent and scope
 First holistic comparison of *whole workspaces*, not isolated token samples. Use **synthetic Northstar Service Rollout** WBS data across Platform Readiness, Data Migration, and Launch Enablement (10 sample entities, 4 watched tasks, contextual and schedule watch signals). It reflects the owner's real meeting patterns, but no external SharePoint or workbook content.
@@ -68,7 +68,7 @@ The prototype is a **design simulator, not the app**: task selection, stage/conc
 
 ## Evidence and acceptance status
 - **Code authoring:** HTML/CSS/JS source committed to design-only draft branch.
-- **Source validation:** inline JS syntax parsed; contains switching, task selection and demo update handlers.
+- **Source validation:** inline JS syntax PASS; mocked-state execution PASS for Schedule Canvas, Meeting Guide, workstream phase and Leadership Briefing; source contains task selection and demo update handlers. This is **not** equivalent to browser-rendered visual QA or end-to-end interaction acceptance.
 - **Rendered visual QA / screenshot measurements:** **NOT YET VERIFIED** in this document. Exact content fit, scroll behavior and font-size suitability are hypotheses. Do not freeze spacing/density tokens from this prototype.
 - **Accessibility testing:** NOT YET COMPLETED. Prototype controls use basic labels and keyboard affordances, but no claim of WCAG conformance.
 - **Product Owner visual critique:** PENDING.
