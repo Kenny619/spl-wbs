@@ -1,9 +1,9 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** PROPOSED v0.1 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** PROPOSED v0.2 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
-Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
+Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
 
 ## Current reference and provenance
 - **Approved current visual target:** v18, [reference/UI_BASELINE_v18_CANDIDATE.html](../../reference/UI_BASELINE_v18_CANDIDATE.html); reference SHA-256: `375425fa94e41ef7d55cc4fac8fe60ad038a2c1095ad04d735bdc1656345ad83`, per [baseline manifest](../../reference/baseline-manifest.json).
@@ -15,7 +15,7 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 ## Documents
 - [01 — Product experience principles](01_PRINCIPLES.md): why and how to resolve trade-offs.
 - [02 — UI guideline](02_UI_GUIDELINE.md): initial rules, tokens and testable expectations.
-- [03 — Design review and change-control process](03_REVIEW_PROCESS.md): future concept, approval and validation gates.
+- [03 — Design review and change-control process](03_REVIEW_PROCESS.md): future concept, approval and validation gates **plus post-release feedback, change request and UI issue management**.
 
 ## Boundaries and change control
 - **No design implementation, pixel-baseline replacement, issue acceptance, merge, release or approval is implied by these drafts.**
@@ -23,6 +23,12 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - UI design reviews do **not** join every ongoing feature iteration before the separately authorized overhaul starts.
 - Keep every proposed redesign in a dedicated design branch / draft PR, versioned with source links, annotated wireframes, decision log and owner disposition. Merge into the source repository only after explicit Product Owner approval.
 - Future artifacts: a task-flow inventory, annotated low-fidelity wireframes, visual concepts, interactive prototypes, state matrix, design tokens, accessibility/performance evidence and accepted baselines. Every mock image should link to its source and design decision, not be an orphan screenshot.
+
+## Owner feedback incorporated in proposed v0.2 (2026-11-07)
+1. P8 now accounts for corporate laptop edit ergonomics and shared-screen legibility on meeting monitors or via video calls; separate presentation/review behavior remains a concept to compare, **not an approved implementation requirement**.
+2. Font, spacing, row-height and density numbers are acceptable only as candidate starting values. No token decision until full holistic design mocks are reviewed in all relevant contexts.
+3. Review governance extends beyond release: GitHub feedback intake, deduplication, triage, severity, owner disposition, proportionate review, release traceability and experience follow-up.
+No current v18 code/spec lock is altered. No design-freeze or implementation authorization inferred.
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
