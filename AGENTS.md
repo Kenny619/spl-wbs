@@ -58,3 +58,12 @@
 - Active visual regression compares a freshly built product with the pinned v18 using identical synthetic workbooks, clocks, viewports and interaction states. Keep the 0.001 maximum different-pixel ratio. Replace obsolete expectations only where they conflict with v18.
 - Preserve functional capabilities, read-only local Excel/SharePoint access, privacy/security rules, and all DEC-EMV-002-01 through -11. This UI implementation does not authorize managed writes, architecture freeze, requirement closure, merge, deployment or release.
 - Complete implementation and relevant unit/build/browser validation within the existing workflow. Do not reopen settled design approval or initiate additional QA/architecture workstreams without Product Owner approval. Report genuine functional defects separately.
+
+
+## Current Product Owner authorization — Excel Managed Variant v1 (2026-11-06)
+- The Product Owner explicitly approved **starting implementation** of the separate Excel Managed Variant v1 using the restricted, fail-closed supported-workbook strategy. This supersedes earlier notes stating implementation is not authorized, **only for the scoped managed v1 development**.
+- Preserve approved requirement contracts EMV-WB-1.0 (#3), EMV-EDIT-1.0 (#4), EMV-HIST-1.0 (#5), EMV-SET-1.0 (#6) and EMV-REPORT-1.0 (#7), plus decisions DEC-EMV-002-01..11 and the EMV-ARCH-1.0 direction. Neither the v18 reference nor the existing read-only viewer may be modified or given managed write behavior.
+- Develop in isolated `feature/excel-managed-v1` with reviewable draft PRs, existing CI, and synthetic data. Direct Save, Save As, backup/recovery, editing, history, Settings and reports must be implemented and tested before acceptance.
+- Unsupported or unverified Excel constructs must **fail closed**. No promise of race-free multi-file atomicity or universal Excel lock detection. An uncertain write must never be reported as successful.
+- This authorization **does not freeze Issue #2 architecture, approve PR merging, deployment or release, waive independent QA/physical Edge gates, or mark #3–#8 accepted/closed**. Only escalate genuine new product decisions or exceptions; routine coordination and implementation should proceed without redundant owner checkpoints.
+- Corporate-PC validation files must be downloadable from GitHub before requesting physical tests; sandbox-only artifacts are insufficient.

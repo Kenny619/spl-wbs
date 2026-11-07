@@ -120,10 +120,12 @@ test("renders 2000 synthetic rows", async ({ page }) => {
 });
 
 test("Chrome opens the built file", async () => {
+  test.setTimeout(90_000); // Windows GitHub runner browser-channel startup can consume the 30s default.
   await smokeChannel("chrome", schedulePath);
 });
 
 test("Edge opens the built file", async () => {
+  test.setTimeout(90_000); // Preserve the real file chooser while allowing slow browser startup.
   await smokeChannel("msedge", schedulePath);
 });
 
