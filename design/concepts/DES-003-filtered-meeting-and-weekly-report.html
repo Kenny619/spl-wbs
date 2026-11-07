@@ -28,12 +28,75 @@ button:disabled{cursor:default;opacity:.5}.tiny{font-size:11px;color:var(--muted
 .preview-shell pre{font:13px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f9fc;border:1px solid #e1e7ef;border-radius:10px;padding:18px;max-height:590px;overflow:auto}
 @media(max-width:1100px){.reportbar{display:block}.report-actions{justify-content:flex-start;margin-top:10px}.b-layout .focusfacts{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.deadline-hero{padding:12px}.deadline-hero strong{font-size:20px}.deadline-count{padding-left:12px}.deadline-count strong{font-size:28px}.report-actions button{font-size:11px}}
+
+/* DES-003: task-list-first weekly review, compact detail, filter toolbar */
+.b-layout{grid-template-columns:minmax(570px,1.44fr) minmax(370px,.92fr);align-items:start;gap:13px}
+.meeting-list .panelhead{padding:12px 15px;min-height:53px}
+.meeting-list .panelhead h2{font-size:15px}
+.filter-zone{padding:12px 14px 11px;background:#fafbfd;border-bottom:1px solid var(--line)}
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.filter-pill{border:1px solid #d7e0e9;background:white;color:#36516b;border-radius:7px;font-size:12px;font-weight:650;padding:7px 9px}
+.filter-pill.active{background:#e5f4fd;border-color:#92c8e6;color:#075c87}
+.filter-selects{display:grid;grid-template-columns:1fr 1fr minmax(128px,.9fr);gap:9px;align-items:end}
+.filter-selects label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#677c92;font-weight:650;min-width:0}
+.filter-selects select,.filter-selects input{height:34px;padding:6px 8px;background:white;border:1px solid #dae3eb;border-radius:7px;min-width:0;width:100%;font-size:12px;color:#314a62}
+.filter-caption{font-size:10px;color:#8392a2;margin-top:7px}
+.meeting-columns,.meeting-item{display:grid;grid-template-columns:minmax(170px,2.15fr) minmax(75px,.84fr) 80px 66px 95px;gap:9px;align-items:center}
+.meeting-columns{background:#f2f5f9;color:#718296;font-size:10px;font-weight:750;letter-spacing:.025em;padding:9px 14px;border-bottom:1px solid var(--line)}
+.meeting-data{max-height:65vh;min-height:190px;overflow:auto}
+.meeting-item{width:100%;text-align:left;border:0;border-bottom:1px solid #e9eef2;background:white;padding:10px 14px;min-height:55px;color:#24374c;cursor:pointer}
+.meeting-item:hover{background:#f6fafe}.meeting-item.selected{background:#e5f4fb;box-shadow:inset 3px 0 #1880b0}
+.meeting-item .entrytitle{font-size:12px;font-weight:690;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meeting-item .entrymeta{font-size:11px;color:#738498;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meeting-item .cell{font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meeting-item .cell:last-child{font-weight:690;color:#276486;white-space:normal}
+.meeting-group{font-size:11px;font-weight:760;padding:9px 14px;color:#42617a;background:#edf3f8;border-bottom:1px solid #dce7ef}
+.zero-match{padding:32px 18px;color:#687d90;font-size:13px;text-align:center}
+.detail-compact .panelhead{padding:11px 15px;min-height:54px}
+.detail-compact .panelbody{padding:14px 15px 17px}
+.detail-compact .focus-title{font-size:19px;line-height:1.22;margin:5px 0 12px}
+.detail-facts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.detail-fact{border:1px solid #e6ecf2;border-radius:7px;padding:9px 10px;min-width:0}
+.detail-fact .key{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#75869b;font-weight:700;margin-bottom:3px}
+.detail-fact .val{font-size:14px;font-weight:680;overflow-wrap:anywhere}
+.detail-fact.due{background:#eef7fb;border-color:#d9eaf3}
+.detail-fact.due .val{font-size:19px;color:#1c6689}
+.detail-sub{font-size:10px;color:#778a9b;margin:8px 0 5px}
+.detail-compact .sectionlabel{margin:13px 0 7px;font-size:10px}
+.detail-compact .riskbox{margin:7px 0;padding:9px 10px}
+.detail-compact .big-update{margin:7px 0;padding:10px 11px;font-size:12px}
+.dependencies{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dep-group{background:#f7f9fb;border:1px solid #e7eef3;border-radius:8px;padding:9px;min-width:0}
+.dep-group .depheader{font-size:11px;font-weight:710;color:#536c80;margin-bottom:6px}
+.dep-link{display:block;width:100%;background:#fff;border:1px solid #dce7f0;border-radius:6px;text-align:left;padding:8px;margin:5px 0;color:#176c94;font-size:11px;line-height:1.4;cursor:pointer}
+.dep-link:hover{border-color:#99c6df;background:#eaf7fd}
+.dep-link span{display:block;color:#7b8c99;font-size:10px;margin-top:3px}
+.dep-empty{font-size:11px;color:#8794a3}
+.calendar-legend{font-size:11px;color:#526b80;border:1px solid #dfe7f0;background:#f6f9fc;border-radius:8px;padding:10px 12px;margin:10px 0 2px}
+.compact-editor .fieldgrid{gap:8px}
+.compact-editor .field input,.compact-editor .field select{height:34px}
+.detail-compact .savebar{margin-top:10px;padding:10px 0 0;border:0;background:transparent}
+.report-period{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.report-period label{font-size:10px;color:#5f7285;display:flex;flex-direction:column;gap:3px}
+.report-period input{height:33px;border:1px solid #dbe4ea;border-radius:7px;padding:6px;font-size:12px;color:#304b62;background:white}
+.report-tags{font-size:11px;color:#6b7f90;margin-top:6px}
+.report-proposed{background:#f0f8fc;border:1px solid #cce2f0;border-radius:8px;padding:10px 12px;font-size:11px;color:#426780;margin:12px 0}
+.storyrow{padding:10px 0;border-bottom:1px solid #edf0f4}
+.storyrow:last-child{border-bottom:0}
+.storyrow strong{font-size:13px}
+.storyrow p{font-size:11px;margin:4px 0;color:#687a8c}
+.storyrow .tiny{font-size:10px}
+.storysection{margin:14px 0 17px}
+.storysection h3{margin:0 0 8px;font-size:16px}
+@media(max-width:1200px){.b-layout{grid-template-columns:minmax(470px,1.32fr) minmax(330px,1fr)}.meeting-columns,.meeting-item{grid-template-columns:minmax(145px,2fr) 70px 65px 59px 72px;gap:5px}.meeting-columns,.meeting-item{padding-left:10px;padding-right:10px}}
+@media(max-width:970px){.b-layout{grid-template-columns:1fr}.meeting-data{max-height:420px}.filter-selects{grid-template-columns:1fr 1fr 140px}.detail-compact .focus-title{font-size:20px}}
+@media(max-width:600px){.meeting-columns,.meeting-item{grid-template-columns:minmax(150px,2fr) 72px 62px 71px}.meeting-columns>*:nth-child(2),.meeting-item>*:nth-child(2){display:none}.filter-selects{grid-template-columns:1fr 1fr}.filter-selects label:last-child{grid-column:1/-1}.dependencies{grid-template-columns:1fr}.reportbar{overflow:auto}}
 </style>
 </head>
 <body>
 <header class="top">
  <div class="brand"><div class="mark">W</div><div><div class="brandtitle">SPT–WBS <span class="pill blue">DES–003</span></div><div class="brandmeta">Holistic concept exploration · Synthetic data</div></div></div>
- <nav class="concept-controls" aria-label="Choose design concept"><button id="navA" class="active" data-view="a">A · Schedule canvas</button><button id="navB" data-view="b">B · Meeting guide</button><button id="navL" data-view="l">Reports · Present</button></nav>
+ <nav class="concept-controls" aria-label="Choose design concept"><button id="navA" data-view="a">A · Schedule canvas</button><button id="navB" class="active" data-view="b">B · Meeting guide</button><button id="navL" data-view="l">Reports · Present</button></nav>
  <div class="topright"><b>DESIGN PROPOSAL · NOT PRODUCT</b>Simulated edits only · No workbook access</div>
 </header>
 <main class="canvas">
