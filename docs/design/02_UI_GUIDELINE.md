@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 0.2
+# SPT-WBS UI Guideline — draft 0.3
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -19,11 +19,12 @@
 - Evaluate **whole-screen readability**: whether hierarchy, column width, dates, task titles, bars, action hierarchy and simultaneous edit states work *together*. Judge layout in situ; type-size adequacy cannot be decided from a table of token values alone.
 
 ## 3. Corporate-office viewing contexts — requirements to validate
+**Owner workflow evidence:** weekly status calls commonly edit existing tasks (append Updates; change dates, status, owner) while progressing entity by entity. Leadership calls mainly present progress, next milestones and flagged risks. Task creation is generally deferred until after the meeting, based on separate notes. See [meeting workflows / viewport study](04_MEETING_WORKFLOWS_AND_VIEWPORTS.md).
 - **Laptop work/edit:** favor space-efficient scanning, persistent WBS/Gantt synchronization, task context, keyboard shortcuts and visible save/conflict feedback. Avoid gratuitous empty space or oversized surfaces that squeeze actual schedule content.
 - **Same-screen discussion:** make a referenced task and the corresponding bar/row easy to follow as attention shifts between participants; controls should not compete with the schedule.
 - **Conference-room monitor:** validate at representative audience viewing distances, including whether dates, task names, milestone labels, alerts and focused items can be read without zooming the whole desktop.
 - **Video-call screen share:** validate at constrained remote-window sizes, common video-call downscaling and compressed imagery. Don't depend on fine hairlines, subtle hue differences, tiny labels, hovering, or precise cursor position to communicate meaning; support an obvious discussion/focus state.
-- **Mode hypothesis, not adopted feature:** compare (A) one responsive layout with adjustable density, (B) a lightweight dedicated presentation/review view, and (C) a hybrid focus capability. Choose only after holistic mock evaluations. Full-screen mode alone is not evidence of better audience comprehension.
+- **Mode hypothesis, not adopted feature:** compare (A) one responsive layout with adjustable density, (B) a lightweight dedicated presentation/review view, and (C) a hybrid focus capability. The strongest initial hypothesis is a **Working Review** view for live updates and a **Leadership Briefing** view for larger milestone/risk communication. Choose only after holistic mock evaluations. Full-screen mode alone is not evidence of better audience comprehension.
 - For shared-screen scenarios, evaluate the visibility and control of editing affordances; do not assume the presenter needs to change tasks while the audience watches. Any display adaptation must be reversible, discoverable and must not silently modify workbook content.
 
 ## 4. Typography, color and meaning
@@ -49,6 +50,7 @@
 - Task edit and history must preserve workbook provenance, change-set relationships and a clear committed-vs-draft distinction.
 
 ## 7. Provisional quality gates for the later overhaul
+**Sizing and information budget study (nonbinding):** working review at ~1366×768 with 15–16px primary task type and ~8–12 navigable rows; leadership at ~1280×720 usable canvas with 20–24px featured task type and ~5–7 featured items; 1920×1080 video output where available. These are **candidate values**, not design approval. Validate on actual Windows laptops, room displays and reduced participant video windows.
 1. WCAG 2.2 AA-focused keyboard/contrast/reflow review and data-grid APG assessment.
 2. **Holistic full-workspace** reviews of proposed type, spacing and density at actual corporate laptop sizes and zoom, and on shared meeting displays, both light and dark. Do not approve design tokens before this gate.
 3. Viewing evaluations on a conference display and a video-call screen share, checking legibility at distance, compression tolerance, selected-item focus and absence of hover-only information.
