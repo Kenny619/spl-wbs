@@ -438,7 +438,7 @@ function closeOverlay(){state.overlay=null;state.pendingNav=null;renderOverlay()
 function draftHasChanges(){var t=current();if(!state.editing||!t)return false;var owner=document.getElementById("owner"),finish=document.getElementById("finish"),status=document.getElementById("status"),pct=document.getElementById("pct"),update=document.getElementById("updateText");
 if(!owner||!finish||!status||!pct||!update)return true;
 return owner.value.trim()!==t.owner||finish.value!==t.end||status.value!==t.status||Number(pct.value)!==t.pct||!!update.value.trim()}
-function requestNavigation(action){if(state.editing){if(!draftHasChanges()){state.editing=false;action();return true}state.pendingNav=action;openOverlay("dirty");return false}action();return true}
+function requestNavigation(action){if(state.editing){if(!draftHasChanges()){state.editing=false;render();action();return true}state.pendingNav=action;openOverlay("dirty");return false}action();return true}
 
 function friendlyAction(field){return {PlannedEnd:"Planned finish revised",TaskStatus:"Status changed",AssignedTo:"Owner changed",Updates:"Update appended",PlannedStart:"Planned start revised",Progress:"Progress changed"}[field]||field+" changed"}
 function renderDrawer(){
@@ -507,8 +507,8 @@ el.classList.remove("hide");
 el.innerHTML='<section class="overlay-card" role="alertdialog" aria-modal="true" aria-label="Unsaved task draft"><div class="overlay-head"><h2>Unsaved task draft</h2></div><div class="overlay-scroll"><div class="synthetic-data-banner">This task has changes. Choose Save, Discard or Cancel before leaving it. Simulated Save does not write a workbook or append UpdateHistory.</div></div><div class="overlay-foot"><button class="ghost" type="button" id="dirtyCancel">Cancel · keep editing</button><button class="ghost" type="button" id="dirtyDiscard">Discard · continue</button><button class="solid" type="button" id="dirtySave">Simulate Save · continue</button></div></section>';
 function bind(id,fn){var e=document.getElementById(id);if(e)e.addEventListener("click",fn)}
 bind("dirtyCancel",closeOverlay);
-bind("dirtyDiscard",function(){var next=state.pendingNav;state.overlay=null;state.pendingNav=null;state.editing=false;if(next)next();else render()});
-bind("dirtySave",function(){var next=state.pendingNav;if(demoSave()){state.overlay=null;state.pendingNav=null;if(next)next();else render()}});
+bind("dirtyDiscard",function(){var next=state.pendingNav;state.overlay=null;state.pendingNav=null;state.editing=false;render();if(next)next()});
+bind("dirtySave",function(){var next=state.pendingNav;if(demoSave()){state.overlay=null;state.pendingNav=null;renderOverlay();if(next)next();else render()}});
 }
 
 function render(){
