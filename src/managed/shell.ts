@@ -1,4 +1,5 @@
 import type { ManagedReports } from "./reportsUi";
+import type { ImportController } from "../data/importController";
 import type { ManagedSettings } from "./settingsUi";
 
 /**
@@ -8,8 +9,10 @@ import type { ManagedSettings } from "./settingsUi";
  */
 export function mountManagedShell(
   doc: Document,
+  controller: ImportController,
   reports: ManagedReports,
   settings: ManagedSettings,
+  guard: (action: () => void) => void,
 ): void {
   const main = doc.querySelector<HTMLElement>(".main");
   const topbar = doc.querySelector<HTMLElement>(".topbar");
@@ -63,6 +66,62 @@ export function mountManagedShell(
   settingsLaunch.classList.add("managed-global-settings");
 
   topbar.append(nav, menu, settingsLaunch);
+
+  // Only previously approved TaskStatus values back this first scope control.
+  // Under Watch, inferred overdue and new commitment algorithms are NOT included.
+  const scope = doc.createElement("div");
+  scope.className = "managed-gantt-scope";
+  scope.setAttribute("role", "group");
+  scope.setAttribute("aria-label", "Gantt task scope");
+  const exceptionButton = doc.createElement("button");
+  exceptionButton.type = "button";
+  exceptionButton.textContent = "Exceptions";
+  exceptionButton.title = "Existing statuses only: At Risk and Blocked. No inferred watch/risk data.";
+  exceptionButton.dataset.managedScope = "exceptions";
+  const workstreamButton = doc.createElement("button");
+  workstreamButton.type = "button";
+  workstreamButton.textContent = "Workstreams";
+  workstreamButton.title = "Return to the previous status filter and inspect all workstreams.";
+  workstreamButton.dataset.managedScope = "workstreams";
+  scope.append(exceptionButton, workstreamButton);
+  const scopeHint = doc.createElement("span");
+  scopeHint.className = "managed-gantt-scope-note";
+  scopeHint.textContent = "Existing status-based exceptions only";
+  scope.append(scopeHint);
+  const chartTitle = doc.querySelector<HTMLElement>(".chart-top");
+  const toolbar = doc.querySelector<HTMLElement>(".chart-top .toolbar");
+  if (chartTitle) chartTitle.insertBefore(scope, toolbar ?? null);
+
+  let mode: "exceptions" | "workstreams" = "workstreams";
+  let previousStatuses: string[] = [];
+  const statusExceptions = ["At Risk", "Blocked"];
+  const isExceptionFilter = (value: readonly string[]) =>
+    value.length === statusExceptions.length && statusExceptions.every(x => value.includes(x));
+  const syncScope = () => {
+    const current = controller.getState().view;
+    if (mode === "exceptions" && !isExceptionFilter(current.statuses)) mode = "workstreams";
+    exceptionButton.disabled = !current.columns.includes("status");
+    for (const [button, kind] of [[exceptionButton, "exceptions"], [workstreamButton, "workstreams"]] as const) {
+      const active = mode === kind;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    }
+  };
+  exceptionButton.addEventListener("click", () => guard(() => {
+    const view = controller.getState().view;
+    if (!view.columns.includes("status")) return;
+    previousStatuses = [...view.statuses];
+    mode = "exceptions";
+    controller.patchView({ statuses: [...statusExceptions] });
+    syncScope();
+  }));
+  workstreamButton.addEventListener("click", () => guard(() => {
+    mode = "workstreams";
+    controller.patchView({ statuses: [...previousStatuses] });
+    syncScope();
+  }));
+  controller.subscribe(syncScope);
+  syncScope();
 
   const fit = doc.getElementById("fitTop");
   doc.querySelector<HTMLElement>(".chart-top .toolbar")?.append(...(fit ? [fit] : []));
