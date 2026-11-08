@@ -423,9 +423,11 @@ body.spt-managed .managed-schedule-body .detail-panel {
 }
 body.spt-managed #backdrop {display:none!important;}
 body.spt-managed .managed-schedule-body .detail-panel:not(.open) #close {display:none;}
-body.spt-managed .managed-schedule-body .detail-panel:not(.open)::before {
-  content:"Select a task to inspect its details.";
-  display:block; color:var(--muted); font-size:12px; margin-top:10px;
+body.spt-managed .managed-schedule-body .detail-panel .managed-empty-detail {
+  color:var(--muted); font-size:12px; margin:10px 0;
+}
+body.spt-managed .managed-schedule-body .detail-panel .managed-empty-detail[hidden] {
+  display:none!important;
 }
 body.spt-managed .managed-schedule-body .managed-editor {min-width:0;}
 body.spt-managed .managed-schedule-body .managed-fields{grid-template-columns:repeat(2,minmax(0,1fr));}
