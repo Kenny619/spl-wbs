@@ -529,6 +529,7 @@ document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggl
 if(document.body&&document.body.classList){document.body.classList.toggle("view-workspace",true);document.body.classList.toggle("view-meeting",state.view==="b");document.body.classList.toggle("view-schedule",state.view==="a");document.body.classList.toggle("view-reports",state.view==="l");}
 document.getElementById("mainDescription").textContent=state.view==="l"?"Latest Status and proposed weekly Update Report presentation · synthetic data only": "Synthetic meeting: "+displayDate(calendar.asOf)+" · filters use holidays and project blackout calendar";
 document.getElementById("app").innerHTML=state.view==="l"?lScreen():state.view==="a"?aScreen():bScreen();
+document.querySelectorAll("[data-stage]").forEach(function(el){el.addEventListener("click",function(){var stage=el.dataset.stage;requestNavigation(function(){state.stage=stage;render()})})});
 var scheduleScroll=document.getElementById("scheduleTableScroll");if(scheduleScroll){scheduleScroll.scrollTop=state.scheduleScroll;scheduleScroll.addEventListener("scroll",function(){state.scheduleScroll=scheduleScroll.scrollTop});}
 var reportScroll=document.getElementById("reportContentScroll");if(reportScroll){reportScroll.scrollTop=state.reportScroll;reportScroll.addEventListener("scroll",function(){state.reportScroll=reportScroll.scrollTop});}
 var scroller=document.getElementById("meetingListScroll");if(scroller){scroller.scrollTop=state.listScroll;scroller.addEventListener("scroll",function(){state.listScroll=scroller.scrollTop});if(state.scrollToSelected&&typeof scroller.querySelector==="function"){var chosen=scroller.querySelector(".meeting-item.selected");if(chosen&&typeof chosen.scrollIntoView==="function")chosen.scrollIntoView({block:"nearest"});state.scrollToSelected=false;}}
@@ -558,7 +559,7 @@ function demoSave(){var t=current();if(!t)return false;var owner=document.getEle
 if(!utc(finish)||!Number.isFinite(pct)||pct<0||pct>100){alert("Invalid date/progress in simulated editor.");return false}
 t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update)state.demoEntries.push({id:t.id,text:"Demo edit · "+update});state.editing=false;if(!filterTasks().some(function(x){return x.id===t.id})){state.filter="all";state.owner="all";state.workstream="all"}render();return true}
 document.querySelectorAll("[data-view]").forEach(function(el){el.addEventListener("click",function(){var view=el.dataset.view;requestNavigation(function(){state.view=view;if(state.view==="b"){ensureSelection();state.listScroll=0}render()})})});
-document.querySelectorAll("[data-stage]").forEach(function(el){el.addEventListener("click",function(){var stage=el.dataset.stage;requestNavigation(function(){state.stage=stage;render()})})});
+
 if(typeof document.addEventListener==="function"){document.addEventListener("keydown",function(ev){
 if(ev.key==="Escape"){if(state.overlay==="dirty"){closeOverlay()}else if(state.drawer){closeDrawer()}return;}
 if(ev.key==="Tab"&&state.drawer&&!state.overlay){var panel=document.getElementById("drawerPanel");if(!panel||typeof panel.querySelectorAll!=="function")return;
