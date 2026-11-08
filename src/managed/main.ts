@@ -8,6 +8,7 @@ import { preflightManagedWorkbook } from "./preflight";
 import { openManagedHistory } from "./historyUi";
 import { ManagedSettings } from "./settingsUi";
 import { ManagedReports } from "./reportsUi";
+import { mountManagedShell } from "./shell";
 import { openManagedRecovery } from "./recoveryUi";
 import type { EditableField, EditValue } from "./workbookCandidate";
 
@@ -181,6 +182,7 @@ export class ManagedEditor {
       timeZone: this.settings.getTimeZone(),
       hasUnsavedDraft: this.isDirty(),
     }));
+    mountManagedShell(doc, this.reports, this.settings);
     controller.subscribe(() => this.render());
     doc.defaultView?.addEventListener("beforeunload", (event) => {
       if (!this.isDirty()) return;
