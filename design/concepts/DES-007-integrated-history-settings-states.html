@@ -266,7 +266,7 @@ var events=[
 {date:"2026-11-07",kind:"released",id:"L2",title:"Readiness communications",group:groups[2],owner:"T. Oda",detail:"Legal sign-off received; all known watch reasons cleared.",source:"Proposed watch-release event (not in frozen workbook)"},
 {date:"2026-11-06",kind:"changed",id:"P2",title:"Environment provisioning",group:groups[0],owner:"A. Tanaka",detail:"Planned finish changed Nov 12 → Nov 14; impact still under review.",source:"UpdateHistory date change (fixture)"}
 ];
-var state={view:"b",stage:"exception",filter:"exceptions",workstream:"all",owner:"all",selected:"D1",editing:false,demoEntries:[],reportMode:"latest",reportDisplay:"present",reportSnapshots:{latest:null,updates:null},periodStart:"2026-11-03",periodEnd:"2026-11-09",dirty:false,periodTouched:false,listScroll:0,scrollToSelected:false,scheduleScroll:0,reportScroll:0};
+var state={view:"b",stage:"exception",filter:"exceptions",workstream:"all",owner:"all",selected:"D1",editing:false,demoEntries:[],reportMode:"latest",reportDisplay:"present",reportSnapshots:{latest:null,updates:null},periodStart:"2026-11-03",periodEnd:"2026-11-09",dirty:false,periodTouched:false,listScroll:0,scrollToSelected:false,scheduleScroll:0,reportScroll:0,overlay:null,historyTask:null,pendingNav:null,settings:{timezone:"Asia/Tokyo",appearance:"System",columns:{Owner:true,Status:true,Finish:true}}};
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function utc(iso){if(!/^\d{4}-\d{2}-\d{2}$/.test(iso||""))return null;var d=new Date(iso+"T00:00:00Z");return Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==iso?null:d}
 function dayIso(d){return d.toISOString().slice(0,10)}
@@ -323,7 +323,7 @@ var editing=state.editing;var fields=editing?editFields(t):'<div class="detail-f
 (finishFlag(t.end)?'<div class="inlinewarning">Finish falls on a nonworking date: '+esc(finishFlag(t.end))+'</div>':'')+
 '<div class="detail-sub">As of '+esc(displayDate(calendar.asOf))+' · excludes weekends, holidays and project blackouts (sample calendar)</div>';
 return '<section class="panel detail-compact"><div class="panelhead"><div><h2>Selected task'+(editing?" · Editing":"")+'</h2></div>'+
-(editing?pill("Draft · demo","blue"):'<button type="button" class="solid" id="meetingEdit">Edit task</button>')+'</div>'+
+(editing?pill("Draft · demo","blue"):'<div class="history-actions"><button type="button" class="ghost" id="taskHistory">History</button><button type="button" class="solid" id="meetingEdit">Edit task</button></div>')+'</div>'+
 '<div class="panelbody"><div class="detail-identity"><span class="detail-id">Workstream <b>'+esc(t.group)+'</b></span><span class="detail-id">WBS <b>'+esc(t.wbs)+'</b></span></div><div class="focus-title">'+esc(t.title)+'</div>'+fields+
 '<div class="sectionlabel">Task relationships</div><div class="dependencies">'+linkGroup(t,true)+linkGroup(t,false)+'</div>'+
 '<div class="sectionlabel">Risk / watch context</div>'+riskBox(t)+
@@ -371,6 +371,73 @@ return '<div class="report-workspace"><div class="reportbar"><div><strong>Output
 '<div class="report-scroll" id="reportContentScroll" tabindex="0" aria-label="Scrollable report preview"><div class="lead-wrap"><div class="lead-head"><div><div class="kicker">Fixed report snapshot · '+esc(snap.generated)+'</div><h2>'+esc(snap.title)+'</h2><p>'+(state.reportMode==="updates"?"Completed, added, new risk, released watch and significant changes":"Project status, milestones and next deadlines")+'</p></div>'+pill(preview?"Text preview":"Presentation view","blue")+'</div>'+
 (preview?'<div class="preview-shell"><h3>Plain-text preview · Synthetic</h3><pre>'+esc(snap.text)+'</pre></div>':presentReport(snap))+
 '<div class="lead-foot">DES-007 design fixture only. V1 frozen Update Report requires field-level UpdateHistory and Save associations; this enhanced weekly change summary is a future proposal. Presentation and preview use one fixed simulated snapshot.</div></div></div></div>'}
+
+/* DES-007 overlays are design simulators: history data, settings and save actions are not persistent. */
+var historyFixture=[
+{save:"SV-0142",when:"2026-11-06T05:10:00Z",changes:[
+{id:"P2",wbs:"1.2",title:"Environment provisioning",field:"PlannedEnd",old:"2026-11-12",value:"2026-11-14"},
+{id:"D1",wbs:"2.1",title:"Data reconciliation",field:"TaskStatus",old:"In Progress",value:"At Risk"}]},
+{save:"SV-0141",when:"2026-11-05T01:45:00Z",changes:[
+{id:"D1",wbs:"2.1",title:"Data reconciliation",field:"AssignedTo",old:"Unassigned",value:"K. Yamada"}]}
+];
+function formattedTime(utcIso){try{return new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:state.settings.timezone}).format(new Date(utcIso))}catch(e){return utcIso}}
+function openOverlay(kind,taskId){state.overlay=kind;state.historyTask=taskId||null;renderOverlay()}
+function closeOverlay(){state.overlay=null;state.pendingNav=null;renderOverlay()}
+function requestNavigation(action){if(state.editing){state.pendingNav=action;openOverlay("dirty");return false}action();return true}
+function renderOverlay(){
+var el=document.getElementById("overlayShell");if(!el)return;
+if(!state.overlay){el.classList.add("hide");el.innerHTML="";return}
+el.classList.remove("hide");
+var head="",body="",footer="";
+if(state.overlay==="menu"){
+head="Additional workspaces";
+body='<button type="button" id="openGlobalHistory">Change History · read only</button><button type="button" id="openSettings">Settings · preferences</button><div class="synthetic-data-banner">These screens demonstrate navigation only; the workbook and local preferences are not changed.</div>';
+footer='<button type="button" class="ghost" id="closeOverlay">Close</button>';
+}else if(state.overlay==="dirty"){
+head="Unsaved task draft";
+body='<div class="synthetic-data-banner">This task is being edited. The frozen product workflow requires **Save / Discard / Cancel** before leaving. This design simulator does not write the workbook or create UpdateHistory.</div><p>What would you like to do before navigating?</p>';
+footer='<button class="ghost" type="button" id="dirtyCancel">Cancel · keep editing</button><button class="ghost" type="button" id="dirtyDiscard">Discard draft · continue</button><button class="solid" type="button" id="dirtySave">Simulate Save · continue</button>';
+}else if(state.overlay==="history"){
+head=state.historyTask?"Task Change History":"Global Change History";
+var groups=historyFixture.map(function(save){
+var selected=save.changes.filter(function(x){return !state.historyTask||x.id===state.historyTask});
+if(!selected.length)return "";
+return '<article class="history-save"><h3>Save '+esc(save.save)+' · '+esc(formattedTime(save.when))+'</h3><div class="tiny">Stored UTC unchanged; timezone affects presentation only. Changes in one Save share an audit identifier.</div>'+selected.map(function(change){
+return '<div class="history-field"><b>'+esc(change.wbs)+' · '+esc(change.title)+'</b> · '+esc(change.field)+'<div>'+esc(change.old)+' → '+esc(change.value)+'</div></div>'}).join("")+'</article>'}).filter(Boolean).join("");
+body='<div class="synthetic-data-banner">Synthetic UpdateHistory records; read-only. Demonstrates one Save with changes to multiple workstreams, immutable task title/WBS snapshots, and selected display timezone. Does not read Excel.</div>'+
+(state.historyTask?'<div class="small">Filtered to Task ID '+esc(state.historyTask)+' · <button type="button" class="ghost" id="historyAll">Show all history</button></div>':"")+
+(groups||'<div class="blankstate">No changes recorded for this sample task.</div>');
+footer='<button type="button" class="ghost" id="closeOverlay">Back to selected task</button>';
+}else if(state.overlay==="settings"){
+head="Settings · local preferences";
+body='<div class="synthetic-data-banner">Design mock only. Settings changes persist in this page session, not browser storage or Excel. Planned task dates never shift with timezone.</div>'+
+'<div class="settings-row"><label for="zoneSetting">Display timezone (timestamps only)</label><select id="zoneSetting">'+["Asia/Tokyo","UTC","America/Los_Angeles"].map(function(zone){return '<option'+(zone===state.settings.timezone?" selected":"")+'>'+zone+'</option>'}).join("")+'</select></div>'+
+'<div class="settings-row"><label for="appearanceSetting">Appearance</label><select id="appearanceSetting">'+["System","Light","Dark"].map(function(mode){return '<option'+(mode===state.settings.appearance?" selected":"")+'>'+mode+'</option>'}).join("")+'</select></div>'+
+'<div class="settings-row"><label>Columns (mock preference)</label><div class="settings-cols">'+["Owner","Status","Finish"].map(function(name){return '<label><input type="checkbox" data-col="'+name+'"'+(state.settings.columns[name]?" checked":"")+'> '+name+'</label>'}).join("")+'</div></div>'+
+'<div class="note">History fixture timestamp preview: '+esc(formattedTime("2026-11-06T05:10:00Z"))+'<div>Planned End for task P2 remains 2026-11-14 (date-only).</div></div>';
+footer='<button class="ghost" type="button" id="resetSettings">Reset defaults…</button><button class="solid" type="button" id="closeOverlay">Done</button>';
+}else if(state.overlay==="reset"){
+head="Reset display settings?";
+body='<p>Restore System appearance, detected-default simulation (Asia/Tokyo) timezone, and all default columns in this prototype.</p><div class="synthetic-data-banner">A real app should use the system/browser detected timezone and persist preferences locally. This mock does neither.</div>';
+footer='<button class="ghost" type="button" id="resetCancel">Cancel</button><button class="solid" type="button" id="resetConfirm">Reset demo settings</button>';
+}
+el.innerHTML='<section class="overlay-card '+(state.overlay==="menu"?"overlay-menu":"")+'" role="dialog" aria-modal="true" aria-label="'+esc(head)+'"><div class="overlay-head"><h2>'+esc(head)+'</h2></div><div class="overlay-scroll">'+body+'</div><div class="overlay-foot">'+footer+'</div></section>';
+function bind(id,fn){var c=document.getElementById(id);if(c)c.addEventListener("click",fn)}
+bind("closeOverlay",closeOverlay);
+bind("openGlobalHistory",function(){requestNavigation(function(){openOverlay("history",null)})});
+bind("openSettings",function(){requestNavigation(function(){openOverlay("settings")})});
+bind("historyAll",function(){openOverlay("history",null)});
+bind("dirtyCancel",closeOverlay);
+bind("dirtyDiscard",function(){var next=state.pendingNav;state.overlay=null;state.pendingNav=null;state.editing=false;if(next)next();else render()});
+bind("dirtySave",function(){var next=state.pendingNav;if(demoSave()){state.overlay=null;state.pendingNav=null;if(next)next();else render()}});
+bind("resetSettings",function(){openOverlay("reset")});
+bind("resetCancel",function(){openOverlay("settings")});
+bind("resetConfirm",function(){state.settings={timezone:"Asia/Tokyo",appearance:"System",columns:{Owner:true,Status:true,Finish:true}};openOverlay("settings")});
+var zone=document.getElementById("zoneSetting");if(zone)zone.addEventListener("change",function(){state.settings.timezone=zone.value;renderOverlay()});
+var appearance=document.getElementById("appearanceSetting");if(appearance)appearance.addEventListener("change",function(){state.settings.appearance=appearance.value;renderOverlay()});
+document.querySelectorAll("[data-col]").forEach(function(input){input.addEventListener("change",function(){state.settings.columns[input.dataset.col]=input.checked})});
+}
+
 function render(){
 document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.dataset.view===state.view)});
 document.querySelectorAll("[data-stage]").forEach(function(el){el.classList.toggle("active",el.dataset.stage===state.stage)});
