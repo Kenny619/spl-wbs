@@ -46,6 +46,9 @@ This is an **interaction-direction decision**, not permission to replace the fro
 | Creation and structural changes | Separate proposal [#23](https://github.com/Kenny619/spl-wbs/issues/23) / frozen #4 editable allowlist | None | Must not assume task creation or new task audit events are available in frozen v1; design entry points only after requirements authorized | Future scope |
 | Accessibility & office viewing | Design principles / review process | Responsive CSS and basic labels | Edge laptop 1366×768, 1440×900; zoom 125–200%; keyboard, screen-reader semantics, reduced video-call window, contrast, focus recovery, scroll trapping | Evidence pending |
 
+## First D3 integration-state exploration prepared
+- [DES-007 integration-state companion prototype](../../design/concepts/DES-007-integrated-history-settings-states.html) preserves DES-006's owner-endorsed main layout and introduces a secondary More menu for Global History/Settings, task History, and simulated Save/Discard/Cancel for changed-draft navigation. See [DES-007 evidence/gaps](13_DES007_HISTORY_SETTINGS_AND_DRAFT_STATES.md). This is **source-mocked only**, not a claim of full #3–#7 compliance or a new approved visual freeze.
+
 ## D3 design preparation (AI design work can proceed without another owner micro-approval)
 **D3-A — Complete a contract-aligned navigation/state inventory.**
 Treat DES-006 as the layout reference, then draw *design-only* interaction flows for global History, task History, Settings, safe exit while editing, and Reports. Keep the three primary navigation buttons stationary; secondary functions should not crowd the approved header layout.
