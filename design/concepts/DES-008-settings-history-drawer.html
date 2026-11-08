@@ -226,6 +226,54 @@ body.view-workspace .report-workspace .report-scroll{flex:none;height:auto;overf
 .overlay-card button:focus-visible{outline:3px solid #5aa9d6;outline-offset:2px}
 @media(max-width:760px){.overlay-card{max-height:93dvh}.overlay-menu{margin:90px 10px 0;}.settings-row{display:block}.settings-row select{width:100%;margin-top:8px}}
 
+
+/* DES-008: authentic existing favicon, release/build provenance and fixed right drawers */
+.mark{width:34px;height:34px;border:0;background:transparent;border-radius:6px;overflow:hidden;flex:none}
+.app-brand-icon{width:34px;height:34px;display:block;object-fit:contain}
+.app-version-label{font-size:10px;color:#527a91;background:#edf5f9;border:1px solid #d6e7f0;border-radius:5px;padding:2px 5px;font-weight:650}
+.drawer-host{position:fixed;inset:0;z-index:95;pointer-events:none;visibility:hidden;transition:visibility 0s linear .22s}
+.drawer-host.open{pointer-events:auto;visibility:visible;transition:visibility 0s}
+.drawer-scrim{position:absolute;inset:0;background:#0c243556;opacity:0;transition:opacity .22s ease}
+.drawer-host.open .drawer-scrim{opacity:1}
+.drawer-panel{position:absolute;right:0;top:0;bottom:0;max-width:100vw;width:min(570px,100vw);background:var(--paper);border-left:1px solid #cfdae5;box-shadow:-12px 0 45px #132e4826;transform:translateX(103%);transition:transform .23s cubic-bezier(.2,.75,.25,1);display:flex;flex-direction:column;overflow:hidden}
+.drawer-host.open .drawer-panel{transform:translateX(0)}
+.drawer-contents{display:flex;flex-direction:column;height:100%;min-height:0}
+.drawer-head{display:flex;align-items:center;gap:10px;padding:18px 18px 14px;border-bottom:1px solid var(--line);flex:none}
+.drawer-head h2{font-size:19px;margin:0;line-height:1.1;letter-spacing:-.025em}
+.drawer-head .ghost{margin-left:auto}
+.drawer-subnav{display:flex;gap:6px;padding:12px 18px;background:#f8fafc;border-bottom:1px solid #e3ebf2;flex:none}
+.drawer-subnav button{font-size:12px;flex:1;border:1px solid #dbe6ee;background:white;border-radius:7px;padding:9px 11px;color:#496477;font-weight:650}
+.drawer-subnav button.active{background:#e4f3fa;color:#14688f;border-color:#a7cbe0}
+.drawer-body{flex:1;min-height:0;overflow-y:auto;padding:16px 18px 24px;overscroll-behavior:contain}
+.drawer-bottom{flex:none;border-top:1px solid var(--line);padding:13px 18px;display:flex;gap:9px;justify-content:flex-end;background:white}
+.drawer-section{margin-bottom:16px}
+.drawer-section h3{margin:0 0 9px;font-size:13px}
+.drawer-note{font-size:11px;color:#6b7e90;line-height:1.55;padding:10px 11px;border:1px solid #dce9f1;border-radius:8px;background:#f7fbfd}
+.version-panel{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.version-panel .detail-fact{background:#f7f9fb}
+.drawer-history-filter{display:flex;gap:9px;align-items:center;margin-bottom:10px}
+.drawer-history-filter label{font-size:11px;color:#647b8d;flex:1}
+.drawer-history-filter select{display:block;width:100%;height:35px;margin-top:5px;padding:5px 7px;border:1px solid #d7e1e9;border-radius:7px;background:white;font:inherit;font-size:12px}
+.history-log-head,.history-log-row{display:grid;grid-template-columns:118px minmax(125px,1fr) minmax(175px,1.25fr);gap:10px;align-items:start}
+.history-log-head{padding:9px 10px;background:#f0f4f8;color:#648096;border:1px solid #e2e9ef;border-radius:7px 7px 0 0;font-size:10px;font-weight:750;position:sticky;top:0;z-index:2}
+.history-log-row{padding:12px 10px;border-bottom:1px solid #e6edf2;font-size:12px;background:#fff}
+.history-log-row:hover{background:#f8fbfe}
+.history-log-time{font-size:11px;font-variant-numeric:tabular-nums;color:#49647e}
+.history-log-task{font-weight:650;min-width:0;overflow-wrap:anywhere}
+.history-log-task .tiny{font-weight:400}
+.history-log-action{min-width:0;overflow-wrap:anywhere}
+.history-log-action strong{display:block;color:#264960;font-size:12px;margin-bottom:4px}
+.history-value{font:11px/1.5 Consolas,monospace;color:#4b6577;border-radius:4px;background:#f1f6f9;padding:4px 6px;display:inline-block;margin:2px 0;max-width:100%;overflow-wrap:anywhere}
+.history-log-wrap{border:1px solid #e2e9ef;border-top:0;border-radius:0 0 8px 8px}
+.history-save-ref{color:#8397a5;font-size:10px;margin-top:4px}
+.drawer-crumb{font-size:11px;color:#657a8c;margin:0 0 11px}
+.drawer-info{font-size:11px;color:#50677e;margin-top:8px}
+.drawer-settings-link{display:block;width:100%;border:1px solid #dae6ee;background:#fff;border-radius:8px;text-align:left;padding:12px;color:#146b95;font-size:12px;font-weight:700;margin:11px 0}
+.drawer-settings-link:hover{background:#eaf6fc}
+.drawer-settings-link span{display:block;color:#7a8c9d;font-size:11px;font-weight:400;margin-top:4px}
+.drawer-settings-reset{padding:14px;border:1px solid #e3eaf0;background:#fbfcfd;border-radius:8px;margin-top:10px}
+@media(max-width:600px){.history-log-head,.history-log-row{grid-template-columns:100px minmax(100px,1fr)}.history-log-head>*:nth-child(3),.history-log-row>*:nth-child(3){grid-column:1/-1}.history-log-head>*:nth-child(3){display:none}.history-log-row{gap:6px}.drawer-panel{width:100vw}}
+@media(prefers-reduced-motion:reduce){.drawer-host,.drawer-scrim,.drawer-panel{transition:none}}
 </style>
 </head>
 <body>
@@ -234,11 +282,12 @@ body.view-workspace .report-workspace .report-scroll{flex:none;height:auto;overf
  <div class="project-head"><strong id="mainTitle">Northstar Service Rollout</strong><span id="mainDescription">Meeting task review</span></div>
  <nav class="concept-controls" aria-label="Choose design concept"><button id="navA" data-view="a">Schedule</button><button id="navB" class="active" data-view="b">Meeting Review</button><button id="navL" data-view="l">Reports · Present</button></nav>
  <div class="phase-controls" id="phases" aria-label="Schedule stage"><button data-stage="exception" class="active">Exceptions</button><button data-stage="workstream">Workstreams</button></div>
- <div class="topright"><button type="button" id="moreMenuButton" class="ghost" aria-haspopup="menu" aria-expanded="false" style="width:110px">More ···</button><div class="tiny" style="white-space:nowrap">DES-008 · Demo</div></div>
+ <div class="topright"><button type="button" id="settingsButton" class="ghost" aria-haspopup="dialog" aria-controls="drawerPanel" aria-expanded="false" style="width:110px">⚙ Settings</button><div class="tiny" style="white-space:nowrap">UI baseline v18</div></div>
 </header>
 <main class="canvas">
  <div id="app" aria-live="polite"></div>
 </main>
+<div id="drawerHost" class="drawer-host" aria-hidden="true"><div class="drawer-scrim" id="drawerScrim"></div><aside id="drawerPanel" class="drawer-panel" role="dialog" aria-modal="true" aria-label="Settings drawer"><div id="drawerContents" class="drawer-contents"></div></aside></div>
 <div id="overlayShell" class="overlay-shell hide" aria-live="polite"></div>
 <script>
 (function(){
