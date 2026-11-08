@@ -20,6 +20,7 @@ export class ManagedSettings {
     private readonly doc: Document,
     private readonly controller: ImportController,
     navigate: (action: () => void) => void,
+    private readonly openHistory: () => void,
   ) {
     try { this.storage = doc.defaultView?.localStorage ?? null; } catch { /* unavailable */ }
     this.preferences = loadPreferences(this.storage);
@@ -52,6 +53,22 @@ export class ManagedSettings {
     close.addEventListener("click", () => this.dialog.close());
     header.append(heading, close);
     this.dialog.append(header);
+    const tabs = make("nav", undefined, "managed-drawer-tabs");
+    tabs.setAttribute("aria-label", "Settings sections");
+    const preferenceTab = make("button", "Preferences", "managed-action active");
+    preferenceTab.type = "button";
+    preferenceTab.setAttribute("aria-current", "page");
+    const historyTab = make("button", "Change History", "managed-action");
+    historyTab.type = "button";
+    historyTab.addEventListener("click", () => {
+      this.dialog.close();
+      // Opens the real workbook-backed History surface, with no synthetic records.
+      this.openHistory();
+    });
+    tabs.append(preferenceTab, historyTab);
+    this.dialog.append(tabs);
+    const body = make("div", undefined, "managed-settings-body");
+    this.dialog.append(body);
 
     const timeSection = make("section", undefined, "managed-settings-section");
     timeSection.append(make("h3", "Display timezone"));
@@ -75,7 +92,7 @@ export class ManagedSettings {
     });
     timezoneLabel.append(this.selector);
     timeSection.append(timezoneLabel);
-    this.dialog.append(timeSection);
+    body.append(timeSection);
 
     const columns = make("section", undefined, "managed-settings-section");
     columns.append(make("h3", "Columns"), make("p",
@@ -87,7 +104,7 @@ export class ManagedSettings {
     columns.append(existing);
     const oldToggle = doc.getElementById("columnToggle");
     if (oldToggle) oldToggle.style.display = "none";
-    this.dialog.append(columns);
+    body.append(columns);
 
     const appearance = make("section", undefined, "managed-settings-section");
     appearance.append(make("h3", "Appearance"));
@@ -115,7 +132,7 @@ export class ManagedSettings {
       radioGroup.append(option);
     }
     appearance.append(radioGroup);
-    this.dialog.append(appearance);
+    body.append(appearance);
 
     const footer = make("div", undefined, "managed-settings-footer");
     const reset = make("button", "Reset to defaults", "managed-action");
@@ -134,7 +151,7 @@ export class ManagedSettings {
     });
     this.saveNote = make("p", "Preferences are stored only in this browser/device.", "managed-settings-hint");
     footer.append(reset, this.saveNote);
-    this.dialog.append(footer);
+    body.append(footer);
 
     // The importer recreates its ViewState on start() and workbook changes.
     // Persist column changes only when *the user* calls patchView(columns);
@@ -163,7 +180,7 @@ export class ManagedSettings {
     return { ...this.preferences, columns: [...this.preferences.columns] };
   }
 
-  private open(): void {
+  open(): void {
     if (this.dialog.open) return;
     this.selector.value = this.preferences.timeZone;
     this.dialog.showModal();
