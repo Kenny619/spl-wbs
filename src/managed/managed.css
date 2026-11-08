@@ -408,6 +408,7 @@ body.spt-managed .managed-schedule-body .chart-card {
 body.spt-managed .managed-schedule-body .chart-top{flex:none;padding:12px 14px;}
 body.spt-managed .managed-schedule-body .gantt {
   flex:1; height:auto; min-height:0; min-width:0;
+  --grid:clamp(365px,52%,500px);
 }
 body.spt-managed .managed-schedule-body .task-pane,
 body.spt-managed .managed-schedule-body .timeline-pane {min-height:0;}
@@ -511,3 +512,7 @@ body.spt-managed[data-managed-theme="dark"] .managed-gantt-scope button.active {
  body.spt-managed .managed-gantt-scope{margin-left:0;justify-content:start;}
  body.spt-managed .managed-gantt-scope-note{text-align:left;}
 }
+
+/* Responsive managed-only control density; the original v18 viewer is untouched. */
+body.spt-managed .managed-schedule-body .chart-top .toolbar .tool {font-size:11px;padding-inline:8px;}
+body.spt-managed .managed-project-menu .top-actions .small-action {display:block!important;}
