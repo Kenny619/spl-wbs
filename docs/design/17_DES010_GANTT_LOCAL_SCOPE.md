@@ -4,7 +4,7 @@
 **Owner feedback:** “exception/workstream view change control under Schedule view should be located inside of a Gantt chart box. going back and forth between gantt chart box and header navigation would be a husstle. everything else looks good”
 
 **Current prototype:** [DES-010-gantt-local-scope.html](../../design/concepts/DES-010-gantt-local-scope.html)  
-**Exact verified HTML blob:** `5bff3213b227b36305dca82253309a10178fad17`  
+**Source-level owner-feedback blob:** `5bff3213b227b36305dca82253309a10178fad17`. **Current corrected HTML blob, real Windows Chromium tested:** `77dc7333ee4e061dc06e54d74caa30b07bdbe79e`.  
 **Historical predecessor:** [DES-009-icon-only-header.html](../../design/concepts/DES-009-icon-only-header.html), retained unchanged.  
 **Controlling:** [UI overhaul Issue #25](https://github.com/Kenny619/spl-wbs/issues/25), design-only draft [PR #29](https://github.com/Kenny619/spl-wbs/pull/29).
 
@@ -36,3 +36,11 @@
 
 ## Scope and authority
 This is a **single localized design change**. Owner’s “everything else looks good” acknowledges the remaining DES-009 design direction but does not authorize implementation, merging, release, deployment, or an unreviewed D3 specification freeze. The design-only PR remains draft. Future product implementation must preserve frozen Issues #3–#7 and the currently accepted v18 reference unless explicitly superseded through Product Owner change control.
+
+## D3 real-browser validation addendum — 2026-11-08
+- Added [Playwright design regression tests](../../test/browser/des010-design-review.spec.ts) to draft design PR #29, reusing existing Windows Chromium CI and attaching screenshots for Schedule, Meeting, Reports and Settings/History at realistic widths.
+- First [Windows Chromium run #42447420570](https://github.com/Kenny619/spl-wbs/actions/runs/42447420570) produced **40/41 browser PASS** and found exactly one real usability defect: Settings in the global header was hidden at 1024px due to a preexisting breakpoint rule.
+- Fixed the header CSS for 971–1220px and for narrower responsive layouts without moving primary navigation; no workbook or production app code changed.
+- Re-ran [CI #42447648745](https://github.com/Kenny619/spl-wbs/actions/runs/42447648745) against exact HTML blob `77dc7333ee4e061dc06e54d74caa30b07bdbe79e`. **41/41 Windows Chromium browser checks PASS**, Ubuntu Build/Unit SUCCESS, both normal read-only viewer and review packaging SUCCESS.
+- [Screenshots and Playwright report](https://github.com/Kenny619/spl-wbs/actions/runs/42447648745/artifacts/13603389072) in the Windows browser diagnostics artifact. The browser tests assert stable nav coordinates, matching detail dimensions, contained scrolling, scope switching, Settings drawer at 1440/1024/860, dirty-draft guard and eight-inclusive-date reporting.
+- **Not equivalent to physical Edge owner UAT** or full accessibility/assistive-technology acceptance; final D3 design freeze requires explicit Product Owner decision on the revised source, and the already-authorized managed-variant implementation in [PR #19](https://github.com/Kenny619/spl-wbs/pull/19) remains a separate gate.
