@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 1.1
+# SPT-WBS UI Guideline — draft 1.2
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -74,6 +74,14 @@
 - Any actual changed draft must be protected on task/view/workbook navigation by **Save / Discard / Cancel**, with Cancel preserving the draft and focus, and failed/uncertain Save never proceeding as successful. **No-op editing must not trigger unnecessary warning**. This requires real data/transaction testing under #3/#4, not only browser-state simulation.
 - Settings must distinguish date-only planned values (no timezone shift) from UTC instants (user-chosen timezone), browser-local display preferences from project-owned calendar settings, and confirmation of Reset. Light/Dark/System and column selection must be fully validated together later, not inferred from design-only controls.
 - [DES-007](13_DES007_HISTORY_SETTINGS_AND_DRAFT_STATES.md) demonstrates secondary navigation and sample state transitions. It is a **proposal**, not an implemented or complete contract-compliant History/Settings/Save flow.
+
+### Settings side drawer, action-level History and reporting period — DES-008
+- Replace generic top-right More with a discoverable **Settings** action in the reserved stable header position. Put **Change History within the Settings navigation**; retain direct task-history access from the selected task.
+- Use a **right slide-out pane** for Settings and both global/task History. The pane has persistent navigation/Close, independent internal scrolling, and expandable section structure. No centered Settings/History overlay. A separate centered *Save/Discard/Cancel* decision is still appropriate for dirty editing when a real navigation would discard work.
+- History is a readable chronological **one-row-per-saved-field-action log** (timestamp, Task/WBS, action and before→after). Preserve shared `ChangeSetID` association even without large Save-level cards. A user may filter tasks and action types without mutating audit source. Historical WBS/title snapshots must remain immutable; current workstream may be shown for orientation only if labelled current.
+- Use the **existing app favicon** rather than a typographic W placeholder. Distinguish product/build package version from the accepted UI visual baseline (repo package currently `0.0.0` placeholder; current approved UI target is `v18`). Production should show independently trustworthy build/release provenance.
+- The proposed default weekly Update Report period is the selected review date and the **same weekday seven calendar days earlier, both dates inclusive (8 dates)**. Respect custom periods and frozen Issue #7 timezone/committed-only/read-only/snapshot semantics; this UI preference does not amend the frozen contract without new Owner change control.
+- DES-008 is a design simulator. Actual drawer animation, keyboard focus, system theme/persistence, history file validation, report correctness and owner visual acceptance require separate evidence. See [DES-008 decision study](14_DES008_SETTINGS_HISTORY_DRAWER_AND_PERIOD.md).
 
 ## 4. Typography, color and meaning
 - Text contrast: WCAG 2.2 AA **4.5:1** for normal text, **3:1** for large text; meaningful UI graphic contrast **3:1** where applicable.
