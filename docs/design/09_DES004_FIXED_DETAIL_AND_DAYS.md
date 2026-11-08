@@ -1,4 +1,6 @@
-# DES-004 — One-Header, List-Scroll / Fixed-Detail Meeting Review (proposed 0.1)
+# DES-004 — One-Header, List-Scroll / Fixed-Detail Meeting Review (historical proposed 0.1)
+
+> **Superseded for current visual critique by [DES-005](../../design/concepts/DES-005-unified-height-and-scroll.html), 2026-11-08.** This preserves the preceding owner-feedback design record and source-level evidence. DES-005 refines consistent full-height Schedule/Meeting/Reports panels and locks global navigation location; see [DES-005 review record](10_DES005_UNIFIED_HEIGHT_AND_NAV.md).
 
 **Date:** 2026-11-08 JST · **Status:** D1 draft concept / not frozen or approved for implementation · **Controlling:** [Issue #25](https://github.com/Kenny619/spl-wbs/issues/25), [design PR #29](https://github.com/Kenny619/spl-wbs/pull/29).
 
