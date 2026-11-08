@@ -283,6 +283,33 @@ body.view-workspace .report-workspace .report-scroll{flex:none;height:auto;overf
 @media(max-width:1220px){.top .header-phase-space{width:180px;min-width:180px}}
 @media(max-width:970px){.top .header-phase-space{grid-area:phases;justify-self:end}}
 @media(max-width:620px){.a-layout .panelhead .gantt-scope-controls{width:100%}.a-layout .panelhead .gantt-scope-controls button{flex:1}}
+
+/* DES-010 responsive QA remediation: Settings must not vanish at laptop widths.
+   Keep the same global nav slot coordinates across working views. */
+@media (min-width:971px) and (max-width:1220px) {
+  .top { grid-template-columns:42px minmax(135px,1fr) max-content 180px 118px; }
+  .top .topright { display:block; width:118px; min-width:0; justify-self:end; }
+}
+@media (max-width:970px) {
+  .top {
+    grid-template-columns:42px minmax(0,1fr) 118px;
+    grid-template-areas:"brand project settings" "nav nav phases";
+    height:auto;
+  }
+  .top .brand { grid-area:brand; }
+  .top .project-head { grid-area:project; }
+  .top .concept-controls { grid-area:nav; }
+  .top .header-phase-space { grid-area:phases; width:118px; min-width:118px; }
+  .top .topright { grid-area:settings; display:block; width:118px; min-width:0; justify-self:end; }
+}
+@media (max-width:620px) {
+  .top {
+    grid-template-columns:42px minmax(0,1fr) 118px;
+    grid-template-areas:"brand project settings" "nav nav nav";
+  }
+  .top .header-phase-space { display:none; }
+}
+
 </style>
 </head>
 <body>
