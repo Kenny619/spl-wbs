@@ -1,4 +1,6 @@
-# DES-007 — Integration-State Companion to Owner-Endorsed DES-006
+# DES-007 — Integration-State Companion to Owner-Endorsed DES-006 (historical proposed concept)
+
+> **Superseded for current interaction critique by [DES-008](../../design/concepts/DES-008-settings-history-drawer.html) on 2026-11-08.** Retained as the earlier More/centered-overlay design. DES-008 places Settings and History in a right slide-out pane, shows action-level history, authentic app icon/version metadata, and an eight-inclusive-date reporting default. See [design record](14_DES008_SETTINGS_HISTORY_DRAWER_AND_PERIOD.md).
 
 **Date:** 2026-11-08 JST  
 **State:** D3 integration concept / PROPOSED, **not** a visual-system freeze or implementation authorization  
