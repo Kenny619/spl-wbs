@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 1.0
+# SPT-WBS UI Guideline — draft 1.1
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -67,6 +67,13 @@
 - A shared two-column CSS track or shared layout token should drive both surfaces; do not maintain divergent per-view percentages or independent hardcoded widths.
 - The current mock's right track is `minmax(365px,39%)` alongside a flexible schedule/list column at >970 CSS px, **proposed only** until actual laptop/zoom rendering is verified. Responsive stacked layouts remain permitted when view width is constrained.
 - Preserve all DES-005 global/report navigation position, internal scrolling, meeting filters, task details and Reports behavior. See [DES-006 rationale](11_DES006_CONSISTENT_DETAIL_WIDTH.md).
+
+### History, Settings and safe draft navigation — proposed D3 integration
+- Keep DES-006's **primary Schedule / Meeting Review / Reports** navigation coordinates fixed. Global Change History and personal Settings can be secondary destinations (for example a reserved fixed-position More menu) only if discoverable, keyboard operable, and compatible with the frozen #5/#6 contracts. Task-specific History should be reachable directly from selected-task details without creating a duplicate top-level History button.
+- Show selected-task historical changes in a **read-only Save-grouped view**, using the immutable task identity/snapshots from UpdateHistory; never reconstruct actual history from task Updates notes, or imply synthetic sample rows are live.
+- Any actual changed draft must be protected on task/view/workbook navigation by **Save / Discard / Cancel**, with Cancel preserving the draft and focus, and failed/uncertain Save never proceeding as successful. **No-op editing must not trigger unnecessary warning**. This requires real data/transaction testing under #3/#4, not only browser-state simulation.
+- Settings must distinguish date-only planned values (no timezone shift) from UTC instants (user-chosen timezone), browser-local display preferences from project-owned calendar settings, and confirmation of Reset. Light/Dark/System and column selection must be fully validated together later, not inferred from design-only controls.
+- [DES-007](13_DES007_HISTORY_SETTINGS_AND_DRAFT_STATES.md) demonstrates secondary navigation and sample state transitions. It is a **proposal**, not an implemented or complete contract-compliant History/Settings/Save flow.
 
 ## 4. Typography, color and meaning
 - Text contrast: WCAG 2.2 AA **4.5:1** for normal text, **3:1** for large text; meaningful UI graphic contrast **3:1** where applicable.
