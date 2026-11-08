@@ -229,3 +229,105 @@ body.spt-managed[data-managed-theme="dark"] .managed-report-preview textarea { b
   color:var(--muted); overflow-wrap:anywhere; }
 body.spt-managed[data-managed-theme="dark"] .managed-recovery-warning {
   background:#4e3c22; color:#ffdfad; border-color:#ad8954; }
+
+
+/* UI-INT-02 — approved DES-010 right-hand Settings and read-only History drawer.
+   Separate managed presentation only; underlying Settings and UpdateHistory engines are unchanged. */
+body.spt-managed .managed-settings[open],
+body.spt-managed .managed-history[open] {
+  position:fixed; inset:0 0 0 auto; margin:0;
+  display:flex; flex-direction:column;
+  height:100dvh; max-height:100dvh; width:min(580px,100vw); max-width:100vw;
+  padding:0; border:0; border-left:1px solid var(--line); border-radius:0;
+  overflow:hidden; box-sizing:border-box;
+  background:var(--panel); color:var(--ink);
+  box-shadow:-14px 0 48px #102b4050;
+}
+body.spt-managed .managed-settings::backdrop,
+body.spt-managed .managed-history::backdrop { background:#102a455e; }
+body.spt-managed .managed-settings-head,
+body.spt-managed .managed-history-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 20px 13px; border-bottom:1px solid var(--line); flex:none;
+}
+body.spt-managed .managed-settings-head h2,
+body.spt-managed .managed-history-head h2 { font-size:19px; }
+body.spt-managed .managed-drawer-tabs {
+  flex:none; display:flex; gap:7px; padding:11px 20px;
+  background:var(--panel); border-bottom:1px solid var(--line);
+}
+body.spt-managed .managed-drawer-tabs button {
+  flex:1; text-align:center; border-radius:7px; padding:9px 10px;
+  color:var(--ink); background:transparent;
+}
+body.spt-managed .managed-drawer-tabs button.active {
+  background:#e8f2fc; color:#145d93; border-color:#aecde7;
+}
+body.spt-managed .managed-settings-body {
+  flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+  padding:6px 20px 28px;
+}
+body.spt-managed .managed-settings-section { padding:17px 0; }
+body.spt-managed .managed-settings-footer { margin-top:16px; }
+
+/* History has its own independent log scroll; header, tabs and filters stay in view. */
+body.spt-managed .managed-history-filters {
+  flex:none; margin:0; padding:14px 20px 9px;
+  border-bottom:1px solid var(--line);
+}
+body.spt-managed .managed-history > .managed-history-note {
+  flex:none; margin:0; padding:9px 20px; font-size:11px;
+}
+body.spt-managed .managed-history-results {
+  flex:1; min-height:0; max-height:none; overflow-y:auto; overscroll-behavior:contain;
+  padding:0 17px 20px;
+}
+body.spt-managed .managed-history-log-head,
+body.spt-managed .managed-history-row {
+  display:grid;
+  grid-template-columns: minmax(98px,120px) minmax(100px,1fr) minmax(160px,1.35fr);
+  align-items:start; column-gap:9px;
+}
+body.spt-managed .managed-history-log-head {
+  position:sticky; top:0; z-index:2;
+  padding:10px 7px; background:var(--panel);
+  border-bottom:1px solid var(--line);
+  font-size:10px; font-weight:750; color:var(--muted);
+}
+body.spt-managed .managed-history-event {
+  border:0; border-left:3px solid #b2cedf;
+  border-radius:0; margin:0; padding:0 0 0 5px;
+  background:transparent;
+}
+body.spt-managed .managed-history-event:nth-of-type(even) { border-left-color:#6ea3c8; }
+body.spt-managed .managed-history-row {
+  border-top:0; border-bottom:1px solid var(--line);
+  padding:11px 7px; font-size:12px;
+}
+body.spt-managed .managed-history-row:hover { background:color-mix(in srgb,var(--panel) 75%,#d2eaf8); }
+body.spt-managed .managed-history-when {
+  display:flex; flex-direction:column; gap:4px;
+  font-size:11px; color:var(--muted); overflow-wrap:anywhere;
+}
+body.spt-managed .managed-history-when small { font-size:10px; }
+body.spt-managed .managed-history-task { line-height:1.4; overflow-wrap:anywhere; }
+body.spt-managed .managed-history-action { min-width:0; overflow-wrap:anywhere; }
+body.spt-managed .managed-history-action > strong { margin-bottom:6px; }
+body.spt-managed .managed-history-values { grid-template-columns:1fr; }
+body.spt-managed .managed-history-values span { overflow-wrap:anywhere; }
+body.spt-managed .managed-history-values pre { max-width:100%; overflow-wrap:anywhere; }
+body.spt-managed[data-managed-theme="dark"] .managed-drawer-tabs button.active {
+  background:#2b4a6c; color:#dbecff; border-color:#6388ad;
+}
+@media (max-width:560px) {
+  body.spt-managed .managed-history-filters { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  body.spt-managed .managed-history-log-head { display:none; }
+  body.spt-managed .managed-history-row { grid-template-columns:minmax(95px,1fr) 1.5fr; }
+  body.spt-managed .managed-history-action { grid-column:1/-1; }
+  body.spt-managed .managed-settings-body { padding-inline:15px; }
+  body.spt-managed .managed-settings-head,body.spt-managed .managed-history-head,
+  body.spt-managed .managed-drawer-tabs { padding-inline:15px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  body.spt-managed .managed-settings, body.spt-managed .managed-history { transition:none; }
+}
