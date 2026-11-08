@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** D2 DIRECTION ENDORSED; D3 integration exploration PROPOSED v1.7; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** D2 DIRECTION ENDORSED; D3 source regression PASS, visual review PENDING — PROPOSED v1.8; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -33,6 +33,7 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [DES-007 historical integration concept](../../design/concepts/DES-007-integrated-history-settings-states.html): More/centered-overlay variant, retained for traceability.
 - [14 — DES-008 Settings Drawer, History Log and Eight-Day Period](14_DES008_SETTINGS_HISTORY_DRAWER_AND_PERIOD.md): owner feedback disposition, source/version verification, log semantics, default date window and remaining browser/contract gates.
 - [DES-008 current interactive integration concept](../../design/concepts/DES-008-settings-history-drawer.html): authentic embedded favicon, v0.0.0 package and v18 UI metadata, fixed Settings button, right-side Settings/History log drawer, and Monday-to-Monday eight-date report default.
+- [15 — D3 regression and owner visual review handoff](15_DES008_D3_REGRESSION_AND_OWNER_REVIEW.md): exact validated DES-008 blob, four corrected navigation/focus findings, 29/29 source-mocked regressions, browser evidence limitations and a bounded owner visual checklist.
 - [11 — DES-006 consistent selected-task width](11_DES006_CONSISTENT_DETAIL_WIDTH.md): owner design feedback, shared column widths and source validation.
 - [DES-006 current interactive design prototype](../../design/concepts/DES-006-consistent-detail-width.html): same selected-task inspector width in Schedule and Meeting Review at the same desktop viewport; DES-005 behavior otherwise preserved.
 
@@ -147,6 +148,11 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - Proposed Update Report default window is **eight inclusive calendar dates**, last same weekday → current review weekday; synthetic Monday Nov 09 returns Monday Nov 02–Monday Nov 09. Custom chosen periods remain supported. This is a **future proposal**, not an amendment to frozen #7.
 - Keep DES-006 working layout and navigation positions, and the DES-007 simulated safe edit choices. Source-level checks pass; actual Edge visual, keyboard, accessibility and production workbook tests remain pending.
 - [DES-008 artifact](../../design/concepts/DES-008-settings-history-drawer.html) · [decision and traceability record](14_DES008_SETTINGS_HISTORY_DRAWER_AND_PERIOD.md). No app implementation, specification freeze or merge authorized.
+
+## D3 integration regression completed (2026-11-08)
+- **D3 source-level interaction gate PASS: 29/29 assertions** against DES-008 Git blob `982b30e2d6f0db339ea7f65f9146ddab8290d197`. Fixed the old dirty-draft dialog remaining visible after entering Settings, unified Save/Discard/Cancel protection across filter/date/stage navigation, and restored expected keyboard focus after drawer rerenders.
+- Re-run the contained **owner visual review** in Edge for right drawer, action log, actual scrollbar and nav stability, keyboard/zoom, and inclusive eight-day reporting. See [the D3 handoff](15_DES008_D3_REGRESSION_AND_OWNER_REVIEW.md). Browser screenshot evidence is still **not available**; source checks must not be represented as browser UAT.
+- Current accepted v18 and frozen #3–#7 remain untouched. Design PR #29 is still **draft**, and the owner has not authorized final D3 freeze or implementation/merge.
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
