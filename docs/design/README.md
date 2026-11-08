@@ -39,6 +39,7 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [DES-010 current interactive prototype](../../design/concepts/DES-010-gantt-local-scope.html): Exceptions/Workstreams selector in the Gantt panel; responsive Settings access restored; Windows Chromium CI 41/41 PASS.
 - [18 — DES-010 Chromium QA and controlled delivery gate](18_DES010_D3_BROWSER_GATE_AND_INTEGRATION_PLAN.md): CI screenshots/evidence, scope-conflict matrix and staged authorization boundaries.
 - [19 — DES-010 to existing managed code map](19_DES010_TO_MANAGED_CODE_INTEGRATION_MAP.md): reuse actual PR #19 modules instead of synthetic prototype data.
+- [20 — D3 exact-source freeze and bounded UI implementation decision](20_DES010_D3_FREEZE_AND_UI_IMPLEMENTATION_DECISION.md): one explicit PO decision package separating visual acceptance from isolated managed UI adaptation; excludes new Meeting/risk/calendar/lifecycle changes.
 - [DES-010 Playwright browser tests](../../test/browser/des010-design-review.spec.ts): 8 Windows Chromium checks for panel geometry, navigation, scrolling, Settings and reports.
 - [15 — D3 regression and owner visual review handoff](15_DES008_D3_REGRESSION_AND_OWNER_REVIEW.md): exact validated DES-008 blob, four corrected navigation/focus findings, 29/29 source-mocked regressions, browser evidence limitations and a bounded owner visual checklist.
 - [11 — DES-006 consistent selected-task width](11_DES006_CONSISTENT_DETAIL_WIDTH.md): owner design feedback, shared column widths and source validation.
