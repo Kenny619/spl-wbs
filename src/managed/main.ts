@@ -111,12 +111,6 @@ export class ManagedEditor {
     label.append(this.fileSelect);
     wrap.append(label);
     actions.prepend(wrap);
-    const historyButton = element(doc, "button", "managed-action", "History");
-    historyButton.type = "button";
-    historyButton.addEventListener("click", () => {
-      this.guard(() => { void this.showHistory(); });
-    });
-    actions.prepend(historyButton);
     const inspectButton = element(doc, "button", "managed-action", "Inspect Save State");
     inspectButton.type = "button";
     inspectButton.addEventListener("click", () => {
@@ -176,7 +170,10 @@ export class ManagedEditor {
       }
       originalPatch(patch);
     };
-    this.settings = new ManagedSettings(doc, controller, (action) => this.guard(action));
+    this.settings = new ManagedSettings(
+      doc, controller, (action) => this.guard(action),
+      () => this.guard(() => { void this.showHistory(); }),
+    );
     this.reports = new ManagedReports(doc, () => ({
       fileName: this.sourceName,
       tasks: this.busy ? null : this.controller.getState().tasks,
@@ -403,7 +400,9 @@ export class ManagedEditor {
     }
     const timeZone = this.settings.getTimeZone();
     try {
-      await openManagedHistory(this.doc, this.loadedBytes, { taskId, timeZone });
+      await openManagedHistory(this.doc, this.loadedBytes, {
+        taskId, timeZone, onSettings: () => this.guard(() => this.settings.open()),
+      });
     } catch (error) {
       this.message = "Unable to open Change History: " + errorMessage(error);
       this.render();
