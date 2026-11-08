@@ -487,18 +487,24 @@ footer='<span class="tiny">Local preference illustration · nothing saved</span>
 content.innerHTML='<div class="drawer-head"><h2>'+esc(title)+'</h2><button type="button" class="ghost" id="drawerClose" aria-label="Close side pane">Close ×</button></div>'+tabButtons+
 '<div class="drawer-body" tabindex="0">'+body+'</div><div class="drawer-bottom">'+footer+'</div>';
 function bind(id,fn){var elem=document.getElementById(id);if(elem)elem.addEventListener("click",fn)}
-bind("drawerClose",closeDrawer);if(state.drawerJustOpened){var initialFocus=document.getElementById("drawerClose");if(initialFocus&&typeof initialFocus.focus==="function")initialFocus.focus();state.drawerJustOpened=false;}
+bind("drawerClose",closeDrawer);
+function refocus(id){var item=document.getElementById(id);if(item&&typeof item.focus==="function")item.focus()}
+if(state.drawerJustOpened){refocus("drawerClose");state.drawerJustOpened=false}
 var scrim=document.getElementById("drawerScrim");if(scrim)scrim.onclick=closeDrawer;
-document.querySelectorAll("[data-drawer-tab]").forEach(function(el){el.addEventListener("click",function(){if(el.dataset.drawerTab==="history"){state.historyTask=null;state.historyField="all"}state.drawer=el.dataset.drawerTab;state.drawerConfirmReset=false;renderDrawer()})});
-bind("openHistoryFromSettings",function(){state.historyTask=null;state.historyField="all";state.drawer="history";renderDrawer()});
-var taskFilter=document.getElementById("historyTaskFilter");if(taskFilter)taskFilter.addEventListener("change",function(){state.historyTask=taskFilter.value==="all"?null:taskFilter.value;renderDrawer()});
-var fieldFilter=document.getElementById("historyFieldFilter");if(fieldFilter)fieldFilter.addEventListener("change",function(){state.historyField=fieldFilter.value;renderDrawer()});
-var zone=document.getElementById("zoneSetting");if(zone)zone.addEventListener("change",function(){state.settings.timezone=zone.value;renderDrawer()});
-var appearance=document.getElementById("appearanceSetting");if(appearance)appearance.addEventListener("change",function(){state.settings.appearance=appearance.value;renderDrawer()});
+document.querySelectorAll("[data-drawer-tab]").forEach(function(el){el.addEventListener("click",function(){
+var tab=el.dataset.drawerTab;if(tab==="history"){state.historyTask=null;state.historyField="all"}
+state.drawer=tab;state.drawerConfirmReset=false;renderDrawer();
+document.querySelectorAll("[data-drawer-tab]").forEach(function(next){if(next.dataset.drawerTab===tab&&typeof next.focus==="function")next.focus()})
+})});
+bind("openHistoryFromSettings",function(){state.historyTask=null;state.historyField="all";state.drawer="history";state.drawerJustOpened=true;renderDrawer()});
+var taskFilter=document.getElementById("historyTaskFilter");if(taskFilter)taskFilter.addEventListener("change",function(){state.historyTask=taskFilter.value==="all"?null:taskFilter.value;renderDrawer();refocus("historyTaskFilter")});
+var fieldFilter=document.getElementById("historyFieldFilter");if(fieldFilter)fieldFilter.addEventListener("change",function(){state.historyField=fieldFilter.value;renderDrawer();refocus("historyFieldFilter")});
+var zone=document.getElementById("zoneSetting");if(zone)zone.addEventListener("change",function(){state.settings.timezone=zone.value;renderDrawer();refocus("zoneSetting")});
+var appearance=document.getElementById("appearanceSetting");if(appearance)appearance.addEventListener("change",function(){state.settings.appearance=appearance.value;renderDrawer();refocus("appearanceSetting")});
 document.querySelectorAll("[data-col]").forEach(function(el){el.addEventListener("change",function(){state.settings.columns[el.dataset.col]=el.checked})});
-bind("resetSettings",function(){state.drawerConfirmReset=true;renderDrawer()});
-bind("resetCancel",function(){state.drawerConfirmReset=false;renderDrawer()});
-bind("resetConfirm",function(){state.settings={timezone:"Asia/Tokyo",appearance:"System",columns:{Owner:true,Status:true,Finish:true}};state.drawerConfirmReset=false;renderDrawer()});
+bind("resetSettings",function(){state.drawerConfirmReset=true;renderDrawer();refocus("resetCancel")});
+bind("resetCancel",function(){state.drawerConfirmReset=false;renderDrawer();refocus("resetSettings")});
+bind("resetConfirm",function(){state.settings={timezone:"Asia/Tokyo",appearance:"System",columns:{Owner:true,Status:true,Finish:true}};state.drawerConfirmReset=false;renderDrawer();refocus("resetSettings")});
 }
 function renderOverlay(){
 var el=document.getElementById("overlayShell");if(!el)return;
