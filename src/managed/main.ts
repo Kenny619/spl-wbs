@@ -9,6 +9,7 @@ import { openManagedHistory } from "./historyUi";
 import { ManagedSettings } from "./settingsUi";
 import { ManagedReports } from "./reportsUi";
 import { mountManagedShell } from "./shell";
+import { MANAGED_APP_VERSION as APP_VERSION } from "./version";
 import { openManagedRecovery } from "./recoveryUi";
 import type { EditableField, EditValue } from "./workbookCandidate";
 
@@ -19,7 +20,7 @@ type PickerHost = typeof globalThis & {
   showDirectoryPicker?: (options?: { mode?: "read" | "readwrite" }) => Promise<FileSystemDirectoryHandle>;
 };
 const STORAGE_PREFIX = "spt-wbs:managed:lastWorkbook:";
-const APP_VERSION = "0.1.0-dev";
+
 const FIELDS: Array<{ field: EditableField; label: string; kind: "text" | "date" | "number" | "textarea" | "select" }> = [
   { field: "Title", label: "Task title", kind: "text" },
   { field: "AssignedTo", label: "Owner", kind: "text" },
