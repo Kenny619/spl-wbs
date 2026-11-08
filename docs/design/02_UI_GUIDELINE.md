@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 1.3
+# SPT-WBS UI Guideline — draft 1.4
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -89,6 +89,13 @@
 - Settings should offer **one top-level Change History tab** inside its right-side pane, not a duplicate History section and button inside Preferences. Preserve direct task-specific History navigation to the same read-only log.
 - Adjust the header's brand grid track without changing view-dependent nav positions. Keep fixed header navigation, same inspector widths/heights and panel-only scroll behavior across Schedule, Meeting, Reports.
 - DES-009 is the current **design proposal**; browser screenshots/visual UAT and any production implementation still require separate evidence and authority.
+
+### Local Exceptions / Workstreams navigation — DES-010
+- Place Schedule's **Exceptions | Workstreams** scope switch **inside the Gantt/WBS panel heading**, adjacent to the chart title rather than in the fixed global application header. Keep both scopes contextually close to the schedule rows.
+- Preserve the stable **Schedule / Meeting Review / Reports** primary header control coordinates across all three views. If needed, reserve a blank inert header grid track rather than repurposing the slot in a way that shifts navigation between views.
+- The local control appears only when the Schedule work area is present and must be wired on every dynamic render. Indicate the active scope via visual state and `aria-pressed`. It is not a new task entity, status, filter or saved workbook value.
+- Switching the scope during an actual edited draft must use the same Save/Discard/Cancel decision protection as other task navigation. Keep schedule scroll containment, full-height panels, identical selected-inspector width and right-hand Settings/History drawer from DES-009.
+- On narrow widths, let the panel header wrap its local controls rather than moving them back to the top header. See [DES-010 review record](17_DES010_GANTT_LOCAL_SCOPE.md).
 
 ## 4. Typography, color and meaning
 - Text contrast: WCAG 2.2 AA **4.5:1** for normal text, **3:1** for large text; meaningful UI graphic contrast **3:1** where applicable.
