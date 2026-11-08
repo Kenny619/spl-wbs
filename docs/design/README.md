@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** PROPOSED v1.2 for discussion; not a frozen specification. **Date:** 2026-11-07 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** PROPOSED v1.3 for discussion; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -25,7 +25,9 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [08 — DES-003 filters, dependencies and report-contract implications](08_DES003_FILTERS_DEPENDENCIES_REPORTING.md): owner feedback and design change impacts, calendar/business-day definitions, event-source gaps, and acceptance scenarios.
 - [DES-003 historical prototype](../../design/concepts/DES-003-filtered-meeting-and-weekly-report.html): task-list-first filters, dependencies and weekly stakeholder reporting (retained for historical visual comparison).
 - [09 — DES-004 single-header, list-scroll, fixed-detail and days semantics](09_DES004_FIXED_DETAIL_AND_DAYS.md): owner feedback mapping, viewport/scroll rules, terminology and validation.
-- [DES-004 current interactive design prototype](../../design/concepts/DES-004-single-header-fixed-detail.html): one compact header, no explanatory footer boxes, independently scrollable task list, anchored selected detail and explicit Workstream/WBS identity.
+- [DES-004 historical prototype](../../design/concepts/DES-004-single-header-fixed-detail.html): single-header, list-scroll, selected-detail and WBS identity exploration; retained for provenance.
+- [10 — DES-005 unified workspace height and fixed navigation](10_DES005_UNIFIED_HEIGHT_AND_NAV.md): panel height, fixed app/report controls, scroll containment and responsive safeguards.
+- [DES-005 current interactive design prototype](../../design/concepts/DES-005-unified-height-and-scroll.html): identical full available Schedule/Meeting panel height, independently scrollable Schedule/Meeting/Reports content and header buttons fixed in the same locations when switching.
 
 ## Boundaries and change control
 - **No design implementation, pixel-baseline replacement, issue acceptance, merge, release or approval is implied by these drafts.**
@@ -106,6 +108,13 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - Label business-calendar countdowns as **“days”** rather than “workdays,” but **continue excluding weekends, official holidays and project blackouts**. Expose the calendar basis via a small legend/tooltip; do not change the actual business-day calculation or call it remaining effort.
 - **Show both Workstream name and WBS code prominently inside the selected task detail** in view and edit states.
 - DES-004 [design rationale and 19 source-level smoke checks](09_DES004_FIXED_DETAIL_AND_DAYS.md). Pending rendered Edge/zoom/UAT review; no current product implementation, freeze or merge authorization.
+
+## Owner feedback incorporated in DES-005 / proposed v1.3 (2026-11-08)
+- All desktop **Schedule and Meeting Review panels must fill the same available viewport height** below the common top header; no arbitrary compact panel height. Scroll the Gantt/list or selected-task details internally when needed.
+- **Reports** likewise occupies the full-height workspace, with its report-specific navigation, time period and Generate/Copy actions always visible; only report content scrolls, not the whole page.
+- **Header navigation controls must not jump** between Schedule, Meeting and Reports. Reserve the layout slot for Schedule-only phase actions even when they are hidden, and keep the main navigation track at a constant desktop position.
+- Preserve accessibility with natural page scroll and stable responsive header reflow at narrow/zoomed effective widths. Design-only verification includes **18 source-mocked checks**; real Edge viewport and zoom QA is still required.
+- Current artifact: [DES-005](../../design/concepts/DES-005-unified-height-and-scroll.html), with [rationale and QA notes](10_DES005_UNIFIED_HEIGHT_AND_NAV.md). No freeze, production implementation, change to v18 or merge authorized.
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
