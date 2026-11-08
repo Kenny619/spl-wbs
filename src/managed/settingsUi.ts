@@ -20,7 +20,7 @@ export class ManagedSettings {
     private readonly doc: Document,
     private readonly controller: ImportController,
     navigate: (action: () => void) => void,
-    private readonly openHistory: () => void,
+    private readonly openHistory: () => void = () => {},
   ) {
     try { this.storage = doc.defaultView?.localStorage ?? null; } catch { /* unavailable */ }
     this.preferences = loadPreferences(this.storage);
