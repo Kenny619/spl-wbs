@@ -61,6 +61,21 @@ export function mountManagedShell(
   summary.textContent = "Project";
   summary.setAttribute("aria-label", "Project and workbook actions");
   menu.append(summary, originalActions);
+  // Native details keeps pointer/keyboard activation; close it when the user
+  // selects a project action or leaves the menu, rather than obscuring the WBS.
+  const dismissMenu = () => { menu.open = false; };
+  originalActions.addEventListener("click", dismissMenu);
+  originalActions.addEventListener("change", dismissMenu);
+  doc.addEventListener("pointerdown", (event) => {
+    if (menu.open && event.target instanceof Node && !menu.contains(event.target)) dismissMenu();
+  }, true);
+  doc.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && menu.open) {
+      event.preventDefault();
+      dismissMenu();
+      summary.focus();
+    }
+  });
 
   const settingsLaunch = settings.getLaunchButton();
   settingsLaunch.classList.add("managed-global-settings");
@@ -124,7 +139,14 @@ export function mountManagedShell(
   syncScope();
 
   const fit = doc.getElementById("fitTop");
-  doc.querySelector<HTMLElement>(".chart-top .toolbar")?.append(...(fit ? [fit] : []));
+  if (fit) {
+    fit.textContent = "Fit";
+    fit.setAttribute("aria-label", "Fit entire schedule");
+    fit.setAttribute("title", "Fit the entire project timeline");
+    fit.classList.remove("btn-primary");
+    fit.classList.add("tool");
+    doc.querySelector<HTMLElement>(".chart-top .toolbar")?.append(fit);
+  }
   // Preserve the original task-selection and editor nodes and all their handlers.
   const workspace = doc.createElement("div");
   workspace.className = "managed-schedule-body";
