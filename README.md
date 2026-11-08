@@ -13,6 +13,18 @@ Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address
 
 The page title is the file name without `.xlsx`.
 
+## Excel Managed Variant — DES-010 owner UAT (development only)
+
+**[Download the DES-010 UAT application (GitHub Actions ZIP)](https://github.com/Kenny619/spl-wbs/actions/runs/42458336216/artifacts/13608815544)**
+
+This GitHub-hosted artifact contains the **CI-built `managed.html`** application for draft [PR #32](https://github.com/Kenny619/spl-wbs/pull/32), commit `9ce49b085eae5ef67e0c78ff47b6db360f8d8ae0`. [CI run #42458336216](https://github.com/Kenny619/spl-wbs/actions/runs/42458336216) passed 134 unit tests and 59 Windows Chromium browser tests. Extract the ZIP and open `managed.html` in Microsoft Edge.
+
+**Companion UAT data and instructions:** The complete three-file `SPT-WBS_DES010_Owner_UAT_Kit.zip` (HTML, synthetic Excel workbook, and detailed checklist) was supplied in the Product Owner's ChatGPT conversation; **that conversation attachment is not hosted on GitHub**, so the link above downloads the application **only**, not the complete kit. Use only the disposable synthetic sample workbook; do not use a corporate production workbook.
+
+**Artifact availability:** GitHub Actions artifacts expire. This application's artifact is currently available through **November 15, 2026 (UTC)** and may require GitHub sign-in. If the direct link has expired, open [draft PR #32](https://github.com/Kenny619/spl-wbs/pull/32) → **Checks** → latest successful CI run → **Artifacts** → `managed-v1-development-preview`. Use the build associated with the exact commit you are testing.
+
+This is **not** the released read-only viewer. Owner UAT, independent QA, physical Windows/Edge workbook-safety gates, merge, and release remain separate and pending.
+
 ## Excel setup
 
 Export or refresh the list to a real `.xlsx` file. Web-query `.iqy` files, formulas, and macros are not read. Put the schedule on a worksheet named `ProjectWBS`. If that sheet is missing and the workbook has exactly one sheet, that sheet is used and a warning is shown. Several sheets and no `ProjectWBS` sheet stops the import.
