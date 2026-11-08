@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** D2 DIRECTION ENDORSED; D3 Settings/History direction endorsed, DES-009 source PASS, full visual review PENDING — PROPOSED v1.9; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** D2 DIRECTION ENDORSED; D3 DES-010 Gantt-local switching source PASS, full visual review PENDING — PROPOSED v2.0; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -34,7 +34,9 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [14 — DES-008 Settings Drawer, History Log and Eight-Day Period](14_DES008_SETTINGS_HISTORY_DRAWER_AND_PERIOD.md): owner feedback disposition, source/version verification, log semantics, default date window and remaining browser/contract gates.
 - [DES-008 historical integration concept](../../design/concepts/DES-008-settings-history-drawer.html): Settings/History right drawer, real app favicon, version/About metadata and eight-date report default. Preserved for comparison.
 - [16 — DES-009 Icon-only Header and History Navigation](16_DES009_ICON_ONLY_HEADER_AND_HISTORY_NAV.md): owner refinement and 17 source-mocked regressions.
-- [DES-009 current interaction prototype](../../design/concepts/DES-009-icon-only-header.html): removes adjacent brand/version/subtitle text from the top bar and redundant History link under Preferences while retaining the Change History tab and About/version details.
+- [DES-009 historical interaction prototype](../../design/concepts/DES-009-icon-only-header.html): icon-only header and streamlined Settings/History drawer, retained unchanged as design history.
+- [17 — DES-010 Gantt-Local Scope Navigation](17_DES010_GANTT_LOCAL_SCOPE.md): owner's panel-local scope-control decision and 18 source-level interaction checks.
+- [DES-010 current interactive prototype](../../design/concepts/DES-010-gantt-local-scope.html): Exceptions/Workstreams selector moves from the global header into the Gantt panel heading, with primary navigation held in place.
 - [15 — D3 regression and owner visual review handoff](15_DES008_D3_REGRESSION_AND_OWNER_REVIEW.md): exact validated DES-008 blob, four corrected navigation/focus findings, 29/29 source-mocked regressions, browser evidence limitations and a bounded owner visual checklist.
 - [11 — DES-006 consistent selected-task width](11_DES006_CONSISTENT_DETAIL_WIDTH.md): owner design feedback, shared column widths and source validation.
 - [DES-006 current interactive design prototype](../../design/concepts/DES-006-consistent-detail-width.html): same selected-task inspector width in Schedule and Meeting Review at the same desktop viewport; DES-005 behavior otherwise preserved.
@@ -161,6 +163,12 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - [DES-009](../../design/concepts/DES-009-icon-only-header.html) retains only the actual app icon in the header. Package version and approved v18 UI baseline stay available in Settings → About, rather than beside the icon.
 - The History tab already within the Settings drawer remains the one Settings-level entry; the duplicate Preferences → History section and View History link are removed. Selected task → History still works.
 - **17/17 source-level interaction checks PASS** against [exact-blob evidence](16_DES009_ICON_ONLY_HEADER_AND_HISTORY_NAV.md). Real Edge/keyboard/zoom visual evidence and full design freeze remain pending; frozen workbook and reporting contracts are unchanged.
+
+## D3 Gantt-local scope navigation — DES-010 (2026-11-08)
+- The Product Owner requests that the **Exceptions / Workstreams switch live within the Gantt chart panel heading**, not in the top-level global header; the former placement forces unnecessary pointer travel during schedule review. All other DES-009 directions were positively endorsed.
+- DES-010 preserves the exact Schedule / Meeting / Reports global navigation positions with an inert reserved header grid slot; only the Gantt panel owns the scope selector. The control remains visible near the schedule list rather than scrolling out with rows, and exposes pressed state.
+- **18/18 source-mocked assertions PASS**, including dynamic binding after each Schedule render, 3 synthetic Exception rows vs 11 total Workstream rows, visibility only in Schedule, and Save/Discard/Cancel when changing task scope with unsaved changes.
+- Current [DES-010 prototype](../../design/concepts/DES-010-gantt-local-scope.html) and [evidence](17_DES010_GANTT_LOCAL_SCOPE.md). Actual Edge visual/keyboard QA, full D3 visual-system freeze and production implementation remain separate gates.
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
