@@ -159,6 +159,35 @@ export function mountManagedShell(
   main.insertBefore(workspace, chart);
   workspace.append(chart, inspector);
   inspector.setAttribute("role", "region");
+  // The approved managed view keeps the inspector visible even with no task
+  // selected. v18's overlay controller sets aria-hidden=true when empty,
+  // which would hide our visible empty state from assistive technology.
+  // Expose a real text node and adjust only the managed instance.
+  const emptyDetail = doc.createElement("p");
+  emptyDetail.className = "managed-empty-detail";
+  emptyDetail.setAttribute("role", "status");
+  emptyDetail.textContent = "Select a task to inspect its details.";
+  inspector.prepend(emptyDetail);
+  const syncDetail = () => {
+    const selected = inspector.classList.contains("open");
+    emptyDetail.hidden = selected;
+    if (!selected) {
+      inspector.setAttribute("aria-label", "Selected task details");
+      if (inspector.getAttribute("aria-hidden") === "true") {
+        inspector.removeAttribute("aria-hidden");
+      }
+    } else {
+      inspector.removeAttribute("aria-label");
+    }
+    // Keep the approved concise display label but retain the existing
+    // business-day calculation and tooltip/calendar behavior.
+    const workdayLabel = inspector.querySelector<HTMLElement>(".workdays-detail small");
+    if (workdayLabel) workdayLabel.textContent = "Days left";
+  };
+  const detailObserver = new MutationObserver(syncDetail);
+  detailObserver.observe(inspector, { attributes: true, attributeFilter: ["class", "aria-hidden"] });
+  controller.subscribe(syncDetail);
+  syncDetail();
   const backdrop = doc.getElementById("backdrop");
   if (backdrop) backdrop.setAttribute("hidden", "");
 
