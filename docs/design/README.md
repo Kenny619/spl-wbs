@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** D2 DIRECTION ENDORSED; D3 DES-010 Gantt-local switching source PASS, full visual review PENDING — PROPOSED v2.0; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** D2 DIRECTION ENDORSED; D3 DES-010 Windows Chromium 41/41 PASS, owner physical Edge review PENDING — PROPOSED v2.1; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -36,10 +36,13 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [16 — DES-009 Icon-only Header and History Navigation](16_DES009_ICON_ONLY_HEADER_AND_HISTORY_NAV.md): owner refinement and 17 source-mocked regressions.
 - [DES-009 historical interaction prototype](../../design/concepts/DES-009-icon-only-header.html): icon-only header and streamlined Settings/History drawer, retained unchanged as design history.
 - [17 — DES-010 Gantt-Local Scope Navigation](17_DES010_GANTT_LOCAL_SCOPE.md): owner's panel-local scope-control decision and 18 source-level interaction checks.
-- [DES-010 current interactive prototype](../../design/concepts/DES-010-gantt-local-scope.html): Exceptions/Workstreams selector moves from the global header into the Gantt panel heading, with primary navigation held in place.
+- [DES-010 current interactive prototype](../../design/concepts/DES-010-gantt-local-scope.html): Exceptions/Workstreams selector in the Gantt panel; responsive Settings access restored; Windows Chromium CI 41/41 PASS.
+- [18 — DES-010 Chromium QA and controlled delivery gate](18_DES010_D3_BROWSER_GATE_AND_INTEGRATION_PLAN.md): CI screenshots/evidence, scope-conflict matrix and staged authorization boundaries.
+- [19 — DES-010 to existing managed code map](19_DES010_TO_MANAGED_CODE_INTEGRATION_MAP.md): reuse actual PR #19 modules instead of synthetic prototype data.
+- [DES-010 Playwright browser tests](../../test/browser/des010-design-review.spec.ts): 8 Windows Chromium checks for panel geometry, navigation, scrolling, Settings and reports.
 - [15 — D3 regression and owner visual review handoff](15_DES008_D3_REGRESSION_AND_OWNER_REVIEW.md): exact validated DES-008 blob, four corrected navigation/focus findings, 29/29 source-mocked regressions, browser evidence limitations and a bounded owner visual checklist.
 - [11 — DES-006 consistent selected-task width](11_DES006_CONSISTENT_DETAIL_WIDTH.md): owner design feedback, shared column widths and source validation.
-- [DES-006 current interactive design prototype](../../design/concepts/DES-006-consistent-detail-width.html): same selected-task inspector width in Schedule and Meeting Review at the same desktop viewport; DES-005 behavior otherwise preserved.
+- [DES-006 endorsed D2 layout reference](../../design/concepts/DES-006-consistent-detail-width.html): historical selected-task width convergence; DES-010 is now the current D3 candidate.
 
 ## Boundaries and change control
 - **No design implementation, pixel-baseline replacement, issue acceptance, merge, release or approval is implied by these drafts.**
@@ -170,8 +173,14 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - **18/18 source-mocked assertions PASS**, including dynamic binding after each Schedule render, 3 synthetic Exception rows vs 11 total Workstream rows, visibility only in Schedule, and Save/Discard/Cancel when changing task scope with unsaved changes.
 - Current [DES-010 prototype](../../design/concepts/DES-010-gantt-local-scope.html) and [evidence](17_DES010_GANTT_LOCAL_SCOPE.md). Actual Edge visual/keyboard QA, full D3 visual-system freeze and production implementation remain separate gates.
 
-## Decisions needed in dialogue
-1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
-2. Should the opening workspace be schedule-first with contextual tools, or action/exception-first with a schedule destination? Test rather than assume.
-3. Which information must remain permanently visible during an edit (task identity, context, save state, dependency impact)?
-These are open hypotheses, not new requirements.
+## D3 browser verification and delivery handoff (2026-11-08)
+- **Windows Chromium real-browser CI PASS** at DES-010 source blob `77dc7333ee4e061dc06e54d74caa30b07bdbe79e`: [run #42447648745](https://github.com/Kenny619/spl-wbs/actions/runs/42447648745), **41/41 browser checks**, Ubuntu build/unit PASS, screenshot attachments collected.
+- Initial [run #42447420570](https://github.com/Kenny619/spl-wbs/actions/runs/42447420570) revealed a real defect: Settings hidden at 1024px (40/41 checks). Responsive CSS corrected and rechecked successfully on the design-only branch.
+- Existing separately authorized, still-draft [Excel Managed PR #19](https://github.com/Kenny619/spl-wbs/pull/19) already contains Save, History, Settings and Output Reports. Reuse real modules instead of DES-010 synthetic data; see [integration map](19_DES010_TO_MANAGED_CODE_INTEGRATION_MAP.md).
+- Existing `ManagedReports.open()` already defaults From to `today - 7 calendar days` and Through to today, giving **8 inclusive dates** as the owner requested. No new date engine or workbook contract is needed for that default.
+- Actual physical Edge owner visual acceptance, formal D3 freeze, new UI implementation authorization and managed Stage A workbook safety gates remain separate.
+
+## Remaining genuine Product Owner gates
+1. Accept/freeze the exact corrected DES-010 D3 visual artifact after evidence review.
+2. Separately authorize bounded UI adaptation of existing managed modules; do not infer new Meeting/risk/calendar/report-lifecycle feature scope from visual preference.
+3. Approve any future workbook schema or frozen report content changes explicitly, after documented impact analysis.
