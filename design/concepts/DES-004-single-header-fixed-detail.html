@@ -91,22 +91,58 @@ button:disabled{cursor:default;opacity:.5}.tiny{font-size:11px;color:var(--muted
 @media(max-width:1200px){.b-layout{grid-template-columns:minmax(470px,1.32fr) minmax(330px,1fr)}.meeting-columns,.meeting-item{grid-template-columns:minmax(145px,2fr) 70px 65px 59px 72px;gap:5px}.meeting-columns,.meeting-item{padding-left:10px;padding-right:10px}}
 @media(max-width:970px){.update-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.b-layout{grid-template-columns:1fr}.meeting-data{max-height:420px}.filter-selects{grid-template-columns:1fr 1fr 140px}.detail-compact .focus-title{font-size:20px}}
 @media(max-width:600px){.meeting-columns,.meeting-item{grid-template-columns:minmax(150px,2fr) 72px 62px 71px}.meeting-columns>*:nth-child(2),.meeting-item>*:nth-child(2){display:none}.filter-selects{grid-template-columns:1fr 1fr}.filter-selects label:last-child{grid-column:1/-1}.dependencies{grid-template-columns:1fr}.reportbar{overflow:auto}}
+
+/* DES-004: one compact header, a scrollable task list, anchored detail */
+.top{height:60px;min-height:60px;padding:0 16px;gap:13px;flex-wrap:nowrap}
+.brand{min-width:178px;gap:8px}.brandmeta{font-size:10px}.brandtitle{font-size:13px}
+.project-head{display:flex;flex-direction:column;gap:1px;min-width:170px;max-width:235px;flex:1;line-height:1.2}
+.project-head strong{font-size:14px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.project-head span{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .concept-controls{flex-shrink:0}.top .concept-controls button{padding:8px 10px}
+.top .phase-controls{flex-shrink:0}.top .phase-controls button{padding:7px 9px}
+.topright{min-width:120px;font-size:10px}.topright b{font-size:10px}
+body.view-meeting{height:100dvh;overflow:hidden}
+body.view-meeting .canvas{height:calc(100dvh - 60px);max-width:none;display:flex;flex-direction:column;overflow:hidden;padding:12px 16px 14px}
+body.view-meeting #app{flex:1;min-height:0;overflow:hidden}
+body.view-meeting #app>.b-layout{height:100%;min-height:0;align-items:stretch}
+body.view-meeting .meeting-list{display:flex;flex-direction:column;min-height:0;max-height:100%;overflow:hidden}
+body.view-meeting .meeting-data{flex:1;min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+body.view-meeting .detail-compact{min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.detail-identity{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+.detail-id{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border:1px solid #dbe6ee;border-radius:6px;background:#f4f8fa;font-size:11px;color:#345875}
+.detail-id b{font-weight:750;color:#224b6a}
+.detail-compact .panelhead{padding:10px 14px}
+.detail-compact .panelbody{padding:11px 14px 15px}
+.detail-compact .focus-title{margin:2px 0 11px}
+.meeting-list .panelhead{min-height:48px}
+.meeting-data:focus-visible{outline:3px solid #6bb1d6;outline-offset:-3px}
+@media(max-width:1260px){
+.topright{display:none}.top{gap:9px}.brand{min-width:160px}.project-head{max-width:220px;min-width:140px}
+}
+@media(max-width:970px){
+body.view-meeting{height:auto;overflow:auto}
+body.view-meeting .canvas{height:auto;display:block;overflow:visible}
+body.view-meeting #app{overflow:visible}
+body.view-meeting #app>.b-layout{height:auto;align-items:start}
+body.view-meeting .meeting-list{max-height:none}
+body.view-meeting .meeting-data{max-height:420px;flex:none}
+body.view-meeting .detail-compact{max-height:none;overflow:visible}
+.top{height:auto;min-height:60px;flex-wrap:wrap;padding:10px 12px}
+.project-head{min-width:150px;max-width:none}
+}
+
 </style>
 </head>
 <body>
 <header class="top">
- <div class="brand"><div class="mark">W</div><div><div class="brandtitle">SPT–WBS <span class="pill blue">DES–004</span></div><div class="brandmeta">Holistic concept exploration · Synthetic data</div></div></div>
- <nav class="concept-controls" aria-label="Choose design concept"><button id="navA" data-view="a">A · Schedule canvas</button><button id="navB" class="active" data-view="b">B · Task review</button><button id="navL" data-view="l">Reports · Present</button></nav>
- <div class="topright"><b>DESIGN PROPOSAL · NOT PRODUCT</b>Simulated edits only · No workbook access</div>
+ <div class="brand"><div class="mark">W</div><div><div class="brandtitle">SPT–WBS <span class="pill blue">DES–004</span></div><div class="brandmeta">Design concept · Synthetic data</div></div></div>
+ <div class="project-head"><strong id="mainTitle">Northstar Service Rollout</strong><span id="mainDescription">Meeting task review</span></div>
+ <nav class="concept-controls" aria-label="Choose design concept"><button id="navA" data-view="a">Schedule</button><button id="navB" class="active" data-view="b">Meeting Review</button><button id="navL" data-view="l">Reports · Present</button></nav>
+ <div class="phase-controls" id="phases" aria-label="Schedule stage"><button data-stage="exception" class="active">Exceptions</button><button data-stage="workstream">Workstreams</button></div>
+ <div class="topright"><b>DESIGN PROPOSAL</b>No workbook access</div>
 </header>
 <main class="canvas">
- <div class="context"><div><div class="kicker" id="conceptKicker">Concept A / dual-pane working review</div><h1 id="mainTitle">Northstar Service Rollout</h1><p id="mainDescription">Exception-first weekly review · 3 workstreams · sample project for UX discussion</p></div><div class="phase-controls" id="phases" aria-label="Review stage"><button data-stage="exception" class="active">01 Exceptions</button><button data-stage="workstream">02 Workstreams</button></div></div>
  <div id="app" aria-live="polite"></div>
- <div class="comparison">
- <div class="compbox"><b>A · Schedule canvas</b><p>Full WBS/Gantt context for editing. Bars indicate planned time spans; task finish and working days are explicit.</p></div>
- <div class="compbox"><b>B · Meeting guide</b><p>One selected-task panel: discussion by default, inline editing only when Edit task is chosen. Exceptions and workstreams remain the two navigation phases.</p></div>
- <div class="compbox"><b>Reports · Present</b><p>Presentation and plain-text preview reuse a fixed synthetic report snapshot. Latest Status and Update Report are not separate presentation engines.</p></div>
- </div>
 </main>
 <script>
 (function(){
