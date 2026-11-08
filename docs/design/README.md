@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** PROPOSED v1.4 for discussion; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** D2 DIRECTION ENDORSED; remaining design and functional specs PROPOSED v1.5; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -28,6 +28,7 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [DES-004 historical prototype](../../design/concepts/DES-004-single-header-fixed-detail.html): single-header, list-scroll, selected-detail and WBS identity exploration; retained for provenance.
 - [10 — DES-005 unified workspace height and fixed navigation](10_DES005_UNIFIED_HEIGHT_AND_NAV.md): panel height, fixed app/report controls, scroll containment and responsive safeguards.
 - [DES-005 historical prototype](../../design/concepts/DES-005-unified-height-and-scroll.html): unified full-height workspace, panel-only scrolling and anchored report/header controls; retained for comparison.
+- [12 — D2 Owner Direction and D3 Integration Matrix](12_D2_OWNER_DIRECTION_AND_D3_INTEGRATION.md): record exact DES-006 concept endorsement, rejected alternatives, frozen-contract coverage gaps, integrated scenarios and separate design/implementation gates.
 - [11 — DES-006 consistent selected-task width](11_DES006_CONSISTENT_DETAIL_WIDTH.md): owner design feedback, shared column widths and source validation.
 - [DES-006 current interactive design prototype](../../design/concepts/DES-006-consistent-detail-width.html): same selected-task inspector width in Schedule and Meeting Review at the same desktop viewport; DES-005 behavior otherwise preserved.
 
@@ -122,6 +123,12 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - **Same selected-task panel width in Schedule and Meeting Review:** retain the overall DES-005 visual composition, pane height, scrolling and navigation. The right-hand inspector uses one shared desktop grid-track definition, so it does not jump in width when switching views.
 - Continue responsive stacking for narrow/zoomed screens; do not force an inaccessible side-by-side layout.
 - Current mock: [DES-006](../../design/concepts/DES-006-consistent-detail-width.html). [Design rationale and 10 source checks](11_DES006_CONSISTENT_DETAIL_WIDTH.md). Owner screenshot review and actual Edge CSS measurement remain pending. No production implementation or merge authorized.
+
+## D2 Product Owner convergence (2026-11-08)
+- The Product Owner explicitly endorsed [DES-006](../../design/concepts/DES-006-consistent-detail-width.html) as the **preferred overall working-view concept**, saying “Perfect. I like it. let's continue.” Record this as **D2-DIR-001 — selected layout/information architecture direction**, against the exact DES-006 blob `b833afeefe5fa3392b17efea79589bd7eede390f`. This is **not** a D3 visual specification freeze, UAT acceptance, implementation/merge authority or a change to frozen workbook requirements.
+- **Stop redundant A/B layout comparisons.** Use DES-006's stable Schedule/Meeting inspector width, full-height scroll-contained workspace and fixed global/report navigation as the reference for D3 integrated interaction mocks.
+- Next: close gaps with frozen task editor, Change History and Settings contracts and distinguish future weekly stakeholder-report risk/creation events from approved history-only v1 reporting. See [D2 decision and D3 integration checklist](12_D2_OWNER_DIRECTION_AND_D3_INTEGRATION.md).
+- Actual Edge screenshot/scroll/zoom and owner whole-workflow review are still pending; no speculative app development has been authorized.
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
