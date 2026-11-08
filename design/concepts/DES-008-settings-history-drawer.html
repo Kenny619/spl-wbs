@@ -530,7 +530,7 @@ var md=document.getElementById("meetingDate");if(md)md.addEventListener("change"
 var clear=document.getElementById("clearFilters");if(clear)clear.addEventListener("click",function(){state.filter="all";state.owner="all";state.workstream="all";state.listScroll=0;ensureSelection();render()});
 var edit=document.getElementById("meetingEdit");if(edit)edit.addEventListener("click",function(){state.editing=true;render()});
 var historyButton=document.getElementById("taskHistory");if(historyButton)historyButton.addEventListener("click",function(){openOverlay("history",state.selected)});
-var moreButton=document.getElementById("moreMenuButton");if(moreButton)moreButton.addEventListener("click",function(){openOverlay("menu")});
+var settingsButton=document.getElementById("settingsButton");if(settingsButton)settingsButton.addEventListener("click",function(){requestNavigation(function(){openDrawer("settings")})});
 var cancel=document.getElementById("cancelEdit");if(cancel)cancel.addEventListener("click",function(){state.editing=false;render()});
 var save=document.getElementById("demoSave");if(save)save.addEventListener("click",demoSave);
 document.querySelectorAll("[data-report]").forEach(function(el){el.addEventListener("click",function(){state.reportMode=el.dataset.report;state.reportScroll=0;render()})});
@@ -539,6 +539,7 @@ var ps=document.getElementById("periodStart");if(ps)ps.addEventListener("change"
 var pe=document.getElementById("periodEnd");if(pe)pe.addEventListener("change",function(){state.periodEnd=pe.value;state.periodTouched=true;state.dirty=true;render()});
 var ref=document.getElementById("refreshReport");if(ref)ref.addEventListener("click",function(){if(state.reportMode==="updates"&&(!utc(state.periodStart)||!utc(state.periodEnd)||state.periodStart>state.periodEnd)){alert("Please select a valid reporting period.");return}state.reportSnapshots[state.reportMode]=buildReport(state.reportMode);state.dirty=false;state.reportScroll=0;render()});
 var copy=document.getElementById("copyReport");if(copy)copy.addEventListener("click",function(){var snap=state.reportSnapshots[state.reportMode];if(!snap){alert("Generate a report first.");return}if(typeof navigator==="undefined"||!navigator.clipboard||!navigator.clipboard.writeText){alert("Clipboard unavailable here. Copy from plain-text preview manually.");return}navigator.clipboard.writeText(snap.text).then(function(){alert("Copied the exact displayed snapshot text.")},function(){alert("Clipboard copy failed. Use the plain-text preview.")})});
+renderDrawer();
 renderOverlay();
 }
 function allowNavigate(){if(state.editing){if(!draftHasChanges()){state.editing=false;return true}alert("This design mock requires Save/Discard/Cancel for edited drafts. Use primary navigation or task selection to try the three-option flow.");return false}return true}
@@ -547,6 +548,7 @@ if(!utc(finish)||!Number.isFinite(pct)||pct<0||pct>100){alert("Invalid date/prog
 t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update)state.demoEntries.push({id:t.id,text:"Demo edit · "+update});state.editing=false;if(!filterTasks().some(function(x){return x.id===t.id})){state.filter="all";state.owner="all";state.workstream="all"}render();return true}
 document.querySelectorAll("[data-view]").forEach(function(el){el.addEventListener("click",function(){var view=el.dataset.view;requestNavigation(function(){state.view=view;if(state.view==="b"){ensureSelection();state.listScroll=0}render()})})});
 document.querySelectorAll("[data-stage]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.stage=el.dataset.stage;render()})});
+if(typeof document.addEventListener==="function"){document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){if(state.overlay==="dirty"){closeOverlay()}else if(state.drawer){closeDrawer()}}})}
 ensureSelection();render();
 })();
 
