@@ -1,4 +1,5 @@
 import type { ImportController } from "../data/importController";
+import { MANAGED_APP_VERSION, MANAGED_APPROVED_UI_BASELINE } from "./version";
 import {
   DEFAULT_COLUMNS, defaultPreferences, effectiveAppearance, loadPreferences,
   persistPreferences, supportedTimeZones, validateColumns, type ManagedPreferences,
@@ -133,6 +134,13 @@ export class ManagedSettings {
     }
     appearance.append(radioGroup);
     body.append(appearance);
+
+    const about = make("section", undefined, "managed-settings-section");
+    about.append(make("h3", "About this application"),
+      make("p", "Managed development version: " + MANAGED_APP_VERSION, "managed-settings-hint"),
+      make("p", "Approved read-only UI baseline: " + MANAGED_APPROVED_UI_BASELINE +
+        ". This isolated managed UI adaptation is under development and is not released.", "managed-settings-hint"));
+    body.append(about);
 
     const footer = make("div", undefined, "managed-settings-footer");
     const reset = make("button", "Reset to defaults", "managed-action");
