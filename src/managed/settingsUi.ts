@@ -175,6 +175,7 @@ export class ManagedSettings {
     this.applyAppearance();
   }
 
+  getLaunchButton(): HTMLButtonElement { return this.launch; }
   getTimeZone(): string { return this.preferences.timeZone; }
   getPreferences(): ManagedPreferences {
     return { ...this.preferences, columns: [...this.preferences.columns] };
