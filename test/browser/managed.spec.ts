@@ -745,3 +745,36 @@ test("DES-010 Gantt scope keeps manual status filters and avoids no-op draft war
   await expect(inProgress).toBeChecked();
   await expect(page.locator(".task-row")).toHaveCount(1);
 });
+
+
+for (const width of [1440, 1024, 860]) {
+  test(\`DES-010 managed \${width}px: Inspector is readable, accessible when empty, and workday label concise\`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 768 });
+    await openManaged(page);
+    const inspector = page.locator("#panel");
+    await expect(inspector).toBeVisible();
+    await expect(page.locator(".managed-global-settings")).toBeVisible();
+    await expect(page.locator(".managed-main-nav [data-managed-view='reports']")).toBeVisible();
+    await expect(inspector.locator(".workdays-detail small")).toHaveText("Days left");
+    const panelBox = await inspector.boundingBox();
+    expect(panelBox).not.toBeNull();
+    expect(panelBox!.x + panelBox!.width).toBeLessThanOrEqual(width + 2);
+    const gantt = await page.locator("#gantt").boundingBox();
+    expect(gantt).not.toBeNull();
+    expect(gantt!.height).toBeGreaterThan(260);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await page.locator("#close").click();
+    const empty = page.locator(".managed-empty-detail");
+    await expect(empty).toBeVisible();
+    await expect(inspector).not.toHaveAttribute("aria-hidden", "true");
+    await expect(page.getByRole("region", { name: "Selected task details" }))
+      .toContainText("Select a task to inspect its details.");
+    await testInfo.attach(\`managed-DES010-empty-inspector-\${width}\`, {
+      body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+    });
+    await page.locator(".task-row").first().click();
+    await expect(empty).toBeHidden();
+    await expect(inspector).not.toHaveAttribute("aria-hidden", "true");
+    await expect(inspector).toHaveAttribute("aria-labelledby", "detailTitle");
+  });
+}
