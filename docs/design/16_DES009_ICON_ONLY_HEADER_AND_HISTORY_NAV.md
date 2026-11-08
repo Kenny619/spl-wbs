@@ -1,4 +1,6 @@
-# DES-009 — Icon-only Header and Single History Navigation Entry
+# DES-009 — Icon-only Header and Single History Navigation Entry (historical proposed concept)
+
+> **Superseded for current visual critique by [DES-010](../../design/concepts/DES-010-gantt-local-scope.html), 2026-11-08.** DES-009 is preserved as the approved-direction predecessor. DES-010 moves only the Schedule Exceptions/Workstreams control into the Gantt panel while retaining the icon-only header and Settings/History decisions. See [DES-010 record](17_DES010_GANTT_LOCAL_SCOPE.md).
 
 **Date:** 2026-11-08 JST  
 **Stage:** D3 design refinement, not implementation approval or full visual-system freeze  
