@@ -485,3 +485,29 @@ body.spt-managed[data-managed-theme="dark"] .managed-main-nav .managed-action.ac
   body.spt-managed .managed-reports[open]{min-height:650px;}
   body.spt-managed .managed-schedule-body .managed-fields{grid-template-columns:1fr;}
 }
+
+
+/* DES-010 Gantt-local scope; only existing status filtering is implemented. */
+body.spt-managed .managed-gantt-scope {
+  display:flex; align-items:center; gap:4px; flex-wrap:wrap;
+  padding:2px; margin-left:auto; max-width:100%;
+}
+body.spt-managed .managed-gantt-scope button {
+  min-height:31px; border:1px solid var(--line); border-radius:6px;
+  background:var(--panel); color:var(--muted); padding:5px 9px;
+  font-size:11px; font-weight:650;
+}
+body.spt-managed .managed-gantt-scope button.active {
+  color:#165a86; background:#e4f2fa; border-color:#b0d0e5;
+}
+body.spt-managed .managed-gantt-scope button:disabled {opacity:.45;cursor:not-allowed;}
+body.spt-managed .managed-gantt-scope-note {
+  display:block; width:100%; font-size:10px; color:var(--muted); text-align:right;
+}
+body.spt-managed[data-managed-theme="dark"] .managed-gantt-scope button.active {
+  background:#2a4a65;color:#e5effe;border-color:#6583a1;
+}
+@media(max-width:1070px){
+ body.spt-managed .managed-gantt-scope{margin-left:0;justify-content:start;}
+ body.spt-managed .managed-gantt-scope-note{text-align:left;}
+}
