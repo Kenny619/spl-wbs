@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** D2 DIRECTION ENDORSED; D3 integration exploration PROPOSED v1.6; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** D2 DIRECTION ENDORSED; D3 integration exploration PROPOSED v1.7; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -30,7 +30,9 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [DES-005 historical prototype](../../design/concepts/DES-005-unified-height-and-scroll.html): unified full-height workspace, panel-only scrolling and anchored report/header controls; retained for comparison.
 - [12 — D2 Owner Direction and D3 Integration Matrix](12_D2_OWNER_DIRECTION_AND_D3_INTEGRATION.md): record exact DES-006 concept endorsement, rejected alternatives, frozen-contract coverage gaps, integrated scenarios and separate design/implementation gates.
 - [13 — DES-007 History/Settings/Draft-state integration](13_DES007_HISTORY_SETTINGS_AND_DRAFT_STATES.md): companion interaction study and gaps against frozen #3–#7.
-- [DES-007 integration-state concept](../../design/concepts/DES-007-integrated-history-settings-states.html): preserves owner-endorsed DES-006 layout, adds secondary History/Settings mock entry and simulated Save/Discard/Cancel navigation.
+- [DES-007 historical integration concept](../../design/concepts/DES-007-integrated-history-settings-states.html): More/centered-overlay variant, retained for traceability.
+- [14 — DES-008 Settings Drawer, History Log and Eight-Day Period](14_DES008_SETTINGS_HISTORY_DRAWER_AND_PERIOD.md): owner feedback disposition, source/version verification, log semantics, default date window and remaining browser/contract gates.
+- [DES-008 current interactive integration concept](../../design/concepts/DES-008-settings-history-drawer.html): authentic embedded favicon, v0.0.0 package and v18 UI metadata, fixed Settings button, right-side Settings/History log drawer, and Monday-to-Monday eight-date report default.
 - [11 — DES-006 consistent selected-task width](11_DES006_CONSISTENT_DETAIL_WIDTH.md): owner design feedback, shared column widths and source validation.
 - [DES-006 current interactive design prototype](../../design/concepts/DES-006-consistent-detail-width.html): same selected-task inspector width in Schedule and Meeting Review at the same desktop viewport; DES-005 behavior otherwise preserved.
 
@@ -137,6 +139,14 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - It deliberately retains Schedule/Meeting/Reports navigation coordinates, same inspector width, full-height scroll behavior, and existing meeting/report concepts. The accepted DES-006 artifact remains intact.
 - Synthetic Save does not write Excel or UpdateHistory. Settings controls are session-only illustrations, not actual theme/column persistence; history is hardcoded sample data; complete draft protection, actual Edge keyboard/visual UAT, workbook conflict handling and full Settings parity remain pending.
 - Source-level JS and **11/11 mocked interaction checks pass**; see the [DES-007 record](13_DES007_HISTORY_SETTINGS_AND_DRAFT_STATES.md). This is **not** an owner-approved D3 visual specification freeze.
+
+## D3 owner feedback incorporated in DES-008 (2026-11-08)
+- Replace the top-right **More** with **Settings**, housing **Change History** within the Settings pane. Both Settings and global/task-specific Change History open as an **expansible right slide-out**, rather than centered overlay.
+- Show actual repository **favicon** (embedded unmodified from `index.html`) and distinguish **package version 0.0.0** (currently placeholder metadata in `package.json`) from the **approved UI baseline v18**. Do not claim a released semver.
+- Present read-only History as a compact chronological log, **one row per saved field-change action**, visibly preserving shared Save identity/association without a multi-row box per Save.
+- Proposed Update Report default window is **eight inclusive calendar dates**, last same weekday → current review weekday; synthetic Monday Nov 09 returns Monday Nov 02–Monday Nov 09. Custom chosen periods remain supported. This is a **future proposal**, not an amendment to frozen #7.
+- Keep DES-006 working layout and navigation positions, and the DES-007 simulated safe edit choices. Source-level checks pass; actual Edge visual, keyboard, accessibility and production workbook tests remain pending.
+- [DES-008 artifact](../../design/concepts/DES-008-settings-history-drawer.html) · [decision and traceability record](14_DES008_SETTINGS_HISTORY_DRAWER_AND_PERIOD.md). No app implementation, specification freeze or merge authorized.
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
