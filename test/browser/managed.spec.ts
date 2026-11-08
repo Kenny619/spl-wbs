@@ -604,3 +604,83 @@ test("Failed new-folder import does not half-switch active directory or lose las
   await page.getByLabel("Task title").fill("Still editing last-good workbook");
   await expect(page.getByLabel("Task title")).toHaveValue("Still editing last-good workbook");
 });
+
+
+test("DES-010 real managed shell anchors inspector, navigation and local Gantt controls", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openManaged(page);
+  await expect(page.locator(".managed-brand img")).toBeVisible();
+  await expect(page.locator(".managed-main-nav")).toContainText("Schedule");
+  await expect(page.locator(".managed-main-nav")).toContainText("Reports");
+  await expect(page.locator(".managed-gantt-scope [data-managed-scope='workstreams']")).toHaveAttribute("aria-pressed", "true");
+  const chart = await page.locator(".managed-schedule-body .chart-card").boundingBox();
+  const detail = await page.locator(".managed-schedule-body #panel").boundingBox();
+  expect(chart).not.toBeNull();
+  expect(detail).not.toBeNull();
+  expect(detail!.x).toBeGreaterThan(chart!.x + chart!.width - 2);
+  expect(Math.abs(detail!.height - chart!.height)).toBeLessThanOrEqual(4);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  await page.locator(".managed-gantt-scope [data-managed-scope='exceptions']").click();
+  await expect(page.locator(".managed-gantt-scope [data-managed-scope='exceptions']")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".task-row")).toHaveCount(0); // The synthetic task is In Progress, not At Risk/Blocked.
+  await page.locator(".managed-gantt-scope [data-managed-scope='workstreams']").click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await testInfo.attach("managed-DES010-schedule-1366", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+});
+
+test("DES-010 real Settings and persisted History occupy one right drawer slot", async ({ page }, testInfo) => {
+  page.on("dialog", async d => { await d.accept(); });
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await openManaged(page);
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("History drawer fixture");
+  await page.getByRole("button", { name: "Save to workbook" }).click();
+  await expect(page.getByText(/Verified Save: task and UpdateHistory persisted/)).toBeVisible();
+
+  const settingsLaunch = page.getByRole("button", { name: "Settings", exact: true });
+  await settingsLaunch.click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await expect(settings.getByRole("button", { name: "Change History" })).toBeVisible();
+  const settingsRect = await settings.boundingBox();
+  expect(settingsRect!.x + settingsRect!.width).toBeCloseTo(1024, 0);
+  await settings.getByRole("button", { name: "Change History" }).click();
+  const history = page.getByRole("dialog", { name: "Change History" });
+  await expect(history.locator(".managed-history-row")).toHaveCount(1);
+  await expect(history.locator(".managed-history-row")).toContainText("History drawer fixture");
+  await expect(history.locator(".managed-history-when small")).toContainText("Save");
+  const historyRect = await history.boundingBox();
+  expect(historyRect!.x).toBeCloseTo(settingsRect!.x, 0);
+  await testInfo.attach("managed-DES010-history-1024", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  await history.getByRole("button", { name: "Preferences" }).click();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+});
+
+test("DES-010 real Reports uses fixed navigation and committed-only scroll workspace", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openManaged(page);
+  const nav = page.locator(".managed-main-nav");
+  const before = await nav.boundingBox();
+  await nav.locator("[data-managed-view='reports']").click();
+  await expect(page.locator("body")).toHaveClass(/spt-managed-report-open/);
+  const report = page.getByRole("dialog", { name: "Output Reports" });
+  await expect(report).toBeVisible();
+  await expect(page.locator(".managed-schedule-body")).toBeHidden();
+  await report.getByRole("button", { name: "Generate / Refresh" }).click();
+  const preview = report.getByRole("textbox", { name: "Report preview" });
+  await expect(preview).toHaveValue(/Synthetic milestone/);
+  const after = await nav.boundingBox();
+  expect(Math.abs(before!.x - after!.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs(before!.y - after!.y)).toBeLessThanOrEqual(2);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  await testInfo.attach("managed-DES010-reports-1366", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  await nav.locator("[data-managed-view='schedule']").click();
+  await expect(page.locator("body")).not.toHaveClass(/spt-managed-report-open/);
+  await expect(page.locator(".managed-schedule-body")).toBeVisible();
+});
