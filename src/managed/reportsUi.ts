@@ -44,8 +44,13 @@ export class ManagedReports {
 
     this.dialog = make("dialog", undefined, "managed-reports");
     this.dialog.setAttribute("aria-label", "Output Reports");
-    doc.body.append(this.dialog);
-    this.dialog.addEventListener("close", () => this.launch.focus());
+    (doc.querySelector(".main") ?? doc.body).append(this.dialog);
+    this.dialog.addEventListener("close", () => {
+      doc.body.classList.remove("spt-managed-report-open");
+      this.launch.classList.remove("active");
+      this.launch.removeAttribute("aria-current");
+      doc.querySelector<HTMLElement>(".managed-main-nav [data-managed-view='schedule']")?.focus();
+    });
 
     const head = make("div", undefined, "managed-reports-head");
     const title = make("h2", "Output Reports");
@@ -128,6 +133,12 @@ export class ManagedReports {
     this.updateMode();
   }
 
+  getLaunchButton(): HTMLButtonElement { return this.launch; }
+
+  close(): void {
+    if (this.dialog.open) this.dialog.close();
+  }
+
   open(): void {
     if (this.dialog.open) return;
     const context = this.getContext();
@@ -135,7 +146,10 @@ export class ManagedReports {
     if (!this.through.value) this.through.value = today;
     if (!this.from.value) this.from.value = addCalendarDays(today, -7);
     this.refreshWarning();
-    this.dialog.showModal();
+    this.doc.body.classList.add("spt-managed-report-open");
+    this.launch.classList.add("active");
+    this.launch.setAttribute("aria-current", "page");
+    this.dialog.show(); // A nonmodal workspace, so global header navigation stays operable.
     this.dialog.querySelector<HTMLButtonElement>(".managed-reports-head button")?.focus();
   }
   private refreshWarning(): void {
