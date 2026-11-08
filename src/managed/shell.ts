@@ -122,19 +122,25 @@ export function mountManagedShell(
       button.setAttribute("aria-pressed", String(active));
     }
   };
-  exceptionButton.addEventListener("click", () => guard(() => {
+  exceptionButton.addEventListener("click", () => {
+    if (mode === "exceptions") return;
+    guard(() => {
     const view = controller.getState().view;
     if (!view.columns.includes("status")) return;
     previousStatuses = [...view.statuses];
     mode = "exceptions";
     controller.patchView({ statuses: [...statusExceptions] });
     syncScope();
-  }));
-  workstreamButton.addEventListener("click", () => guard(() => {
+    });
+  });
+  workstreamButton.addEventListener("click", () => {
+    if (mode === "workstreams") return;
+    guard(() => {
     mode = "workstreams";
     controller.patchView({ statuses: [...previousStatuses] });
     syncScope();
-  }));
+    });
+  });
   controller.subscribe(syncScope);
   syncScope();
 
