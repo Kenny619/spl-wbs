@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 0.7
+# SPT-WBS UI Guideline — draft 0.8
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -44,6 +44,14 @@
 - For stakeholder reports, prioritize **what changed** and decision-relevant dates. A proposed weekly report may surface completed, added, new risk and cleared watch lifecycle events over a default seven-date period; do not imply those event sources exist under the currently frozen History contract.
 - Latest Status task lists should group by workstream and show owner beside each task; preserve nonredundant Workstream heading format required by Issue #7.
 - Explicitly separate **proposal versus frozen requirement** where stakeholders request changing the approved Output Report contract, especially Save-count removal and lifecycle events absent from current History schema.
+
+### Compact meeting view and calendar-day language — DES-004 design direction
+- Keep a **single desktop top-level header** containing application, project context, current review mode and relevant controls; no separate oversized project-context header row.
+- Preserve a meaningful split between **filterable task list** and **selected details**. On desktop, scrolling through many workstream tasks must **not move the selected detail offscreen**. The outer meeting page remains fixed, task list scrolls independently, and list scroll position survives selection changes. Extremely long detail may scroll internally rather than clip; responsive stacked views may use page scrolling.
+- Avoid nonfunctional concept-comparison cards or redundant tutorial content in the live work area.
+- Make **Workstream name and WBS code** prominently visible inside selected task details in both view/edit states, rather than relying solely on a small panel header or the list.
+- User-facing task and report countdown labels use **“days”** for brevity. The measured quantity is still **working days per project calendar** (excluding weekends/holidays/blackouts), **not elapsed calendar days and not remaining effort**. A visible or discoverable calendar legend and accessible explanation must preserve that meaning, especially across filter labels such as `Due in <5 days`.
+- Treat the 60px top-header size and CSS scroll strategy in DES-004 as **mock hypotheses**, not approved design tokens. Validate real laptop scaling, keyboard/trackpad behavior, long task content, and video-call readability before freezing.
 
 ## 4. Typography, color and meaning
 - Text contrast: WCAG 2.2 AA **4.5:1** for normal text, **3:1** for large text; meaningful UI graphic contrast **3:1** where applicable.
