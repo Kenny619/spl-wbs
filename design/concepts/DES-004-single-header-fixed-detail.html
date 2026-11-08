@@ -170,7 +170,7 @@ var events=[
 {date:"2026-11-07",kind:"released",id:"L2",title:"Readiness communications",group:groups[2],owner:"T. Oda",detail:"Legal sign-off received; all known watch reasons cleared.",source:"Proposed watch-release event (not in frozen workbook)"},
 {date:"2026-11-06",kind:"changed",id:"P2",title:"Environment provisioning",group:groups[0],owner:"A. Tanaka",detail:"Planned finish changed Nov 12 → Nov 14; impact still under review.",source:"UpdateHistory date change (fixture)"}
 ];
-var state={view:"b",stage:"exception",filter:"exceptions",workstream:"all",owner:"all",selected:"D1",editing:false,demoEntries:[],reportMode:"latest",reportDisplay:"present",reportSnapshots:{latest:null,updates:null},periodStart:"2026-11-03",periodEnd:"2026-11-09",dirty:false,periodTouched:false};
+var state={view:"b",stage:"exception",filter:"exceptions",workstream:"all",owner:"all",selected:"D1",editing:false,demoEntries:[],reportMode:"latest",reportDisplay:"present",reportSnapshots:{latest:null,updates:null},periodStart:"2026-11-03",periodEnd:"2026-11-09",dirty:false,periodTouched:false,listScroll:0,scrollToSelected:false};
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function utc(iso){if(!/^\d{4}-\d{2}-\d{2}$/.test(iso||""))return null;var d=new Date(iso+"T00:00:00Z");return Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==iso?null:d}
 function dayIso(d){return d.toISOString().slice(0,10)}
@@ -180,7 +180,7 @@ function isWorking(s){var d=utc(s);return !!d&&calendar.weekdays.includes(d.getU
 function workdayCount(from,to){var a=utc(from),b=utc(to);if(!a||!b)return null;if(a.getTime()===b.getTime())return 0;var forward=b>a,low=forward?a:b,high=forward?b:a,n=0;
 for(var ms=low.getTime()+86400000;ms<=high.getTime();ms+=86400000){if(isWorking(dayIso(new Date(ms))))n++}return forward?n:-n}
 function remaining(s){return workdayCount(calendar.asOf,s)}
-function remainingLabel(s){var n=remaining(s);return n===null?"Date unavailable":s===calendar.asOf?"Due today":n<0?Math.abs(n)+" workdays overdue":n===0?"0 working days left":n+" workdays left"}
+function remainingLabel(s){var n=remaining(s);return n===null?"Date unavailable":s===calendar.asOf?"Due today":n<0?Math.abs(n)+" days overdue":n===0?"0 days left":n+" days left"}
 function finishFlag(s){return calendar.holidays[s]?"Holiday finish":calendar.blackouts[s]?"Blackout finish":!isWorking(s)?"Weekend finish":""}
 function current(){return tasks.find(function(t){return t.id===state.selected})||null}
 function related(t,upstream){return upstream?t.pred.map(function(id){return tasks.find(function(x){return x.id===id})}).filter(Boolean):tasks.filter(function(x){return x.pred.includes(t.id)})}
@@ -202,12 +202,12 @@ if(state.filter==="all"){return groups.map(function(g){var subset=arr.filter(fun
 return arr.map(listItem).join("")}
 function bQueue(){var arr=filterTasks(),owners=Array.from(new Set(tasks.map(function(t){return t.owner}).filter(Boolean))).sort();return '<section class="panel meeting-list"><div class="panelhead"><div><h2>Tasks · Meeting Review</h2><div class="tiny">Filter the same WBS records, not separate lists</div></div>'+pill("Synthetic data","blue")+'</div>'+
 '<div class="filter-zone"><div class="filter-pills" role="group" aria-label="Task list filters">'+
-[["exceptions","Exceptions"],["all","All · Workstreams"],["today","Due today"],["due5","Next <5 workdays"]].map(function(v){return '<button type="button" data-filter="'+v[0]+'" class="filter-pill'+(state.filter===v[0]?" active":"")+'" aria-pressed="'+(state.filter===v[0])+'">'+esc(v[1])+'</button>'}).join("")+'</div>'+
+[["exceptions","Exceptions"],["all","All · Workstreams"],["today","Due today"],["due5","Due in <5 days"]].map(function(v){return '<button type="button" data-filter="'+v[0]+'" class="filter-pill'+(state.filter===v[0]?" active":"")+'" aria-pressed="'+(state.filter===v[0])+'">'+esc(v[1])+'</button>'}).join("")+'</div>'+
 '<div class="filter-selects"><label>Workstream<select id="filterWorkstream">'+options(["all"].concat(groups),state.workstream)+'</select></label>'+
 '<label>Owner<select id="filterOwner">'+options(["all"].concat(owners).concat(["__unassigned__"]),state.owner)+'</select></label>'+
 '<label>Meeting date<input type="date" id="meetingDate" value="'+esc(calendar.asOf)+'"></label></div>'+
-'<div class="filter-caption">“Today” uses the selected meeting date. Next &lt;5 includes today plus the next 1–4 working days.</div><details class="calendar-legend"><summary>Working calendar used by filters and countdowns</summary><div>Working week: Mon–Fri. Japan holidays: Nov 03 and Nov 23, 2026. Project blackout dates: Nov 12 (environment freeze), Nov 20 (deployment blackout). Both holiday and blackout dates are excluded. Sample only; future project-owned configuration is not yet implemented.</div></details></div>'+
-'<div class="meeting-columns"><div>WBS / task</div><div>Owner</div><div>Status</div><div>Finish</div><div>Working time</div></div>'+
+'<div class="filter-caption">“Today” is the selected meeting date. “&lt;5 days” means 0–4 remaining days on the project calendar.</div><details class="calendar-legend"><summary>Working calendar used by filters and countdowns</summary><div>Days always exclude weekends, Japan holidays (Nov 03, Nov 23) and sample project blackout dates (Nov 12, Nov 20). “Days” are working dates on the project calendar, not elapsed calendar days or remaining effort. Sample calendar only; project-owned settings are not yet implemented.</div></details></div>'+
+'<div class="meeting-columns"><div>WBS / task</div><div>Owner</div><div>Status</div><div>Finish</div><div>Days left</div></div>'+
 '<div class="meeting-data">'+listMarkup(arr)+'</div></section>'}
 function linkGroup(t,upstream){var xs=related(t,upstream);return '<div class="dep-group"><div class="depheader">'+(upstream?"Depends on · predecessors":"Dependent tasks · successors")+'</div>'+
 (xs.length?xs.map(function(x){return '<button type="button" class="dep-link" data-link-task="'+esc(x.id)+'" title="Open linked WBS task">'+esc(x.wbs)+' · '+esc(x.title)+'<span>Finish-to-start example · Due '+esc(displayDate(x.end))+'</span></button>'}).join(""):'<span class="dep-empty">No '+(upstream?"predecessors":"successors")+' in this sample</span>')+'</div>'}
@@ -223,9 +223,9 @@ function compactDetail(){var t=current();if(!t)return '<section class="panel det
 var editing=state.editing;var fields=editing?editFields(t):'<div class="detail-facts"><div class="detail-fact"><div class="key">Status</div><div class="val">'+esc(t.status)+'</div></div>'+
 '<div class="detail-fact"><div class="key">Owner</div><div class="val">'+esc(t.owner||"Unassigned")+'</div></div>'+
 '<div class="detail-fact due"><div class="key">Planned finish</div><div class="val">'+esc(displayDate(t.end))+'</div></div>'+
-'<div class="detail-fact due"><div class="key">Working days left</div><div class="val">'+esc(remainingLabel(t.end))+'</div></div></div>'+
+'<div class="detail-fact due"><div class="key" title="Based on project calendar; weekends, holidays and blackout dates excluded">Days left</div><div class="val">'+esc(remainingLabel(t.end))+'</div></div></div>'+
 (finishFlag(t.end)?'<div class="inlinewarning">Finish falls on a nonworking date: '+esc(finishFlag(t.end))+'</div>':'')+
-'<div class="detail-sub">From '+esc(displayDate(calendar.asOf))+' (simulation) · weekdays, Japan holidays and project blackouts excluded</div>';
+'<div class="detail-sub">As of '+esc(displayDate(calendar.asOf))+' · excludes weekends, holidays and project blackouts (sample calendar)</div>';
 return '<section class="panel detail-compact"><div class="panelhead"><div><h2>Selected task'+(editing?" · Editing":"")+'</h2><div class="tiny">'+esc(t.group)+' · WBS '+esc(t.wbs)+'</div></div>'+
 (editing?pill("Draft · demo","blue"):'<button type="button" class="solid" id="meetingEdit">Edit task</button>')+'</div>'+
 '<div class="panelbody"><div class="focus-title">'+esc(t.title)+'</div>'+fields+
