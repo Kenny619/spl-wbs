@@ -61,6 +61,7 @@ async function openManaged(page: import("@playwright/test").Page) {
   }, { encoded: base64 });
   await page.goto(fileUrl);
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
   await expect(page.locator("#title")).toHaveText("synthetic-demo");
   await expect(page.locator(".task-row")).toHaveCount(1);
@@ -186,7 +187,9 @@ test("Change History is read-only, grouped and filtered, with task entry and saf
   // Global toolbar is behind the task-detail overlay; close details first.
   await page.locator("#close").click();
 
-  await page.getByRole("button", { name: "History", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("dialog", { name: "Settings" })
+    .getByRole("button", { name: "Change History" }).click();
   let history = page.getByRole("dialog", { name: "Change History" });
   await expect(history.getByText("This workbook has no saved Change History yet.")).toBeVisible();
   await history.getByRole("button", { name: "Close" }).click();
@@ -201,14 +204,16 @@ test("Change History is read-only, grouped and filtered, with task entry and saf
   await page.getByRole("button", { name: "Task history" }).click();
   history = page.getByRole("dialog", { name: "Change History" });
   await expect(history.getByText("1 saved change event(s)")).toBeVisible();
-  await expect(history.getByText(/2 field change\(s\)/)).toBeVisible();
+  await expect(history.locator(".managed-history-row")).toHaveCount(2);
+  await expect(history.locator(".managed-history-when small")).toHaveCount(2);
+  await expect(history.locator(".managed-history-event")).toHaveCount(1);
   await expect(history.getByLabel("History task filter")).toHaveValue("501");
   expect(await history.locator("img").count()).toBe(0);
   await history.getByText("Expand full before / after").click();
   await expect(history.locator("pre")).toContainText("<img src=x onerror=alert('x')>");
   await history.getByLabel("History field filter").selectOption("Title");
-  await expect(history.getByText(/1 field change\(s\)/)).toBeVisible();
-  await expect(history.locator(".managed-history-row strong")).toContainText("Title");
+  await expect(history.locator(".managed-history-row")).toHaveCount(1);
+  await expect(history.locator(".managed-history-action > strong")).toHaveText("Title");
   await history.getByLabel("History end date").fill("2000-01-01");
   await expect(history.getByText("No changes match these filters.")).toBeVisible();
   await history.getByRole("button", { name: "Close" }).click();
@@ -300,7 +305,9 @@ test("Change History uses the Settings timezone without mutating saved UTC audit
   const settings = page.getByRole("dialog", { name: "Settings" });
   await settings.getByLabel("Display timezone").selectOption("Asia/Tokyo");
   await settings.getByRole("button", { name: "Close" }).click();
-  await page.getByRole("button", { name: "History", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("dialog", { name: "Settings" })
+    .getByRole("button", { name: "Change History" }).click();
   const history = page.getByRole("dialog", { name: "Change History" });
   await expect(history.getByText(/Times are displayed in Asia\/Tokyo/)).toBeVisible();
   await expect(history.getByText(/1 saved change event/)).toBeVisible();
