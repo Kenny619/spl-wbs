@@ -2,7 +2,7 @@
 
 **Prepared:** 2026-11-08 JST  
 **Controlling design issue:** [#25](https://github.com/Kenny619/spl-wbs/issues/25) · **Design-only draft:** [PR #29](https://github.com/Kenny619/spl-wbs/pull/29)  
-**Selected visual concept:** [DES-010](../../design/concepts/DES-010-gantt-local-scope.html), Git blob **`5bff3213b227b36305dca82253309a10178fad17`** at owner feedback.  
+**Selected visual concept:** [DES-010](../../design/concepts/DES-010-gantt-local-scope.html), original owner-endorsed blob `5bff3213b227b36305dca82253309a10178fad17`; **current QA-remediated, Windows Chromium-tested blob `77dc7333ee4e061dc06e54d74caa30b07bdbe79e`**.  
 **Product Owner disposition:** “perfect! let's continue and keep our momentum.” Record as **strong endorsement of the DES-010 design direction**, particularly Schedule-local Exceptions/Workstreams navigation; **not** a blanket specification change, a tested production build, a main merge, or an unconditional release approval.
 
 ## Reality check: reuse the live managed implementation
@@ -26,11 +26,13 @@ A new **design-only** Playwright suite now lives at [`test/browser/des010-design
 1. **1366×768, 1024×768, 1440×900:** Schedule/Meeting selected-task inspector width/height/x alignment; stable global header button x coordinates across Schedule/Meeting/Reports; Gantt-local scope placement and switching (3 synthetic Exceptions vs 11 Workstreams); screenshot attachments.
 2. **1366×768:** All Workstreams task-list internal scroll with anchored selected inspector and no window/page scroll; screenshot.
 3. **1366×768:** Update Report's own scroll region, with global nav and report toolbar stationary; screenshot.
-4. **1440px, 1024px, 860px:** Settings action visible and right drawer operable, History log entry and three sample action rows; screenshot. **Specific suspected defect:** old CSS hides the right header area (including Settings) at effective widths ≤1220px, making the approved secondary navigation inaccessible on some laptops. This is an **unverified source-level risk until actual browser evidence**; fix if confirmed.
+4. **1440px, 1024px, 860px:** Settings action visible and right drawer operable, History log entry and three sample action rows; screenshot. **Confirmed and corrected in DES-010:** first Windows Chromium run found Settings hidden at 1024px due to preexisting `max-width:1220px` CSS. Current responsive CSS keeps the fixed Settings slot visible while preserving primary global navigation.
 5. **Dirty task draft:** Schedule Exceptions↔Workstreams uses Save/Discard/Cancel, preserving edits on Cancel and switching only after Discard.
 6. **Update Report:** default Nov 02–09 eight inclusive dates and fixed preview until Generate/Refresh.
 
-**Current result at package creation:** GitHub Actions [CI run #42447420570](https://github.com/Kenny619/spl-wbs/actions/runs/42447420570) was **running**, with Ubuntu Build/Unit success and Windows Chromium in progress. **Do not mark browser PASS until its exact test output is inspected.** Browser run screenshots/Playwright diagnostics are expected in the existing `windows-browser-diagnostics` artifact; never claim actual physical Microsoft Edge UAT from CI Chromium.
+**Final D3 browser regression verdict: PASS at corrected source blob `77dc7333ee4e061dc06e54d74caa30b07bdbe79e`.** [CI run #42447648745](https://github.com/Kenny619/spl-wbs/actions/runs/42447648745) completed **SUCCESS**: Windows Chromium **41/41 browser tests passed** (including all 8 new DES-010 tests), Ubuntu Build/Unit job SUCCESS, product build and review-package creation SUCCESS. Browser evidence: [Windows browser diagnostics artifact #13603389072](https://github.com/Kenny619/spl-wbs/actions/runs/42447648745/artifacts/13603389072), including Playwright screenshot attachments and report; [v18 implementation validation package #13604485966](https://github.com/Kenny619/spl-wbs/actions/runs/42447648745/artifacts/13604485966) remains independent baseline evidence. This is actual **Windows Chromium** rendering, **not physical Microsoft Edge Owner UAT** or workbook safety acceptance.
+
+**Finding and remediation trace:** Earlier [run #42447420570](https://github.com/Kenny619/spl-wbs/actions/runs/42447420570) had **40/41** browser checks pass, one failed because Settings was not visible at **1024px**. A **design CSS-only** responsive adjustment fixed accessibility of Settings at 971–1220px and narrower stacked layouts without changing the three primary header nav positions. The exact corrected source and new CI run passed every check. No product/application code was modified.
 
 ## D3 design-to-implementation compatibility matrix
 
