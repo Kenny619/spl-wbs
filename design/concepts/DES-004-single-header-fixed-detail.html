@@ -196,7 +196,7 @@ function options(vals,sel){return vals.map(function(v){return '<option value="'+
 function listItem(t){var cls=t.id===state.selected?" selected":"";var work=(state.filter==="all")?"":t.group+" · ";
 return '<button type="button" class="meeting-item'+cls+'" data-task="'+esc(t.id)+'" aria-label="Show '+esc(t.title)+' detail">'+
 '<div><div class="entrytitle">'+esc(t.wbs)+' · '+esc(t.title)+'</div><div class="entrymeta">'+esc(work)+(watched(t)?"Under Watch":t.milestone?"Milestone":"Task")+'</div></div>'+
-'<div class="cell">'+esc(t.owner||"Unassigned")+'</div><div class="cell">'+statusPill(t)+'</div><div class="cell">'+esc(displayDate(t.end))+'</div><div class="cell">'+esc(remainingLabel(t.end))+'</div></button>'}
+'<div class="cell">'+esc(t.owner||"Unassigned")+'</div><div class="cell">'+statusPill(t)+'</div><div class="cell">'+esc(displayDate(t.end))+'</div><div class="cell" title="Calendar-aware days; excludes weekends, holidays and project blackout dates">'+esc(remainingLabel(t.end))+'</div></button>'}
 function listMarkup(arr){if(!arr.length)return '<div class="zero-match">No tasks match these filters.<div style="margin-top:10px"><button type="button" class="ghost" id="clearFilters">Clear filters</button></div></div>';
 if(state.filter==="all"){return groups.map(function(g){var subset=arr.filter(function(t){return t.group===g});if(!subset.length)return "";return '<div class="meeting-group">'+esc(g)+'</div>'+subset.map(listItem).join("")}).join("")}
 return arr.map(listItem).join("")}
@@ -208,7 +208,7 @@ function bQueue(){var arr=filterTasks(),owners=Array.from(new Set(tasks.map(func
 '<label>Meeting date<input type="date" id="meetingDate" value="'+esc(calendar.asOf)+'"></label></div>'+
 '<div class="filter-caption">“Today” is the selected meeting date. “&lt;5 days” means 0–4 remaining days on the project calendar.</div><details class="calendar-legend"><summary>Working calendar used by filters and countdowns</summary><div>Days always exclude weekends, Japan holidays (Nov 03, Nov 23) and sample project blackout dates (Nov 12, Nov 20). “Days” are working dates on the project calendar, not elapsed calendar days or remaining effort. Sample calendar only; project-owned settings are not yet implemented.</div></details></div>'+
 '<div class="meeting-columns"><div>WBS / task</div><div>Owner</div><div>Status</div><div>Finish</div><div>Days left</div></div>'+
-'<div class="meeting-data">'+listMarkup(arr)+'</div></section>'}
+'<div class="meeting-data" id="meetingListScroll" tabindex="0" aria-label="Scrollable filtered task list">'+listMarkup(arr)+'</div></section>'}
 function linkGroup(t,upstream){var xs=related(t,upstream);return '<div class="dep-group"><div class="depheader">'+(upstream?"Depends on · predecessors":"Dependent tasks · successors")+'</div>'+
 (xs.length?xs.map(function(x){return '<button type="button" class="dep-link" data-link-task="'+esc(x.id)+'" title="Open linked WBS task">'+esc(x.wbs)+' · '+esc(x.title)+'<span>Finish-to-start example · Due '+esc(displayDate(x.end))+'</span></button>'}).join(""):'<span class="dep-empty">No '+(upstream?"predecessors":"successors")+' in this sample</span>')+'</div>'}
 function riskBox(t){if(!watched(t))return '<div class="inlinewarning" style="background:#eff9f4;border-color:#d8ebe1;color:#386d54">No active watch reasons in this static fixture; production health requires current checks.</div>';
@@ -226,9 +226,9 @@ var editing=state.editing;var fields=editing?editFields(t):'<div class="detail-f
 '<div class="detail-fact due"><div class="key" title="Based on project calendar; weekends, holidays and blackout dates excluded">Days left</div><div class="val">'+esc(remainingLabel(t.end))+'</div></div></div>'+
 (finishFlag(t.end)?'<div class="inlinewarning">Finish falls on a nonworking date: '+esc(finishFlag(t.end))+'</div>':'')+
 '<div class="detail-sub">As of '+esc(displayDate(calendar.asOf))+' · excludes weekends, holidays and project blackouts (sample calendar)</div>';
-return '<section class="panel detail-compact"><div class="panelhead"><div><h2>Selected task'+(editing?" · Editing":"")+'</h2><div class="tiny">'+esc(t.group)+' · WBS '+esc(t.wbs)+'</div></div>'+
+return '<section class="panel detail-compact"><div class="panelhead"><div><h2>Selected task'+(editing?" · Editing":"")+'</h2></div>'+
 (editing?pill("Draft · demo","blue"):'<button type="button" class="solid" id="meetingEdit">Edit task</button>')+'</div>'+
-'<div class="panelbody"><div class="focus-title">'+esc(t.title)+'</div>'+fields+
+'<div class="panelbody"><div class="detail-identity"><span class="detail-id">Workstream <b>'+esc(t.group)+'</b></span><span class="detail-id">WBS <b>'+esc(t.wbs)+'</b></span></div><div class="focus-title">'+esc(t.title)+'</div>'+fields+
 '<div class="sectionlabel">Task relationships</div><div class="dependencies">'+linkGroup(t,true)+linkGroup(t,false)+'</div>'+
 '<div class="sectionlabel">Risk / watch context</div>'+riskBox(t)+
 '<div class="sectionlabel">Latest update</div><div class="big-update">'+esc(t.update)+'</div>'+
