@@ -383,7 +383,10 @@ var historyFixture=[
 function formattedTime(utcIso){try{return new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:state.settings.timezone}).format(new Date(utcIso))}catch(e){return utcIso}}
 function openOverlay(kind,taskId){state.overlay=kind;state.historyTask=taskId||null;renderOverlay()}
 function closeOverlay(){state.overlay=null;state.pendingNav=null;renderOverlay()}
-function requestNavigation(action){if(state.editing){state.pendingNav=action;openOverlay("dirty");return false}action();return true}
+function draftHasChanges(){var t=current();if(!state.editing||!t)return false;var owner=document.getElementById("owner"),finish=document.getElementById("finish"),status=document.getElementById("status"),pct=document.getElementById("pct"),update=document.getElementById("updateText");
+if(!owner||!finish||!status||!pct||!update)return true;
+return owner.value.trim()!==t.owner||finish.value!==t.end||status.value!==t.status||Number(pct.value)!==t.pct||!!update.value.trim()}
+function requestNavigation(action){if(state.editing){if(!draftHasChanges()){state.editing=false;action();return true}state.pendingNav=action;openOverlay("dirty");return false}action();return true}
 function renderOverlay(){
 var el=document.getElementById("overlayShell");if(!el)return;
 if(!state.overlay){el.classList.add("hide");el.innerHTML="";return}
@@ -395,7 +398,7 @@ body='<button type="button" id="openGlobalHistory">Change History · read only</
 footer='<button type="button" class="ghost" id="closeOverlay">Close</button>';
 }else if(state.overlay==="dirty"){
 head="Unsaved task draft";
-body='<div class="synthetic-data-banner">This task is being edited. The frozen product workflow requires **Save / Discard / Cancel** before leaving. This design simulator does not write the workbook or create UpdateHistory.</div><p>What would you like to do before navigating?</p>';
+body='<div class="synthetic-data-banner">This task is being edited. The frozen product workflow requires <strong>Save / Discard / Cancel</strong> before leaving when actual changes exist. This design simulator does not write the workbook or create UpdateHistory.</div><p>What would you like to do before navigating?</p>';
 footer='<button class="ghost" type="button" id="dirtyCancel">Cancel · keep editing</button><button class="ghost" type="button" id="dirtyDiscard">Discard draft · continue</button><button class="solid" type="button" id="dirtySave">Simulate Save · continue</button>';
 }else if(state.overlay==="history"){
 head=state.historyTask?"Task Change History":"Global Change History";
@@ -468,7 +471,7 @@ var ref=document.getElementById("refreshReport");if(ref)ref.addEventListener("cl
 var copy=document.getElementById("copyReport");if(copy)copy.addEventListener("click",function(){var snap=state.reportSnapshots[state.reportMode];if(!snap){alert("Generate a report first.");return}if(typeof navigator==="undefined"||!navigator.clipboard||!navigator.clipboard.writeText){alert("Clipboard unavailable here. Copy from plain-text preview manually.");return}navigator.clipboard.writeText(snap.text).then(function(){alert("Copied the exact displayed snapshot text.")},function(){alert("Clipboard copy failed. Use the plain-text preview.")})});
 renderOverlay();
 }
-function allowNavigate(){if(state.editing){alert("Demo edit open: Simulate save or Cancel before navigating. Production uses frozen Save/Discard/Cancel.");return false}return true}
+function allowNavigate(){if(state.editing){if(!draftHasChanges()){state.editing=false;return true}alert("This design mock requires Save/Discard/Cancel for edited drafts. Use primary navigation or task selection to try the three-option flow.");return false}return true}
 function demoSave(){var t=current();if(!t)return false;var owner=document.getElementById("owner").value.trim(),finish=document.getElementById("finish").value,status=document.getElementById("status").value,pct=Number(document.getElementById("pct").value),update=document.getElementById("updateText").value.trim();
 if(!utc(finish)||!Number.isFinite(pct)||pct<0||pct>100){alert("Invalid date/progress in simulated editor.");return false}
 t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update)state.demoEntries.push({id:t.id,text:"Demo edit · "+update});state.editing=false;if(!filterTasks().some(function(x){return x.id===t.id})){state.filter="all";state.owner="all";state.workstream="all"}render();return true}
