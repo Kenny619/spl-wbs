@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 1.2
+# SPT-WBS UI Guideline — draft 1.3
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -82,6 +82,13 @@
 - Use the **existing app favicon** rather than a typographic W placeholder. Distinguish product/build package version from the accepted UI visual baseline (repo package currently `0.0.0` placeholder; current approved UI target is `v18`). Production should show independently trustworthy build/release provenance.
 - The proposed default weekly Update Report period is the selected review date and the **same weekday seven calendar days earlier, both dates inclusive (8 dates)**. Respect custom periods and frozen Issue #7 timezone/committed-only/read-only/snapshot semantics; this UI preference does not amend the frozen contract without new Owner change control.
 - DES-008 is a design simulator. Actual drawer animation, keyboard focus, system theme/persistence, history file validation, report correctness and owner visual acceptance require separate evidence. See [DES-008 decision study](14_DES008_SETTINGS_HISTORY_DRAWER_AND_PERIOD.md).
+
+### Lean app identity and single History entry — DES-009
+- Keep the authentic application icon as the **only brand element in the top-left header**. Do not repeat `SPT–WBS v0.0.0` or prototype status text beside it. Retain a clear accessible icon label.
+- Preserve app/build version provenance in **Settings → About this application**, separate from the approved UI visual baseline; do not infer the package placeholder is a release number.
+- Settings should offer **one top-level Change History tab** inside its right-side pane, not a duplicate History section and button inside Preferences. Preserve direct task-specific History navigation to the same read-only log.
+- Adjust the header's brand grid track without changing view-dependent nav positions. Keep fixed header navigation, same inspector widths/heights and panel-only scroll behavior across Schedule, Meeting, Reports.
+- DES-009 is the current **design proposal**; browser screenshots/visual UAT and any production implementation still require separate evidence and authority.
 
 ## 4. Typography, color and meaning
 - Text contrast: WCAG 2.2 AA **4.5:1** for normal text, **3:1** for large text; meaningful UI graphic contrast **3:1** where applicable.
