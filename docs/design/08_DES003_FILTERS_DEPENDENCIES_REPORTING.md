@@ -1,4 +1,6 @@
-# DES-003 — Filtered Meeting Review and Weekly Reporting Concepts (proposed 0.1)
+# DES-003 — Filtered Meeting Review and Weekly Reporting Concepts (historical proposed 0.1)
+
+> **Superseded for current visual critique by [DES-004](../../design/concepts/DES-004-single-header-fixed-detail.html), 2026-11-08.** This file retains the earlier owner feedback, report gaps and source-level evidence. DES-004 changes the single-header/scroll and calendar-day-label presentation only; see [DES-004 review record](09_DES004_FIXED_DETAIL_AND_DAYS.md).
 
 **Date:** 2026-11-08 JST · **Stage:** D1 / owner-led holistic concept iteration · **State:** PROPOSED / not design-frozen · **Controlling:** [Issue #25](https://github.com/Kenny619/spl-wbs/issues/25) · **Design PR:** [#29](https://github.com/Kenny619/spl-wbs/pull/29).
 
