@@ -688,3 +688,24 @@ test("DES-010 real Reports uses fixed navigation and committed-only scroll works
   await expect(page.locator("body")).not.toHaveClass(/spt-managed-report-open/);
   await expect(page.locator(".managed-schedule-body")).toBeVisible();
 });
+
+
+test("DES-010 Project menu dismisses on outside, Escape and action while retaining recovery", async ({ page }) => {
+  await openManaged(page);
+  const menu = page.locator(".managed-project-menu");
+  const toggle = menu.locator("summary");
+  await expect(menu).not.toHaveAttribute("open", "");
+  await toggle.click();
+  await expect(menu).toHaveAttribute("open", "");
+  await page.locator(".managed-main-nav [data-managed-view='schedule']").click();
+  await expect(menu).not.toHaveAttribute("open", "");
+  await toggle.click();
+  await page.keyboard.press("Escape");
+  await expect(menu).not.toHaveAttribute("open", "");
+  await toggle.click();
+  await menu.getByRole("button", { name: "Inspect Save State" }).click();
+  await expect(menu).not.toHaveAttribute("open", "");
+  const inspect = page.getByRole("dialog", { name: "Inspect Save State" });
+  await expect(inspect.getByText("Inspection: READY")).toBeVisible();
+  await inspect.getByRole("button", { name: "Close" }).click();
+});
