@@ -1,4 +1,6 @@
-# DES-005 — Unified Workspace Heights, Panel Scrolling and Fixed Header Navigation (proposed 0.1)
+# DES-005 — Unified Workspace Heights, Panel Scrolling and Fixed Header Navigation (historical proposed 0.1)
+
+> **Superseded for current visual critique by [DES-006](../../design/concepts/DES-006-consistent-detail-width.html), 2026-11-08.** DES-005 remains an immutable record of the full-height and navigation design. DES-006 changes only the shared selected-task inspector width; see [design record](11_DES006_CONSISTENT_DETAIL_WIDTH.md).
 
 **Product Owner feedback date:** 2026-11-08 JST  
 **Stage:** D1 holistic UI iteration · **Status:** Design proposal (not approved for implementation or merging)  
