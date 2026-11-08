@@ -1,6 +1,6 @@
 # SPT-WBS Product Experience / UI Design Workstream
 
-**Status:** PROPOSED v1.3 for discussion; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
+**Status:** PROPOSED v1.4 for discussion; not a frozen specification. **Date:** 2026-11-08 JST. **Controlling issue:** [#25 — UI overhaul](https://github.com/Kenny619/spl-wbs/issues/25).
 
 ## Charter
 Design a first-class enterprise project schedule workspace that reduces cognitive and interaction burden while preserving clarity, safety, auditability and powerful WBS/Gantt functionality. Treat **laptop editing** and **office review/sharing** (same screen, conference-room display and video-call screen share) as distinct usage contexts; the same UI density may not serve them equally well. Design deliberately for the complete planned product, not just the original viewer. Work is led through an interactive Product Owner + AI design-director dialogue. There is only one human Product Owner; AI design / engineering / QA roles must be represented truthfully.
@@ -27,7 +27,9 @@ Design a first-class enterprise project schedule workspace that reduces cognitiv
 - [09 — DES-004 single-header, list-scroll, fixed-detail and days semantics](09_DES004_FIXED_DETAIL_AND_DAYS.md): owner feedback mapping, viewport/scroll rules, terminology and validation.
 - [DES-004 historical prototype](../../design/concepts/DES-004-single-header-fixed-detail.html): single-header, list-scroll, selected-detail and WBS identity exploration; retained for provenance.
 - [10 — DES-005 unified workspace height and fixed navigation](10_DES005_UNIFIED_HEIGHT_AND_NAV.md): panel height, fixed app/report controls, scroll containment and responsive safeguards.
-- [DES-005 current interactive design prototype](../../design/concepts/DES-005-unified-height-and-scroll.html): identical full available Schedule/Meeting panel height, independently scrollable Schedule/Meeting/Reports content and header buttons fixed in the same locations when switching.
+- [DES-005 historical prototype](../../design/concepts/DES-005-unified-height-and-scroll.html): unified full-height workspace, panel-only scrolling and anchored report/header controls; retained for comparison.
+- [11 — DES-006 consistent selected-task width](11_DES006_CONSISTENT_DETAIL_WIDTH.md): owner design feedback, shared column widths and source validation.
+- [DES-006 current interactive design prototype](../../design/concepts/DES-006-consistent-detail-width.html): same selected-task inspector width in Schedule and Meeting Review at the same desktop viewport; DES-005 behavior otherwise preserved.
 
 ## Boundaries and change control
 - **No design implementation, pixel-baseline replacement, issue acceptance, merge, release or approval is implied by these drafts.**
@@ -115,6 +117,11 @@ No current v18 code/spec lock is altered. No design-freeze or implementation aut
 - **Header navigation controls must not jump** between Schedule, Meeting and Reports. Reserve the layout slot for Schedule-only phase actions even when they are hidden, and keep the main navigation track at a constant desktop position.
 - Preserve accessibility with natural page scroll and stable responsive header reflow at narrow/zoomed effective widths. Design-only verification includes **18 source-mocked checks**; real Edge viewport and zoom QA is still required.
 - Current artifact: [DES-005](../../design/concepts/DES-005-unified-height-and-scroll.html), with [rationale and QA notes](10_DES005_UNIFIED_HEIGHT_AND_NAV.md). No freeze, production implementation, change to v18 or merge authorized.
+
+## Owner feedback incorporated in DES-006 / proposed v1.4 (2026-11-08)
+- **Same selected-task panel width in Schedule and Meeting Review:** retain the overall DES-005 visual composition, pane height, scrolling and navigation. The right-hand inspector uses one shared desktop grid-track definition, so it does not jump in width when switching views.
+- Continue responsive stacking for narrow/zoomed screens; do not force an inaccessible side-by-side layout.
+- Current mock: [DES-006](../../design/concepts/DES-006-consistent-detail-width.html). [Design rationale and 10 source checks](11_DES006_CONSISTENT_DETAIL_WIDTH.md). Owner screenshot review and actual Edge CSS measurement remain pending. No production implementation or merge authorized.
 
 ## Decisions needed in dialogue
 1. Which core job dominates the first-screen hierarchy: daily schedule authoring/maintenance or rapid schedule inspection/review? Both must remain supported.
