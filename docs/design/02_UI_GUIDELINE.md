@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 0.8
+# SPT-WBS UI Guideline — draft 0.9
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -52,6 +52,15 @@
 - Make **Workstream name and WBS code** prominently visible inside selected task details in both view/edit states, rather than relying solely on a small panel header or the list.
 - User-facing task and report countdown labels use **“days”** for brevity. The measured quantity is still **working days per project calendar** (excluding weekends/holidays/blackouts), **not elapsed calendar days and not remaining effort**. A visible or discoverable calendar legend and accessible explanation must preserve that meaning, especially across filter labels such as `Due in <5 days`.
 - Treat the 60px top-header size and CSS scroll strategy in DES-004 as **mock hypotheses**, not approved design tokens. Validate real laptop scaling, keyboard/trackpad behavior, long task content, and video-call readability before freezing.
+
+### Uniform full-height workspaces and stable navigation — DES-005
+- Schedule and Meeting Review must use the same available full viewport height beneath the common header; do not shorten selected-detail or list panels when switching modes. Each work area scrolls **within its own panel** when content exceeds the viewport.
+- **Schedule:** the WBS/Gantt grid and selected detail are equal-height regions; the table/timeline scrolls within its container, and selected detail can scroll internally for lengthy updates.
+- **Meeting:** retain the previously approved list/detail proportion. Task-list filters and column headings remain visible; only the task rows scroll. Details remain in place and fill the full available panel height.
+- **Reports:** retain fixed report actions, period and mode controls above a dedicated scrollable report body. The parent page must not scroll on normal desktop widths, so navigation remains visible while reading long reports.
+- **Header navigation:** use a fixed desktop layout track for global view-switching buttons. Reserve a non-shifting area for Schedule-only subnavigation when other views are shown; project/context text changes must not change button positions.
+- **Responsive behavior:** when viewport width or zoom prevents a usable split layout, allow natural page scrolling and predictable header wrapping instead of clipping or trapping controls. The exact grid/viewport values are design hypotheses until browser/owner acceptance.
+- Preserve independent scroll offsets across task selection and sensible reset for filter/mode changes, with keyboard focus and visible scrollbar affordances. See [DES-005 study](10_DES005_UNIFIED_HEIGHT_AND_NAV.md).
 
 ## 4. Typography, color and meaning
 - Text contrast: WCAG 2.2 AA **4.5:1** for normal text, **3:1** for large text; meaningful UI graphic contrast **3:1** where applicable.
