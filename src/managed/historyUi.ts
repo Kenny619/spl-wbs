@@ -10,7 +10,7 @@ import {
  */
 export async function openManagedHistory(
   doc: Document, workbook: Uint8Array,
-  options: { taskId?: string; timeZone: string },
+  options: { taskId?: string; timeZone: string; onSettings?: () => void },
 ): Promise<void> {
   const dialog = doc.createElement("dialog");
   dialog.className = "managed-history";
@@ -46,6 +46,19 @@ export async function openManagedHistory(
   close.addEventListener("click", dismiss);
   head.append(heading, close);
   dialog.append(head);
+  const tabs = element("nav", undefined, "managed-drawer-tabs");
+  tabs.setAttribute("aria-label", "Settings sections");
+  const preferencesTab = element("button", "Preferences", "managed-action");
+  preferencesTab.type = "button";
+  preferencesTab.addEventListener("click", () => {
+    dismiss();
+    options.onSettings?.();
+  });
+  const historyTab = element("button", "Change History", "managed-action active");
+  historyTab.type = "button";
+  historyTab.setAttribute("aria-current", "page");
+  tabs.append(preferencesTab, historyTab);
+  dialog.append(tabs);
 
   let records: HistoryEvent[];
   try {
@@ -160,18 +173,25 @@ export async function openManagedHistory(
       return;
     }
     results.append(element("p", filtered.length + " saved change event(s)", "managed-history-note"));
+    const headings = element("div", undefined, "managed-history-log-head");
+    headings.append(element("span", "When · Save reference"),
+      element("span", "Task"), element("span", "Action · Before → After"));
+    results.append(headings);
     for (const event of filtered) {
+      // Logical Saves remain grouped by ChangeSetID even though each action occupies one log row.
       const entry = element("section", undefined, "managed-history-event");
-      entry.append(element("h3",
-        historyDisplayTime(event.timestampUTC, options.timeZone) +
-        " · " + event.changes.length + " field change(s)"));
-      const idText = element("small", "ChangeSetID " + event.changeSetId);
-      entry.append(idText);
+      entry.setAttribute("aria-label", "Save " + event.changeSetId);
       for (const change of event.changes) {
         const row = element("div", undefined, "managed-history-row");
-        row.append(element("strong", change.wbsCode + " · " + change.taskTitle +
-          " (ID " + change.taskId + ") · " + change.field));
-        row.append(valueView(change));
+        const when = element("div", undefined, "managed-history-when");
+        when.append(element("span", historyDisplayTime(event.timestampUTC, options.timeZone)),
+          element("small", "Save " + event.changeSetId.slice(0, 8)));
+        const taskLabel = element("strong",
+          change.wbsCode + " · " + change.taskTitle + " (ID " + change.taskId + ")",
+          "managed-history-task");
+        const action = element("div", undefined, "managed-history-action");
+        action.append(element("strong", change.field), valueView(change));
+        row.append(when, taskLabel, action);
         entry.append(row);
       }
       results.append(entry);
