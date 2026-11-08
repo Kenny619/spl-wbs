@@ -709,3 +709,39 @@ test("DES-010 Project menu dismisses on outside, Escape and action while retaini
   await expect(inspect.getByText("Inspection: READY")).toBeVisible();
   await inspect.getByRole("button", { name: "Close" }).click();
 });
+
+
+test("DES-010 Gantt scope keeps manual status filters and avoids no-op draft warnings", async ({ page }) => {
+  await openManaged(page);
+  await page.locator("#filterToggle").click();
+  const inProgress = page.locator('#filterStatuses input[value="In Progress"]');
+  await inProgress.check();
+  await page.locator("#filterDone").click();
+  await expect(inProgress).toBeChecked();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+
+  const scope = page.locator(".managed-gantt-scope");
+  // Workstreams is already selected: clicking again must not reset a manual filter.
+  await scope.locator('[data-managed-scope="workstreams"]').click();
+  await expect(inProgress).toBeChecked();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Pending manual filter preserved");
+  await scope.locator('[data-managed-scope="workstreams"]').click();
+  await expect(page.getByRole("dialog", { name: "Unsaved changes" })).toBeHidden();
+  await expect(page.getByLabel("Task title")).toHaveValue("Pending manual filter preserved");
+
+  // Changing scopes is still a real navigation and remains protected by the shared guard.
+  await scope.locator('[data-managed-scope="exceptions"]').click();
+  await expect(page.getByRole("dialog", { name: "Unsaved changes" })).toBeVisible();
+  await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Cancel" }).click();
+  await expect(inProgress).toBeChecked();
+  await expect(page.getByLabel("Task title")).toHaveValue("Pending manual filter preserved");
+  await scope.locator('[data-managed-scope="exceptions"]').click();
+  await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Discard" }).click();
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await scope.locator('[data-managed-scope="workstreams"]').click();
+  await expect(inProgress).toBeChecked();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+});
