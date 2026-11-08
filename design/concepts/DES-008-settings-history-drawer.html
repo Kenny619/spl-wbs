@@ -431,7 +431,7 @@ var historyFixture=[
 ];
 function formattedTime(utcIso){try{return new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:state.settings.timezone}).format(new Date(utcIso))}catch(e){return utcIso}}
 var appPackageVersion="0.0.0",approvedUiBaseline="v18";
-function openDrawer(kind,taskId){state.drawer=kind;state.drawerConfirmReset=false;if(kind==="history")state.historyTask=taskId||null;renderDrawer()}
+function openDrawer(kind,taskId){state.drawer=kind;state.drawerConfirmReset=false;if(kind==="history"){state.historyTask=taskId||null;state.historyField="all"}renderDrawer()}
 function closeDrawer(){state.drawer=null;state.drawerConfirmReset=false;renderDrawer();var button=document.getElementById("settingsButton");if(button&&typeof button.focus==="function")button.focus()}
 function openOverlay(kind,taskId){if(kind==="history"||kind==="settings"){openDrawer(kind,taskId);return}state.overlay=kind;renderOverlay()}
 function closeOverlay(){state.overlay=null;state.pendingNav=null;renderOverlay()}
