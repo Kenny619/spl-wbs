@@ -120,11 +120,81 @@ const UNSUPPORTED_SHEET_FEATURE =
   /<(?:[\w-]+:)?(?:f|drawing|legacyDrawing|tableParts|pivotTable|extLst|oleObjects|controls|sheetProtection|conditionalFormatting|dataValidations|hyperlinks|mergeCells|autoFilter|protectedRanges|customSheetViews|scenarios)\b/i;
 
 /**
+ * Inspect raw ZIP central-directory names before JSZip converts entries into
+ * a name-keyed map. JSZip can collapse duplicate raw entries, hiding ambiguity.
+ * This is a deliberately restricted XLSX/ZIP subset, not a general ZIP parser.
+ */
+function verifyRawZipNames(source: ArrayBuffer | Uint8Array): void {
+  const bytes = source instanceof Uint8Array ? source : new Uint8Array(source);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const reject = (): never => {
+    throw new ManagedWorkbookError("UNSUPPORTED_PACKAGE", "Ambiguous or unsupported raw XLSX ZIP directory.");
+  };
+  const inside = (p: number, n: number) =>
+    Number.isSafeInteger(p) && p >= 0 && n >= 0 && p + n <= bytes.byteLength;
+  const u16 = (p: number) => view.getUint16(p, true);
+  const u32 = (p: number) => view.getUint32(p, true);
+  let eocd = -1;
+  for (let p = bytes.byteLength - 22; p >= Math.max(0, bytes.byteLength - 65557); p--) {
+    if (inside(p, 22) && u32(p) === 0x06054b50 && inside(p, 22 + u16(p + 20)) &&
+        p + 22 + u16(p + 20) === bytes.byteLength) {
+      eocd = p;
+      break;
+    }
+  }
+  if (eocd < 0 || u16(eocd + 4) !== 0 || u16(eocd + 6) !== 0 ||
+      u16(eocd + 8) !== u16(eocd + 10)) return reject();
+  const count = u16(eocd + 10);
+  const length = u32(eocd + 12);
+  const start = u32(eocd + 16);
+  // ZIP64 and multi-disk archives are deliberately unsupported.
+  if (count === 0xffff || start === 0xffffffff || length === 0xffffffff ||
+      !inside(start, length) || start + length > eocd) return reject();
+
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  const names = new Set<string>();
+  const folded = new Set<string>();
+  let cursor = start;
+  for (let index = 0; index < count; index++) {
+    if (!inside(cursor, 46) || u32(cursor) !== 0x02014b50) return reject();
+    const flag = u16(cursor + 8);
+    const nameLength = u16(cursor + 28);
+    const extraLength = u16(cursor + 30);
+    const commentLength = u16(cursor + 32);
+    const localOffset = u32(cursor + 42);
+    const entryLength = 46 + nameLength + extraLength + commentLength;
+    if ((flag & 1) || !inside(cursor, entryLength) ||
+        cursor + entryLength > start + length ||
+        localOffset === 0xffffffff || !inside(localOffset, 30) ||
+        u32(localOffset) !== 0x04034b50) return reject();
+    const localNameLength = u16(localOffset + 26);
+    const localExtraLength = u16(localOffset + 28);
+    if (!inside(localOffset, 30 + localNameLength + localExtraLength) ||
+        localOffset + 30 + localNameLength + localExtraLength > start) return reject();
+    const central = bytes.subarray(cursor + 46, cursor + 46 + nameLength);
+    const local = bytes.subarray(localOffset + 30, localOffset + 30 + localNameLength);
+    if (central.length !== local.length || central.some((byte, i) => byte !== local[i])) return reject();
+    let name: string;
+    try { name = decoder.decode(central); } catch { return reject(); }
+    if (!name || name.includes("\\") || name.startsWith("/") ||
+        name.split("/").some((segment, i, parts) =>
+          segment === "." || segment === ".." || (!segment && i !== parts.length - 1))) return reject();
+    const lower = name.toLowerCase();
+    if (names.has(name) || folded.has(lower)) return reject();
+    names.add(name);
+    folded.add(lower);
+    cursor += entryLength;
+  }
+  if (cursor !== start + length) return reject();
+}
+
+/**
  * Conservative, intentionally narrow compatibility allowlist.
  * It does not purport to validate arbitrary OOXML. Only this simple subset
  * proceeds to a second ExcelJS serialization + readback validation.
  */
 export async function preflightManagedWorkbook(source: ArrayBuffer | Uint8Array): Promise<void> {
+  verifyRawZipNames(source);
   let zip: JSZip;
   try {
     zip = await JSZip.loadAsync(source);
