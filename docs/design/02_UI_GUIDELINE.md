@@ -1,4 +1,4 @@
-# SPT-WBS UI Guideline — draft 0.9
+# SPT-WBS UI Guideline — draft 1.0
 
 **State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
 
@@ -61,6 +61,12 @@
 - **Header navigation:** use a fixed desktop layout track for global view-switching buttons. Reserve a non-shifting area for Schedule-only subnavigation when other views are shown; project/context text changes must not change button positions.
 - **Responsive behavior:** when viewport width or zoom prevents a usable split layout, allow natural page scrolling and predictable header wrapping instead of clipping or trapping controls. The exact grid/viewport values are design hypotheses until browser/owner acceptance.
 - Preserve independent scroll offsets across task selection and sensible reset for filter/mode changes, with keyboard focus and visible scrollbar affordances. See [DES-005 study](10_DES005_UNIFIED_HEIGHT_AND_NAV.md).
+
+### Stable selected-task panel width across working views (DES-006)
+- At a given desktop viewport width, **Schedule and Meeting Review must use the same selected-task inspector column width**, as well as the already consistent panel heights. Switching views should not horizontally move either edge of the selected-task detail panel.
+- A shared two-column CSS track or shared layout token should drive both surfaces; do not maintain divergent per-view percentages or independent hardcoded widths.
+- The current mock's right track is `minmax(365px,39%)` alongside a flexible schedule/list column at >970 CSS px, **proposed only** until actual laptop/zoom rendering is verified. Responsive stacked layouts remain permitted when view width is constrained.
+- Preserve all DES-005 global/report navigation position, internal scrolling, meeting filters, task details and Reports behavior. See [DES-006 rationale](11_DES006_CONSISTENT_DETAIL_WIDTH.md).
 
 ## 4. Typography, color and meaning
 - Text contrast: WCAG 2.2 AA **4.5:1** for normal text, **3:1** for large text; meaningful UI graphic contrast **3:1** where applicable.
