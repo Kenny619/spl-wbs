@@ -748,7 +748,7 @@ test("DES-010 Gantt scope keeps manual status filters and avoids no-op draft war
 
 
 for (const width of [1440, 1024, 860]) {
-  test(\`DES-010 managed \${width}px: Inspector is readable, accessible when empty, and workday label concise\`, async ({ page }, testInfo) => {
+  test(`DES-010 managed ${width}px: Inspector is readable, accessible when empty, and workday label concise`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 768 });
     await openManaged(page);
     const inspector = page.locator("#panel");
@@ -769,7 +769,7 @@ for (const width of [1440, 1024, 860]) {
     await expect(inspector).not.toHaveAttribute("aria-hidden", "true");
     await expect(page.getByRole("region", { name: "Selected task details" }))
       .toContainText("Select a task to inspect its details.");
-    await testInfo.attach(\`managed-DES010-empty-inspector-\${width}\`, {
+    await testInfo.attach(`managed-DES010-empty-inspector-${width}`, {
       body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
     });
     await page.locator(".task-row").first().click();
