@@ -61,7 +61,6 @@ async function openManaged(page: import("@playwright/test").Page) {
   }, { encoded: base64 });
   await page.goto(fileUrl);
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
-  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
   await expect(page.locator("#title")).toHaveText("synthetic-demo");
   await expect(page.locator(".task-row")).toHaveCount(1);
@@ -419,6 +418,7 @@ test("Stage A inspector shows READY state without modifying any workbook bytes",
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
   await page.locator("#close").click();
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Inspect Save State" }).click();
   const dialog = page.getByRole("dialog", { name: "Inspect Save State" });
   await expect(dialog.getByText("Inspection: READY")).toBeVisible();
@@ -449,6 +449,7 @@ test("Stage A orphan recovery file blocks direct Save and inspector preserves al
   await page.locator("#close").click();
   await page.getByRole("dialog", { name: "Unsaved changes" })
     .getByRole("button", { name: "Discard" }).click();
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Inspect Save State" }).click();
   const dialog = page.getByRole("dialog", { name: "Inspect Save State" });
   await expect(dialog.getByText("Inspection: STOP")).toBeVisible();
@@ -565,8 +566,10 @@ test("Failed workbook selection keeps previous verified source, editable state a
     files.set("unreadable.xlsx", new TextEncoder().encode("corrupt ZIP bytes"));
   });
   // After a folder has been loaded, the toolbar control is named Change folder.
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Change folder" }).click();
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
+  await page.locator(".managed-project-menu summary").click();
   await page.getByLabel("Active Excel workbook").selectOption("unreadable.xlsx");
   await expect(page.getByText(/Managed workbook unavailable:.*Previous verified workbook remains active/)).toBeVisible();
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
@@ -596,6 +599,7 @@ test("Failed new-folder import does not half-switch active directory or lose las
       configurable: true, value: async () => invalidDir,
     });
   });
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Change folder" }).click();
   await expect(page.getByText(/Previous verified workbook remains active/)).toBeVisible();
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
