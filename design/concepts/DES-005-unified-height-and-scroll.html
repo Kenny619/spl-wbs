@@ -131,6 +131,62 @@ body.view-meeting .detail-compact{max-height:none;overflow:visible}
 .project-head{min-width:150px;max-width:none}
 }
 
+
+/* DES-005: identical full-height workspaces with scrolling limited to panels.
+   The header grid reserves positions for every navigation/control slot. */
+.top{display:grid;grid-template-columns:178px minmax(145px,1fr) max-content 182px 118px;column-gap:10px;align-items:center;justify-content:initial;height:60px;min-height:60px;padding:0 16px}
+.top .brand{min-width:0}
+.top .project-head{min-width:0;max-width:none}
+.top .concept-controls{justify-self:start;white-space:nowrap}
+.top #phases{justify-self:stretch;width:182px}
+.top #phases.hide{display:flex!important;visibility:hidden;pointer-events:none}
+.top .topright{display:block;min-width:0;width:118px;text-align:right}
+body.view-workspace{height:100dvh;overflow:hidden}
+body.view-workspace .canvas{height:calc(100dvh - 60px);max-width:none;display:flex;flex-direction:column;overflow:hidden;padding:12px 16px 14px}
+body.view-workspace #app{flex:1;min-height:0;overflow:hidden}
+body.view-workspace #app>.main{height:100%;min-height:0;align-items:stretch}
+body.view-workspace #app>.main>.panel{height:100%;max-height:100%;min-height:0}
+body.view-workspace .a-layout>.panel:first-child{display:flex;flex-direction:column;overflow:hidden}
+body.view-workspace .a-layout .schedule{flex:1;min-height:0;max-height:none;overflow-y:auto;overflow-x:auto;overscroll-behavior:contain}
+body.view-workspace .a-layout .schedule-head{position:sticky;top:0;z-index:2}
+body.view-workspace .detail-compact{height:100%;min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+body.view-workspace .meeting-list{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body.view-workspace .meeting-list .meeting-data{flex:1;min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+body.view-workspace .report-workspace{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body.view-workspace .report-workspace .reportbar{flex:none}
+body.view-workspace .report-workspace .report-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;border-radius:12px}
+body.view-workspace .report-scroll .lead-wrap{margin:0 auto}
+#scheduleTableScroll:focus-visible,#reportContentScroll:focus-visible{outline:3px solid #6bb1d6;outline-offset:-3px}
+@media(max-width:1220px){
+.top{grid-template-columns:166px minmax(135px,1fr) max-content 180px}
+.top .topright{display:none}
+.top #phases{width:180px}
+}
+@media(max-width:970px){
+.top{grid-template-columns:minmax(155px,1fr) minmax(0,1fr);grid-template-areas:"brand project" "nav phases";height:auto;min-height:60px;padding:9px 12px;gap:8px 12px}
+.top .brand{grid-area:brand}
+.top .project-head{grid-area:project}
+.top .concept-controls{grid-area:nav;justify-self:start}
+.top #phases{grid-area:phases;justify-self:end}
+body.view-workspace{height:auto;overflow:auto}
+body.view-workspace .canvas{height:auto;display:block;overflow:visible;padding:12px}
+body.view-workspace #app{overflow:visible}
+body.view-workspace #app>.main{height:auto;align-items:start}
+body.view-workspace #app>.main>.panel{height:auto;max-height:none}
+body.view-workspace .a-layout>.panel:first-child{max-height:490px}
+body.view-workspace .a-layout .schedule{flex:none;max-height:420px;overflow:auto}
+body.view-workspace .detail-compact{height:auto;max-height:none;overflow:visible}
+body.view-workspace .meeting-list{height:auto;max-height:none}
+body.view-workspace .meeting-list .meeting-data{flex:none;max-height:420px;min-height:160px;overflow:auto}
+body.view-workspace .report-workspace{height:auto;overflow:visible}
+body.view-workspace .report-workspace .report-scroll{flex:none;height:auto;overflow:visible}
+}
+@media(max-width:620px){
+.top{grid-template-columns:1fr;grid-template-areas:"brand" "project" "nav" "phases"}
+.top .concept-controls{max-width:100%;overflow-x:auto}
+.top #phases{justify-self:start}
+}
+
 </style>
 </head>
 <body>
