@@ -430,64 +430,85 @@ var historyFixture=[
 {id:"D1",wbs:"2.1",title:"Data reconciliation",field:"AssignedTo",old:"Unassigned",value:"K. Yamada"}]}
 ];
 function formattedTime(utcIso){try{return new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:state.settings.timezone}).format(new Date(utcIso))}catch(e){return utcIso}}
-function openOverlay(kind,taskId){state.overlay=kind;state.historyTask=taskId||null;renderOverlay()}
+var appPackageVersion="0.0.0",approvedUiBaseline="v18";
+function openDrawer(kind,taskId){state.drawer=kind;state.drawerConfirmReset=false;if(kind==="history")state.historyTask=taskId||null;renderDrawer()}
+function closeDrawer(){state.drawer=null;state.drawerConfirmReset=false;renderDrawer();var button=document.getElementById("settingsButton");if(button&&typeof button.focus==="function")button.focus()}
+function openOverlay(kind,taskId){if(kind==="history"||kind==="settings"){openDrawer(kind,taskId);return}state.overlay=kind;renderOverlay()}
 function closeOverlay(){state.overlay=null;state.pendingNav=null;renderOverlay()}
 function draftHasChanges(){var t=current();if(!state.editing||!t)return false;var owner=document.getElementById("owner"),finish=document.getElementById("finish"),status=document.getElementById("status"),pct=document.getElementById("pct"),update=document.getElementById("updateText");
 if(!owner||!finish||!status||!pct||!update)return true;
 return owner.value.trim()!==t.owner||finish.value!==t.end||status.value!==t.status||Number(pct.value)!==t.pct||!!update.value.trim()}
 function requestNavigation(action){if(state.editing){if(!draftHasChanges()){state.editing=false;action();return true}state.pendingNav=action;openOverlay("dirty");return false}action();return true}
+
+function friendlyAction(field){return {PlannedEnd:"Planned finish revised",TaskStatus:"Status changed",AssignedTo:"Owner changed",Updates:"Update appended",PlannedStart:"Planned start revised",Progress:"Progress changed"}[field]||field+" changed"}
+function renderDrawer(){
+var host=document.getElementById("drawerHost"),panel=document.getElementById("drawerPanel"),content=document.getElementById("drawerContents");
+if(!host||!panel||!content)return;
+if(!state.drawer){host.classList.remove("open");host.setAttribute("aria-hidden","true");content.innerHTML="";var settingsButton=document.getElementById("settingsButton");if(settingsButton)settingsButton.setAttribute("aria-expanded","false");return}
+host.classList.add("open");host.setAttribute("aria-hidden","false");panel.setAttribute("aria-label",state.drawer==="history"?"Change History drawer":"Settings drawer");
+var settingsButton=document.getElementById("settingsButton");if(settingsButton)settingsButton.setAttribute("aria-expanded","true");
+var tabButtons='<div class="drawer-subnav" role="navigation" aria-label="Settings sections">'+
+'<button type="button" data-drawer-tab="settings" class="'+(state.drawer==="settings"?"active":"")+'">Preferences</button>'+
+'<button type="button" data-drawer-tab="history" class="'+(state.drawer==="history"?"active":"")+'">Change History</button></div>';
+var title=state.drawer==="history"?"Change History":"Settings",body="",footer="";
+if(state.drawer==="history"){
+var entries=[];historyFixture.forEach(function(save){save.changes.forEach(function(change,index){entries.push({save:save.save,when:save.when,change:change,index:index})})});
+entries=entries.filter(function(row){return (!state.historyTask||state.historyTask===row.change.id)&&(state.historyField==="all"||state.historyField===row.change.field)});
+entries.sort(function(a,b){return b.when.localeCompare(a.when)||a.save.localeCompare(b.save)||a.index-b.index});
+var availableTasks=Array.from(new Set(historyFixture.flatMap(function(save){return save.changes.map(function(c){return c.id})})));
+var fields=Array.from(new Set(historyFixture.flatMap(function(save){return save.changes.map(function(c){return c.field})})));
+body='<div class="drawer-note">Read-only sample audit log. <strong>Each row represents one saved field-change action</strong>; actions from the same Save retain their shared reference. Current Workstream is shown for orientation, not represented as a stored historic value.</div>'+
+'<div class="drawer-history-filter">'+
+'<label>Task<select id="historyTaskFilter"><option value="all"'+(!state.historyTask?" selected":"")+'>All tasks</option>'+availableTasks.map(function(id){var task=tasks.find(function(t){return t.id===id});return '<option value="'+esc(id)+'"'+(state.historyTask===id?" selected":"")+'>'+esc(task?task.wbs+" · "+task.title:id)+'</option>'}).join("")+'</select></label>'+
+'<label>Action<select id="historyFieldFilter"><option value="all"'+(state.historyField==="all"?" selected":"")+'>All changes</option>'+fields.map(function(name){return '<option value="'+esc(name)+'"'+(state.historyField===name?" selected":"")+'>'+esc(friendlyAction(name))+'</option>'}).join("")+'</select></label></div>'+
+'<div class="history-log-head"><div>When · '+esc(state.settings.timezone)+'</div><div>Task</div><div>Action / change</div></div>'+
+'<div class="history-log-wrap">'+(entries.length?entries.map(function(row){var c=row.change,t=tasks.find(function(task){return task.id===c.id}),currentGroup=t?t.group:"Unknown Workstream";
+return '<div class="history-log-row" data-history-action="'+esc(c.field)+'" data-save-ref="'+esc(row.save)+'">'+
+'<div class="history-log-time">'+esc(formattedTime(row.when))+'<div class="history-save-ref">Ref '+esc(row.save)+'</div></div>'+
+'<div class="history-log-task">'+esc(c.wbs)+' · '+esc(c.title)+'<div class="tiny">'+esc(currentGroup)+'</div></div>'+
+'<div class="history-log-action"><strong>'+esc(friendlyAction(c.field))+'</strong><span class="history-value">'+esc(c.old)+'</span> → <span class="history-value">'+esc(c.value)+'</span></div></div>'}).join(""):'<div class="zero-match">No matching saved changes in this sample.</div>')+'</div>';
+footer='<span class="tiny">Synthetic history · no workbook access</span>';
+}else{
+body='<div class="drawer-note">This is a UI design simulation. Preferences change this page session only; the current app contract calls for local browser storage. Settings and Change History share this slide-out pane.</div>'+
+'<div class="drawer-section"><h3>Display</h3>'+
+'<div class="settings-row"><label for="zoneSetting">Display timezone</label><select id="zoneSetting">'+["Asia/Tokyo","UTC","America/Los_Angeles"].map(function(zone){return '<option'+(zone===state.settings.timezone?" selected":"")+'>'+zone+'</option>'}).join("")+'</select></div>'+
+'<div class="settings-row"><label for="appearanceSetting">Appearance</label><select id="appearanceSetting">'+["System","Light","Dark"].map(function(mode){return '<option'+(mode===state.settings.appearance?" selected":"")+'>'+mode+'</option>'}).join("")+'</select></div>'+
+'<div class="settings-row"><label>Visible columns (illustrative)</label><div class="settings-cols">'+["Owner","Status","Finish"].map(function(name){return '<label><input type="checkbox" data-col="'+name+'"'+(state.settings.columns[name]?" checked":"")+'> '+name+'</label>'}).join("")+'</div></div></div>'+
+'<div class="drawer-section"><h3>History</h3><button type="button" class="drawer-settings-link" id="openHistoryFromSettings">View Change History<span>Review task actions and shared Save references in a chronological log.</span></button></div>'+
+'<div class="drawer-section"><h3>About this application</h3><div class="version-panel">'+
+'<div class="detail-fact"><div class="key">Package version</div><div class="val">v'+esc(appPackageVersion)+'</div></div>'+
+'<div class="detail-fact"><div class="key">Approved UI baseline</div><div class="val">'+esc(approvedUiBaseline)+'</div></div></div>'+
+'<div class="drawer-info">Package version comes from the repository package.json and is currently a 0.0.0 placeholder, not a separately confirmed public release version. The approved UI baseline is v18. DES-008 is a design mock.</div></div>'+
+'<div class="drawer-section"><h3>Preference reset</h3>'+
+(state.drawerConfirmReset?'<div class="drawer-settings-reset"><strong>Reset preferences?</strong><p class="note">Restore simulated defaults (Asia/Tokyo, System appearance and default columns). Production must detect the system timezone.</p><button type="button" class="ghost" id="resetCancel">Cancel</button> <button type="button" class="solid" id="resetConfirm">Confirm reset</button></div>':'<button type="button" class="ghost" id="resetSettings">Reset to defaults…</button>')+'</div>'+
+'<div class="drawer-note">Example UTC Save timestamp: '+esc(formattedTime("2026-11-06T05:10:00Z"))+' · Planned finish (date-only) remains 2026-11-14.</div>';
+footer='<span class="tiny">Local preference illustration · nothing saved</span>';
+}
+content.innerHTML='<div class="drawer-head"><h2>'+esc(title)+'</h2><button type="button" class="ghost" id="drawerClose" aria-label="Close side pane">Close ×</button></div>'+tabButtons+
+'<div class="drawer-body" tabindex="0">'+body+'</div><div class="drawer-bottom">'+footer+'</div>';
+function bind(id,fn){var elem=document.getElementById(id);if(elem)elem.addEventListener("click",fn)}
+bind("drawerClose",closeDrawer);
+var scrim=document.getElementById("drawerScrim");if(scrim)scrim.onclick=closeDrawer;
+document.querySelectorAll("[data-drawer-tab]").forEach(function(el){el.addEventListener("click",function(){if(el.dataset.drawerTab==="history"){state.historyTask=null;state.historyField="all"}state.drawer=el.dataset.drawerTab;state.drawerConfirmReset=false;renderDrawer()})});
+bind("openHistoryFromSettings",function(){state.historyTask=null;state.historyField="all";state.drawer="history";renderDrawer()});
+var taskFilter=document.getElementById("historyTaskFilter");if(taskFilter)taskFilter.addEventListener("change",function(){state.historyTask=taskFilter.value==="all"?null:taskFilter.value;renderDrawer()});
+var fieldFilter=document.getElementById("historyFieldFilter");if(fieldFilter)fieldFilter.addEventListener("change",function(){state.historyField=fieldFilter.value;renderDrawer()});
+var zone=document.getElementById("zoneSetting");if(zone)zone.addEventListener("change",function(){state.settings.timezone=zone.value;renderDrawer()});
+var appearance=document.getElementById("appearanceSetting");if(appearance)appearance.addEventListener("change",function(){state.settings.appearance=appearance.value;renderDrawer()});
+document.querySelectorAll("[data-col]").forEach(function(el){el.addEventListener("change",function(){state.settings.columns[el.dataset.col]=el.checked})});
+bind("resetSettings",function(){state.drawerConfirmReset=true;renderDrawer()});
+bind("resetCancel",function(){state.drawerConfirmReset=false;renderDrawer()});
+bind("resetConfirm",function(){state.settings={timezone:"Asia/Tokyo",appearance:"System",columns:{Owner:true,Status:true,Finish:true}};state.drawerConfirmReset=false;renderDrawer()});
+}
 function renderOverlay(){
 var el=document.getElementById("overlayShell");if(!el)return;
-if(!state.overlay){el.classList.add("hide");el.innerHTML="";return}
+if(state.overlay!=="dirty"){el.classList.add("hide");el.innerHTML="";return}
 el.classList.remove("hide");
-var head="",body="",footer="";
-if(state.overlay==="menu"){
-head="Additional workspaces";
-body='<button type="button" id="openGlobalHistory">Change History · read only</button><button type="button" id="openSettings">Settings · preferences</button><div class="synthetic-data-banner">These screens demonstrate navigation only; the workbook and local preferences are not changed.</div>';
-footer='<button type="button" class="ghost" id="closeOverlay">Close</button>';
-}else if(state.overlay==="dirty"){
-head="Unsaved task draft";
-body='<div class="synthetic-data-banner">This task is being edited. The frozen product workflow requires <strong>Save / Discard / Cancel</strong> before leaving when actual changes exist. This design simulator does not write the workbook or create UpdateHistory.</div><p>What would you like to do before navigating?</p>';
-footer='<button class="ghost" type="button" id="dirtyCancel">Cancel · keep editing</button><button class="ghost" type="button" id="dirtyDiscard">Discard draft · continue</button><button class="solid" type="button" id="dirtySave">Simulate Save · continue</button>';
-}else if(state.overlay==="history"){
-head=state.historyTask?"Task Change History":"Global Change History";
-var groups=historyFixture.map(function(save){
-var selected=save.changes.filter(function(x){return !state.historyTask||x.id===state.historyTask});
-if(!selected.length)return "";
-return '<article class="history-save"><h3>Save '+esc(save.save)+' · '+esc(formattedTime(save.when))+'</h3><div class="tiny">Stored UTC unchanged; timezone affects presentation only. Changes in one Save share an audit identifier.</div>'+selected.map(function(change){
-return '<div class="history-field"><b>'+esc(change.wbs)+' · '+esc(change.title)+'</b> · '+esc(change.field)+'<div>'+esc(change.old)+' → '+esc(change.value)+'</div></div>'}).join("")+'</article>'}).filter(Boolean).join("");
-body='<div class="synthetic-data-banner">Synthetic UpdateHistory records; read-only. Demonstrates one Save with changes to multiple workstreams, immutable task title/WBS snapshots, and selected display timezone. Does not read Excel.</div>'+
-(state.historyTask?'<div class="small">Filtered to Task ID '+esc(state.historyTask)+' · <button type="button" class="ghost" id="historyAll">Show all history</button></div>':"")+
-(groups||'<div class="blankstate">No changes recorded for this sample task.</div>');
-footer='<button type="button" class="ghost" id="closeOverlay">Back to selected task</button>';
-}else if(state.overlay==="settings"){
-head="Settings · local preferences";
-body='<div class="synthetic-data-banner">Design mock only. Settings changes persist in this page session, not browser storage or Excel. Planned task dates never shift with timezone.</div>'+
-'<div class="settings-row"><label for="zoneSetting">Display timezone (timestamps only)</label><select id="zoneSetting">'+["Asia/Tokyo","UTC","America/Los_Angeles"].map(function(zone){return '<option'+(zone===state.settings.timezone?" selected":"")+'>'+zone+'</option>'}).join("")+'</select></div>'+
-'<div class="settings-row"><label for="appearanceSetting">Appearance</label><select id="appearanceSetting">'+["System","Light","Dark"].map(function(mode){return '<option'+(mode===state.settings.appearance?" selected":"")+'>'+mode+'</option>'}).join("")+'</select></div>'+
-'<div class="settings-row"><label>Columns (mock preference)</label><div class="settings-cols">'+["Owner","Status","Finish"].map(function(name){return '<label><input type="checkbox" data-col="'+name+'"'+(state.settings.columns[name]?" checked":"")+'> '+name+'</label>'}).join("")+'</div></div>'+
-'<div class="note">History fixture timestamp preview: '+esc(formattedTime("2026-11-06T05:10:00Z"))+'<div>Planned End for task P2 remains 2026-11-14 (date-only).</div></div>';
-footer='<button class="ghost" type="button" id="resetSettings">Reset defaults…</button><button class="solid" type="button" id="closeOverlay">Done</button>';
-}else if(state.overlay==="reset"){
-head="Reset display settings?";
-body='<p>Restore System appearance, detected-default simulation (Asia/Tokyo) timezone, and all default columns in this prototype.</p><div class="synthetic-data-banner">A real app should use the system/browser detected timezone and persist preferences locally. This mock does neither.</div>';
-footer='<button class="ghost" type="button" id="resetCancel">Cancel</button><button class="solid" type="button" id="resetConfirm">Reset demo settings</button>';
-}
-el.innerHTML='<section class="overlay-card '+(state.overlay==="menu"?"overlay-menu":"")+'" role="dialog" aria-modal="true" aria-label="'+esc(head)+'"><div class="overlay-head"><h2>'+esc(head)+'</h2></div><div class="overlay-scroll">'+body+'</div><div class="overlay-foot">'+footer+'</div></section>';
-function bind(id,fn){var c=document.getElementById(id);if(c)c.addEventListener("click",fn)}
-bind("closeOverlay",closeOverlay);
-bind("openGlobalHistory",function(){requestNavigation(function(){openOverlay("history",null)})});
-bind("openSettings",function(){requestNavigation(function(){openOverlay("settings")})});
-bind("historyAll",function(){openOverlay("history",null)});
+el.innerHTML='<section class="overlay-card" role="alertdialog" aria-modal="true" aria-label="Unsaved task draft"><div class="overlay-head"><h2>Unsaved task draft</h2></div><div class="overlay-scroll"><div class="synthetic-data-banner">This task has changes. Choose Save, Discard or Cancel before leaving it. Simulated Save does not write a workbook or append UpdateHistory.</div></div><div class="overlay-foot"><button class="ghost" type="button" id="dirtyCancel">Cancel · keep editing</button><button class="ghost" type="button" id="dirtyDiscard">Discard · continue</button><button class="solid" type="button" id="dirtySave">Simulate Save · continue</button></div></section>';
+function bind(id,fn){var e=document.getElementById(id);if(e)e.addEventListener("click",fn)}
 bind("dirtyCancel",closeOverlay);
 bind("dirtyDiscard",function(){var next=state.pendingNav;state.overlay=null;state.pendingNav=null;state.editing=false;if(next)next();else render()});
 bind("dirtySave",function(){var next=state.pendingNav;if(demoSave()){state.overlay=null;state.pendingNav=null;if(next)next();else render()}});
-bind("resetSettings",function(){openOverlay("reset")});
-bind("resetCancel",function(){openOverlay("settings")});
-bind("resetConfirm",function(){state.settings={timezone:"Asia/Tokyo",appearance:"System",columns:{Owner:true,Status:true,Finish:true}};openOverlay("settings")});
-var zone=document.getElementById("zoneSetting");if(zone)zone.addEventListener("change",function(){state.settings.timezone=zone.value;renderOverlay()});
-var appearance=document.getElementById("appearanceSetting");if(appearance)appearance.addEventListener("change",function(){state.settings.appearance=appearance.value;renderOverlay()});
-document.querySelectorAll("[data-col]").forEach(function(input){input.addEventListener("change",function(){state.settings.columns[input.dataset.col]=input.checked})});
 }
 
 function render(){
