@@ -518,3 +518,59 @@ body.spt-managed[data-managed-theme="dark"] .managed-gantt-scope button.active {
 /* Responsive managed-only control density; the original v18 viewer is untouched. */
 body.spt-managed .managed-schedule-body .chart-top .toolbar .tool {font-size:11px;padding-inline:8px;}
 body.spt-managed .managed-project-menu .top-actions .small-action {display:block!important;}
+
+/* UAT-02 D1–D5 — managed dark-mode contrast remediation.
+   All overrides are scoped: the approved read-only v18 viewer remains intact. */
+body.spt-managed[data-managed-theme="dark"] :is(.weekend,.holiday-overlay) {
+  background-color:#2b4159;
+  opacity:.58;
+}
+body.spt-managed[data-managed-theme="dark"] .week-holiday {
+  background:#526a84;
+}
+body.spt-managed[data-managed-theme="dark"] .workdays-detail {
+  background:#25384d;
+  color:#e9f2fe;
+  border:1px solid #48617e;
+}
+body.spt-managed[data-managed-theme="dark"] .workdays-detail small {
+  color:#b5c9df;
+}
+body.spt-managed[data-managed-theme="dark"] .workdays-detail strong {
+  color:#f3f8ff;
+}
+body.spt-managed[data-managed-theme="dark"] .zoom-group {
+  background:#24334a;
+  border-color:#42546d;
+}
+body.spt-managed[data-managed-theme="dark"] .zoom-choice {
+  color:#c5d5e9;
+  border-right-color:#42546d;
+}
+body.spt-managed[data-managed-theme="dark"] .zoom-choice.selected {
+  background:#456bce;
+  color:#fff;
+}
+body.spt-managed[data-managed-theme="dark"] .zoom-choice:hover:not(.selected) {
+  background:#314560;
+}
+body.spt-managed[data-managed-theme="dark"] .pill.done {
+  color:#c5f2da; background:#244c42; border-color:#427b66;
+}
+body.spt-managed[data-managed-theme="dark"] .pill.progress {
+  color:#d2e5ff; background:#2c446b; border-color:#567bb4;
+}
+body.spt-managed[data-managed-theme="dark"] .pill.risk {
+  color:#ffe4a9; background:#604825; border-color:#997041;
+}
+body.spt-managed[data-managed-theme="dark"] .pill.blocked {
+  color:#ffcbc9; background:#63363c; border-color:#a55a64;
+}
+body.spt-managed[data-managed-theme="dark"] .pill.todo {
+  color:#d5dfed; background:#344255; border-color:#5a708a;
+}
+body.spt-managed[data-managed-theme="dark"] .dep-layer path {
+  stroke:#b4d8fa !important;
+  stroke-width:2 !important;
+  filter:drop-shadow(0 0 1px #07182a);
+}
