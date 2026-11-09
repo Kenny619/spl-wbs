@@ -15,24 +15,28 @@ The page title is the file name without `.xlsx`.
 
 ## Excel Managed Variant — DES-010 owner UAT (development only)
 
-**[Download the COMPLETE DES-010 Owner UAT Kit (GitHub Actions ZIP)](https://github.com/Kenny619/spl-wbs/actions/runs/42549611042/artifacts/13644857552)**
+**[Download CORRECTED complete DES-010 Owner UAT Kit (GitHub Actions ZIP)](https://github.com/Kenny619/spl-wbs/actions/runs/42552811227/artifacts/13646311446)**
 
-**This is the complete six-file kit, not the earlier HTML-only artifact.** I verified that its GitHub-hosted ZIP contains:
+**Current build (November 9, 2026):** exact [draft PR #32](https://github.com/Kenny619/spl-wbs/pull/32) source commit `52fdb6173f22a8dcd3d9aaa7d06344f40e5a7cc5`. [Windows CI #42552811227](https://github.com/Kenny619/spl-wbs/actions/runs/42552811227) **PASS, 60/60 browser tests** including a real import, verified Save and `UpdateHistory` roundtrip with the **exact included 23-task workbook**, exercised through an automated Chromium folder-handle simulation. Actual owner Microsoft Edge/native folder picker remains UAT.
 
-- `managed.html` — self-contained managed application (same verified HTML build as prior UAT).
-- `SPT-WBS_DES010_Synthetic_UAT.xlsx` — disposable fictional 23-task `ProjectWBS` workbook.
-- `START-HERE.txt` — short setup instructions.
-- `README-OWNER-UAT.txt` — detailed Microsoft Edge UAT scenarios.
-- `UAT-RESULTS-TEMPLATE.md` — checklist and findings register.
-- `SHA256SUMS.txt` — integrity checksums.
+**The prior November 9 kit is superseded.** Owner UAT found folder selection produced no visible loaded workbook. Investigation found (1) the original **Choose project folder** button was outside the Project menu documented in the instructions, and (2) the originally distributed workbook contained an **AutoFilter**, which fails the managed v1 Save safety preflight. Both are corrected. Folder scanning, picker cancellation and workbook import failures now display explicit status messages.
 
-**Getting started:** Download and extract the complete ZIP. Copy the synthetic workbook into a separate empty working folder, then open `managed.html` in Microsoft Edge. Choose **Project → Choose project folder**, select the working folder, and follow the included checklist. **Do not use a real or corporate production workbook.**
+**The corrected six-file ZIP includes:**
 
-**Build provenance:** draft [PR #32](https://github.com/Kenny619/spl-wbs/pull/32); packaged at GitHub Actions [run #42549611042](https://github.com/Kenny619/spl-wbs/actions/runs/42549611042). The application bytes match the earlier verified UAT build; the updated artifact additionally bundles sample data, instructions and verification files. ZIP and sample-workbook structural checks passed. The application is an unmerged development preview, not a release.
+- `managed.html` — corrected managed development application.
+- `SPT-WBS_DES010_Synthetic_UAT.xlsx` — fictional 23-task `ProjectWBS`, now without unsupported AutoFilter.
+- `START-HERE.txt` — quick-start.
+- `README-OWNER-UAT.txt` — Edge UAT instructions.
+- `UAT-RESULTS-TEMPLATE.md` — results register.
+- `SHA256SUMS.txt` — integrity manifest.
 
-**Artifact availability:** This GitHub Actions download expires on **November 16, 2026 (UTC)** and may require sign-in. If it has expired, open the latest successful CI run on [PR #32](https://github.com/Kenny619/spl-wbs/pull/32), under **Checks → Artifacts → managed-v1-development-preview**, and verify that the chosen artifact contains the workbook and instructions. The kit is generated automatically after the managed build.
+**Retest in Microsoft Edge:** Extract this **new** ZIP into a new folder (do not reuse the old `managed.html`). Copy the included XLSX into a separate empty disposable work folder. Open the **new** `managed.html`, select **Project → Choose project folder**, grant the browser the requested folder permission, and select the disposable work folder. Confirm the app displays `Workbook ready`, the workbook title, and the synthetic tasks. Use only the disposable copy for Save and History UAT.
 
-Owner UAT, independent QA, physical Windows/Edge workbook-safety gates, merge and release remain separate approval steps.
+**If import still fails**, note the **exact status/error line beneath the application header**, your Edge version, and whether Edge asked for read/write permission. Do not test a real or corporate workbook. Do not repeatedly attempt Save when permission or recovery status is uncertain.
+
+**Availability:** GitHub Actions artifacts expire, currently **November 16, 2026 (UTC)**. For a fresh build, see [PR #32](https://github.com/Kenny619/spl-wbs/pull/32) → Checks → latest successful workflow → Artifacts → `managed-v1-development-preview`. This CI artifact now automatically bundles all six files, not HTML alone.
+
+The previously failed Owner UAT check remains **OPEN pending retest**. Independent QA, physical Edge/file-locking safety, merge, release and deployment are separate gates.
 
 ## Excel setup
 
