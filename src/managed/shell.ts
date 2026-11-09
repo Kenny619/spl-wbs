@@ -196,12 +196,21 @@ export function mountManagedShell(
     // Keep the approved concise display label but retain the existing
     // business-day calculation and tooltip/calendar behavior.
     const workdayLabel = inspector.querySelector<HTMLElement>(".workdays-detail small");
-    if (workdayLabel) workdayLabel.textContent = "Days left";
+    if (workdayLabel) {
+      workdayLabel.textContent = "Days left";
+      const remaining = inspector.querySelector<HTMLElement>(".workdays-detail strong");
+      // Managed-only wording. Keep the shared (v18) weekday/holiday arithmetic intact.
+      if (remaining) remaining.textContent = (remaining.textContent ?? "")
+        .replace(/\bworkdays?\b/gi, (word) => word.toLowerCase().endsWith("s") ? "days" : "day");
+    }
   };
   const detailObserver = new MutationObserver(syncDetail);
   detailObserver.observe(inspector, { attributes: true, attributeFilter: ["class", "aria-hidden"] });
   controller.subscribe(syncDetail);
   syncDetail();
+  const calendarHint = doc.querySelector<HTMLElement>(".calendar-hint");
+  if (calendarHint) calendarHint.textContent =
+    "Dates inclusive · remaining days exclude weekends and holidays · blackout does not affect the count · session only";
   const backdrop = doc.getElementById("backdrop");
   if (backdrop) backdrop.setAttribute("hidden", "");
 
