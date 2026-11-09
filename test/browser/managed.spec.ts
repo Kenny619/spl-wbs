@@ -736,7 +736,9 @@ test("UAT-02: managed dark theme has restrained day markers, semantic statuses a
       statuses,
     };
   });
-  expect(styles.weekend).not.toBe("rgb(246, 248, 252)");
+  expect(styles.weekend).toBe("rgb(43, 65, 89)"); // overrides inline #eef3f8
+  const shadeOpacity = await page.locator(".holiday-overlay").first().evaluate(node => getComputedStyle(node).opacity);
+  expect(shadeOpacity).toBe("0.58");
   expect(styles.remaining).not.toBe("rgb(248, 251, 255)");
   expect(styles.dependency).toBe("rgb(180, 216, 250)");
   expect(new Set(styles.statuses.map(item => item.background)).size).toBeGreaterThan(2);
