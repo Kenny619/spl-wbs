@@ -521,9 +521,15 @@ body.spt-managed .managed-project-menu .top-actions .small-action {display:block
 
 /* UAT-02 D1–D5 — managed dark-mode contrast remediation.
    All overrides are scoped: the approved read-only v18 viewer remains intact. */
-body.spt-managed[data-managed-theme="dark"] :is(.weekend,.holiday-overlay) {
-  background-color:#2b4159;
+body.spt-managed[data-managed-theme="dark"] .weekend {
+  background:#2b4159;
   opacity:.58;
+}
+/* Renderer assigns inline background and opacity to dayShade(). The important
+   managed-only override is necessary to keep physical dark-mode weekends muted. */
+body.spt-managed[data-managed-theme="dark"] .holiday-overlay {
+  background:#2b4159 !important;
+  opacity:.58 !important;
 }
 body.spt-managed[data-managed-theme="dark"] .week-holiday {
   background:#526a84;
