@@ -229,3 +229,292 @@ body.spt-managed[data-managed-theme="dark"] .managed-report-preview textarea { b
   color:var(--muted); overflow-wrap:anywhere; }
 body.spt-managed[data-managed-theme="dark"] .managed-recovery-warning {
   background:#4e3c22; color:#ffdfad; border-color:#ad8954; }
+
+
+/* UI-INT-02 — approved DES-010 right-hand Settings and read-only History drawer.
+   Separate managed presentation only; underlying Settings and UpdateHistory engines are unchanged. */
+body.spt-managed .managed-settings[open],
+body.spt-managed .managed-history[open] {
+  position:fixed; inset:0 0 0 auto; margin:0;
+  display:flex; flex-direction:column;
+  height:100dvh; max-height:100dvh; width:min(580px,100vw); max-width:100vw;
+  padding:0; border:0; border-left:1px solid var(--line); border-radius:0;
+  overflow:hidden; box-sizing:border-box;
+  background:var(--panel); color:var(--ink);
+  box-shadow:-14px 0 48px #102b4050;
+}
+body.spt-managed .managed-settings::backdrop,
+body.spt-managed .managed-history::backdrop { background:#102a455e; }
+body.spt-managed .managed-settings-head,
+body.spt-managed .managed-history-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 20px 13px; border-bottom:1px solid var(--line); flex:none;
+}
+body.spt-managed .managed-settings-head h2,
+body.spt-managed .managed-history-head h2 { font-size:19px; }
+body.spt-managed .managed-drawer-tabs {
+  flex:none; display:flex; gap:7px; padding:11px 20px;
+  background:var(--panel); border-bottom:1px solid var(--line);
+}
+body.spt-managed .managed-drawer-tabs button {
+  flex:1; text-align:center; border-radius:7px; padding:9px 10px;
+  color:var(--ink); background:transparent;
+}
+body.spt-managed .managed-drawer-tabs button.active {
+  background:#e8f2fc; color:#145d93; border-color:#aecde7;
+}
+body.spt-managed .managed-settings-body {
+  flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+  padding:6px 20px 28px;
+}
+body.spt-managed .managed-settings-section { padding:17px 0; }
+body.spt-managed .managed-settings-footer { margin-top:16px; }
+
+/* History has its own independent log scroll; header, tabs and filters stay in view. */
+body.spt-managed .managed-history-filters {
+  flex:none; margin:0; padding:14px 20px 9px;
+  border-bottom:1px solid var(--line);
+}
+body.spt-managed .managed-history > .managed-history-note {
+  flex:none; margin:0; padding:9px 20px; font-size:11px;
+}
+body.spt-managed .managed-history-results {
+  flex:1; min-height:0; max-height:none; overflow-y:auto; overscroll-behavior:contain;
+  padding:0 17px 20px;
+}
+body.spt-managed .managed-history-log-head,
+body.spt-managed .managed-history-row {
+  display:grid;
+  grid-template-columns: minmax(98px,120px) minmax(100px,1fr) minmax(160px,1.35fr);
+  align-items:start; column-gap:9px;
+}
+body.spt-managed .managed-history-log-head {
+  position:sticky; top:0; z-index:2;
+  padding:10px 7px; background:var(--panel);
+  border-bottom:1px solid var(--line);
+  font-size:10px; font-weight:750; color:var(--muted);
+}
+body.spt-managed .managed-history-event {
+  border:0; border-left:3px solid #b2cedf;
+  border-radius:0; margin:0; padding:0 0 0 5px;
+  background:transparent;
+}
+body.spt-managed .managed-history-event:nth-of-type(even) { border-left-color:#6ea3c8; }
+body.spt-managed .managed-history-row {
+  border-top:0; border-bottom:1px solid var(--line);
+  padding:11px 7px; font-size:12px;
+}
+body.spt-managed .managed-history-row:hover { background:color-mix(in srgb,var(--panel) 75%,#d2eaf8); }
+body.spt-managed .managed-history-when {
+  display:flex; flex-direction:column; gap:4px;
+  font-size:11px; color:var(--muted); overflow-wrap:anywhere;
+}
+body.spt-managed .managed-history-when small { font-size:10px; }
+body.spt-managed .managed-history-task { line-height:1.4; overflow-wrap:anywhere; }
+body.spt-managed .managed-history-action { min-width:0; overflow-wrap:anywhere; }
+body.spt-managed .managed-history-action > strong { margin-bottom:6px; }
+body.spt-managed .managed-history-values { grid-template-columns:1fr; }
+body.spt-managed .managed-history-values span { overflow-wrap:anywhere; }
+body.spt-managed .managed-history-values pre { max-width:100%; overflow-wrap:anywhere; }
+body.spt-managed[data-managed-theme="dark"] .managed-drawer-tabs button.active {
+  background:#2b4a6c; color:#dbecff; border-color:#6388ad;
+}
+@media (max-width:560px) {
+  body.spt-managed .managed-history-filters { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  body.spt-managed .managed-history-log-head { display:none; }
+  body.spt-managed .managed-history-row { grid-template-columns:minmax(95px,1fr) 1.5fr; }
+  body.spt-managed .managed-history-action { grid-column:1/-1; }
+  body.spt-managed .managed-settings-body { padding-inline:15px; }
+  body.spt-managed .managed-settings-head,body.spt-managed .managed-history-head,
+  body.spt-managed .managed-drawer-tabs { padding-inline:15px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  body.spt-managed .managed-settings, body.spt-managed .managed-history { transition:none; }
+}
+
+
+/* UI-INT-01/03: real-workbook Schedule and Reports workspace, DES-010 visual direction.
+   Managed build only. Underlying v18 DOM/event handlers are MOVED, not duplicated. */
+body.spt-managed .app { height:100dvh; min-height:0; overflow:hidden; }
+body.spt-managed .main {
+  display:flex; flex-direction:column; height:100dvh; min-height:0;
+  padding:0; width:100%; overflow:hidden;
+}
+body.spt-managed .topbar {
+  display:grid;
+  grid-template-columns:38px minmax(100px,1fr) max-content max-content 115px;
+  align-items:center; gap:13px; flex:none;
+  padding:11px 18px; min-height:69px;
+  background:var(--panel); border-bottom:1px solid var(--line);
+  position:relative; z-index:11;
+}
+body.spt-managed .managed-brand {
+  display:grid; place-items:center; width:36px; height:36px; overflow:hidden;
+}
+body.spt-managed .managed-brand img {display:block; width:34px; height:34px; object-fit:contain;}
+body.spt-managed .managed-project-heading {min-width:0;}
+body.spt-managed .managed-project-heading #title {
+  margin:0; font-size:16px; letter-spacing:-.25px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+body.spt-managed .managed-project-heading .eyebrow,
+body.spt-managed .managed-project-heading #subtitle { display:none; }
+body.spt-managed .managed-project-heading :is(#provenance,#notice) {
+  max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  font-size:10px;
+}
+body.spt-managed .managed-main-nav {display:flex;align-items:center;gap:5px;white-space:nowrap;}
+body.spt-managed .managed-main-nav .managed-action {
+  padding:9px 14px; border-radius:7px;
+  color:var(--muted); background:transparent; border-color:transparent;
+}
+body.spt-managed .managed-main-nav .managed-action.active {
+  background:#e5f1fa; color:#185b87; border-color:#b6d7e8;
+}
+body.spt-managed .managed-global-settings {justify-self:end;min-width:100px;}
+body.spt-managed .managed-project-menu {position:relative; min-width:100px;}
+body.spt-managed .managed-project-menu > summary {
+  list-style:none; cursor:pointer; text-align:center; padding:9px 13px;
+  border:1px solid var(--line); border-radius:7px; background:var(--panel);
+  color:var(--ink); font-size:12px; font-weight:650;
+}
+body.spt-managed .managed-project-menu > summary::-webkit-details-marker{display:none}
+body.spt-managed .managed-project-menu > summary::after{content:" ▾";color:var(--muted)}
+body.spt-managed .managed-project-menu[open] .top-actions {
+  position:absolute; top:calc(100% + 6px); right:0; z-index:25;
+  display:flex; flex-direction:column; align-items:stretch;
+  width:min(300px,calc(100vw - 30px)); max-height:70dvh; overflow:auto;
+  padding:12px; gap:8px; background:var(--panel);
+  border:1px solid var(--line); border-radius:9px;
+  box-shadow:0 12px 33px #07192c39;
+}
+body.spt-managed .managed-project-menu:not([open]) .top-actions {display:none;}
+body.spt-managed .managed-project-menu .top-actions :is(button,select){width:100%;max-width:100%; }
+body.spt-managed .managed-project-menu .managed-chooser{display:block;}
+body.spt-managed .managed-project-menu .managed-chooser label{display:block;}
+body.spt-managed .managed-project-menu .managed-chooser select{margin-top:5px;}
+body.spt-managed .stats, body.spt-managed .mobile-note{display:none;}
+body.spt-managed .managed-banner {
+  flex:none; margin:8px 14px 0; padding:7px 11px; font-size:11px;
+  max-height:84px; overflow:auto;
+}
+body.spt-managed .managed-schedule-body {
+  display:grid; grid-template-columns:minmax(0,61fr) minmax(340px,39fr);
+  flex:1; min-height:0; gap:10px; padding:10px 14px 12px;
+}
+body.spt-managed .managed-schedule-body .chart-card {
+  min-width:0; min-height:0; height:100%; display:flex; flex-direction:column;
+}
+body.spt-managed .managed-schedule-body .chart-top{flex:none;padding:12px 14px;}
+body.spt-managed .managed-schedule-body .gantt {
+  flex:1; height:auto; min-height:0; min-width:0;
+  --grid:clamp(365px,52%,500px);
+}
+body.spt-managed .managed-schedule-body .task-pane,
+body.spt-managed .managed-schedule-body .timeline-pane {min-height:0;}
+body.spt-managed .managed-schedule-body .detail-panel {
+  position:relative; inset:auto; right:auto; top:auto; bottom:auto;
+  display:block; transform:none!important; transition:none;
+  width:auto; height:100%; max-height:100%; min-width:0; min-height:0;
+  padding:18px 18px 28px; overflow-y:auto; overscroll-behavior:contain;
+  background:var(--panel); color:var(--ink);
+  box-shadow:none; border:1px solid var(--line); border-radius:10px;
+  z-index:auto;
+}
+body.spt-managed #backdrop {display:none!important;}
+body.spt-managed .managed-schedule-body .detail-panel:not(.open) #close {display:none;}
+body.spt-managed .managed-schedule-body .detail-panel .managed-empty-detail {
+  color:var(--muted); font-size:12px; margin:10px 0;
+}
+body.spt-managed .managed-schedule-body .detail-panel .managed-empty-detail[hidden] {
+  display:none!important;
+}
+body.spt-managed .managed-schedule-body .managed-editor {min-width:0;}
+body.spt-managed .managed-schedule-body .managed-fields{grid-template-columns:repeat(2,minmax(0,1fr));}
+body.spt-managed .managed-schedule-body .managed-field{min-width:0;}
+body.spt-managed .managed-schedule-body .managed-actions{gap:6px;}
+
+/* Reports: retained real committed-only generator, now a full-height nonmodal workspace.
+   Existing global navigation stays available; only the textarea content scrolls. */
+body.spt-managed-report-open .managed-schedule-body{display:none!important;}
+body.spt-managed .managed-reports[open] {
+  display:flex; flex-direction:column; flex:1;
+  position:relative; inset:auto; width:auto; max-width:none;
+  height:auto; max-height:none; min-width:0; min-height:0; overflow:hidden;
+  margin:10px 14px 12px; padding:15px 19px;
+  border:1px solid var(--line); border-radius:10px;
+  box-shadow:none;
+}
+body.spt-managed .managed-reports-head,
+body.spt-managed .managed-reports-controls,
+body.spt-managed .managed-reports-actions,
+body.spt-managed .managed-report-warning,
+body.spt-managed .managed-report-status{flex:none;}
+body.spt-managed .managed-reports .managed-report-preview {
+  flex:1; min-height:0; display:flex; flex-direction:column;
+}
+body.spt-managed .managed-reports .managed-report-preview textarea {
+  flex:1; min-height:0; max-height:none; height:100%;
+  resize:none; overflow:auto; overscroll-behavior:contain;
+}
+body.spt-managed[data-managed-theme="dark"] .managed-main-nav .managed-action.active {
+  background:#2a4765;color:#d2e6fb;border-color:#5e88aa;
+}
+@media(max-width:1190px) {
+  body.spt-managed .topbar {
+    grid-template-columns:38px minmax(0,1fr) auto auto 108px;
+    gap:8px; padding-inline:12px;
+  }
+  body.spt-managed .managed-schedule-body{grid-template-columns:minmax(0,59fr) minmax(290px,41fr);}
+  body.spt-managed .managed-schedule-body .managed-fields{grid-template-columns:1fr;}
+}
+@media(max-width:880px) {
+  body.spt-managed .topbar {
+    grid-template-columns:38px minmax(0,1fr) auto 110px;
+    grid-template-areas:"brand title project settings" "nav nav nav nav";
+  }
+  body.spt-managed .managed-brand{grid-area:brand;}
+  body.spt-managed .managed-project-heading{grid-area:title;}
+  body.spt-managed .managed-main-nav{grid-area:nav;}
+  body.spt-managed .managed-project-menu{grid-area:project;}
+  body.spt-managed .managed-global-settings{grid-area:settings;}
+  body.spt-managed .managed-schedule-body{grid-template-columns:minmax(0,1fr) minmax(245px,41%);}
+}
+@media(max-width:640px) {
+  body.spt-managed .app,body.spt-managed .main {height:auto;min-height:100dvh;overflow:visible;}
+  body.spt-managed .managed-schedule-body {display:flex;flex-direction:column;min-height:670px;}
+  body.spt-managed .managed-schedule-body .chart-card {height:490px;flex:none;}
+  body.spt-managed .managed-schedule-body .detail-panel {min-height:280px;max-height:440px;}
+  body.spt-managed .managed-reports[open]{min-height:650px;}
+  body.spt-managed .managed-schedule-body .managed-fields{grid-template-columns:1fr;}
+}
+
+
+/* DES-010 Gantt-local scope; only existing status filtering is implemented. */
+body.spt-managed .managed-gantt-scope {
+  display:flex; align-items:center; gap:4px; flex-wrap:wrap;
+  padding:2px; margin-left:auto; max-width:100%;
+}
+body.spt-managed .managed-gantt-scope button {
+  min-height:31px; border:1px solid var(--line); border-radius:6px;
+  background:var(--panel); color:var(--muted); padding:5px 9px;
+  font-size:11px; font-weight:650;
+}
+body.spt-managed .managed-gantt-scope button.active {
+  color:#165a86; background:#e4f2fa; border-color:#b0d0e5;
+}
+body.spt-managed .managed-gantt-scope button:disabled {opacity:.45;cursor:not-allowed;}
+body.spt-managed .managed-gantt-scope-note {
+  display:block; width:100%; font-size:10px; color:var(--muted); text-align:right;
+}
+body.spt-managed[data-managed-theme="dark"] .managed-gantt-scope button.active {
+  background:#2a4a65;color:#e5effe;border-color:#6583a1;
+}
+@media(max-width:1070px){
+ body.spt-managed .managed-gantt-scope{margin-left:0;justify-content:start;}
+ body.spt-managed .managed-gantt-scope-note{text-align:left;}
+}
+
+/* Responsive managed-only control density; the original v18 viewer is untouched. */
+body.spt-managed .managed-schedule-body .chart-top .toolbar .tool {font-size:11px;padding-inline:8px;}
+body.spt-managed .managed-project-menu .top-actions .small-action {display:block!important;}

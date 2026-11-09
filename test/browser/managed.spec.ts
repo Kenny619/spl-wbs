@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 import ExcelJS from "exceljs";
 import path from "node:path";
+import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { spawn } from "node:child_process";
 
 let fileUrl = "";
 let base64 = "";
+let packagedUatBase64 = "";
 
 test.beforeAll(async () => {
   const book = new ExcelJS.Workbook();
@@ -21,6 +23,11 @@ test.beforeAll(async () => {
     child.on("close", (code) => code === 0 ? resolve() : reject(new Error("Managed build failed: " + code)));
   });
   fileUrl = pathToFileURL(path.resolve("dist-managed/managed.html")).href;
+  // This is the REAL Excel file shipped to the owner, not the small synthetic
+  // one-task workbook used by other managed tests.
+  packagedUatBase64 = (await readFile(path.resolve(
+    "dist-managed/SPT-WBS_DES010_Synthetic_UAT.xlsx",
+  ))).toString("base64");
 }, { timeout: 120000 });
 
 async function openManaged(page: import("@playwright/test").Page) {
@@ -61,6 +68,7 @@ async function openManaged(page: import("@playwright/test").Page) {
   }, { encoded: base64 });
   await page.goto(fileUrl);
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
   await expect(page.locator("#title")).toHaveText("synthetic-demo");
   await expect(page.locator(".task-row")).toHaveCount(1);
@@ -186,7 +194,9 @@ test("Change History is read-only, grouped and filtered, with task entry and saf
   // Global toolbar is behind the task-detail overlay; close details first.
   await page.locator("#close").click();
 
-  await page.getByRole("button", { name: "History", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("dialog", { name: "Settings" })
+    .getByRole("button", { name: "Change History" }).click();
   let history = page.getByRole("dialog", { name: "Change History" });
   await expect(history.getByText("This workbook has no saved Change History yet.")).toBeVisible();
   await history.getByRole("button", { name: "Close" }).click();
@@ -201,14 +211,16 @@ test("Change History is read-only, grouped and filtered, with task entry and saf
   await page.getByRole("button", { name: "Task history" }).click();
   history = page.getByRole("dialog", { name: "Change History" });
   await expect(history.getByText("1 saved change event(s)")).toBeVisible();
-  await expect(history.getByText(/2 field change\(s\)/)).toBeVisible();
+  await expect(history.locator(".managed-history-row")).toHaveCount(2);
+  await expect(history.locator(".managed-history-when small")).toHaveCount(2);
+  await expect(history.locator(".managed-history-event")).toHaveCount(1);
   await expect(history.getByLabel("History task filter")).toHaveValue("501");
   expect(await history.locator("img").count()).toBe(0);
   await history.getByText("Expand full before / after").click();
   await expect(history.locator("pre")).toContainText("<img src=x onerror=alert('x')>");
   await history.getByLabel("History field filter").selectOption("Title");
-  await expect(history.getByText(/1 field change\(s\)/)).toBeVisible();
-  await expect(history.locator(".managed-history-row strong")).toContainText("Title");
+  await expect(history.locator(".managed-history-row")).toHaveCount(1);
+  await expect(history.locator(".managed-history-action > strong")).toHaveText("Title");
   await history.getByLabel("History end date").fill("2000-01-01");
   await expect(history.getByText("No changes match these filters.")).toBeVisible();
   await history.getByRole("button", { name: "Close" }).click();
@@ -300,7 +312,9 @@ test("Change History uses the Settings timezone without mutating saved UTC audit
   const settings = page.getByRole("dialog", { name: "Settings" });
   await settings.getByLabel("Display timezone").selectOption("Asia/Tokyo");
   await settings.getByRole("button", { name: "Close" }).click();
-  await page.getByRole("button", { name: "History", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("dialog", { name: "Settings" })
+    .getByRole("button", { name: "Change History" }).click();
   const history = page.getByRole("dialog", { name: "Change History" });
   await expect(history.getByText(/Times are displayed in Asia\/Tokyo/)).toBeVisible();
   await expect(history.getByText(/1 saved change event/)).toBeVisible();
@@ -412,6 +426,7 @@ test("Stage A inspector shows READY state without modifying any workbook bytes",
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
   await page.locator("#close").click();
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Inspect Save State" }).click();
   const dialog = page.getByRole("dialog", { name: "Inspect Save State" });
   await expect(dialog.getByText("Inspection: READY")).toBeVisible();
@@ -442,6 +457,7 @@ test("Stage A orphan recovery file blocks direct Save and inspector preserves al
   await page.locator("#close").click();
   await page.getByRole("dialog", { name: "Unsaved changes" })
     .getByRole("button", { name: "Discard" }).click();
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Inspect Save State" }).click();
   const dialog = page.getByRole("dialog", { name: "Inspect Save State" });
   await expect(dialog.getByText("Inspection: STOP")).toBeVisible();
@@ -558,8 +574,10 @@ test("Failed workbook selection keeps previous verified source, editable state a
     files.set("unreadable.xlsx", new TextEncoder().encode("corrupt ZIP bytes"));
   });
   // After a folder has been loaded, the toolbar control is named Change folder.
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Change folder" }).click();
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
+  await page.locator(".managed-project-menu summary").click();
   await page.getByLabel("Active Excel workbook").selectOption("unreadable.xlsx");
   await expect(page.getByText(/Managed workbook unavailable:.*Previous verified workbook remains active/)).toBeVisible();
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
@@ -589,6 +607,7 @@ test("Failed new-folder import does not half-switch active directory or lose las
       configurable: true, value: async () => invalidDir,
     });
   });
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Change folder" }).click();
   await expect(page.getByText(/Previous verified workbook remains active/)).toBeVisible();
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
@@ -596,4 +615,250 @@ test("Failed new-folder import does not half-switch active directory or lose las
   await page.getByRole("button", { name: "Edit task" }).click();
   await page.getByLabel("Task title").fill("Still editing last-good workbook");
   await expect(page.getByLabel("Task title")).toHaveValue("Still editing last-good workbook");
+});
+
+
+test("DES-010 real managed shell anchors inspector, navigation and local Gantt controls", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openManaged(page);
+  await expect(page.locator(".managed-brand img")).toBeVisible();
+  await expect(page.locator(".managed-main-nav")).toContainText("Schedule");
+  await expect(page.locator(".managed-main-nav")).toContainText("Reports");
+  await expect(page.locator(".managed-gantt-scope [data-managed-scope='workstreams']")).toHaveAttribute("aria-pressed", "true");
+  const chart = await page.locator(".managed-schedule-body .chart-card").boundingBox();
+  const detail = await page.locator(".managed-schedule-body #panel").boundingBox();
+  expect(chart).not.toBeNull();
+  expect(detail).not.toBeNull();
+  expect(detail!.x).toBeGreaterThan(chart!.x + chart!.width - 2);
+  expect(Math.abs(detail!.height - chart!.height)).toBeLessThanOrEqual(4);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  await page.locator(".managed-gantt-scope [data-managed-scope='exceptions']").click();
+  await expect(page.locator(".managed-gantt-scope [data-managed-scope='exceptions']")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".task-row")).toHaveCount(0); // The synthetic task is In Progress, not At Risk/Blocked.
+  await page.locator(".managed-gantt-scope [data-managed-scope='workstreams']").click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await testInfo.attach("managed-DES010-schedule-1366", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+});
+
+test("DES-010 real Settings and persisted History occupy one right drawer slot", async ({ page }, testInfo) => {
+  page.on("dialog", async d => { await d.accept(); });
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await openManaged(page);
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("History drawer fixture");
+  await page.getByRole("button", { name: "Save to workbook" }).click();
+  await expect(page.getByText(/Verified Save: task and UpdateHistory persisted/)).toBeVisible();
+
+  const settingsLaunch = page.getByRole("button", { name: "Settings", exact: true });
+  await settingsLaunch.click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await expect(settings.getByRole("button", { name: "Change History" })).toBeVisible();
+  const settingsRect = await settings.boundingBox();
+  expect(settingsRect!.x + settingsRect!.width).toBeCloseTo(1024, 0);
+  await settings.getByRole("button", { name: "Change History" }).click();
+  const history = page.getByRole("dialog", { name: "Change History" });
+  await expect(history.locator(".managed-history-row")).toHaveCount(1);
+  await expect(history.locator(".managed-history-row")).toContainText("History drawer fixture");
+  await expect(history.locator(".managed-history-when small")).toContainText("Save");
+  const historyRect = await history.boundingBox();
+  expect(historyRect!.x).toBeCloseTo(settingsRect!.x, 0);
+  await testInfo.attach("managed-DES010-history-1024", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  await history.getByRole("button", { name: "Preferences" }).click();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+});
+
+test("DES-010 real Reports uses fixed navigation and committed-only scroll workspace", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openManaged(page);
+  const nav = page.locator(".managed-main-nav");
+  const before = await nav.boundingBox();
+  await nav.locator("[data-managed-view='reports']").click();
+  await expect(page.locator("body")).toHaveClass(/spt-managed-report-open/);
+  const report = page.getByRole("dialog", { name: "Output Reports" });
+  await expect(report).toBeVisible();
+  await expect(page.locator(".managed-schedule-body")).toBeHidden();
+  await report.getByRole("button", { name: "Generate / Refresh" }).click();
+  const preview = report.getByRole("textbox", { name: "Report preview" });
+  await expect(preview).toHaveValue(/Synthetic milestone/);
+  const after = await nav.boundingBox();
+  expect(Math.abs(before!.x - after!.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs(before!.y - after!.y)).toBeLessThanOrEqual(2);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  await testInfo.attach("managed-DES010-reports-1366", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  await nav.locator("[data-managed-view='schedule']").click();
+  await expect(page.locator("body")).not.toHaveClass(/spt-managed-report-open/);
+  await expect(page.locator(".managed-schedule-body")).toBeVisible();
+});
+
+
+test("DES-010 Project menu dismisses on outside, Escape and action while retaining recovery", async ({ page }) => {
+  await openManaged(page);
+  const menu = page.locator(".managed-project-menu");
+  const toggle = menu.locator("summary");
+  await expect(menu).not.toHaveAttribute("open", "");
+  await toggle.click();
+  await expect(menu).toHaveAttribute("open", "");
+  await page.locator(".managed-main-nav [data-managed-view='schedule']").click();
+  await expect(menu).not.toHaveAttribute("open", "");
+  await toggle.click();
+  await page.keyboard.press("Escape");
+  await expect(menu).not.toHaveAttribute("open", "");
+  await toggle.click();
+  await menu.getByRole("button", { name: "Inspect Save State" }).click();
+  await expect(menu).not.toHaveAttribute("open", "");
+  const inspect = page.getByRole("dialog", { name: "Inspect Save State" });
+  await expect(inspect.getByText("Inspection: READY")).toBeVisible();
+  await inspect.getByRole("button", { name: "Close" }).click();
+});
+
+
+test("DES-010 Gantt scope keeps manual status filters and avoids no-op draft warnings", async ({ page }) => {
+  await openManaged(page);
+  await page.locator("#filterToggle").click();
+  const inProgress = page.locator('#filterStatuses input[value="In Progress"]');
+  await inProgress.check();
+  await page.locator("#filterDone").click();
+  await expect(inProgress).toBeChecked();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+
+  const scope = page.locator(".managed-gantt-scope");
+  // Workstreams is already selected: clicking again must not reset a manual filter.
+  await scope.locator('[data-managed-scope="workstreams"]').click();
+  await expect(inProgress).toBeChecked();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Pending manual filter preserved");
+  await scope.locator('[data-managed-scope="workstreams"]').click();
+  await expect(page.getByRole("dialog", { name: "Unsaved changes" })).toBeHidden();
+  await expect(page.getByLabel("Task title")).toHaveValue("Pending manual filter preserved");
+
+  // Changing scopes is still a real navigation and remains protected by the shared guard.
+  await scope.locator('[data-managed-scope="exceptions"]').click();
+  await expect(page.getByRole("dialog", { name: "Unsaved changes" })).toBeVisible();
+  await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Cancel" }).click();
+  await expect(inProgress).toBeChecked();
+  await expect(page.getByLabel("Task title")).toHaveValue("Pending manual filter preserved");
+  await scope.locator('[data-managed-scope="exceptions"]').click();
+  await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Discard" }).click();
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await scope.locator('[data-managed-scope="workstreams"]').click();
+  await expect(inProgress).toBeChecked();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+});
+
+
+for (const width of [1440, 1024, 860]) {
+  test(`DES-010 managed ${width}px: Inspector is readable, accessible when empty, and workday label concise`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 768 });
+    await openManaged(page);
+    const inspector = page.locator("#panel");
+    await expect(inspector).toBeVisible();
+    await expect(page.locator(".managed-global-settings")).toBeVisible();
+    await expect(page.locator(".managed-main-nav [data-managed-view='reports']")).toBeVisible();
+    await expect(inspector.locator(".workdays-detail small")).toHaveText("Days left");
+    const panelBox = await inspector.boundingBox();
+    expect(panelBox).not.toBeNull();
+    expect(panelBox!.x + panelBox!.width).toBeLessThanOrEqual(width + 2);
+    const gantt = await page.locator("#gantt").boundingBox();
+    expect(gantt).not.toBeNull();
+    expect(gantt!.height).toBeGreaterThan(260);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await page.locator("#close").click();
+    const empty = page.locator(".managed-empty-detail");
+    await expect(empty).toBeVisible();
+    await expect(inspector).not.toHaveAttribute("aria-hidden", "true");
+    await expect(page.getByRole("region", { name: "Selected task details" }))
+      .toContainText("Select a task to inspect its details.");
+    await testInfo.attach(`managed-DES010-empty-inspector-${width}`, {
+      body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+    });
+    await page.locator(".task-row").first().click();
+    await expect(empty).toBeHidden();
+    await expect(inspector).not.toHaveAttribute("aria-hidden", "true");
+    await expect(inspector).toHaveAttribute("aria-labelledby", "detailTitle");
+  });
+}
+
+test("Owner UAT kit: packaged 23-task XLSX imports, allows direct Save and writes real History", async ({ page }) => {
+  const fileName = "SPT-WBS_DES010_Synthetic_UAT.xlsx";
+  const messages: string[] = [];
+  page.on("pageerror", error => messages.push("JS: " + error.message));
+  page.on("console", message => { if (message.type() === "error") messages.push(message.text()); });
+  page.on("dialog", async dialog => { await dialog.accept(); });
+  await page.addInitScript(({ encoded, name }) => {
+    const decoded = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
+    const files = new Map<string, Uint8Array>([[name, decoded]]);
+    const dir = {
+      kind: "directory",
+      name: "disposable-owner-uat",
+      async *entries() {
+        for (const fileName of files.keys()) yield [fileName, { kind:"file", name:fileName }];
+      },
+      async getFileHandle(fileName: string, options?: { create?: boolean }) {
+        if (!files.has(fileName)) {
+          if (!options?.create) throw new DOMException("not found", "NotFoundError");
+          files.set(fileName, new Uint8Array());
+        }
+        return {
+          kind: "file",
+          name: fileName,
+          async getFile() {
+            return new File([new Uint8Array(files.get(fileName)!)], fileName, {
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+          },
+          async createWritable() {
+            let pending = new Uint8Array();
+            return {
+              async write(data: Uint8Array) { pending = new Uint8Array(data); },
+              async close() { files.set(fileName, pending); },
+            };
+          },
+        };
+      },
+      async removeEntry(fileName: string) { files.delete(fileName); },
+    };
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true, value: async () => dir,
+    });
+    Object.defineProperty(window, "__ownerUatFiles", {
+      configurable: true, value: files,
+    });
+  }, { encoded: packagedUatBase64, name:fileName });
+  await page.goto(fileUrl);
+  const menu = page.locator(".managed-project-menu");
+  await menu.locator("summary").click();
+  await menu.getByRole("button", { name:"Choose project folder" }).click();
+  const banner = page.locator(".managed-banner");
+  await expect(banner, "Packaged UAT workbook must import; browser errors: " + messages.join("; ")).toContainText(
+    "Workbook ready", { timeout:15000 },
+  );
+  await expect(page.locator("#title")).toHaveText("SPT-WBS_DES010_Synthetic_UAT");
+  await expect(page.locator(".task-row").first()).toBeVisible();
+  await expect(page.getByLabel("Active Excel workbook")).toHaveValue(fileName);
+  // Must be writable; previous package mistakenly included unsupported AutoFilter.
+  await page.locator(".task-row").first().click();
+  await expect(page.getByRole("button", { name:"Edit task" })).toBeEnabled();
+  await page.getByRole("button", { name:"Edit task" }).click();
+  await page.getByLabel("Task title").fill("UAT kit verified synthetic update");
+  await page.getByRole("button", { name:"Save to workbook" }).click();
+  await expect(banner).toContainText("Verified Save: task and UpdateHistory persisted", { timeout:15000 });
+  const after = await page.evaluate(async filename => {
+    const files = (window as typeof window & { __ownerUatFiles: Map<string,Uint8Array> }).__ownerUatFiles;
+    return { names:[...files.keys()], source:Array.from(files.get(filename)!) };
+  },fileName);
+  expect(after.names).toContain("SPT-WBS_DES010_Synthetic_UAT.backup.xlsx");
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.load(Uint8Array.from(after.source) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  expect(book.getWorksheet("ProjectWBS")?.getCell("B2").value).toBe("UAT kit verified synthetic update");
+  expect(book.getWorksheet("UpdateHistory")).toBeTruthy();
+  expect(messages).toEqual([]);
 });

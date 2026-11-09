@@ -8,6 +8,8 @@ import { preflightManagedWorkbook } from "./preflight";
 import { openManagedHistory } from "./historyUi";
 import { ManagedSettings } from "./settingsUi";
 import { ManagedReports } from "./reportsUi";
+import { mountManagedShell } from "./shell";
+import { MANAGED_APP_VERSION as APP_VERSION } from "./version";
 import { openManagedRecovery } from "./recoveryUi";
 import type { EditableField, EditValue } from "./workbookCandidate";
 
@@ -18,7 +20,7 @@ type PickerHost = typeof globalThis & {
   showDirectoryPicker?: (options?: { mode?: "read" | "readwrite" }) => Promise<FileSystemDirectoryHandle>;
 };
 const STORAGE_PREFIX = "spt-wbs:managed:lastWorkbook:";
-const APP_VERSION = "0.1.0-dev";
+
 const FIELDS: Array<{ field: EditableField; label: string; kind: "text" | "date" | "number" | "textarea" | "select" }> = [
   { field: "Title", label: "Task title", kind: "text" },
   { field: "AssignedTo", label: "Owner", kind: "text" },
@@ -111,12 +113,6 @@ export class ManagedEditor {
     label.append(this.fileSelect);
     wrap.append(label);
     actions.prepend(wrap);
-    const historyButton = element(doc, "button", "managed-action", "History");
-    historyButton.type = "button";
-    historyButton.addEventListener("click", () => {
-      this.guard(() => { void this.showHistory(); });
-    });
-    actions.prepend(historyButton);
     const inspectButton = element(doc, "button", "managed-action", "Inspect Save State");
     inspectButton.type = "button";
     inspectButton.addEventListener("click", () => {
@@ -176,7 +172,10 @@ export class ManagedEditor {
       }
       originalPatch(patch);
     };
-    this.settings = new ManagedSettings(doc, controller, (action) => this.guard(action));
+    this.settings = new ManagedSettings(
+      doc, controller, (action) => this.guard(action),
+      () => this.guard(() => { void this.showHistory(); }),
+    );
     this.reports = new ManagedReports(doc, () => ({
       fileName: this.sourceName,
       tasks: this.busy ? null : this.controller.getState().tasks,
@@ -184,6 +183,7 @@ export class ManagedEditor {
       timeZone: this.settings.getTimeZone(),
       hasUnsavedDraft: this.isDirty(),
     }));
+    mountManagedShell(doc, controller, this.reports, this.settings, (action) => this.guard(action));
     controller.subscribe(() => this.render());
     doc.defaultView?.addEventListener("beforeunload", (event) => {
       if (!this.isDirty()) return;
@@ -243,13 +243,17 @@ export class ManagedEditor {
       return;
     }
     let dir: FileSystemDirectoryHandle;
-    try { dir = await picker({ mode: "readwrite" }); }
+    try { dir = await picker.call(globalThis, { mode: "readwrite" }); }
     catch (error) {
-      if (error instanceof Error && error.name === "AbortError") return;
-      this.message = "Folder selection failed: " + errorMessage(error);
+      this.message = error instanceof Error && error.name === "AbortError"
+        ? "Folder selection cancelled; no workbook was changed."
+        : "Folder selection failed: " + errorMessage(error) +
+          ". Check that Edge permits local folder access.";
       this.render();
       return;
     }
+    this.message = "Scanning selected folder " + dir.name + " for .xlsx workbooks…";
+    this.render();
     const found: string[] = [];
     try {
       for await (const [name, handle] of (dir as DirectoryWithEntries).entries()) {
@@ -296,7 +300,9 @@ export class ManagedEditor {
       await this.controller.chooseFile(file);
       const loaded = this.controller.getState();
       if (!loaded.tasks || loaded.fileName !== name || loaded.loadError) {
-        throw new Error("Workbook import failed; see the import errors.");
+        const details = loaded.loadError?.slice(0, 3).map((issue) => issue.message).join("; ") ||
+          loaded.notice || "Invalid workbook or unsupported worksheet data.";
+        throw new Error("Workbook import failed: " + details);
       }
       // Commit the new selection in one step, after its real import succeeds.
       this.directory = targetDir;
@@ -403,7 +409,9 @@ export class ManagedEditor {
     }
     const timeZone = this.settings.getTimeZone();
     try {
-      await openManagedHistory(this.doc, this.loadedBytes, { taskId, timeZone });
+      await openManagedHistory(this.doc, this.loadedBytes, {
+        taskId, timeZone, onSettings: () => this.guard(() => this.settings.open()),
+      });
     } catch (error) {
       this.message = "Unable to open Change History: " + errorMessage(error);
       this.render();

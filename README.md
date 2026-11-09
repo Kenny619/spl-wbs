@@ -2,6 +2,18 @@
 
 # Gantt Viewer
 
+## Excel Managed Variant — DES-010 owner UAT (development only)
+
+**Current corrected UAT kit:** [Download the complete six-file ZIP from GitHub Actions run #42552811227](https://github.com/Kenny619/spl-wbs/actions/runs/42552811227/artifacts/13646311446). Includes `managed.html`, `SPT-WBS_DES010_Synthetic_UAT.xlsx`, `START-HERE.txt`, `README-OWNER-UAT.txt`, `UAT-RESULTS-TEMPLATE.md`, and `SHA256SUMS.txt`. The earlier kit is **superseded** because the initial project picker was misplaced and the example workbook included unsupported AutoFilter metadata.
+
+1. Download and **extract** the ZIP; do not open HTML from inside the archive.
+2. Create an **empty disposable local folder** and **copy only the supplied XLSX** into it.
+3. Open the newly extracted `managed.html` in Microsoft Edge (Ctrl+O).
+4. Open **Project → Choose project folder**, choose the disposable folder, and confirm the workbook name and 23 task rows appear.
+5. If nothing loads, report the **exact status banner text**, Edge version, and whether an Edge permission prompt appeared. Do **not** use any real corporate workbook.
+
+This kit was verified for ZIP integrity, file checksums and supported XLSX sample structure, and the packaged workbook passed automated Chromium import and disposable Save/History regression at [PR #32 commit `52fdb617`](https://github.com/Kenny619/spl-wbs/pull/32). It still needs actual corporate Edge UAT; no release or write-safety acceptance is implied. This managed UAT is separate from the read-only `dist/index.html` viewer described below.
+
 Read-only schedule viewer for one project. Open a SharePoint List `.xlsx` export and review the WBS, dates, progress, and calendar in the browser. The viewer never writes back to the workbook or to SharePoint.
 
 Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address. Choose **Choose workbook**, or drop an `.xlsx` file onto the page.
