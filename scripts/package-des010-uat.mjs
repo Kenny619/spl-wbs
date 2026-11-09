@@ -68,12 +68,20 @@ sheet.getRow(1).font = { bold:true, color:{ argb:"FFFFFFFF" } };
 sheet.getRow(1).fill = { type:"pattern", pattern:"solid", fgColor:{ argb:"FF175C89" } };
 sheet.getRow(1).height = 23;
 for (let c=1;c<=headers.length;c++) sheet.getColumn(c).width = [10,35,12,14,12,16,16,11,17,19,25,12,12,18,38,42,24][c-1];
-sheet.autoFilter = { from:"A1",to:"Q24" };
+// Do not add worksheet AutoFilter: the managed v1 fail-closed preflight expressly rejects it.
 const workbookPath = join(dist,"SPT-WBS_DES010_Synthetic_UAT.xlsx");
 await workbook.xlsx.writeFile(workbookPath);
 const verify = new ExcelJS.Workbook();
 await verify.xlsx.readFile(workbookPath);
 if (verify.getWorksheet("ProjectWBS")?.rowCount !== 24) throw new Error("Packaged workbook failed roundtrip.");
+// Validate the raw sheet against the exact unsupported-feature gate before distributing
+// a workbook that owner UAT needs to save. A roundtrip through ExcelJS alone is insufficient.
+const JSZip = (await import("jszip")).default;
+const sourceZip = await JSZip.loadAsync(await readFile(workbookPath));
+const worksheetXML = await sourceZip.file("xl/worksheets/sheet1.xml")?.async("string");
+if (!worksheetXML || /<(?:f|drawing|legacyDrawing|tableParts|pivotTable|extLst|oleObjects|controls|sheetProtection|conditionalFormatting|dataValidations|hyperlinks|mergeCells|autoFilter|protectedRanges|customSheetViews|scenarios)\\b/i.test(worksheetXML)) {
+  throw new Error("Owner UAT workbook includes an unsupported Excel worksheet feature; refusing to package.");
+}
 
 const start = [
   "SPT-WBS DES-010 — COMPLETE Owner UAT Kit",
@@ -86,6 +94,7 @@ const start = [
   "3. COPY SPT-WBS_DES010_Synthetic_UAT.xlsx into that folder; keep the original untouched.",
   "4. Open managed.html in Microsoft Edge (Ctrl+O).",
   "5. Select Project > Choose project folder, then select your disposable working folder.",
+  "   Confirm the workbook title and 23 tasks appear. If not, record the exact status line.",
   "6. Follow README-OWNER-UAT.txt and fill in UAT-RESULTS-TEMPLATE.md.",
   "",
   "Do not merge, release or deploy on the basis of this development-preview package."
