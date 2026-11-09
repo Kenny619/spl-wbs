@@ -352,7 +352,8 @@ test("Output Reports uses committed data only with unsaved draft, then copies ex
   const copied = await page.evaluate(() =>
     (window as unknown as { __copiedReport: string }).__copiedReport);
   expect(copied).toBe(snapshot);
-  await report.getByRole("button", { name: "Close" }).click();
+  await page.locator(".managed-main-nav [data-managed-view='schedule']").click();
+  await expect(report).toBeHidden();
   await expect(page.getByLabel("Task title")).toHaveValue("Not yet committed");
   await expect(page.getByText("Unsaved changes", { exact: true })).toBeVisible();
 });
