@@ -698,6 +698,62 @@ test("DES-010 real Reports uses fixed navigation and committed-only scroll works
 });
 
 
+
+test("UAT-02: managed dark theme has restrained day markers, semantic statuses and visible dependencies", async ({ page }, testInfo) => {
+  await page.clock.setFixedTime(new Date("2026-11-09T03:00:00Z"));
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByLabel("Dark", { exact: true }).check();
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.locator(".task-row").filter({ hasText: "Requirements sign-off" }).click();
+  await expect(page.locator(".workdays-detail small")).toHaveText("Days left");
+  await expect(page.locator(".workdays-detail strong")).toContainText("4 days remaining");
+  await expect(page.locator(".workdays-detail strong")).not.toContainText(/workdays?/i);
+  await expect(page.locator(".calendar-hint")).not.toContainText(/workdays?/i);
+  await page.locator("#deps").check();
+  await expect(page.locator(".dep-layer path").first()).toBeAttached();
+  const styles = await page.evaluate(() => {
+    const css = (selector: string) => getComputedStyle(document.querySelector(selector)!);
+    const statuses = [...document.querySelectorAll(".task-row .pill")].map(node => {
+      const style = getComputedStyle(node);
+      return { label: node.textContent?.trim(), color: style.color, background: style.backgroundColor };
+    });
+    return {
+      weekend: css(".holiday-overlay").backgroundColor,
+      remaining: css(".workdays-detail").backgroundColor,
+      remainingText: css(".workdays-detail strong").color,
+      separator: css(".zoom-choice").borderRightColor,
+      dependency: css(".dep-layer path").stroke,
+      statuses,
+    };
+  });
+  expect(styles.weekend).not.toBe("rgb(246, 248, 252)");
+  expect(styles.remaining).not.toBe("rgb(248, 251, 255)");
+  expect(styles.dependency).toBe("rgb(180, 216, 250)");
+  expect(new Set(styles.statuses.map(item => item.background)).size).toBeGreaterThan(2);
+  await testInfo.attach("managed-UAT02-dark-contrast", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+});
+
+test("UAT-02: Reports uses global Schedule navigation and no redundant Close button", async ({ page }) => {
+  await openManaged(page);
+  await page.locator(".managed-main-nav [data-managed-view='reports']").click();
+  const report = page.getByRole("dialog", { name: "Output Reports" });
+  await expect(report).toBeVisible();
+  await expect(report.getByRole("button", { name: "Close", exact: true })).toHaveCount(0);
+  await expect(report.getByLabel("Report mode")).toBeFocused();
+  await page.locator(".managed-main-nav [data-managed-view='schedule']").click();
+  await expect(report).toBeHidden();
+});
+
 test("DES-010 Project menu dismisses on outside, Escape and action while retaining recovery", async ({ page }) => {
   await openManaged(page);
   const menu = page.locator(".managed-project-menu");
