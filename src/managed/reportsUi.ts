@@ -54,10 +54,9 @@ export class ManagedReports {
 
     const head = make("div", undefined, "managed-reports-head");
     const title = make("h2", "Output Reports");
-    const close = make("button", "Close", "managed-action");
-    close.type = "button";
-    close.addEventListener("click", () => this.dialog.close());
-    head.append(title, close);
+    // Global Schedule / Reports navigation is permanently visible.
+    // A second Close button is redundant in this nonmodal workspace.
+    head.append(title);
     this.dialog.append(head);
 
     this.warning = make("p", "", "managed-report-warning");
@@ -150,7 +149,7 @@ export class ManagedReports {
     this.launch.classList.add("active");
     this.launch.setAttribute("aria-current", "page");
     this.dialog.show(); // A nonmodal workspace, so global header navigation stays operable.
-    this.dialog.querySelector<HTMLButtonElement>(".managed-reports-head button")?.focus();
+    this.mode.focus();
   }
   private refreshWarning(): void {
     const context = this.getContext();
