@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 import ExcelJS from "exceljs";
 import path from "node:path";
+import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { spawn } from "node:child_process";
 
 let fileUrl = "";
 let base64 = "";
+let packagedUatBase64 = "";
 
 test.beforeAll(async () => {
   const book = new ExcelJS.Workbook();
@@ -21,6 +23,11 @@ test.beforeAll(async () => {
     child.on("close", (code) => code === 0 ? resolve() : reject(new Error("Managed build failed: " + code)));
   });
   fileUrl = pathToFileURL(path.resolve("dist-managed/managed.html")).href;
+  // This is the REAL Excel file shipped to the owner, not the small synthetic
+  // one-task workbook used by other managed tests.
+  packagedUatBase64 = (await readFile(path.resolve(
+    "dist-managed/SPT-WBS_DES010_Synthetic_UAT.xlsx",
+  ))).toString("base64");
 }, { timeout: 120000 });
 
 async function openManaged(page: import("@playwright/test").Page) {
@@ -778,3 +785,79 @@ for (const width of [1440, 1024, 860]) {
     await expect(inspector).toHaveAttribute("aria-labelledby", "detailTitle");
   });
 }
+
+test("Owner UAT kit: packaged 23-task XLSX imports, allows direct Save and writes real History", async ({ page }) => {
+  const fileName = "SPT-WBS_DES010_Synthetic_UAT.xlsx";
+  const messages: string[] = [];
+  page.on("pageerror", error => messages.push("JS: " + error.message));
+  page.on("console", message => { if (message.type() === "error") messages.push(message.text()); });
+  page.on("dialog", async dialog => { await dialog.accept(); });
+  await page.addInitScript(({ encoded, name }) => {
+    const decoded = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
+    const files = new Map<string, Uint8Array>([[name, decoded]]);
+    const dir = {
+      kind: "directory",
+      name: "disposable-owner-uat",
+      async *entries() {
+        for (const fileName of files.keys()) yield [fileName, { kind:"file", name:fileName }];
+      },
+      async getFileHandle(fileName: string, options?: { create?: boolean }) {
+        if (!files.has(fileName)) {
+          if (!options?.create) throw new DOMException("not found", "NotFoundError");
+          files.set(fileName, new Uint8Array());
+        }
+        return {
+          kind: "file",
+          name: fileName,
+          async getFile() {
+            return new File([new Uint8Array(files.get(fileName)!)], fileName, {
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+          },
+          async createWritable() {
+            let pending = new Uint8Array();
+            return {
+              async write(data: Uint8Array) { pending = new Uint8Array(data); },
+              async close() { files.set(fileName, pending); },
+            };
+          },
+        };
+      },
+      async removeEntry(fileName: string) { files.delete(fileName); },
+    };
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true, value: async () => dir,
+    });
+    Object.defineProperty(window, "__ownerUatFiles", {
+      configurable: true, value: files,
+    });
+  }, { encoded: packagedUatBase64, name:fileName });
+  await page.goto(fileUrl);
+  const menu = page.locator(".managed-project-menu");
+  await menu.locator("summary").click();
+  await menu.getByRole("button", { name:"Choose project folder" }).click();
+  const banner = page.locator(".managed-banner");
+  await expect(banner, () => messages.join("\n")).toContainText(
+    "Workbook ready", { timeout:15000 },
+  );
+  await expect(page.locator("#title")).toHaveText("SPT-WBS_DES010_Synthetic_UAT");
+  await expect(page.locator(".task-row").first()).toBeVisible();
+  await expect(page.getByLabel("Active Excel workbook")).toHaveValue(fileName);
+  // Must be writable; previous package mistakenly included unsupported AutoFilter.
+  await page.locator(".task-row").first().click();
+  await expect(page.getByRole("button", { name:"Edit task" })).toBeEnabled();
+  await page.getByRole("button", { name:"Edit task" }).click();
+  await page.getByLabel("Task title").fill("UAT kit verified synthetic update");
+  await page.getByRole("button", { name:"Save to workbook" }).click();
+  await expect(banner).toContainText("Verified Save: task and UpdateHistory persisted", { timeout:15000 });
+  const after = await page.evaluate(async filename => {
+    const files = (window as typeof window & { __ownerUatFiles: Map<string,Uint8Array> }).__ownerUatFiles;
+    return { names:[...files.keys()], source:Array.from(files.get(filename)!) };
+  },fileName);
+  expect(after.names).toContain("SPT-WBS_DES010_Synthetic_UAT.backup.xlsx");
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.load(Uint8Array.from(after.source) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  expect(book.getWorksheet("ProjectWBS")?.getCell("B2").value).toBe("UAT kit verified synthetic update");
+  expect(book.getWorksheet("UpdateHistory")).toBeTruthy();
+  expect(messages).toEqual([]);
+});
