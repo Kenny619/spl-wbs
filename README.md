@@ -15,15 +15,24 @@ The page title is the file name without `.xlsx`.
 
 ## Excel Managed Variant — DES-010 owner UAT (development only)
 
-**[Download the DES-010 UAT application (GitHub Actions ZIP)](https://github.com/Kenny619/spl-wbs/actions/runs/42458336216/artifacts/13608815544)**
+**[Download the COMPLETE DES-010 Owner UAT Kit (GitHub Actions ZIP)](https://github.com/Kenny619/spl-wbs/actions/runs/42549611042/artifacts/13644857552)**
 
-This GitHub-hosted artifact contains the **CI-built `managed.html`** application for draft [PR #32](https://github.com/Kenny619/spl-wbs/pull/32), commit `9ce49b085eae5ef67e0c78ff47b6db360f8d8ae0`. [CI run #42458336216](https://github.com/Kenny619/spl-wbs/actions/runs/42458336216) passed 134 unit tests and 59 Windows Chromium browser tests. Extract the ZIP and open `managed.html` in Microsoft Edge.
+**This is the complete six-file kit, not the earlier HTML-only artifact.** I verified that its GitHub-hosted ZIP contains:
 
-**Companion UAT data and instructions:** The complete three-file `SPT-WBS_DES010_Owner_UAT_Kit.zip` (HTML, synthetic Excel workbook, and detailed checklist) was supplied in the Product Owner's ChatGPT conversation; **that conversation attachment is not hosted on GitHub**, so the link above downloads the application **only**, not the complete kit. Use only the disposable synthetic sample workbook; do not use a corporate production workbook.
+- `managed.html` — self-contained managed application (same verified HTML build as prior UAT).
+- `SPT-WBS_DES010_Synthetic_UAT.xlsx` — disposable fictional 23-task `ProjectWBS` workbook.
+- `START-HERE.txt` — short setup instructions.
+- `README-OWNER-UAT.txt` — detailed Microsoft Edge UAT scenarios.
+- `UAT-RESULTS-TEMPLATE.md` — checklist and findings register.
+- `SHA256SUMS.txt` — integrity checksums.
 
-**Artifact availability:** GitHub Actions artifacts expire. This application's artifact is currently available through **November 15, 2026 (UTC)** and may require GitHub sign-in. If the direct link has expired, open [draft PR #32](https://github.com/Kenny619/spl-wbs/pull/32) → **Checks** → latest successful CI run → **Artifacts** → `managed-v1-development-preview`. Use the build associated with the exact commit you are testing.
+**Getting started:** Download and extract the complete ZIP. Copy the synthetic workbook into a separate empty working folder, then open `managed.html` in Microsoft Edge. Choose **Project → Choose project folder**, select the working folder, and follow the included checklist. **Do not use a real or corporate production workbook.**
 
-This is **not** the released read-only viewer. Owner UAT, independent QA, physical Windows/Edge workbook-safety gates, merge, and release remain separate and pending.
+**Build provenance:** draft [PR #32](https://github.com/Kenny619/spl-wbs/pull/32); packaged at GitHub Actions [run #42549611042](https://github.com/Kenny619/spl-wbs/actions/runs/42549611042). The application bytes match the earlier verified UAT build; the updated artifact additionally bundles sample data, instructions and verification files. ZIP and sample-workbook structural checks passed. The application is an unmerged development preview, not a release.
+
+**Artifact availability:** This GitHub Actions download expires on **November 16, 2026 (UTC)** and may require sign-in. If it has expired, open the latest successful CI run on [PR #32](https://github.com/Kenny619/spl-wbs/pull/32), under **Checks → Artifacts → managed-v1-development-preview**, and verify that the chosen artifact contains the workbook and instructions. The kit is generated automatically after the managed build.
+
+Owner UAT, independent QA, physical Windows/Edge workbook-safety gates, merge and release remain separate approval steps.
 
 ## Excel setup
 
