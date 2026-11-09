@@ -60,6 +60,20 @@ export function mountManagedShell(
   const summary = doc.createElement("summary");
   summary.textContent = "Project";
   summary.setAttribute("aria-label", "Project and workbook actions");
+  // The original v18 "Choose project folder" button lived inside the empty
+  // chart panel, so it was absent from Project on first launch. Move the live
+  // node (and its already-bound managed picker handler) into the Project menu.
+  // Do not clone it or create a second file-access path.
+  const choose = doc.getElementById("choose");
+  const change = doc.getElementById("change");
+  if (choose) originalActions.prepend(choose);
+  const syncFolderAction = () => {
+    const loaded = Boolean(controller.getState().tasks);
+    if (choose) choose.hidden = loaded;
+    if (change) change.hidden = !loaded;
+  };
+  controller.subscribe(syncFolderAction);
+  syncFolderAction();
   menu.append(summary, originalActions);
   // Native details keeps pointer/keyboard activation; close it when the user
   // selects a project action or leaves the menu, rather than obscuring the WBS.
