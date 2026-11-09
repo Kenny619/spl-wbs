@@ -1,0 +1,96 @@
+name: Corporate Node 26 compatibility validation
+
+on:
+  push:
+    branches:
+      - feature/corporate-node26-compat-validation
+  pull_request:
+    branches:
+      - feature/excel-managed-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: corporate-node26-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-unit-build:
+    name: Node 26.13.0 + npm 11.19.1 / Linux unit and builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.13.0
+          cache: npm
+      - name: Pin corporate npm
+        run: npm install --global npm@11.19.1
+      - name: Verify runtime versions
+        shell: bash
+        run: |
+          test "$(node --version)" = "v26.13.0"
+          test "$(npm --version)" = "11.19.1"
+      - name: Clean install
+        run: npm ci
+      - name: UUID scanner fixture tests
+        run: node verification/security/test-uuid-reachability.mjs
+      - name: Bounded ExcelJS UUID scan
+        run: node verification/security/uuid-reachability.mjs
+      - name: Unit suite
+        run: npm test
+      - name: Read-only product build
+        run: npm run build
+      - name: Managed offline build
+        run: npm run build:managed
+      - name: Production dependency audit (evidence only)
+        run: npm audit --omit=dev --json > npm-audit-production.json || true
+      - name: Upload audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corporate-node26-audit
+          path: npm-audit-production.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  windows-browser:
+    name: Node 26.13.0 + npm 11.19.1 / Windows Chromium
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.13.0
+          cache: npm
+      - name: Pin corporate npm
+        run: npm install --global npm@11.19.1
+      - name: Verify runtime versions
+        shell: pwsh
+        run: |
+          if ((node --version).Trim() -ne 'v26.13.0') { throw 'Node version mismatch' }
+          if ((npm --version).Trim() -ne '11.19.1') { throw 'npm version mismatch' }
+      - name: Clean install
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install chromium
+      - name: Browser regression
+        run: npm run test:e2e -- --reporter=list
+      - name: Verify read-only build
+        run: npm run build
+      - name: Verify managed build
+        run: npm run build:managed
+      - name: Browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corporate-node26-browser-diagnostics
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
