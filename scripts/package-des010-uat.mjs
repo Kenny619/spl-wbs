@@ -79,7 +79,7 @@ if (verify.getWorksheet("ProjectWBS")?.rowCount !== 24) throw new Error("Package
 const JSZip = (await import("jszip")).default;
 const sourceZip = await JSZip.loadAsync(await readFile(workbookPath));
 const worksheetXML = await sourceZip.file("xl/worksheets/sheet1.xml")?.async("string");
-if (!worksheetXML || /<(?:f|drawing|legacyDrawing|tableParts|pivotTable|extLst|oleObjects|controls|sheetProtection|conditionalFormatting|dataValidations|hyperlinks|mergeCells|autoFilter|protectedRanges|customSheetViews|scenarios)\\b/i.test(worksheetXML)) {
+if (!worksheetXML || /<(?:f|drawing|legacyDrawing|tableParts|pivotTable|extLst|oleObjects|controls|sheetProtection|conditionalFormatting|dataValidations|hyperlinks|mergeCells|autoFilter|protectedRanges|customSheetViews|scenarios)\b/i.test(worksheetXML)) {
   throw new Error("Owner UAT workbook includes an unsupported Excel worksheet feature; refusing to package.");
 }
 
