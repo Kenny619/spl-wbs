@@ -128,10 +128,30 @@ The first 15 distinct workstream names in sheet order receive the fixed palette.
 
 ## Develop
 
+### Corporate Windows environment
+
+The corporate-PC runtime is **Node.js v26.13.0** with **npm v11.19.1** (owner-confirmed 2026-11-09). Do not instruct corporate users to downgrade Node or npm. Run these commands in Edge-accessible Windows PowerShell or a terminal from the project folder:
+
+```powershell
+node --version
+npm --version
+npm ci
+npm run build
+npm run build:managed
+npm test
+```
+
+`npm ci` installs the exact committed lockfile and does not change dependency versions. For browser regression verification, install Playwright Chromium where the corporate machine permits it, then use `npm run test:e2e`. The delivered `dist/index.html` read-only viewer and `dist-managed/managed.html` managed development preview are self-contained HTML; **running Node/npm is not required to open those artifacts in Edge**.
+
+The existing Node 22 CI remains the baseline. The separate corporate compatibility workflow `.github/workflows/corporate-node26-compat.yml` tests **exact Node 26.13.0 + npm 11.19.1** on Linux and Windows, including clean lockfile install, units, builds, Windows Chromium tests and bounded UUID screening. This verifies the build/test toolchain under the stated corporate runtime; it is **not** proof of physical corporate Edge policy, Excel file locking, OneDrive permissions, or unrestricted workbook editing safety.
+
+### General development
+
 ```bash
-npm install
+npm ci
 npm run dev
 npm run build
+npm run build:managed
 npm test
 npm run test:e2e
 ```
