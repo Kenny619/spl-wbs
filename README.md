@@ -4,9 +4,9 @@
 
 ## Excel Managed Variant — DES-010 owner UAT (development only)
 
-**Folder-picker failure remediation in progress:** the historical kit linked below lacks the read-only picker fallback. New candidate branch `feature/des010-uat-edge-picker-fallback` adds detailed native Edge AbortError diagnostics and file-only read-only preview; the revised package must pass fresh exact-head CI before being linked here. Do not assume old artifact includes this fix.
+**Corrected corporate Edge picker kit (2026-11-09):** [Download complete six-file ZIP from Actions run #42576183324](https://github.com/Kenny619/spl-wbs/actions/runs/42576183324/artifacts/13655660880). This supersedes the initial DES-010 package and previous corrected kit. If the native folder picker returns `AbortError`, use **Project → Open XLSX read-only…** to view the supplied synthetic XLSX without writing. This does not authorize Save/backup UAT or physical Edge filesystem acceptance. All six ZIP contents and manifest checksums were verified and exact source CI passed **134/134 unit, 62/62 Chromium**.
 
-**Current corrected UAT kit:** [Download the complete six-file ZIP from GitHub Actions run #42552811227](https://github.com/Kenny619/spl-wbs/actions/runs/42552811227/artifacts/13646311446). Includes `managed.html`, `SPT-WBS_DES010_Synthetic_UAT.xlsx`, `START-HERE.txt`, `README-OWNER-UAT.txt`, `UAT-RESULTS-TEMPLATE.md`, and `SHA256SUMS.txt`. The earlier kit is **superseded** because the initial project picker was misplaced and the example workbook included unsupported AutoFilter metadata.
+**Current corrected UAT kit:** [Download the complete six-file ZIP from GitHub Actions run #42552811227](https://github.com/Kenny619/spl-wbs/actions/runs/42576183324/artifacts/13655660880). Includes `managed.html`, `SPT-WBS_DES010_Synthetic_UAT.xlsx`, `START-HERE.txt`, `README-OWNER-UAT.txt`, `UAT-RESULTS-TEMPLATE.md`, and `SHA256SUMS.txt`. The earlier kit is **superseded** because the initial project picker was misplaced and the example workbook included unsupported AutoFilter metadata.
 
 1. Download and **extract** the ZIP; do not open HTML from inside the archive.
 2. Create an **empty disposable local folder** and **copy only the supplied XLSX** into it.
