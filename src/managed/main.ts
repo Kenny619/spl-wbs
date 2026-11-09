@@ -243,13 +243,17 @@ export class ManagedEditor {
       return;
     }
     let dir: FileSystemDirectoryHandle;
-    try { dir = await picker({ mode: "readwrite" }); }
+    try { dir = await picker.call(globalThis, { mode: "readwrite" }); }
     catch (error) {
-      if (error instanceof Error && error.name === "AbortError") return;
-      this.message = "Folder selection failed: " + errorMessage(error);
+      this.message = error instanceof Error && error.name === "AbortError"
+        ? "Folder selection cancelled; no workbook was changed."
+        : "Folder selection failed: " + errorMessage(error) +
+          ". Check that Edge permits local folder access.";
       this.render();
       return;
     }
+    this.message = "Scanning selected folder " + dir.name + " for .xlsx workbooks…";
+    this.render();
     const found: string[] = [];
     try {
       for await (const [name, handle] of (dir as DirectoryWithEntries).entries()) {
@@ -296,7 +300,9 @@ export class ManagedEditor {
       await this.controller.chooseFile(file);
       const loaded = this.controller.getState();
       if (!loaded.tasks || loaded.fileName !== name || loaded.loadError) {
-        throw new Error("Workbook import failed; see the import errors.");
+        const details = loaded.loadError?.slice(0, 3).map((issue) => issue.message).join("; ") ||
+          loaded.notice || "Invalid workbook or unsupported worksheet data.";
+        throw new Error("Workbook import failed: " + details);
       }
       // Commit the new selection in one step, after its real import succeeds.
       this.directory = targetDir;
