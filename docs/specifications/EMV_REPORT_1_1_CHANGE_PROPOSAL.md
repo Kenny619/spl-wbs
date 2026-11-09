@@ -41,6 +41,32 @@ For a chosen **inclusive calendar date range** in Settings IANA timezone, use pe
 
 The exact historical extent of prior `ProjectWBS` snapshots is **not guaranteed**. Do **not** calculate before/after project completion percentages unless complete reliable snapshots and an approved method exist. `UpdateHistory` can capture discrete saved edits, **not** all corporate activities or changes made outside the application.
 
+### 2.2.1 Evidence classification and deterministic period-event rules (review refinement)
+
+The implementation must use **two explicit evidence channels** rather than silently promoting current task attributes into historical facts:
+
+- **Saved-change evidence:** a valid UpdateHistory event with a canonical `TimestampUTC`, `ChangeSetID`, TaskID, field, old/new values, and a timestamp inside the chosen local-date window. Each field comparison comes from the stored values; classify *only* known editable fields.
+- **Current-state evidence:** a task present in the presently committed ProjectWBS, as loaded at Generate/Refresh. A current state of Completed, At Risk, Blocked or overdue **does not prove when it became so**.
+- **Unverified historical state:** a task with no relevant saved transition in the reporting period; do not assign it a “new”, “resolved”, “advanced” or “slipped this period” label.
+
+Transition rules proposed for acceptance testing:
+
+| Recorded field and transition | Stakeholder report fact | Explicit limitation |
+|---|---|---|
+| `TaskStatus` to `Completed` from another status | **Recorded completion** within period | Do not assert first-ever completion if multiple status changes exist |
+| `Progress` numeric increase (0–100) | **Recorded progress increase** for task | Do not aggregate into project % historical delta; repeated events may reverse or supersede |
+| `TaskStatus` to `At Risk` or `Blocked` from a different status | **Recorded risk-status entry** | Re-entry may not be the first historical risk event |
+| `TaskStatus` out of `At Risk` or `Blocked` | **Recorded risk-status exit** | Do not equate exit with proven issue resolution or mitigation |
+| `PlannedStart` or `PlannedEnd` changed | **Recorded schedule revision**, old/new dates | Call it a delay only when the saved end date moves later; do not infer cause |
+| `AssignedTo`, `Priority`, `Updates`, `Description` changed | Optional **recorded note/reassignment/priority change**, factual and attributable | Free-form notes are not automatically a verified risk, completion or action commitment |
+| No relevant validated events | **No recorded changes for this period** | Do not say “nothing progressed” or “no emerging risks” |
+
+Multiple saved transitions for the same task within the period must be ordered by `TimestampUTC`, then deterministic ChangeSetID/row order; avoid contradictory headline claims by showing **recorded event progression and latest/current status separately**. Do not deduplicate away reversals, and do not count one logical Save as multiple separate work events merely because several fields changed. For the event's display identity, use the saved task title and WBS snapshot, even if current title differs; current workstream remains a *presentation* grouping per 1.0. A removed task may remain in recorded historical changes, grouped under **Unknown Workstream**, and cannot be claimed to be currently outstanding.
+
+**Current-risk precedence:** Outstanding current `Blocked` / `At Risk` and overdue are evaluated from committed task data using the already-approved classification and today's date in the selected timezone, labeled **current** and displayed independently from any historical risk transitions. A period may contain a recorded risk entry that was subsequently resolved or reversed; present the historic event without calling it an outstanding risk. Where no reliable period baseline exists, show **no computed trend percentage**, no inferred planned-vs-actual variance, and no automatic risk causes or “next owner action” that is not in recorded fields.
+
+**Historical source coverage:** Existing `readManagedHistory()` legitimately returns an **empty event set when the UpdateHistory sheet is absent**. For 1.1, report messaging must distinguish “history sheet absent” (no in-app history available) from “sheet exists with zero qualifying events” when possible without modifying the schema; both cases must avoid claiming complete corporate change coverage. A history read/parse failure must be surfaced as an error, not replaced with a generic “no updates” result.
+
 ### 2.3 Detailed Change Audit — preserve existing Update Report semantics
 
 Retain the complete frozen EMV-REPORT-1.0 historical Update Report under a new explicitly audit-focused name. Continue reading **only** `UpdateHistory` for date-window events: affected task count, logical Save count, field-row count, old/new values, immutable historical title/WBS snapshot, field labels, timestamps, complete cross-workstream `ChangeSetID` links, full/abbreviated long-text choice, deterministic order, malformed-history rejection, empty-window behavior. Existing validated test coverage must remain.
