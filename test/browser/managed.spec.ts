@@ -837,7 +837,7 @@ test("Owner UAT kit: packaged 23-task XLSX imports, allows direct Save and write
   await menu.locator("summary").click();
   await menu.getByRole("button", { name:"Choose project folder" }).click();
   const banner = page.locator(".managed-banner");
-  await expect(banner, () => messages.join("\n")).toContainText(
+  await expect(banner, "Packaged UAT workbook must import; browser errors: " + messages.join("; ")).toContainText(
     "Workbook ready", { timeout:15000 },
   );
   await expect(page.locator("#title")).toHaveText("SPT-WBS_DES010_Synthetic_UAT");
