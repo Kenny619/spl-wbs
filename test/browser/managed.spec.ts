@@ -710,8 +710,9 @@ test("UAT-02: managed dark theme has restrained day markers, semantic statuses a
   await expect(page.locator(".task-row")).toHaveCount(23);
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const settings = page.getByRole("dialog", { name: "Settings" });
-  await settings.getByLabel("Dark", { exact: true }).check();
+  await settings.getByRole("radio", { name: "Dark" }).check();
   await settings.getByRole("button", { name: "Close" }).click();
+  await page.locator(".zoom-choice").filter({ hasText: "Day" }).click();
   await page.locator(".task-row").filter({ hasText: "Requirements sign-off" }).click();
   await expect(page.locator(".workdays-detail small")).toHaveText("Days left");
   await expect(page.locator(".workdays-detail strong")).toContainText("4 days remaining");
