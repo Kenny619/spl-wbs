@@ -13,6 +13,12 @@ Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address
 
 The page title is the file name without `.xlsx`.
 
+## Report design review — work-PC access
+
+The Report specification is tracked in [Issue #7 — EMV-REPORT-1.0](https://github.com/Kenny619/spl-wbs/issues/7), with the broader [UI/UX workstream in Issue #25](https://github.com/Kenny619/spl-wbs/issues/25).
+
+**Interactive Report 1.1 prototype and screenshot:** the latest design files (`SPT-WBS_Report_1.1_Interactive_Prototype.html` and `SPT-WBS_Report_1.1_Preview.png`) were generated as chat attachments, **not yet published to this repository**. Chat attachment links are not portable GitHub download URLs; do not mistake an older application/UAT ZIP for this report prototype. GitHub-hosted preview links will be added only after the actual files have been published and verified.
+
 ## Excel Managed Variant — DES-010 owner UAT (development only)
 
 **[Download CORRECTED complete DES-010 Owner UAT Kit (GitHub Actions ZIP)](https://github.com/Kenny619/spl-wbs/actions/runs/42552811227/artifacts/13646311446)**
