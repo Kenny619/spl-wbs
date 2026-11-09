@@ -68,6 +68,7 @@ async function openManaged(page: import("@playwright/test").Page) {
   }, { encoded: base64 });
   await page.goto(fileUrl);
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
+  await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
   await expect(page.locator("#title")).toHaveText("synthetic-demo");
   await expect(page.locator(".task-row")).toHaveCount(1);
