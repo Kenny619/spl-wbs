@@ -113,6 +113,33 @@ export class ManagedEditor {
     label.append(this.fileSelect);
     wrap.append(label);
     actions.prepend(wrap);
+    // A native <input type=file> is independent of showDirectoryPicker and can
+    // provide read-only UAT access even when corporate Edge blocks directory handles.
+    // It must never create a writable workbook/backup transaction.
+    const previewInput = element(doc, "input");
+    previewInput.type = "file";
+    previewInput.accept = ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    previewInput.hidden = true;
+    previewInput.setAttribute("aria-label", "Choose an XLSX for read-only preview");
+    const previewButton = element(doc, "button", "managed-action", "Open XLSX read-only…");
+    previewButton.type = "button";
+    previewButton.title = "Import a disposable workbook without folder write permission. Saving remains disabled.";
+    previewButton.addEventListener("click", () => {
+      if (this.busy) return;
+      if (this.isDirty()) {
+        this.message = "Discard or save unsaved changes before opening a different preview.";
+        this.render();
+        return;
+      }
+      previewInput.value = "";
+      previewInput.click();
+    });
+    previewInput.addEventListener("change", () => {
+      const file = previewInput.files?.[0];
+      previewInput.value = "";
+      if (file) void this.previewWorkbook(file);
+    });
+    actions.prepend(previewButton, previewInput);
     const inspectButton = element(doc, "button", "managed-action", "Inspect Save State");
     inspectButton.type = "button";
     inspectButton.addEventListener("click", () => {
@@ -235,6 +262,41 @@ export class ManagedEditor {
     else this.render();
   }
 
+  private async previewWorkbook(file: File): Promise<void> {
+    if (this.busy || this.isDirty()) return;
+    // Preserve a previously verified editable source on failed import. The
+    // preview never exposes writable handles even if the workbook passes preflight.
+    this.busy = true;
+    this.message = "Importing " + file.name + " in read-only preview…";
+    this.render();
+    try {
+      await this.controller.chooseFile(file);
+      const loaded = this.controller.getState();
+      if (!loaded.tasks || loaded.fileName !== file.name || loaded.loadError) {
+        const reason = loaded.loadError?.slice(0, 3).map(issue => issue.message).join("; ") ||
+          loaded.notice || "Unsupported or invalid workbook data.";
+        throw new Error(reason);
+      }
+      this.directory = null;
+      this.sourceName = null;
+      this.loadedHash = null;
+      this.loadedBytes = null;
+      this.inspectionName = null;
+      this.names = [];
+      this.canWrite = false;
+      this.recoveryHold = false;
+      this.clearDraft();
+      this.message = "Read-only preview loaded: " + file.name +
+        ". Folder write access remains unavailable; Save, Save As and History write verification are disabled.";
+    } catch (error) {
+      this.message = "Read-only workbook preview failed: " + errorMessage(error) +
+        ". No workbook files were changed.";
+    } finally {
+      this.busy = false;
+      this.render();
+    }
+  }
+
   private async chooseFolder(): Promise<void> {
     const picker = (globalThis as PickerHost).showDirectoryPicker;
     if (typeof picker !== "function") {
@@ -245,10 +307,12 @@ export class ManagedEditor {
     let dir: FileSystemDirectoryHandle;
     try { dir = await picker.call(globalThis, { mode: "readwrite" }); }
     catch (error) {
-      this.message = error instanceof Error && error.name === "AbortError"
-        ? "Folder selection cancelled; no workbook was changed."
-        : "Folder selection failed: " + errorMessage(error) +
-          ". Check that Edge permits local folder access.";
+      const name = error instanceof Error ? error.name : "UnknownError";
+      const detail = errorMessage(error);
+      this.message = "Edge folder picker did not grant a folder (" + name + ": " + detail +
+        "). This can be cancellation, permission denial or browser policy. " +
+        "Try Project → Open XLSX read-only to inspect the workbook without writing. " +
+        "No workbook was changed.";
       this.render();
       return;
     }
