@@ -787,6 +787,48 @@ for (const width of [1440, 1024, 860]) {
   });
 }
 
+test("Owner UAT: native Edge AbortError reports diagnostic and safe read-only XLSX fallback", async ({ page }) => {
+  const messages: string[] = [];
+  page.on("pageerror", error => messages.push(error.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true,
+      value: async () => { throw new DOMException("The user agent denied folder access", "AbortError"); },
+    });
+  });
+  await page.goto(fileUrl);
+  const menu = page.locator(".managed-project-menu");
+  await menu.locator("summary").click();
+  await menu.getByRole("button", { name: "Choose project folder" }).click();
+  await expect(page.locator(".managed-banner")).toContainText("AbortError: The user agent denied folder access");
+  await expect(page.locator(".managed-banner")).toContainText("Open XLSX read-only");
+  await menu.locator("summary").click();
+  const fallback = menu.getByRole("button", { name: "Open XLSX read-only…" });
+  await expect(fallback).toBeVisible();
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded", { timeout: 15000 });
+  await expect(page.locator("#title")).toHaveText("SPT-WBS_DES010_Synthetic_UAT");
+  await expect(page.locator(".task-row").first()).toBeVisible();
+  await page.locator(".task-row").first().click();
+  await expect(page.getByRole("button", { name: "Edit task" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Save to workbook" })).toHaveCount(0);
+  expect(messages).toEqual([]);
+});
+
+test("Owner UAT: non-XLSX read-only fallback retains previous state without a write", async ({ page }) => {
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "not-a-workbook.txt", mimeType: "text/plain", buffer: Buffer.from("bad"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only workbook preview failed");
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Save to workbook" })).toHaveCount(0);
+});
+
 test("Owner UAT kit: packaged 23-task XLSX imports, allows direct Save and writes real History", async ({ page }) => {
   const fileName = "SPT-WBS_DES010_Synthetic_UAT.xlsx";
   const messages: string[] = [];
