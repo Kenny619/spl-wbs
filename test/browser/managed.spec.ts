@@ -502,16 +502,16 @@ test("Review 02 visual parity: report studio and Schedule share design language"
   await page.getByRole("button", { name: "Output Reports" }).last().click();
   const reports = page.getByRole("dialog", { name: "Output Reports" });
   const sidebar = reports.locator(".report11-builder");
-  const document = reports.locator(".report11-workspace");
+  const workspace = reports.locator(".report11-workspace");
   await expect(sidebar).toBeVisible();
-  await expect(document).toBeVisible();
+  await expect(workspace).toBeVisible();
   await expect(sidebar.getByRole("heading", { name: "Build a report" })).toBeVisible();
   await expect(reports.locator(".report11-mode-card")).toHaveCount(3);
   await expect(reports.locator(".report11-mode-card.active")).toContainText("Progress & Risks Update");
   await expect(reports.locator(".report11-format-choices")).toBeVisible();
 
   const left = await sidebar.boundingBox();
-  const right = await document.boundingBox();
+  const right = await workspace.boundingBox();
   expect(left && right).toBeTruthy();
   expect(left!.x + left!.width).toBeLessThan(right!.x);
   expect(left!.width).toBeGreaterThan(250);
