@@ -15,13 +15,15 @@ The page title is the file name without `.xlsx`.
 
 ## Latest UAT download — SPT-WBS Report 1.1
 
-**[Download the latest complete Report 1.1 UAT ZIP](https://github.com/Kenny619/spl-wbs/actions/runs/42794050453/artifacts/13753546087)**
+**[Download the latest complete Report 1.1 UAT ZIP](https://github.com/Kenny619/spl-wbs/actions/runs/42803451878/artifacts/13757420806)**
 
-Development preview · **November 10, 2026** · packaged source `308c39d36b74e2869b8e3eb8adc2247cce3ccce7` · [CI evidence](https://github.com/Kenny619/spl-wbs/actions/runs/42794050453) (**162/162 unit and 65/65 Chromium tests passed**).
+Review 02 design-restored development preview · **November 10, 2026** · packaged source `85218fd629e50bf1ae17f22c5d2dd8f86ebb8eef` · [CI evidence](https://github.com/Kenny619/spl-wbs/actions/runs/42803451878) (**162/162 unit and 66/66 Windows Chromium tests passed**).
 
-The ZIP contains `managed.html`, `SPT-WBS_Report11_Synthetic_UAT.xlsx` (fictional G5 milestone and saved history), `REPORT11_START_HERE.txt`, `REPORT11_UAT_CHECKLIST.md`, `REPORT11_CHECKSUMS.txt`, and the earlier DES-010 fixture for compatibility. **Use the Report11 workbook for Report 1.1 UAT.**
+The ZIP contains the **Review 02 two-column Report Studio and matching Schedule design** in `managed.html`, `SPT-WBS_Report11_Synthetic_UAT.xlsx` (fictional G5 milestone and saved history), `REPORT11_START_HERE.txt`, `REPORT11_UAT_CHECKLIST.md`, `REPORT11_CHECKSUMS.txt`, and the earlier DES-010 fixture for compatibility. **Use the Report11 workbook for Report 1.1 UAT.**
 
 **On your work PC:** Download and extract the ZIP; copy only the Report11 workbook into a new empty disposable folder; open `managed.html` locally in Edge; choose the folder under **Project**, then open **Reports**. Enter project name `Fictional Enterprise Program`; review all three modes, and use **November 9–10, 2026** for the historical reports. Test **Copy for Outlook** by pasting into a new, **unsent** HTML email. Record results in `REPORT11_UAT_CHECKLIST.md`. If folder selection is blocked, use **Open XLSX read-only** and mark write-dependent checks BLOCKED.
+
+**Visual baseline:** Approved Review 02 report prototype is preserved as the controlling design in [Design Office Issue #25](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6765376047). The latest ZIP incorporates the paper-style report, four exception-focused KPI cards, compact tables, dark/light treatment and the Schedule priority summary; at narrow laptop widths, controls compress to preserve the Gantt height.
 
 **Status:** Draft [implementation PR #37](https://github.com/Kenny619/spl-wbs/pull/37), unmerged; independent QA and corporate Edge/Outlook UAT remain open. Use synthetic data only; no release authorized.
 
