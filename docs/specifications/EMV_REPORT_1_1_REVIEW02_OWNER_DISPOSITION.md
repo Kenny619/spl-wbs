@@ -3,7 +3,7 @@
 **Date:** 2026-11-10 JST  
 **Source:** [Owner's feedback on Issue #7](https://github.com/Kenny619/spl-wbs/issues/7#issuecomment-6757994310), followed by explicit owner response in the Report review chat: **"Excellent update. No more change requests. Please proceed."**  
 **Visual reference:** [Review 02 interactive HTML](../prototypes/SPT-WBS_Report_1.1_Interactive_Prototype_Review02.html), commit `abddcd80f93d11a6d2bf1326927cfc8c660cd3d2`.  
-**Disposition:** **REVIEW-02 DESIGN ACCEPTED / NO FURTHER DESIGN CHANGE REQUESTS**. Scope may proceed to formal versioned specification reconciliation and delivery gate preparation. **Not** a formal requirements freeze (Decision A), report-engine implementation authorization (Decision B), integration/merge, release, or owner UAT acceptance. Frozen EMV-REPORT-1.0 remains controlling until explicit 1.1 freeze.
+**Review disposition:** **REVIEW-02 DESIGN ACCEPTED / NO FURTHER DESIGN CHANGE REQUESTS**. **Subsequent separate authorization:** on 2026-11-10 the Product Owner explicitly approved both formal requirements freeze **A** and bounded draft implementation **B**. The authoritative revised contract is [EMV-REPORT-1.1 FROZEN](EMV_REPORT_1_1_FROZEN.md). This older design feedback record remains historical; no merge, release, physical UAT acceptance or security waiver.
 
 ## Product Owner-directed changes (proposed for EMV-REPORT-1.1)
 
@@ -53,7 +53,7 @@
 | Gate | State |
 |---|---|
 | Review 02 design feedback closure | **ACCEPTED** (owner: no further change requests) |
-| Formal EMV-REPORT-1.1 requirements freeze — Decision A | **OPEN** |
-| Bounded draft implementation authorization — Decision B | **OPEN** |
+| Formal EMV-REPORT-1.1 requirements freeze — Decision A | **APPROVED / FROZEN 2026-11-10** |
+| Bounded draft implementation authorization — Decision B | **APPROVED 2026-11-10** |
 | Independent QA / owner physical Edge + Outlook UAT | **NOT RUN** |
 | Merge / release | **NOT AUTHORIZED** |
