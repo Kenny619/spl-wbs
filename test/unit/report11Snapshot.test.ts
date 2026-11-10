@@ -103,6 +103,9 @@ describe("EMV-REPORT-1.1 canonical stakeholder snapshot", () => {
       task(String(i + 10), { status: "At Risk" }));
     const s = build({ tasks: [...TASKS, ...many], limit: "top10" });
     expect(s.risks).toHaveLength(10);
+    expect(s.omittedRisks).toBe(6);
+    expect(renderReport11Text(s)).toContain("6 additional risk tasks omitted");
+    expect(renderReport11Html(s)).toContain("6 additional qualifying task(s) omitted");
     expect(s.scheduleChanges).toHaveLength(1);
     expect(() => build({ startDay: "2026-11-11", endDay: "2026-11-10" })).toThrow();
   });
