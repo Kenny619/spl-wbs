@@ -172,7 +172,7 @@ function historyRows(rows: readonly Report11ChangeRow[], missing: boolean): stri
     esc(item.timestampUTC) + ' · Save ' + esc(item.changeSetId) + '</td></tr>');
 }
 export function renderReport11Html(s: Report11Snapshot): string {
-  const [days, milestone] = headline(s);
+  const [days] = headline(s);
   const intro = s.mode === "status" ? "Latest Status" : "Progress & Risks Update";
   const dates = s.period ? s.period.start + " – " + s.period.end : "As of " + s.today;
   const card = (label:string, value:string|number, note:string, tone="") => {
@@ -189,10 +189,11 @@ export function renderReport11Html(s: Report11Snapshot): string {
     '<section class="report-section"><div class="section-title"><h2>' + esc(name) +
     '</h2><span class="count">' + count + ' item(s)</span></div>' + html + '</section>';
   const omitted = (n:number) => n ? '<p class="sub">' + n +
-    ' qualifying task(s) omitted by the selected Top 10 limit.</p>' : '';
+    ' additional qualifying task(s) omitted by Top 10 selection.</p>' : '';
   const missing = s.historyCoverage === "unavailable";
   const upcoming = s.nextMilestone.kind === "identified" ?
-    s.nextMilestone.task.taskName + ' · ' + s.nextMilestone.date : "Next incomplete milestone";
+    s.nextMilestone.task.taskName + " · " + s.nextMilestone.days + " days remaining" : "No open milestone";
+  const milestoneDate = s.nextMilestone.kind === "identified" ? s.nextMilestone.date : "None";
   const goNote = (s.goLive.kind === "identified" || s.goLive.kind === "past") ?
     s.goLive.task.taskName + ' · ' + s.goLive.date : "Unique G5 / Release / Launch milestone required";
   const content =
@@ -206,7 +207,7 @@ export function renderReport11Html(s: Report11Snapshot): string {
     '<div>' + esc(s.timeZone) + '</div></div></header>' +
     '<div class="metrics">' +
     card("Days to go-live", days, goNote, "go-live") +
-    card("Upcoming milestone", milestone, upcoming) +
+    card("Upcoming milestone", milestoneDate, upcoming) +
     card("Red / Blocked", s.totalRedRisks, "Current exception statuses", "red") +
     card("Amber / At Risk", s.totalAmberRisks, "Current exception statuses", "amber") +
     '</div>' +
