@@ -102,12 +102,12 @@ function esc(x: unknown): string { return escapeReportHtml(x); }
 function tableRows(items: readonly Report11TaskRow[]): string {
   if (!items.length) return '<p class="empty">None</p>';
   return [...group(items)].map(([name, list]) =>
-    "<h3>" + esc(name) + "</h3><table><colgroup><col style=\"width:39%\"><col style=\"width:24%\"><col style=\"width:37%\"></colgroup>" +
-    "<thead><tr><th>Task</th><th>Status</th><th>Due / Owner</th></tr></thead><tbody>" +
-    list.map((item) => '<tr' + (item.tone !== "neutral" ? ' class="' + item.tone + '"' : "") +
-      '><td>' + esc(item.name) + '</td><td>' + esc(item.status) +
+    '<h3 style="font-size:12px;color:#315b81">' + esc(name) + '</h3><table style="width:100%;table-layout:fixed;border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px"><colgroup><col style=\"width:39%\"><col style=\"width:24%\"><col style=\"width:37%\"></colgroup>" +
+    '<thead><tr><th style="background:#e9f1f8;color:#355c80;padding:8px">Task</th><th style="background:#e9f1f8;color:#355c80;padding:8px">Status</th><th style="background:#e9f1f8;color:#355c80;padding:8px">Due / Owner</th></tr></thead><tbody>' +
+    list.map((item) => '<tr' + (item.tone !== "neutral" ? ' class="' + item.tone + '" style="background:' + (item.tone === "red" ? "#ffe9e8" : "#fff2db") + ';border-left:5px solid '+(item.tone === "red" ? "#b93030" : "#b7821d")+'"' : "") +
+      '><td style="padding:8px;border-bottom:1px solid #e2e9f1;vertical-align:top">' + esc(item.name) + '</td><td style="padding:8px;border-bottom:1px solid #e2e9f1;vertical-align:top">' + esc(item.status) +
       (item.tone !== "neutral" ? " · " + esc(item.tone.toUpperCase()) : "") +
-      '</td><td>' + esc(item.due ?? "Unscheduled") + ' · ' + esc(item.owner) + '</td></tr>').join("") +
+      '</td><td style="padding:8px;border-bottom:1px solid #e2e9f1;vertical-align:top">' + esc(item.due ?? "Unscheduled") + ' · ' + esc(item.owner) + '</td></tr>').join("") +
     "</tbody></table>").join("");
 }
 function savedRows(items: readonly Report11ChangeRow[], unavailable: boolean): string {
@@ -125,10 +125,10 @@ function savedRows(items: readonly Report11ChangeRow[], unavailable: boolean): s
 export function renderReport11Html(s: Report11Snapshot): string {
   const [go, next, exception] = headline(s);
   const card = (label: string, value: string) =>
-    '<div class="metric"><span>' + esc(label) + '</span><strong>' + esc(value) + '</strong></div>';
+    '<div class="metric" style="display:inline-block;vertical-align:top;border:1px solid #d4e1ee;background:#f3f7fb;border-radius:5px;padding:12px;min-width:150px;margin:0 8px 8px 0"><span style="font-size:11px;color:#5b7083">' + esc(label) + '</span><strong style="display:block;font-size:19px;color:#193958;margin-top:5px">' + esc(value) + '</strong></div>';
   const intro = s.mode === "status" ? "Latest Status" : "Progress & Risks Update";
   const dates = s.period ? s.period.start + " to " + s.period.end : "As of " + s.today;
-  const section = (label: string, html: string) => "<section><h2>" + esc(label) + "</h2>" + html + "</section>";
+  const section = (label: string, html: string) => '<section><h2 style="font-family:Arial,sans-serif;font-size:15px;color:#234e72;border-bottom:1px solid #d9e4ec;padding-bottom:6px">' + esc(label) + "</h2>" + html + "</section>";
   const omission = (count: number) => count > 0 ? '<p class="sub">' + count + ' additional qualifying task(s) omitted by Top 10 selection.</p>' : '';
   const unavailable = s.historyCoverage === "unavailable";
   const body = '<header><h1>' + esc(intro) + '</h1><strong>' + esc(s.projectName) +
