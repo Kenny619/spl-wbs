@@ -318,3 +318,53 @@ body.spt-managed .report11-studio :is(input,select,textarea):focus-visible {
   body.spt-managed .report11-panel-head {align-items:start;}
   body.spt-managed .report11-toolbar {margin-left:0;}
 }
+
+/* Compact Schedule exception-first hierarchy; no WBS sort or Gantt behavior changes. */
+body.spt-managed .managed-schedule-summary {
+  display:flex; align-items:center; gap:19px; justify-content:space-between;
+  margin:11px 14px 0; padding:10px 16px; flex:none;
+  border:1px solid var(--r11-edge); border-radius:10px;
+  background:var(--r11-surface); box-shadow:var(--r11-shadow);
+}
+body.spt-managed .managed-schedule-summary[hidden] {display:none!important;}
+body.spt-managed-report-open .managed-schedule-summary {display:none!important;}
+body.spt-managed .managed-schedule-summary-heading {display:flex;flex-direction:column;gap:3px;}
+body.spt-managed .managed-schedule-eyebrow {
+  font-size:9px; letter-spacing:.12em; font-weight:850; color:var(--r11-sub);
+}
+body.spt-managed .managed-schedule-summary-heading strong {
+  color:var(--r11-ink); font-size:13px; font-weight:800;
+}
+body.spt-managed .managed-schedule-summary-counts {
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+}
+body.spt-managed .managed-schedule-summary-item {
+  min-width:95px;display:flex;align-items:center;gap:7px;
+  border:1px solid var(--r11-edge);border-radius:7px;
+  color:var(--r11-ink);background:var(--r11-raised);
+  padding:7px 10px;font-size:10px;font-weight:750;
+}
+body.spt-managed .managed-schedule-summary-item strong {
+  font-size:16px;letter-spacing:-.3px;color:var(--r11-ink);
+}
+body.spt-managed .managed-schedule-summary-item.blocked {
+  background:#ffebe9;border-color:#d39892;color:#9f3936;
+}
+body.spt-managed .managed-schedule-summary-item.blocked strong{color:#b23632;}
+body.spt-managed .managed-schedule-summary-item.risk {
+  background:#fff3dd;border-color:#dec18c;color:#855a23;
+}
+body.spt-managed .managed-schedule-summary-item.risk strong{color:#9d6719;}
+body.spt-managed[data-managed-theme="dark"] .managed-schedule-summary-item.blocked {
+  background:#543036;border-color:#99616a;color:#ffd4d1;
+}
+body.spt-managed[data-managed-theme="dark"] .managed-schedule-summary-item.blocked strong{color:#ffc1bd;}
+body.spt-managed[data-managed-theme="dark"] .managed-schedule-summary-item.risk {
+  background:#534129;border-color:#9e8151;color:#ffe1aa;
+}
+body.spt-managed[data-managed-theme="dark"] .managed-schedule-summary-item.risk strong{color:#ffd59a;}
+@media(max-width:700px){
+  body.spt-managed .managed-schedule-summary {align-items:start;flex-direction:column;gap:9px;}
+  body.spt-managed .managed-schedule-summary-counts {width:100%;}
+  body.spt-managed .managed-schedule-summary-item {min-width:0;flex:1;}
+}
