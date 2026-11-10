@@ -1,30 +1,6 @@
 > **Current baseline: approved v18.** The Product Owner directive of 2026-11-05 supersedes v17 as the current UI/UX authority and authorizes implementation in PR #15. v17 references below are historical; use the pinned v18 and live product/reference tests for visual acceptance. Read-only access and all eleven Excel Managed Variant decisions remain unchanged.
 
 # Gantt Viewer
-## Report 1.1 — targeted Owner UAT package (draft development only)
-
-**Latest Report 1.1 synthetic kit, verified by Linux + Windows CI on 2026-11-10:** [Download the full GitHub Actions ZIP](https://github.com/Kenny619/spl-wbs/actions/runs/42794050453/artifacts/13753546087) · [CI evidence: run #42794050453](https://github.com/Kenny619/spl-wbs/actions/runs/42794050453) · [Draft feature PR #37](https://github.com/Kenny619/spl-wbs/pull/37).
-
-**Exact packaged source SHA:** `308c39d36b74e2869b8e3eb8adc2247cce3ccce7`. **Automated checks:** 162/162 unit tests; 65/65 Windows Chromium browser tests; product and managed builds PASS. The ZIP includes the complete `managed.html` application, a **separate Report 1.1 fictional workbook** `SPT-WBS_Report11_Synthetic_UAT.xlsx`, `REPORT11_START_HERE.txt`, `REPORT11_UAT_CHECKLIST.md`, `REPORT11_CHECKSUMS.txt`, **plus the original DES-010 synthetic fixture and its instructions**. The Report 1.1 workbook contains one **G5 go-live milestone** and fictional saved history over **2026-11-09 and 2026-11-10** (3 logical Saves and 5 recorded field changes).
-
-**Work PC / Edge instructions:** Download the entire Actions ZIP, extract it, copy **only** `SPT-WBS_Report11_Synthetic_UAT.xlsx` to a clean disposable folder, and open the included `managed.html` locally in Edge. Choose the disposable folder under Project; if native folder access is blocked, use **Open XLSX read-only** for preview-only UAT and mark writable checks BLOCKED. Open Reports, enter Project name `Fictional Enterprise Program`, and review Latest Status, Progress & Risks Update (select dates **Nov 09–10, 2026**), and Detailed Change Audit. Check the 2 daily audit tables, full Save IDs, red/amber status, G5 countdown, exact plain-text/HTML report parity, fixed snapshot, downloaded offline HTML, and deliberately malicious-looking historical value displayed only as **literal text**. For **Copy for Outlook**, paste into a *new unsent* HTML-format message and inspect layout; **do not send**. Record results in the included checklist.
-
-**Safety & authority:** Synthetic and disposable workbook **only**. Source PR #37 remains draft/unmerged. CI pass is not independent security approval or physical corporate Edge/Outlook UAT PASS. Existing v18, workbook-backup/Save gates, advisory disposition, and explicit integration/release decisions remain separate.
-
-
-## Excel Managed Variant — DES-010 owner UAT (development only)
-
-**Corrected corporate Edge picker kit (2026-11-09):** [Download complete six-file ZIP from Actions run #42576183324](https://github.com/Kenny619/spl-wbs/actions/runs/42576183324/artifacts/13655660880). This supersedes the initial DES-010 package and previous corrected kit. If the native folder picker returns `AbortError`, use **Project → Open XLSX read-only…** to view the supplied synthetic XLSX without writing. This does not authorize Save/backup UAT or physical Edge filesystem acceptance. All six ZIP contents and manifest checksums were verified and exact source CI passed **134/134 unit, 62/62 Chromium**.
-
-**Current corrected UAT kit:** [Download the complete six-file ZIP from GitHub Actions run #42552811227](https://github.com/Kenny619/spl-wbs/actions/runs/42576183324/artifacts/13655660880). Includes `managed.html`, `SPT-WBS_DES010_Synthetic_UAT.xlsx`, `START-HERE.txt`, `README-OWNER-UAT.txt`, `UAT-RESULTS-TEMPLATE.md`, and `SHA256SUMS.txt`. The earlier kit is **superseded** because the initial project picker was misplaced and the example workbook included unsupported AutoFilter metadata.
-
-1. Download and **extract** the ZIP; do not open HTML from inside the archive.
-2. Create an **empty disposable local folder** and **copy only the supplied XLSX** into it.
-3. Open the newly extracted `managed.html` in Microsoft Edge (Ctrl+O).
-4. Open **Project → Choose project folder**, choose the disposable folder, and confirm the workbook name and 23 task rows appear.
-5. If the banner reports `AbortError` or the folder was not granted, the browser/native picker has not given a writable directory handle. Do **not** repeatedly retry Save or infer an XLSX parsing failure. Use **Project → Open XLSX read-only…**, select the supplied `SPT-WBS_DES010_Synthetic_UAT.xlsx` directly, and confirm the 23 tasks are visible. This is a safe **view-only** UAT fallback; edit, Save, Save As, backups and write-history UAT remain blocked until corporate Edge folder permission is resolved. Report the **exact diagnostic banner**, Edge version, whether any permission prompt appeared and whether direct read-only import succeeded. Do **not** use corporate production workbooks.
-
-This kit was verified for ZIP integrity, file checksums and supported XLSX sample structure, and the packaged workbook passed automated Chromium import and disposable Save/History regression at [PR #32 commit `52fdb617`](https://github.com/Kenny619/spl-wbs/pull/32). It still needs actual corporate Edge UAT; no release or write-safety acceptance is implied. This managed UAT is separate from the read-only `dist/index.html` viewer described below.
 
 Read-only schedule viewer for one project. Open a SharePoint List `.xlsx` export and review the WBS, dates, progress, and calendar in the browser. The viewer never writes back to the workbook or to SharePoint.
 
@@ -36,6 +12,20 @@ Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address
 - On a compatible browser, the previous file can be offered again after you return. Permission is requested only after you click. Task rows are not stored.
 
 The page title is the file name without `.xlsx`.
+
+## Latest UAT download — SPT-WBS Report 1.1
+
+**[Download the latest complete Report 1.1 UAT ZIP](https://github.com/Kenny619/spl-wbs/actions/runs/42794050453/artifacts/13753546087)**
+
+Development preview · **November 10, 2026** · packaged source `308c39d36b74e2869b8e3eb8adc2247cce3ccce7` · [CI evidence](https://github.com/Kenny619/spl-wbs/actions/runs/42794050453) (**162/162 unit and 65/65 Chromium tests passed**).
+
+The ZIP contains `managed.html`, `SPT-WBS_Report11_Synthetic_UAT.xlsx` (fictional G5 milestone and saved history), `REPORT11_START_HERE.txt`, `REPORT11_UAT_CHECKLIST.md`, `REPORT11_CHECKSUMS.txt`, and the earlier DES-010 fixture for compatibility. **Use the Report11 workbook for Report 1.1 UAT.**
+
+**On your work PC:** Download and extract the ZIP; copy only the Report11 workbook into a new empty disposable folder; open `managed.html` locally in Edge; choose the folder under **Project**, then open **Reports**. Enter project name `Fictional Enterprise Program`; review all three modes, and use **November 9–10, 2026** for the historical reports. Test **Copy for Outlook** by pasting into a new, **unsent** HTML email. Record results in `REPORT11_UAT_CHECKLIST.md`. If folder selection is blocked, use **Open XLSX read-only** and mark write-dependent checks BLOCKED.
+
+**Status:** Draft [implementation PR #37](https://github.com/Kenny619/spl-wbs/pull/37), unmerged; independent QA and corporate Edge/Outlook UAT remain open. Use synthetic data only; no release authorized.
+
+**README download policy:** This is the **single current UAT/mock download entry**. Whenever a revised mock or UAT package is available, replace this link, version, evidence and instructions **in the default-branch README and active feature-branch README** in the same handoff. Remove outdated README download entries rather than stacking links. Historical evidence stays in issues, PRs and CI records, not in this download section.
 
 ## Excel setup
 
