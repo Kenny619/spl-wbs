@@ -4,7 +4,7 @@
 **Controlling requirements:** [Issue #7](https://github.com/Kenny619/spl-wbs/issues/7), frozen **EMV-REPORT-1.0** (approved 2026-11-06).  
 **Related:** #3 workbook schema; #4 editing; #5 UpdateHistory audit; #6 Settings/timezone; DES-010 UAT Session 02 and UI [PR #35](https://github.com/Kenny619/spl-wbs/pull/35).  
 **Decision status:** Product Owner explicitly approved **reporting direction** in chat on 2026-11-09 ("approved"), in response to proposed stakeholder-focused Progress & Risks Update as the primary period report, Detailed Change Audit separately, and plain-text **and HTML** output. This document captures a **proposed revision** for formal freeze/review, not an automatic amendment or implementation authorization.  
-**Version status:** 1.1 *proposal*; **1.0 remains frozen and controlling until separately frozen**. No report-engine changes, PR merge, deployment, release or Issue #7 closure authorized by this document.
+**Version status:** 1.1 *proposal*; **1.0 remains frozen and controlling until separately frozen**. No report-engine changes, PR merge, deployment, release or Issue #7 closure authorized by this document. **Review 02 visual design accepted 2026-11-10** (owner: “Excellent update. No more change requests. Please proceed.”). Newer design decisions and current source-contract gaps are described in [Review 02 Owner Disposition](EMV_REPORT_1_1_REVIEW02_OWNER_DISPOSITION.md); where an earlier proposal bullet conflicts, that delta is the current **proposed** 1.1 behavior, not frozen 1.0.
 
 ## 1. Change control: approved direction versus existing rule
 
@@ -21,21 +21,23 @@
 
 ## 2. Proposed product behavior (for formal contract review)
 
-### 2.1 Latest Status — existing 1.0 functionality retained
+### 2.1 Latest Status — core source protections retained; Review 02 presentation revision proposed
 
-- Current committed workbook-only progress rollups using existing calculation and status classification; no invented trend or summary-task double counts.
-- Needs Attention: Blocked / At Risk / relevant overdue; milestones and near-term highlights, honoring workstream grouping, task-limit selector, and frozen display/timezone rules.
-- Available as text and HTML using identical facts, generated timestamp, empty states and ordering.
+- Use committed task state and existing status/date rules. **Do not display overall progress percentage** in the stakeholder report; do not alter the internal weighted-progress algorithm used elsewhere.
+- Show **Days to go-live first**, derived from one uniquely identified Launch Date / Release Date / G5 milestone, using existing Japanese workday/holiday rules. Show an explicit unavailable/ambiguous state rather than guess. Show the **single next milestone** as date plus remaining days; no task count or duplicated date.
+- Emphasize one **Risks and Blockers** section (Blocked, At Risk, and supported Red/Amber RAG), then scoped upcoming commitments due in **five working days**. Remove healthy In-progress Highlights.
+- Display **project name, not workbook filename** in report content. Default task listing control to **All Tasks**, with a compact one-task-per-row grouped layout and optional Top 10. Workstream formatting, selected timezone, unsaved draft exclusion and fixed snapshot remain.
+- Both text and HTML render the same substantive facts; unresolved project-name and manual-RAG source contracts are tracked in [Review 02](EMV_REPORT_1_1_REVIEW02_OWNER_DISPOSITION.md).
 
 ### 2.2 Progress & Risks Update — new *primary period* report
 
 For a chosen **inclusive calendar date range** in Settings IANA timezone, use persisted `UpdateHistory` as evidence of specific changes and current committed `ProjectWBS` for **current** status. Organize for stakeholder reading, *not* as a list of field edits:
 
-1. **Executive summary:** project/file identity, reporting dates, selected timezone, generated timestamp; current weighted progress and current attention counts clearly labeled **as-of-generation**, not misrepresented as historical end-of-period metrics.
+1. **Executive summary:** explicit project name (**no workbook filename**), reporting dates, selected timezone and generated timestamp; go-live working-day countdown as **first metric**, single next milestone date + days remaining, and conspicuous current Red/Amber/Blocked/At Risk counts. **Do not include overall project progress percentage** or make historical trend claims.
 2. **Progress and accomplishments:** meaningful completed/advanced tasks and milestones *only when dated evidence supports a transition*; distinguish "recorded during period" from task state simply observed now. If `UpdateHistory` does not capture a transition, say so and avoid inferred historic status.
-3. **Emerging risks and schedule shifts:** newly Blocked / At Risk status transitions, newly identified overdue exposure or changed committed dates *only where history includes the before/after values and timestamp*. If current tasks are blocked/at risk without new period history, present them as **outstanding current risks**, not "new."
-4. **Actions / near-term commitments:** current incomplete or upcoming milestones/deadlines grounded in date-only scheduled values, grouped by workstream; **do not fabricate owner actions, mitigation plans, delivery confidence, or risk causes**. Include saved `Updates` text as quoted factual notes only where available and clearly attributed; do not treat a text field as verified completion.
-5. **Workstream presentation:** show exceptions first, then meaningful progress and next milestones grouped by workstream. Multiple tasks beneath headings use plain workstream headings and unprefixed task names; standalone mentions use `[Workstream] Task Name` as frozen in 1.0.
+3. **Risks and Blockers / Schedule Changes:** consolidate current Red/Amber RAG (when supported) and Blocked/At Risk status into one **Risks and Blockers** section; label them current unless valid saved history proves a dated transition. A distinct **Schedule Changes** section lists **only** actual recorded PlannedStart/PlannedEnd changes with timestamps/old/new. Never infer a schedule edit from a merely overdue task.
+4. **Upcoming Commitments:** current incomplete tasks/milestones due **today through five working days from today** (inclusive of fifth working day), using selected Settings timezone and authoritative Japanese holiday calendar. Exclude already-overdue items from this section. Group by workstream; **do not fabricate owner actions, mitigation plans, confidence, or causes**. Saved `Updates` text may appear as attributed factual notes, never verified completion.
+5. **Workstream presentation:** show exceptions first, then evidence-backed progress, schedule changes and five-working-day commitments. Render **one task per compact row**; if more than one task appears, group by plain workstream headings with unprefixed task names; standalone mentions use `[Workstream] Task Name` as frozen in 1.0. **All Tasks** is the default, with explicit Top 10 option and no invisible truncation.
 6. **Evidence and no-data behavior:** a missing/incomplete history must not imply no work occurred. Display "No recorded period changes" when valid history has none; differentiate empty valid history from malformed/incompatible data (fail closed rather than produce a misleading full report). Preserve visible timestamps for factual historical changes.
 7. **Ranking:** use existing approved status/deadline rules, deterministic sorting and existing priority semantics; no invented risk score or new risk model.
 
@@ -69,13 +71,13 @@ Multiple saved transitions for the same task within the period must be ordered b
 
 ### 2.3 Detailed Change Audit — preserve existing Update Report semantics
 
-Retain the complete frozen EMV-REPORT-1.0 historical Update Report under a new explicitly audit-focused name. Continue reading **only** `UpdateHistory` for date-window events: affected task count, logical Save count, field-row count, old/new values, immutable historical title/WBS snapshot, field labels, timestamps, complete cross-workstream `ChangeSetID` links, full/abbreviated long-text choice, deterministic order, malformed-history rejection, empty-window behavior. Existing validated test coverage must remain.
+Retain the complete frozen EMV-REPORT-1.0 historical Update Report under a new explicitly audit-focused name. Continue reading **only** `UpdateHistory` for date-window events: affected task count, logical Save count, field-row count, old/new values, immutable historical title/WBS snapshot, field labels, timestamps, complete cross-workstream `ChangeSetID` links, full/abbreviated long-text choice, deterministic order, malformed-history rejection, empty-window behavior. For **HTML presentation**, group by selected-timezone **local calendar date**, with **one fixed-column table per day**, all changes for that day shown in rows, and identical columns/widths across each date table. Display full event identity accessibly (not solely through truncated tooltip) and preserve shared logical Save semantics. Existing validated test coverage must remain.
 
 ### 2.4 Plain-text and HTML output
 
 - Both representations derive from the **same immutable generated snapshot and same canonical report data**. Changing display format alone must not trigger Generate/Refresh or change facts, timezone, period, grouping, ordering or totals.
 - **Text:** readable preview, exact-text Copy Report, and unchanged snapshot/clipboard failure notices; no loss to existing v1 copy workflow.
-- **HTML:** readable document-style preview with clear headings, workstream sections, compact progress/risk highlights, accessible contrast, semantic tables only when useful, responsive printable layout; standalone **Download HTML** for offline browser open/printing.
+- **HTML:** readable document-style preview with clear headings, workstream sections, compact progress/risk rows and strong non-color-only contrast, stable audit date tables, responsive printable layout; standalone **Download HTML** for offline browser open/printing. Offer an explicit **Copy for Outlook** rich clipboard operation with both `text/html` and `text/plain` MIME representations, safe inline email-compatible styles, accurate error/denial feedback and no automatic email sending; corporate Edge/Outlook paste must be physically verified.
 - HTML is generated from trusted local render templates and **escaped untrusted workbook text**. Never treat Description/Updates as executable markup. No script, remote assets, external tracking, embedded links to untrusted locations or network transmission. Use local, static CSS. CSP-compatible inert content; malicious workbook cell text remains literal visible text.
 - Export only on explicit user gesture. Exporting reports **does not write workbook files, change UpdateHistory or create Save/backup transactions**.
 - Avoid claiming HTML exists in the current build; 1.0 product provides plain text only.
@@ -87,7 +89,7 @@ No source workbook changes from report generation; unsaved drafts excluded and w
 ## 3. Impact analysis and dependencies
 
 - **Requirements:** change to frozen Issue #7's report modes, Update Report source/presentation, and text-only output guarantee. Formal freeze and version/changelog update required; preserve 1.0 provenance as historical baseline.
-- **Data:** no XLSX schema changes proposed. `ProjectWBS` + existing `UpdateHistory` sufficient for factual current-state and *recorded* changes; historical trending may be limited; new fields/event log are **out of scope** pending separately approved business case.
+- **Data:** no XLSX schema changes proposed. `ProjectWBS` + existing `UpdateHistory` are sufficient for saved transitions and current **TaskStatus** facts, but **neither a separate project-name attribute nor independent manual RAG state is present** in the currently reviewed model. The proposed UI-only project-name configuration and RAG source limitation need explicit acceptance at the formal freeze. Historical trending remains limited; new workbook fields/event logs are **out of scope** pending a separately approved business case.
 - **Implementation:** refactor `src/managed/reports.ts` into source-normalized typed report view models plus text and inert-HTML renderers; update `reportsUi.ts` to offer three modes and format selection/download. Preserve current audited generator for Detailed Change Audit and stable text contract. The reports workspace is already fixed under DES-010; Close button remediation lives in draft PR #35, not this proposal.
 - **Tests:** preserve existing 1.0 text/audit contract tests as regression for Detailed Audit; add period-boundary and DST tests, recorded transition vs current-state distinction, no fabricated deltas, workstream formatting, cross-Save association, text/HTML semantic equivalence, XSS escaping and malformed data, fixed snapshot, download-only-on-click, clipboard and offline HTML rendering, dirty draft/no workbook writes.
 - **Security:** HTML generation creates an injection surface. Require inert rendering, safe escaping, no remote resource loads, and security review. Existing ExcelJS/uuid moderate dependency advisory remains separately open.
@@ -97,14 +99,14 @@ No source workbook changes from report generation; unsaved drafts excluded and w
 ## 4. Proposed acceptance criteria
 
 1. Three report modes with stakeholder Progress & Risks Update the default dated period report and a separately discoverable Detailed Change Audit.
-2. Latest Status unchanged in core facts; same verified weighted progress/attention logic and summary handling.
+2. Latest Status uses verified committed task status/attention handling without showing overall progress, presents the first-box go-live countdown, one upcoming milestone date plus remaining days, strong Risks and Blockers, five-working-day commitments, and omits generic In-progress Highlights.
 3. Dated transition claims only when `UpdateHistory` contains supporting events, with current outstanding issues labeled separately. No historical trend or mitigation invented.
 4. Clear source/evidence distinction; malformed history and missing historical baseline never misrepresented as verified period performance.
-5. Stakeholder content prioritizes changes/progress, emerging/current risks and upcoming deadlines/decisions, with workstream hierarchy and frozen naming rules.
-6. Detailed Change Audit preserves all original Issue #7 historical field, Save grouping, timezone and clipboard rules.
+5. Stakeholder content prioritizes consolidated current Risks and Blockers, recorded progress, a separate history-backed Schedule Changes section and five-working-day commitments; project-name-only header; compact one-task-per-row workstream hierarchy; All Tasks default; strong accessible Red/Amber presentation and frozen naming rules.
+6. Detailed Change Audit preserves all original Issue #7 historical field, Save grouping, timezone and clipboard rules; HTML displays one fixed-column table per selected-timezone calendar date, with complete shared ChangeSetID access and historical identity.
 7. Both text and HTML operate on one fixed snapshot until Generate/Refresh; identical facts, ordering, dates, counts and timezone.
 8. HTML is offline, inert, accessible and printable; workbook text escaped; no network/resource injection or active content.
-9. HTML download explicit, no mutation of workbook/history, text clipboard unchanged and failures surfaced accurately.
+9. HTML download and rich **Copy for Outlook** action explicit; clipboard provides paired HTML and plain-text MIME payloads or clear failure/fallback, without workbook/history mutation or auto-send.
 10. Invalid dates, DST, no period activity, incomplete history, unsaved drafts, no workbook, disabled write status and cancelled exports covered by unit + Windows Chromium tests.
 11. Existing read-only v18 and approved managed visual/UI routes remain unchanged.
 
@@ -115,5 +117,6 @@ No source workbook changes from report generation; unsaved drafts excluded and w
 | 2026-11-06 | **1.0 FROZEN** | Owner approved Latest Status and UpdateHistory-only plain-text Update Report with workstream formatting |
 | 2026-11-09 | **1.1 direction APPROVED** | Owner approved stakeholder-focused Progress & Risks Update, separate Detailed Change Audit and plain-text + HTML outputs in response to consolidated proposal |
 | 2026-11-09 | **1.1 formal proposal PREPARED** | Written contract, evidence boundaries, impact analysis and acceptance criteria prepared for explicit freeze; no production code changed |
+| 2026-11-10 | **Review 02 design ACCEPTED; spec delta PROPOSED** | Owner confirmed no further design changes; incorporated Review 02 requirements with two data-source gaps awaiting formal disposition; docs-only, no implementation authorization |
 
 **Open approval boundary:** this is the *formal revision proposal*. Product Owner approval of the direction does not silently freeze the exact detailed 1.1 requirements or authorize a PR merge/release. No remaining decisions should be escalated until the detailed spec is ready for a consolidated freeze and implementation decision.
