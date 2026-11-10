@@ -277,10 +277,10 @@ export class ManagedReports {
           generatedAt: generatedAt.toISOString(), timeZone,
           startDay: this.from.value, endDay: this.through.value,
           audit, includeFullValues: this.full.checked,
+          historyPresent: history.present,
         };
         const html = renderReport11AuditHtml(input);
-        const text = renderReport11AuditText(input) +
-          (history.present ? "" : "\nHistory not available: UpdateHistory sheet is absent.");
+        const text = renderReport11AuditText(input);
         output = { html, text, mode };
       } else {
         const history = mode === "progress" ?
