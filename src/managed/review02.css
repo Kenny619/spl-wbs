@@ -375,3 +375,23 @@ body.spt-managed[data-managed-theme="dark"] .managed-schedule-summary-item.risk 
 @media(max-width:960px){
   body.spt-managed .managed-schedule-summary{display:none!important;}
 }
+
+/* At 860px the Gantt header wraps. Keep the DES-010 accepted minimum
+ * usable chart height by reverting density only at compact widths, while
+ * retaining Review 02 color/contrast and the desktop executive hierarchy. */
+@media(max-width:960px){
+ body.spt-managed .managed-schedule-body{gap:10px;padding:10px 14px 12px;}
+ body.spt-managed .managed-schedule-body .chart-top{padding:9px 12px;}
+ body.spt-managed .managed-schedule-body .managed-gantt-scope{
+   border:0;background:transparent;padding:1px;gap:2px;
+ }
+ body.spt-managed .managed-schedule-body .managed-gantt-scope button{
+   padding:4px 7px;min-height:27px;
+ }
+ body.spt-managed .managed-schedule-body .managed-gantt-scope-note{
+   font-size:9px;line-height:1.2;
+ }
+ body.spt-managed .managed-schedule-body .chart-top .toolbar .tool{
+   padding-inline:6px;font-size:10px;
+ }
+}
