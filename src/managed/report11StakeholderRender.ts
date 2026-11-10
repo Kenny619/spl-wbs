@@ -11,8 +11,8 @@ function headline(snapshot: Report11Snapshot): readonly [string, string, string]
   const milestone = next.kind === "identified" ?
     next.task.taskName + " · " + next.date + " · " + next.days + " days remaining" :
     next.kind === "none" ? "None" : "Holiday coverage incomplete";
-  const red = snapshot.risks.filter((row) => row.tone === "red").length;
-  const amber = snapshot.risks.filter((row) => row.tone === "amber").length;
+  const red = snapshot.totalRedRisks;
+  const amber = snapshot.totalAmberRisks;
   return [goLive, milestone, red + " red/blocked · " + amber + " amber/at risk"];
 }
 function group<T extends { workstream: string }>(items: readonly T[]): ReadonlyMap<string, readonly T[]> {
