@@ -483,6 +483,67 @@ test("Report 1.1 HTML preview and Outlook dual MIME copy keep an immutable snaps
   expect(clipboard.plain).toBe(plain);
 });
 
+test("Review 02 visual parity: report studio and Schedule share design language", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page);
+
+  const chart = page.locator(".managed-schedule-body .chart-card");
+  const detail = page.locator(".managed-schedule-body .detail-panel");
+  await expect(chart).toBeVisible();
+  await expect(detail).toBeVisible();
+  const scheduleRadius = await chart.evaluate((node) => getComputedStyle(node).borderRadius);
+  expect(scheduleRadius).toBe("11px");
+  const scheduleToolbar = page.locator(".managed-schedule-body .managed-gantt-scope");
+  await expect(scheduleToolbar).toBeVisible();
+  await testInfo.attach("review02-schedule-light", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+
+  await page.getByRole("button", { name: "Output Reports" }).last().click();
+  const reports = page.getByRole("dialog", { name: "Output Reports" });
+  const sidebar = reports.locator(".report11-builder");
+  const document = reports.locator(".report11-workspace");
+  await expect(sidebar).toBeVisible();
+  await expect(document).toBeVisible();
+  await expect(sidebar.getByRole("heading", { name: "Build a report" })).toBeVisible();
+  await expect(reports.locator(".report11-mode-card")).toHaveCount(3);
+  await expect(reports.locator(".report11-mode-card.active")).toContainText("Progress & Risks Update");
+  await expect(reports.locator(".report11-format-choices")).toBeVisible();
+
+  const left = await sidebar.boundingBox();
+  const right = await document.boundingBox();
+  expect(left && right).toBeTruthy();
+  expect(left!.x + left!.width).toBeLessThan(right!.x);
+  expect(left!.width).toBeGreaterThan(250);
+  expect(right!.width).toBeGreaterThan(520);
+
+  await reports.getByLabel("Project name").fill("Design Parity Program");
+  await reports.getByLabel("Report mode").selectOption("status");
+  await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  const srcdoc = await reports.locator('iframe[title="Formatted report preview"]').getAttribute("srcdoc");
+  expect(srcdoc).toContain('class="report-paper"');
+  expect(srcdoc).toContain('class="metric go-live"');
+  expect(srcdoc).toContain('class="metric red"');
+  expect(srcdoc).toContain('class="metric amber"');
+  expect(srcdoc).toContain("Executive snapshot");
+  expect(srcdoc).not.toContain("Overall progress");
+  await testInfo.attach("review02-reports-light", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+
+  await page.evaluate(() => { document.body.dataset.managedTheme = "dark"; });
+  const background = await sidebar.evaluate((node) => getComputedStyle(node).backgroundColor);
+  expect(background).toBe("rgb(29, 43, 62)");
+  await testInfo.attach("review02-reports-dark", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  await reports.locator("[data-report11-mode='audit']").click();
+  await expect(reports.getByLabel("Report mode")).toHaveValue("audit");
+  await page.locator(".managed-main-nav [data-managed-view='schedule']").click();
+  await expect(chart).toBeVisible();
+  await expect(reports).toBeHidden();
+});
+
 test("Stage A inspector shows READY state without modifying any workbook bytes", async ({ page }) => {
   await openManaged(page);
   const source = await page.evaluate(() =>
