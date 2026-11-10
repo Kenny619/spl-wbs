@@ -13,36 +13,19 @@ Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address
 
 The page title is the file name without `.xlsx`.
 
-## Report design review — work-PC access
+## Latest UAT download — SPT-WBS Report 1.1
 
-The Report specification is tracked in [Issue #7 — EMV-REPORT-1.0](https://github.com/Kenny619/spl-wbs/issues/7), with the broader [UI/UX workstream in Issue #25](https://github.com/Kenny619/spl-wbs/issues/25).
+**[Download the latest complete Report 1.1 UAT ZIP](https://github.com/Kenny619/spl-wbs/actions/runs/42794050453/artifacts/13753546087)**
 
-**Latest Report 1.1 review mock — iteration 02 (PO feedback on Issue #7):** [View HTML file on GitHub](https://github.com/Kenny619/spl-wbs/blob/docs/report-1-1-po-approved-direction/docs/prototypes/SPT-WBS_Report_1.1_Interactive_Prototype_Review02.html) · [Get standalone HTML](https://raw.githubusercontent.com/Kenny619/spl-wbs/docs/report-1-1-po-approved-direction/docs/prototypes/SPT-WBS_Report_1.1_Interactive_Prototype_Review02.html). Save the raw file and open it locally in Microsoft Edge. This fictional prototype incorporates stronger Red/Amber exceptions, go-live working-day countdown, five-working-day commitments, compact one-task-per-row sections, date-grouped fixed-column audit tables, default All Tasks and an experimental **Copy for Outlook** rich HTML/plain-text clipboard action. Corporate Outlook paste behavior requires physical UAT. No Excel connection or workbook writes. **Unmerged design prototype only; detailed 1.1 contract is NOT frozen and implementation is NOT authorized.** [Previous review-01 prototype](https://github.com/Kenny619/spl-wbs/blob/docs/report-1-1-po-approved-direction/docs/prototypes/SPT-WBS_Report_1.1_Interactive_Prototype.html) is retained for comparison.
+Development preview · **November 10, 2026** · packaged source `308c39d36b74e2869b8e3eb8adc2247cce3ccce7` · [CI evidence](https://github.com/Kenny619/spl-wbs/actions/runs/42794050453) (**162/162 unit and 65/65 Chromium tests passed**).
 
-## Excel Managed Variant — DES-010 owner UAT (development only)
+The ZIP contains `managed.html`, `SPT-WBS_Report11_Synthetic_UAT.xlsx` (fictional G5 milestone and saved history), `REPORT11_START_HERE.txt`, `REPORT11_UAT_CHECKLIST.md`, `REPORT11_CHECKSUMS.txt`, and the earlier DES-010 fixture for compatibility. **Use the Report11 workbook for Report 1.1 UAT.**
 
-**[Download CORRECTED complete DES-010 Owner UAT Kit (GitHub Actions ZIP)](https://github.com/Kenny619/spl-wbs/actions/runs/42552811227/artifacts/13646311446)**
+**On your work PC:** Download and extract the ZIP; copy only the Report11 workbook into a new empty disposable folder; open `managed.html` locally in Edge; choose the folder under **Project**, then open **Reports**. Enter project name `Fictional Enterprise Program`; review all three modes, and use **November 9–10, 2026** for the historical reports. Test **Copy for Outlook** by pasting into a new, **unsent** HTML email. Record results in `REPORT11_UAT_CHECKLIST.md`. If folder selection is blocked, use **Open XLSX read-only** and mark write-dependent checks BLOCKED.
 
-**Current build (November 9, 2026):** exact [draft PR #32](https://github.com/Kenny619/spl-wbs/pull/32) source commit `52fdb6173f22a8dcd3d9aaa7d06344f40e5a7cc5`. [Windows CI #42552811227](https://github.com/Kenny619/spl-wbs/actions/runs/42552811227) **PASS, 60/60 browser tests** including a real import, verified Save and `UpdateHistory` roundtrip with the **exact included 23-task workbook**, exercised through an automated Chromium folder-handle simulation. Actual owner Microsoft Edge/native folder picker remains UAT.
+**Status:** Draft [implementation PR #37](https://github.com/Kenny619/spl-wbs/pull/37), unmerged; independent QA and corporate Edge/Outlook UAT remain open. Use synthetic data only; no release authorized.
 
-**The prior November 9 kit is superseded.** Owner UAT found folder selection produced no visible loaded workbook. Investigation found (1) the original **Choose project folder** button was outside the Project menu documented in the instructions, and (2) the originally distributed workbook contained an **AutoFilter**, which fails the managed v1 Save safety preflight. Both are corrected. Folder scanning, picker cancellation and workbook import failures now display explicit status messages.
-
-**The corrected six-file ZIP includes:**
-
-- `managed.html` — corrected managed development application.
-- `SPT-WBS_DES010_Synthetic_UAT.xlsx` — fictional 23-task `ProjectWBS`, now without unsupported AutoFilter.
-- `START-HERE.txt` — quick-start.
-- `README-OWNER-UAT.txt` — Edge UAT instructions.
-- `UAT-RESULTS-TEMPLATE.md` — results register.
-- `SHA256SUMS.txt` — integrity manifest.
-
-**Retest in Microsoft Edge:** Extract this **new** ZIP into a new folder (do not reuse the old `managed.html`). Copy the included XLSX into a separate empty disposable work folder. Open the **new** `managed.html`, select **Project → Choose project folder**, grant the browser the requested folder permission, and select the disposable work folder. Confirm the app displays `Workbook ready`, the workbook title, and the synthetic tasks. Use only the disposable copy for Save and History UAT.
-
-**If import still fails**, note the **exact status/error line beneath the application header**, your Edge version, and whether Edge asked for read/write permission. Do not test a real or corporate workbook. Do not repeatedly attempt Save when permission or recovery status is uncertain.
-
-**Availability:** GitHub Actions artifacts expire, currently **November 16, 2026 (UTC)**. For a fresh build, see [PR #32](https://github.com/Kenny619/spl-wbs/pull/32) → Checks → latest successful workflow → Artifacts → `managed-v1-development-preview`. This CI artifact now automatically bundles all six files, not HTML alone.
-
-The previously failed Owner UAT check remains **OPEN pending retest**. Independent QA, physical Edge/file-locking safety, merge, release and deployment are separate gates.
+**README download policy:** This is the **single current UAT/mock download entry**. Whenever a revised mock or UAT package is available, replace this link, version, evidence and instructions **in the default-branch README and active feature-branch README** in the same handoff. Remove outdated README download entries rather than stacking links. Historical evidence stays in issues, PRs and CI records, not in this download section.
 
 ## Excel setup
 
