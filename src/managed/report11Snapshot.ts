@@ -106,6 +106,9 @@ function limited<T>(items: readonly T[], limit: "all" | "top10"): readonly T[] {
 export function buildReport11Snapshot(input: Report11Input): Report11Snapshot {
   const name = input.projectName.trim();
   if (!name || name.length > 180) throw new Error("Enter a Project name to generate a report.");
+  if (input.mode === "progress" && input.historyAvailable && input.history === null) {
+    throw new Error("Verified history data is required when history is marked available.");
+  }
   const today = todayInTimeZone(input.generatedAt, input.timeZone);
   const limit = input.limit ?? "all";
   const tasks = input.tasks.filter((task) => task.taskType !== "Summary");
