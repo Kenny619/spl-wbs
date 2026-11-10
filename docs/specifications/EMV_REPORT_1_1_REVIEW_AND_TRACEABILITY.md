@@ -77,3 +77,7 @@
 
 **Readiness:** static mock JavaScript/report rendering was smoke-checked; no implementation CI, runtime integration/security verification or physical Outlook paste UAT. Formal decisions A (freeze) and B (draft implementation) remain open.
 
+
+## Formal authorization update — 2026-11-10 JST
+
+**Product Owner explicitly approved both Decision A (1.1 specification freeze) and Decision B (isolated draft feature implementation)** after Review 02. [Frozen contract](EMV_REPORT_1_1_FROZEN.md) supersedes earlier pending/gap statements in this historical QA review; the local Project name input and status-only RAG fallback with verified-source-only extension are accepted without a workbook schema change. Exact-head CI/independent QA and physical Edge+Outlook UAT are still required before acceptance. **No merge/release/waiver**.
