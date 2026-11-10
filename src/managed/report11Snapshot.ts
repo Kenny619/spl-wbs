@@ -40,7 +40,9 @@ export type Report11Snapshot = Readonly<{
   goLive: ReturnType<typeof getDaysToGoLive>;
   nextMilestone: ReturnType<typeof getUpcomingMilestone>;
   risks: readonly Report11TaskRow[];
+  omittedRisks: number;
   commitments: readonly Report11TaskRow[];
+  omittedCommitments: number;
   commitmentCoverage: "ready" | "holiday-coverage-incomplete";
   recordedProgress: readonly Report11ChangeRow[];
   scheduleChanges: readonly Report11ChangeRow[];
@@ -108,13 +110,15 @@ export function buildReport11Snapshot(input: Report11Input): Report11Snapshot {
   const limit = input.limit ?? "all";
   const tasks = input.tasks.filter((task) => task.taskType !== "Summary");
   const byId = new Map(input.tasks.map((task) => [task.id, task]));
-  const risks = limited(currentStatusExceptions(tasks)
-    .map((item) => mapCurrent(item.task, item.tone)), limit);
+  const allRisks = currentStatusExceptions(tasks)
+    .map((item) => mapCurrent(item.task, item.tone));
+  const risks = limited(allRisks, limit);
   const upcoming = fiveWorkingDayCommitments(tasks, today, input.calendar);
-  const commitments = upcoming.kind === "ready" ?
-    limited(upcoming.tasks.map((task) =>
+  const allCommitments = upcoming.kind === "ready" ?
+    upcoming.tasks.map((task) =>
       mapCurrent(task, task.status === "Blocked" ? "red" :
-        task.status === "At Risk" ? "amber" : "neutral")), limit) : [];
+        task.status === "At Risk" ? "amber" : "neutral")) : [];
+  const commitments = limited(allCommitments, limit);
   const recordedProgress: Report11ChangeRow[] = [];
   const riskTransitions: Report11ChangeRow[] = [];
   const scheduleChanges: Report11ChangeRow[] = [];
@@ -147,7 +151,9 @@ export function buildReport11Snapshot(input: Report11Input): Report11Snapshot {
     goLive: getDaysToGoLive(tasks, today, input.calendar),
     nextMilestone: getUpcomingMilestone(tasks, today, input.calendar),
     risks: Object.freeze([...risks]),
+    omittedRisks: allRisks.length - risks.length,
     commitments: Object.freeze([...commitments]),
+    omittedCommitments: allCommitments.length - commitments.length,
     commitmentCoverage: upcoming.kind,
     recordedProgress: Object.freeze(recordedProgress),
     scheduleChanges: Object.freeze(scheduleChanges),
