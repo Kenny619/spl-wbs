@@ -346,7 +346,7 @@ test("Report 1.1 keeps committed-only snapshot after mode changes, and copies ex
   const preview = report.getByRole("textbox", { name: "Report preview" });
   await expect(preview).toHaveValue(/LATEST STATUS/);
   await expect(preview).toHaveValue(/Project: Synthetic Program/);
-  await expect(preview).toHaveValue(/Synthetic milestone/);
+  await expect(preview).toHaveValue(/DAYS TO GO-LIVE:/);
   expect(await preview.inputValue()).not.toContain("Not yet committed");
   expect(await preview.inputValue()).not.toContain("Workbook:");
   const snapshot = await preview.inputValue();
@@ -469,7 +469,7 @@ test("Report 1.1 HTML preview and Outlook dual MIME copy keep an immutable snaps
   expect(srcdoc).not.toContain("Workbook:");
   expect(srcdoc).not.toContain("<script");
   await report.getByLabel("Report format").selectOption("text");
-  const plain = await report.getByLabel("Report preview").inputValue();
+  const plain = await report.getByRole("textbox", { name: "Report preview" }).inputValue();
   expect(plain).toContain("Project: Project Orion & Launch");
   await report.getByLabel("Report format").selectOption("html");
   expect(await iframe.getAttribute("srcdoc")).toBe(srcdoc);
@@ -745,9 +745,12 @@ test("DES-010 real Reports uses fixed navigation and committed-only scroll works
   const report = page.getByRole("dialog", { name: "Output Reports" });
   await expect(report).toBeVisible();
   await expect(page.locator(".managed-schedule-body")).toBeHidden();
+  await report.getByLabel("Project name").fill("Synthetic Program");
+  await report.getByLabel("Report mode").selectOption("status");
+  await report.getByLabel("Report format").selectOption("text");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const preview = report.getByRole("textbox", { name: "Report preview" });
-  await expect(preview).toHaveValue(/Synthetic milestone/);
+  await expect(preview).toHaveValue(/DAYS TO GO-LIVE:/);
   const after = await nav.boundingBox();
   expect(Math.abs(before!.x - after!.x)).toBeLessThanOrEqual(2);
   expect(Math.abs(before!.y - after!.y)).toBeLessThanOrEqual(2);
