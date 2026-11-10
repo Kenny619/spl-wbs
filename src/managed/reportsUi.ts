@@ -184,6 +184,104 @@ export class ManagedReports {
     this.htmlPreview.style.minHeight = "640px";
     this.htmlPreview.style.border = "1px solid #c9d7e5";
     this.dialog.append(this.htmlPreview);
+
+    // Owner-accepted Review 02 visual composition: persistent compact report
+    // builder at left and a document-stage preview at right. Reparent the real
+    // controls; do not fork any workbook, export or event handler logic.
+    this.dialog.classList.add("report11-studio");
+    const studio = make("div", undefined, "report11-layout");
+    const sidebar = make("aside", undefined, "report11-builder");
+    sidebar.setAttribute("aria-label", "Report builder");
+    const intro = make("div", undefined, "report11-builder-intro");
+    intro.append(make("span", "REPORT STUDIO", "report11-eyebrow"));
+    head.querySelector("h2")!.textContent = "Build a report";
+    intro.append(head, make("p", "Create a leadership-ready update from the last verified workbook.", "report11-intro-copy"));
+    sidebar.append(intro);
+
+    const modeArea = make("section", undefined, "report11-builder-section");
+    modeArea.append(make("div", "REPORT TYPE", "report11-control-heading"));
+    const modes = make("div", undefined, "report11-modes");
+    for (const [value, title, description, symbol] of [
+      ["status", "Latest Status", "Current health, exceptions and milestones", "◫"],
+      ["progress", "Progress & Risks Update", "Recorded changes and upcoming commitments", "↗"],
+      ["audit", "Detailed Change Audit", "Saved fields and original audit references", "☷"],
+    ] as const) {
+      const button = make("button", undefined, "report11-mode-card");
+      button.type = "button";
+      button.dataset.report11Mode = value;
+      button.setAttribute("aria-pressed", "false");
+      button.append(make("span", symbol, "report11-mode-icon"));
+      const wording = make("span", undefined, "report11-mode-wording");
+      wording.append(make("strong", title), make("small", description));
+      button.append(wording);
+      button.addEventListener("click", () => {
+        this.mode.value = value;
+        this.updateMode();
+      });
+      modes.append(button);
+    }
+    modeArea.append(modes);
+    // Retain accessible native selector for keyboard and existing UAT scripts.
+    const nativeMode = controls.querySelector("label")!;
+    nativeMode.classList.add("report11-native-mode");
+    modeArea.append(nativeMode);
+    sidebar.append(modeArea);
+    const inputSection = make("section", undefined, "report11-builder-section");
+    inputSection.append(make("div", "REPORT SETTINGS", "report11-control-heading"), controls);
+    sidebar.append(inputSection);
+    const generateSection = make("div", undefined, "report11-generate-area");
+    generate.classList.add("report11-generate");
+    generate.prepend(make("span", "↻", "report11-button-icon"));
+    generateSection.append(generate, this.warning, this.status);
+    sidebar.append(generateSection);
+    sidebar.append(make("p",
+      "Evidence principle · Saved changes and current risks are reported separately. No unsupported progress trends or mitigation actions are inferred.",
+      "report11-evidence-note"));
+
+    const workspace = make("section", undefined, "report11-workspace");
+    workspace.setAttribute("aria-label", "Report document workspace");
+    const panelHead = make("div", undefined, "report11-panel-head");
+    const heading = make("div", undefined, "report11-heading");
+    heading.append(make("h2", "Progress & Risks Update", "report11-panel-title"));
+    heading.append(make("p", "Generate a fixed report snapshot; switch formats without recalculation.", "report11-panel-subtitle"));
+    panelHead.append(heading);
+    const toolbar = make("div", undefined, "report11-toolbar");
+    const formatChoices = make("div", undefined, "report11-format-choices");
+    formatChoices.setAttribute("role", "group");
+    formatChoices.setAttribute("aria-label", "Preview format");
+    for (const [value, title] of [["html", "◫ HTML"], ["text", "☷ Plain text"]] as const) {
+      const button = make("button", title, "report11-format-choice");
+      button.type = "button";
+      button.dataset.report11Format = value;
+      button.setAttribute("aria-pressed", "false");
+      button.addEventListener("click", () => {
+        this.format.value = value;
+        this.showFormat();
+      });
+      formatChoices.append(button);
+    }
+    toolbar.append(formatChoices);
+    this.format.classList.add("report11-native-format");
+    this.format.title = "Report format (keyboard selector)";
+    toolbar.append(this.format, this.copy, this.download);
+    panelHead.append(toolbar);
+    workspace.append(panelHead);
+    const meta = make("div", undefined, "report11-preview-top");
+    meta.append(make("strong", "FIXED SNAPSHOT", "report11-fixed-pill"));
+    meta.append(make("span", "Professional HTML preview · printable and offline", "report11-preview-description"));
+    workspace.append(meta);
+    const stage = make("div", undefined, "report11-paper-stage");
+    const paper = make("div", undefined, "report11-paper-viewport");
+    label.classList.add("report11-text-paper");
+    paper.append(this.htmlPreview, label);
+    stage.append(paper);
+    workspace.append(stage);
+    const bottom = make("div", undefined, "report11-bottom");
+    bottom.append(make("span", "Committed workbook data only · No report-initiated writes"),
+      make("span", "Use Generate / Refresh to apply new settings"));
+    workspace.append(bottom);
+    studio.append(sidebar, workspace);
+    this.dialog.replaceChildren(studio);
     this.updateMode();
     this.showFormat();
   }
@@ -214,7 +312,7 @@ export class ManagedReports {
     this.launch.classList.add("active");
     this.launch.setAttribute("aria-current", "page");
     this.dialog.show(); // Nonmodal: Schedule/Reports header navigation remains operable.
-    this.mode.focus();
+    (this.dialog.querySelector<HTMLButtonElement>(".report11-mode-card.active") ?? this.mode).focus();
   }
 
   private refreshWarning(): void {
@@ -229,6 +327,16 @@ export class ManagedReports {
     this.range.hidden = !dated;
     this.full.parentElement!.hidden = this.mode.value !== "audit";
     this.limit.parentElement!.hidden = this.mode.value === "audit";
+    this.dialog.querySelectorAll<HTMLButtonElement>("[data-report11-mode]").forEach((button) => {
+      const active = button.dataset.report11Mode === this.mode.value;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    const titles: Record<string, string> = {
+      status: "Latest Status", progress: "Progress & Risks Update", audit: "Detailed Change Audit",
+    };
+    const heading = this.dialog.querySelector<HTMLElement>(".report11-panel-title");
+    if (heading) heading.textContent = titles[this.mode.value] ?? "Reports";
   }
 
   private showFormat(): void {
@@ -236,6 +344,15 @@ export class ManagedReports {
     this.htmlPreview.hidden = !html;
     this.preview.parentElement!.hidden = html;
     this.copy.textContent = html ? "Copy for Outlook" : "Copy Report";
+    this.dialog.querySelectorAll<HTMLButtonElement>("[data-report11-format]").forEach((button) => {
+      const active = button.dataset.report11Format === this.format.value;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    const description = this.dialog.querySelector<HTMLElement>(".report11-preview-description");
+    if (description) description.textContent = html
+      ? "Professional HTML preview · print-friendly, offline"
+      : "Exact plain-text report preview · suitable for email and chat";
     // Display-only format change: neither report content nor timestamp changes.
     if (this.output) {
       this.preview.value = this.output.text;
