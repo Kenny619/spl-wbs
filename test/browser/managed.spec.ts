@@ -321,7 +321,7 @@ test("Change History uses the Settings timezone without mutating saved UTC audit
 });
 
 
-test("Output Reports uses committed data only with unsaved draft, then copies exactly the fixed preview", async ({ page }) => {
+test("Report 1.1 keeps committed-only snapshot after mode changes, and copies exact text", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -339,16 +339,21 @@ test("Output Reports uses committed data only with unsaved draft, then copies ex
   const report = page.getByRole("dialog", { name: "Output Reports" });
   await expect(report).toBeVisible();
   await expect(report.getByText(/Unsaved task edits exist/)).toBeVisible();
+  await report.getByLabel("Project name").fill("Synthetic Program");
+  await report.getByLabel("Report mode").selectOption("status");
+  await report.getByLabel("Report format").selectOption("text");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const preview = report.getByRole("textbox", { name: "Report preview" });
-  await expect(preview).toHaveValue(/Latest Status Report/);
+  await expect(preview).toHaveValue(/LATEST STATUS/);
+  await expect(preview).toHaveValue(/Project: Synthetic Program/);
   await expect(preview).toHaveValue(/Synthetic milestone/);
   expect(await preview.inputValue()).not.toContain("Not yet committed");
+  expect(await preview.inputValue()).not.toContain("Workbook:");
   const snapshot = await preview.inputValue();
-  await report.getByLabel("Report mode").selectOption("updates");
-  await expect(preview).toHaveValue(snapshot); // options alone do not refresh snapshot
+  await report.getByLabel("Report mode").selectOption("progress");
+  await expect(preview).toHaveValue(snapshot);
   await report.getByRole("button", { name: "Copy Report" }).click();
-  await expect(report.getByText(/Copied exactly/)).toBeVisible();
+  await expect(report.getByText(/Exact plain-text preview copied/)).toBeVisible();
   const copied = await page.evaluate(() =>
     (window as unknown as { __copiedReport: string }).__copiedReport);
   expect(copied).toBe(snapshot);
@@ -358,7 +363,7 @@ test("Output Reports uses committed data only with unsaved draft, then copies ex
   await expect(page.getByText("Unsaved changes", { exact: true })).toBeVisible();
 });
 
-test("Update Report generates from persisted history only, honors selected timezone and never rewrites workbook", async ({ page }) => {
+test("Report 1.1 Detailed Audit preserves history, timezone and workbook bytes", async ({ page }) => {
   page.on("dialog", async (dialog) => { await dialog.accept(); });
   await openManaged(page);
   await page.getByRole("button", { name: "Edit task" }).click();
@@ -377,29 +382,31 @@ test("Update Report generates from persisted history only, honors selected timez
   await settings.getByRole("button", { name: "Close" }).click();
   await page.getByRole("button", { name: "Output Reports" }).click();
   const report = page.getByRole("dialog", { name: "Output Reports" });
-  await report.getByLabel("Report mode").selectOption("updates");
+  await report.getByLabel("Project name").fill("Synthetic Program");
+  await report.getByLabel("Report mode").selectOption("audit");
+  await report.getByLabel("Report format").selectOption("text");
   await report.getByLabel("Report start date").fill("2026-01-01");
   await report.getByLabel("Report end date").fill("2027-12-31");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const preview = report.getByRole("textbox", { name: "Report preview" });
-  await expect(preview).toHaveValue(/Update Report/);
-  await expect(preview).toHaveValue(/Logical Save events: 1/);
-  await expect(preview).toHaveValue(/Field-change rows: 2/);
-  await expect(preview).toHaveValue(/ChangeSetID:/);
+  await expect(preview).toHaveValue(/Detailed Change Audit/);
+  await expect(preview).toHaveValue(/Save events: 1/);
+  await expect(preview).toHaveValue(/Field changes: 2/);
+  await expect(preview).toHaveValue(/Save ID/);
   await expect(preview).toHaveValue(/Confirmed progress review/);
   await expect(preview).toHaveValue(/Asia\/Tokyo/);
   const text = await preview.inputValue();
   await report.getByLabel("Report end date").fill("1900-01-01");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   await expect(report.getByText(/Report not generated: Choose valid start\/end dates/)).toBeVisible();
-  await expect(preview).toHaveValue(text); // failed refresh retains verified snapshot
+  await expect(preview).toHaveValue(text);
   const afterReport = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
   expect(afterReport).toEqual(beforeReport);
 });
 
-test("Output Report clipboard denied shows accurate failure and keeps snapshot available for manual copy", async ({ page }) => {
+test("Report 1.1 denied clipboard shows accurate failure and retains the snapshot", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -412,6 +419,9 @@ test("Output Report clipboard denied shows accurate failure and keeps snapshot a
   await page.locator("#close").click();
   await page.getByRole("button", { name: "Output Reports" }).click();
   const report = page.getByRole("dialog", { name: "Output Reports" });
+  await report.getByLabel("Project name").fill("Synthetic Program");
+  await report.getByLabel("Report mode").selectOption("status");
+  await report.getByLabel("Report format").selectOption("text");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const preview = report.getByRole("textbox", { name: "Report preview" });
   const original = await preview.inputValue();
@@ -419,7 +429,6 @@ test("Output Report clipboard denied shows accurate failure and keeps snapshot a
   await expect(report.getByText(/Copy failed: Denied/)).toBeVisible();
   await expect(preview).toHaveValue(original);
 });
-
 
 test("Stage A inspector shows READY state without modifying any workbook bytes", async ({ page }) => {
   await openManaged(page);
