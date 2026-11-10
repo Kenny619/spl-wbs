@@ -72,11 +72,11 @@ export function renderReport11Text(s: Report11Snapshot): string {
       ...(s.historyCoverage === "unavailable" ? ["History not available."] :
         changeText(s.scheduleChanges)));
   }
-  lines.push("", "UPCOMING COMMITMENTS · 5 WORKING DAYS",
+  lines.push("", "UPCOMING COMMITMENTS · NEXT 5 DAYS",
     ...(s.commitmentCoverage === "ready" ? taskText(s.commitments) :
       ["Holiday coverage incomplete; no exact upcoming horizon can be calculated."]),
     ...(s.omittedCommitments ? ["… " + s.omittedCommitments + " additional commitment tasks omitted by Top 10 selection."] : []));
-  lines.push("", "Current task conditions are not historical period-change evidence.");
+  lines.push("", "Current task conditions are not historical period-change evidence. Days exclude weekends and Japanese holidays.");
   return lines.join("\n");
 }
 
@@ -140,10 +140,10 @@ export function renderReport11Html(s: Report11Snapshot): string {
     (s.mode === "progress" ?
       section("Recorded Progress & Accomplishments", savedRows(s.recordedProgress, unavailable)) +
       section("Schedule Changes", savedRows(s.scheduleChanges, unavailable)) : "") +
-    section("Upcoming Commitments · 5 working days",
+    section("Upcoming Commitments · Next 5 days",
       s.commitmentCoverage === "ready" ? tableRows(s.commitments) + omission(s.omittedCommitments) :
       '<p class="empty">Holiday coverage incomplete; exact due horizon unavailable.</p>') +
-    "<footer>Current status is not proof of change during the selected period. Report generated read-only.</footer>";
+    "<footer>Current status is not proof of change during the selected period. Day counts exclude weekends and Japanese holidays. Report generated read-only.</footer>";
   return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src &#39;none&#39;; connect-src &#39;none&#39;; base-uri &#39;none&#39;">' +
