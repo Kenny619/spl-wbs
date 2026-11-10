@@ -17,7 +17,7 @@ The page title is the file name without `.xlsx`.
 
 The Report specification is tracked in [Issue #7 — EMV-REPORT-1.0](https://github.com/Kenny619/spl-wbs/issues/7), with the broader [UI/UX workstream in Issue #25](https://github.com/Kenny619/spl-wbs/issues/25).
 
-**Interactive Report 1.1 prototype and screenshot:** the latest design files (`SPT-WBS_Report_1.1_Interactive_Prototype.html` and `SPT-WBS_Report_1.1_Preview.png`) were generated as chat attachments, **not yet published to this repository**. Chat attachment links are not portable GitHub download URLs; do not mistake an older application/UAT ZIP for this report prototype. GitHub-hosted preview links will be added only after the actual files have been published and verified.
+**Interactive Report 1.1 HTML design prototype (draft PR #36):** [View source on GitHub](https://github.com/Kenny619/spl-wbs/blob/docs/report-1-1-po-approved-direction/docs/prototypes/SPT-WBS_Report_1.1_Interactive_Prototype.html) · [Get standalone HTML](https://raw.githubusercontent.com/Kenny619/spl-wbs/docs/report-1-1-po-approved-direction/docs/prototypes/SPT-WBS_Report_1.1_Interactive_Prototype.html). Save the raw `.html` file locally, then open it in Microsoft Edge to try the three report modes, HTML/plain-text preview, date controls and exports. **Fictional demonstration data only; not connected to Excel**. This is a prototype on an unmerged draft branch, not a released report feature or a formal specification freeze. The previously generated screenshot remains a chat attachment and is not linked as a verified GitHub file.
 
 ## Excel Managed Variant — DES-010 owner UAT (development only)
 
