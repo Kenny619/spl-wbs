@@ -885,7 +885,7 @@ test("UAT-02: Reports uses global Schedule navigation and no redundant Close but
   const report = page.getByRole("dialog", { name: "Output Reports" });
   await expect(report).toBeVisible();
   await expect(report.getByRole("button", { name: "Close", exact: true })).toHaveCount(0);
-  await expect(report.getByLabel("Report mode")).toBeFocused();
+  await expect(report.locator(".report11-mode-card.active")).toBeFocused();
   await page.locator(".managed-main-nav [data-managed-view='schedule']").click();
   await expect(report).toBeHidden();
 });
