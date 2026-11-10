@@ -26,6 +26,7 @@ export type Report11ExportInput = Readonly<{
   endDay: string;
   audit: Report11Audit;
   includeFullValues: boolean;
+  historyPresent?: boolean;
 }>;
 
 function check(input: Report11ExportInput): void {
@@ -62,7 +63,8 @@ export function renderReport11AuditText(input: Report11ExportInput): string {
     "Save events: " + input.audit.logicalSaves,
     "Field changes: " + input.audit.fieldRows,
   ];
-  if (!input.audit.days.length) lines.push("", "No recorded changes in this period.");
+  if (input.historyPresent === false) lines.push("", "History not available: UpdateHistory sheet is absent.");
+  else if (!input.audit.days.length) lines.push("", "No recorded changes in this period.");
   for (const day of input.audit.days) {
     lines.push("", "DATE: " + day.localDay, "Save ID | Saved UTC | Workstream | Historical task/WBS | Field | Before | After");
     for (const row of day.rows) lines.push(rowFacts(row, input.includeFullValues).join(" | "));
@@ -141,7 +143,8 @@ export function renderReport11AuditHtml(input: Report11ExportInput): string {
     '<section class="metrics">' + metric("Affected tasks", input.audit.distinctTasks) +
     metric("Save events", input.audit.logicalSaves) +
     metric("Field changes", input.audit.fieldRows) + '</section>' +
-    (input.audit.days.length ? input.audit.days.map((day) => table(day, input.includeFullValues)).join("") :
+    (input.historyPresent === false ? '<p class="empty">History not available: UpdateHistory sheet is absent.</p>' :
+      input.audit.days.length ? input.audit.days.map((day) => table(day, input.includeFullValues)).join("") :
       '<p class="empty">No recorded changes in this period.</p>') +
     '<footer>Read-only historical audit. Saved transitions do not prove all work performed.</footer>' +
     '</body></html>';
