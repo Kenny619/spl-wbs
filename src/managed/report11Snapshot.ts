@@ -40,6 +40,8 @@ export type Report11Snapshot = Readonly<{
   goLive: ReturnType<typeof getDaysToGoLive>;
   nextMilestone: ReturnType<typeof getUpcomingMilestone>;
   risks: readonly Report11TaskRow[];
+  totalRedRisks: number;
+  totalAmberRisks: number;
   omittedRisks: number;
   commitments: readonly Report11TaskRow[];
   omittedCommitments: number;
@@ -154,6 +156,8 @@ export function buildReport11Snapshot(input: Report11Input): Report11Snapshot {
     goLive: getDaysToGoLive(tasks, today, input.calendar),
     nextMilestone: getUpcomingMilestone(tasks, today, input.calendar),
     risks: Object.freeze([...risks]),
+    totalRedRisks: allRisks.filter((row) => row.tone === "red").length,
+    totalAmberRisks: allRisks.filter((row) => row.tone === "amber").length,
     omittedRisks: allRisks.length - risks.length,
     commitments: Object.freeze([...commitments]),
     omittedCommitments: allCommitments.length - commitments.length,
