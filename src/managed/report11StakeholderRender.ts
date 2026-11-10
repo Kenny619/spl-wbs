@@ -62,6 +62,7 @@ export function renderReport11Text(s: Report11Snapshot): string {
     "",
     "RISKS AND BLOCKERS",
     ...taskText(s.risks),
+    ...(s.omittedRisks ? ["… " + s.omittedRisks + " additional risk tasks omitted by Top 10 selection."] : []),
   ];
   if (s.mode === "progress") {
     lines.push("", "RECORDED PROGRESS & ACCOMPLISHMENTS",
@@ -73,7 +74,8 @@ export function renderReport11Text(s: Report11Snapshot): string {
   }
   lines.push("", "UPCOMING COMMITMENTS · 5 WORKING DAYS",
     ...(s.commitmentCoverage === "ready" ? taskText(s.commitments) :
-      ["Holiday coverage incomplete; no exact upcoming horizon can be calculated."]));
+      ["Holiday coverage incomplete; no exact upcoming horizon can be calculated."]),
+    ...(s.omittedCommitments ? ["… " + s.omittedCommitments + " additional commitment tasks omitted by Top 10 selection."] : []));
   lines.push("", "Current task conditions are not historical period-change evidence.");
   return lines.join("\n");
 }
@@ -127,18 +129,19 @@ export function renderReport11Html(s: Report11Snapshot): string {
   const intro = s.mode === "status" ? "Latest Status" : "Progress & Risks Update";
   const dates = s.period ? s.period.start + " to " + s.period.end : "As of " + s.today;
   const section = (label: string, html: string) => "<section><h2>" + esc(label) + "</h2>" + html + "</section>";
+  const omission = (count: number) => count > 0 ? '<p class="sub">' + count + ' additional qualifying task(s) omitted by Top 10 selection.</p>' : '';
   const unavailable = s.historyCoverage === "unavailable";
   const body = '<header><h1>' + esc(intro) + '</h1><strong>' + esc(s.projectName) +
     '</strong><p class="sub">' + esc(dates) + " · " + esc(s.timeZone) +
     " · Generated " + esc(s.generatedAt) + '</p></header>' +
     '<div class="metrics">' + card("Days to go-live", go) +
     card("Upcoming milestone", next) + card("Risks and blockers", exception) + '</div>' +
-    section("Risks and Blockers", tableRows(s.risks)) +
+    section("Risks and Blockers", tableRows(s.risks) + omission(s.omittedRisks)) +
     (s.mode === "progress" ?
       section("Recorded Progress & Accomplishments", savedRows(s.recordedProgress, unavailable)) +
       section("Schedule Changes", savedRows(s.scheduleChanges, unavailable)) : "") +
     section("Upcoming Commitments · 5 working days",
-      s.commitmentCoverage === "ready" ? tableRows(s.commitments) :
+      s.commitmentCoverage === "ready" ? tableRows(s.commitments) + omission(s.omittedCommitments) :
       '<p class="empty">Holiday coverage incomplete; exact due horizon unavailable.</p>') +
     "<footer>Current status is not proof of change during the selected period. Report generated read-only.</footer>";
   return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
