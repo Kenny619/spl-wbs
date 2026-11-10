@@ -491,6 +491,11 @@ test("Review 02 visual parity: report studio and Schedule share design language"
   const detail = page.locator(".managed-schedule-body .detail-panel");
   await expect(chart).toBeVisible();
   await expect(detail).toBeVisible();
+  const priority = page.locator(".managed-schedule-summary");
+  await expect(priority).toBeVisible();
+  await expect(priority).toContainText("Blocked");
+  await expect(priority).toContainText("At Risk");
+  await expect(priority).toContainText("Open milestones");
   const scheduleRadius = await chart.evaluate((node) => getComputedStyle(node).borderRadius);
   expect(scheduleRadius).toBe("11px");
   const scheduleToolbar = page.locator(".managed-schedule-body .managed-gantt-scope");
@@ -501,6 +506,7 @@ test("Review 02 visual parity: report studio and Schedule share design language"
 
   await page.getByRole("button", { name: "Output Reports" }).last().click();
   const reports = page.getByRole("dialog", { name: "Output Reports" });
+  await expect(priority).toBeHidden();
   const sidebar = reports.locator(".report11-builder");
   const workspace = reports.locator(".report11-workspace");
   await expect(sidebar).toBeVisible();
