@@ -9,7 +9,7 @@ function headline(snapshot: Report11Snapshot): readonly [string, string, string]
     go.kind === "unidentified" ? "Go-live not identified" : "Holiday coverage incomplete";
   const next = snapshot.nextMilestone;
   const milestone = next.kind === "identified" ?
-    next.date + " · " + next.days + " days remaining" :
+    next.task.taskName + " · " + next.date + " · " + next.days + " days remaining" :
     next.kind === "none" ? "None" : "Holiday coverage incomplete";
   const red = snapshot.risks.filter((row) => row.tone === "red").length;
   const amber = snapshot.risks.filter((row) => row.tone === "amber").length;
