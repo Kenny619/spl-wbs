@@ -102,7 +102,7 @@ function esc(x: unknown): string { return escapeReportHtml(x); }
 function tableRows(items: readonly Report11TaskRow[]): string {
   if (!items.length) return '<p class="empty">None</p>';
   return [...group(items)].map(([name, list]) =>
-    '<h3 style="font-size:12px;color:#315b81">' + esc(name) + '</h3><table style="width:100%;table-layout:fixed;border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px"><colgroup><col style=\"width:39%\"><col style=\"width:24%\"><col style=\"width:37%\"></colgroup>\' +
+    '<h3 style="font-size:12px;color:#315b81">' + esc(name) + '</h3><table style="width:100%;table-layout:fixed;border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px"><colgroup><col style=\"width:39%\"><col style=\"width:24%\"><col style=\"width:37%\"></colgroup>' +
     '<thead><tr><th style="background:#e9f1f8;color:#355c80;padding:8px">Task</th><th style="background:#e9f1f8;color:#355c80;padding:8px">Status</th><th style="background:#e9f1f8;color:#355c80;padding:8px">Due / Owner</th></tr></thead><tbody>' +
     list.map((item) => '<tr' + (item.tone !== "neutral" ? ' class="' + item.tone + '" style="background:' + (item.tone === "red" ? "#ffe9e8" : "#fff2db") + ';border-left:5px solid '+(item.tone === "red" ? "#b93030" : "#b7821d")+'"' : "") +
       '><td style="padding:8px;border-bottom:1px solid #e2e9f1;vertical-align:top">' + esc(item.name) + '</td><td style="padding:8px;border-bottom:1px solid #e2e9f1;vertical-align:top">' + esc(item.status) +
