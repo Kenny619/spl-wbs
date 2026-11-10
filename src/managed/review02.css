@@ -368,3 +368,10 @@ body.spt-managed[data-managed-theme="dark"] .managed-schedule-summary-item.risk 
   body.spt-managed .managed-schedule-summary-counts {width:100%;}
   body.spt-managed .managed-schedule-summary-item {min-width:0;flex:1;}
 }
+
+/* Preserve the already accepted 860px conference/laptop Gantt height.
+ * The priority strip remains available at desktop width; smaller widths use
+ * Gantt-local Exceptions/Workstreams and semantic status chips instead. */
+@media(max-width:960px){
+  body.spt-managed .managed-schedule-summary{display:none!important;}
+}
