@@ -1,6 +1,16 @@
 > **Current baseline: approved v18.** The Product Owner directive of 2026-11-05 supersedes v17 as the current UI/UX authority and authorizes implementation in PR #15. v17 references below are historical; use the pinned v18 and live product/reference tests for visual acceptance. Read-only access and all eleven Excel Managed Variant decisions remain unchanged.
 
 # Gantt Viewer
+## Report 1.1 — targeted Owner UAT package (draft development only)
+
+**Latest Report 1.1 synthetic kit, verified by Linux + Windows CI on 2026-11-10:** [Download the full GitHub Actions ZIP](https://github.com/Kenny619/spl-wbs/actions/runs/42794050453/artifacts/13753546087) · [CI evidence: run #42794050453](https://github.com/Kenny619/spl-wbs/actions/runs/42794050453) · [Draft feature PR #37](https://github.com/Kenny619/spl-wbs/pull/37).
+
+**Exact packaged source SHA:** `308c39d36b74e2869b8e3eb8adc2247cce3ccce7`. **Automated checks:** 162/162 unit tests; 65/65 Windows Chromium browser tests; product and managed builds PASS. The ZIP includes the complete `managed.html` application, a **separate Report 1.1 fictional workbook** `SPT-WBS_Report11_Synthetic_UAT.xlsx`, `REPORT11_START_HERE.txt`, `REPORT11_UAT_CHECKLIST.md`, `REPORT11_CHECKSUMS.txt`, **plus the original DES-010 synthetic fixture and its instructions**. The Report 1.1 workbook contains one **G5 go-live milestone** and fictional saved history over **2026-11-09 and 2026-11-10** (3 logical Saves and 5 recorded field changes).
+
+**Work PC / Edge instructions:** Download the entire Actions ZIP, extract it, copy **only** `SPT-WBS_Report11_Synthetic_UAT.xlsx` to a clean disposable folder, and open the included `managed.html` locally in Edge. Choose the disposable folder under Project; if native folder access is blocked, use **Open XLSX read-only** for preview-only UAT and mark writable checks BLOCKED. Open Reports, enter Project name `Fictional Enterprise Program`, and review Latest Status, Progress & Risks Update (select dates **Nov 09–10, 2026**), and Detailed Change Audit. Check the 2 daily audit tables, full Save IDs, red/amber status, G5 countdown, exact plain-text/HTML report parity, fixed snapshot, downloaded offline HTML, and deliberately malicious-looking historical value displayed only as **literal text**. For **Copy for Outlook**, paste into a *new unsent* HTML-format message and inspect layout; **do not send**. Record results in the included checklist.
+
+**Safety & authority:** Synthetic and disposable workbook **only**. Source PR #37 remains draft/unmerged. CI pass is not independent security approval or physical corporate Edge/Outlook UAT PASS. Existing v18, workbook-backup/Save gates, advisory disposition, and explicit integration/release decisions remain separate.
+
 
 ## Excel Managed Variant — DES-010 owner UAT (development only)
 
