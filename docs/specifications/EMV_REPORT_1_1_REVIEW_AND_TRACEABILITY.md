@@ -54,3 +54,26 @@
 6. Return with one consolidated **1.1 freeze + bounded implementation authorization** decision after contract review; do not demand repeated owner permission for docs-only prep.
 
 **Overall QA disposition:** **CONCERN (governance / historical evidence limitations explicitly bounded) → proposal suitable for Product Owner freeze review**, not accepted implemented software. No merge or release recommendation until specified tests and owner acceptance exist.
+
+## Review 02 acceptance — source compatibility and test additions (2026-11-10)
+
+**Owner:** Review 02 design accepted without further change requests, not a requirements freeze or implementation authorization. See [Owner Review 02 disposition](EMV_REPORT_1_1_REVIEW02_OWNER_DISPOSITION.md) and [interactive design mock](../prototypes/SPT-WBS_Report_1.1_Interactive_Prototype_Review02.html).
+
+**Verified source gaps (feature/excel-managed-v1):** `src/data/types.ts` exposes `TaskStatus` but no manual `RAG` property; `src/managed/reportsUi.ts` exposes `fileName` but no distinct `projectName`. A fictional prototype value is **not** acceptable production evidence. Proposed local project-name entry and bounded RAG status-fallback are awaiting formal Product Owner disposition before 1.1 source contract is complete.
+
+**Delta test matrix** (additional to previous v1 traceability):
+
+| ID | Required focused check |
+|---|---|
+| R11-TEST-PROJECT | Project name entered independently of workbook path, displayed in all report/clipboard/export outputs; filename appears UI only; blank name rejects generation instead of inventing value. |
+| R11-TEST-GOLIVE | Case/whitespace normalization, one/zero/multiple matching Launch Date/Release Date/G5 milestones, completed/past dates, holiday coverage gap, timezone-specific Today; actual working-day count with visible “days”. |
+| R11-TEST-MILESTONE | One earliest upcoming incomplete milestone, one date and one remaining-day number, no duplicate date or task count. |
+| R11-TEST-RAG | Current Blocked/At Risk classification plus a verified independent red/amber RAG source if available, dedupe overlapping signals and validate high-contrast/status text; do not claim a manual RAG source exists today. |
+| R11-TEST-ROW | All Tasks default, optional Top 10 and explicit suppressed count, >100 item HTML render/print performance, one row per task, workstream headings without brackets. |
+| R11-TEST-HISTORY | One table per **local** day including DST boundary, identical colgroup across dates, fixed column locations, full ChangeSetID grouping, historical title/WBS, multi-task/multi-workstream Save, multiline full-value option. |
+| R11-TEST-EVIDENCE | Separate current Risks and Blockers from date-field changes; only recorded start/end changes in Schedule Changes; reversible/contradictory event fixtures. |
+| R11-TEST-COMMITMENTS | Today and fifth working day included, sixth excluded; weekend/holiday gap, overdue omitted, timezone rollover, task/milestone classification. |
+| R11-TEST-OUTLOOK | HTML+plain ClipboardItem MIME parity, escaped malicious workbook values, email-compatible inline styles, Edge permissions errors, actual Outlook HTML-compose paste; no send, no XLSX mutation, no external calls. |
+
+**Readiness:** static mock JavaScript/report rendering was smoke-checked; no implementation CI, runtime integration/security verification or physical Outlook paste UAT. Formal decisions A (freeze) and B (draft implementation) remain open.
+
