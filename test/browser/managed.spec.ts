@@ -430,6 +430,59 @@ test("Report 1.1 denied clipboard shows accurate failure and retains the snapsho
   await expect(preview).toHaveValue(original);
 });
 
+test("Report 1.1 HTML preview and Outlook dual MIME copy keep an immutable snapshot", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "ClipboardItem", {
+      configurable: true,
+      value: class FakeClipboardItem {
+        data: Record<string, Blob>;
+        constructor(data: Record<string, Blob>) { this.data = data; }
+      },
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        write: async (items: Array<{ data: Record<string, Blob> }>) => {
+          const mime = items[0].data;
+          (window as unknown as { __copiedHtml: string; __copiedPlain: string }).__copiedHtml =
+            await mime["text/html"].text();
+          (window as unknown as { __copiedPlain: string }).__copiedPlain =
+            await mime["text/plain"].text();
+        },
+      },
+    });
+  });
+  await openManaged(page);
+  await page.locator("#close").click();
+  await page.getByRole("button", { name: "Output Reports" }).click();
+  const report = page.getByRole("dialog", { name: "Output Reports" });
+  await expect(report.getByLabel("Report task limit")).toHaveValue("all");
+  await report.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(report.getByText(/Enter a Project name before generating/)).toBeVisible();
+  await report.getByLabel("Project name").fill("Project Orion & Launch");
+  await report.getByLabel("Report mode").selectOption("status");
+  await report.getByLabel("Report format").selectOption("html");
+  await report.getByRole("button", { name: "Generate / Refresh" }).click();
+  const iframe = report.locator("iframe[title='Formatted report preview']");
+  const srcdoc = await iframe.getAttribute("srcdoc");
+  expect(srcdoc).toContain("Project Orion &amp; Launch");
+  expect(srcdoc).not.toContain("Workbook:");
+  expect(srcdoc).not.toContain("<script");
+  await report.getByLabel("Report format").selectOption("text");
+  const plain = await report.getByLabel("Report preview").inputValue();
+  expect(plain).toContain("Project: Project Orion & Launch");
+  await report.getByLabel("Report format").selectOption("html");
+  expect(await iframe.getAttribute("srcdoc")).toBe(srcdoc);
+  await report.getByRole("button", { name: "Copy for Outlook" }).click();
+  await expect(report.getByText(/HTML and matching plain text copied/)).toBeVisible();
+  const clipboard = await page.evaluate(() => {
+    const holder = window as unknown as { __copiedHtml: string; __copiedPlain: string };
+    return { html: holder.__copiedHtml, plain: holder.__copiedPlain };
+  });
+  expect(clipboard.html).toBe(srcdoc);
+  expect(clipboard.plain).toBe(plain);
+});
+
 test("Stage A inspector shows READY state without modifying any workbook bytes", async ({ page }) => {
   await openManaged(page);
   const source = await page.evaluate(() =>
