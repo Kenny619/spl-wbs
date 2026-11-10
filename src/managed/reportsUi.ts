@@ -321,7 +321,7 @@ export class ManagedReports {
     const browser = this.doc.defaultView;
     try {
       if (this.format.value === "html") {
-        const ClipboardItemConstructor = browser?.ClipboardItem;
+        const ClipboardItemConstructor = typeof ClipboardItem === "undefined" ? null : ClipboardItem;
         await copyReport11ForOutlook(
           output.html, output.text, browser?.navigator.clipboard,
           ClipboardItemConstructor ?? null,
