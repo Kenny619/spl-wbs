@@ -1,8 +1,10 @@
-# Meeting Review — functional specification proposal MR-0.1 (NOT FROZEN)
+# Meeting Review — functional specification proposal MR-0.1 (SUPERSEDED delivery alternative; NOT FROZEN)
 
 **Prepared:** 2026-11-11 JST · **Controlling issue:** [#25](https://github.com/Kenny619/spl-wbs/issues/25)  
 **Design authority:** Owner-approved [DES-012 Consolidated Review 08](../../design/concepts/DES-012-consolidated-review08-task-detail.html), exact HTML blob `de6ebaa63aa035ba741b4435cf1cdb9d1166d958` (no visual redesign authorized).  
 **Proposal status:** Functional discovery/contract review only. **Existing DES-010 implementation approval B expressly excluded a permanent Meeting Review business workflow.** No coding, merge, deploy, UAT or change to #3–#7 is authorized by this document.
+
+> **Owner decision superseding MR-01-first recommendation (2026-11-11): [MR-D01 = B](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6786902711).** The Product Owner explicitly rejected an interim status-only Meeting Review, because the watch list shapes the UX of the entire page. This document is retained as a *functional inventory* of possible review behavior, **not as authorization or an active MR-01 implementation plan**. Prepare integrated Meeting Review + real Under Watch as a dependent pair after a shared-data source and watch lifecycle have been specified, frozen and separately authorized. [Authoritative decision record](26_2026-11-11_FUNCTIONAL_RECONCILIATION_OWNER_DISPOSITION.md). The accepted [Review 08 visual design](../../design/concepts/DES-012-consolidated-review08-task-detail.html) remains untouched.
 
 ## Purpose
 
@@ -50,10 +52,10 @@ Once the risk/watch source is approved and implemented, augment the same accepte
 - No task/history/file mutations from agenda-only actions; workbook Save continues through the existing guarded transaction.
 - Scope separated from existing report, workbook safety, CI and physical Edge gates.
 
-## Genuine Product Owner decision required — MR-D01
+## Historical choices — MR-D01 now decided by Owner
 
-**A (recommended):** Approve **MR-01 read-only Meeting Review** as an independent feature specification/implementation authorization later, then add watch-derived agenda semantics as MR-02 only after its data model is approved. This restores the agreed third operational workspace without blocking on an unapproved risk schema, and honestly labels interim status-only exceptions.
+**A (historically recommended; rejected by Owner):** Approve **MR-01 read-only Meeting Review** as an independent feature specification/implementation authorization later, then add watch-derived agenda semantics as MR-02 only after its data model is approved. This restores the agreed third operational workspace without blocking on an unapproved risk schema, and honestly labels interim status-only exceptions.
 
-**B:** Defer functional Meeting Review entirely until the Under Watch schema/lifecycle is frozen and implement both together.
+**B (OWNER-SELECTED):** Defer permanent Meeting Review implementation until Under Watch's shared-data architecture, reason lifecycle and clearance semantics are frozen. Integrate Watch into the Meeting Review page from its first functional release. No status-only interim Meeting Review.
 
-This is a **proposal, not approval**. For now record an owner choice of A or B, any changes to review-date and due-window semantics, and *separately* authorize any implementation. Keep the visual HTML and read-only v18 untouched.
+**Disposition:** Owner selected B (direction); details of the integrated functional contract, data source, security and implementation remain OPEN. No implementation/merge/release authorization. Keep the visual HTML and read-only v18 untouched.
