@@ -48,7 +48,11 @@ For **B shared Watch register**:
 For **either**:
 - State transitions preserve reason history and Green prerequisites, failed/partial writes fail closed, no unintended task workbook changes, no automatic clearing from a revised finish date, and the final Meeting Review can accurately show active sources and status-based exceptions without mixing them up.
 
-## 5. Genuine remaining owner architecture choice (only when ready)
+## 5. Watch-enabled Meeting Review design dependency
+
+**MR-D01 B makes these screens dependent:** the global Schedule and Reports visual patterns remain frozen, but the Meeting Review's task list/agenda may need new reason summaries, watch provenance, Unknown state and shared freshness indicators. Those are substantive *content and interaction* changes even if the approved three-page styling stays consistent. Prepare a **targeted watch-aware Meeting Review design revision** after defining the real Watch data contract; seek the Owner's specific approval of that revision before code, and do not treat the existing synthetic Review 08 indicators as a real shared Watch UI.
+
+## 6. Genuine remaining owner architecture choice (only when ready)
 
 **ARCH-D01 — Shared authoritative source and network policy.**
 
