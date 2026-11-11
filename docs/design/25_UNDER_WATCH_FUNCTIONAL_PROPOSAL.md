@@ -1,8 +1,12 @@
-# Under Watch — functional contract proposal WATCH-0.1 (NOT FROZEN)
+# Under Watch — functional contract proposal WATCH-0.1 (OWNER DIRECTION SET; NOT FROZEN)
 
 **Prepared:** 2026-11-11 JST · **Controlling issue:** [#25](https://github.com/Kenny619/spl-wbs/issues/25)  
 **Earlier design discovery:** [Risk Watch Model 0.4](05_RISK_WATCH_MODEL.md); [DES-012 visual approval](22_DES012_REVIEW08_OWNER_DESIGN_APPROVAL.md).  
 **Current authorized state:** Excel Managed v1 contains **TaskStatus**, dates, relationships, saved field history and genuine workbook safety mechanisms, **not** independent persistent watch reasons, audited RAG health, accepted commitments or baseline models. This proposal does not change frozen #3–#7 or authorize implementation.
+
+> **Owner decision (2026-11-11): [WATCH-D01 = A, WATCH-D02 = A, WATCH-D03 = A, MR-D01 = B](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6786902711).** Shared, auditable project watch state is required so **one person's update is visible to all project members**. Initial health must be reason-backed Watch/Clear/Unknown (not invented Red/Amber), and clearance must use the low-administration Resolve / accepted revised commitment model. **The owner also decided to withhold Meeting Review functionality until real Under Watch is designed and integrated.**
+>
+> These are **owner-selected product directions**, not approval of a storage technology, schema, authentication method, automatic alert thresholds, workbook mutation, risk severity model or feature implementation. A local workbook copy does *not* itself guarantee concurrent cross-user visibility. [Decision record](26_2026-11-11_FUNCTIONAL_RECONCILIATION_OWNER_DISPOSITION.md).
 
 ## 1. Already aligned product intent — do not discard
 
@@ -85,22 +89,22 @@ Before coding, architecture must establish:
 7. Save/Save As failure, conflict, invalid worksheet or read-only mode preserve original data and explicit errors.
 8. Permission/keyboard/screen-share/accessibility checks and both light/dark themes at the approved inspector width.
 
-## 6. Genuine Product Owner decisions (proposed defaults, NOT assumed approval)
+## 6. Owner-selected directions — functional details still to freeze
 
 **WATCH-D01 — persistence owner**  
-A **recommended**: Project-portable, auditable watch/commitment state, with exact workbook/companion storage decided in a separate safe architecture review; do not ship local-only watch as the true shared register.  
+A **OWNER-SELECTED**: Project-portable, auditable watch/commitment state, with exact workbook/companion storage decided in a separate safe architecture review; do not ship local-only watch as the true shared register.  
 B: Browser-local watch as an explicitly personal aid; not portable/team-shared. If B, it cannot be presented as project-wide risk truth.
 
 **WATCH-D02 — initial severity policy**  
-A **recommended**: First deliver **Watch / Clear / Unknown** with reason provenance; add Red/Amber only after criticality thresholds and source facts are approved. Preserve existing TaskStatus labels independently.  
+A **OWNER-SELECTED**: First deliver **Watch / Clear / Unknown** with reason provenance; add Red/Amber only after criticality thresholds and source facts are approved. Preserve existing TaskStatus labels independently.  
 B: Include a separately specified manual severity source from day one, with its own audit/storage/permissions contract. No implied Risk score.
 
 **WATCH-D03 — low-administration clearance**  
-A **recommended**: Explicit context-risk **Resolve** action with actor/time, original reason and lightweight rationale, plus contextual **Accept revised commitment** when material; re-evaluate all reasons automatically.  
+A **OWNER-SELECTED**: Explicit context-risk **Resolve** action with actor/time, original reason and lightweight rationale, plus contextual **Accept revised commitment** when material; re-evaluate all reasons automatically.  
 B: Require additional structured approval steps for every risk/commitment resolution, with a separately defined authority model.
 
 **WATCH-D04 — delivery sequence**  
-A **recommended**: Freeze data/safety architecture independently, implement watch in a separate future feature branch after accepted Meeting Review core (if approved), then integrate watch indicators into the protected design under design change control.  
-B: Hold Meeting Review until watch architecture is complete, then implement together.
+A **REJECTED as written**: Freeze data/safety architecture independently, implement watch in a separate future feature branch after accepted Meeting Review core (if approved), then integrate watch indicators into the protected design under design change control.  
+B **OWNER-SELECTED via MR-D01**: Hold Meeting Review until watch architecture is complete, then implement together.
 
-Do not interpret silence or “continue” as authorization to add schemas, invent Green severity or begin production coding. Product Owner can disposition all four choices in a single GitHub comment. Until then WATCH-0.1 remains a proposal.
+**Disposition:** Watch A/A/A and integrated Meeting Review sequencing are directionally approved, but the shared source, exact schema, permission rules, actor identity, conflict handling, trigger conditions and thresholds remain open. Do not treat this as approval to add sheets, invent Green or begin production coding. Until then WATCH-0.1 remains a proposal.
