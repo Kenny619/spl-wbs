@@ -27,5 +27,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: exceljs-uuid-static-reachability
-          path: work/security-candidate/uuid-reachability.json
+          path: work/ci/uuid-reachability.json
+          if-no-files-found: error
           retention-days: 14
