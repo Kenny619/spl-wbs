@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPT-WBS · Design Review 08 · Task Timeline Study</title>
+<style>
+:root{font-family:"Segoe UI",Inter,Arial,sans-serif;color-scheme:light;--bg:#f3f6f9;--paper:#fff;--ink:#1c3044;--sub:#64788b;--border:#e2e9f0;--blue:#1475a7;--blue2:#e8f4fa;--red:#ad414c;--redbg:#fff0f1;--amber:#a16c23;--amberbg:#fff5e5;--green:#2b805f;--greenbg:#ebf8f2;--soft:#f8fafc;--shadow:0 5px 20px #223b5210}
+[data-theme="dark"]{color-scheme:dark;--bg:#101b29;--paper:#1a293a;--ink:#e8eef4;--sub:#a5b6c8;--border:#33485c;--blue:#60b0dc;--blue2:#203c51;--red:#f0a2aa;--redbg:#4b2935;--amber:#e7c182;--amberbg:#4a392c;--green:#8ed0b0;--greenbg:#233e37;--soft:#1c3245;--shadow:0 5px 22px #0004}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.45}
+button{font:inherit;cursor:pointer;border:1px solid var(--border);color:var(--ink);background:var(--paper);border-radius:8px;padding:8px 11px;font-weight:600}
+button:hover{border-color:var(--blue)}
+button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+button.active{border-color:var(--blue);background:var(--blue2);color:var(--blue)}
+header{background:var(--paper);border-bottom:1px solid var(--border);padding:14px max(18px,calc((100vw - 1140px)/2));display:flex;align-items:center;justify-content:space-between;gap:15px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:750;letter-spacing:-.015em}
+.logo{width:36px;height:36px;background:var(--blue2);border:1px solid var(--border);border-radius:9px;color:var(--blue);display:grid;place-items:center;font-size:20px}
+main{max-width:1140px;margin:0 auto;padding:25px 18px 40px}
+h1{font-size:23px;letter-spacing:-.045em;margin:0 0 6px}
+h2{font-size:15px;letter-spacing:-.02em;margin:0}
+p{margin:0}
+.muted{color:var(--sub)}
+.lead{margin-bottom:18px;max-width:850px}
+.notice{background:var(--blue2);border-left:3px solid var(--blue);padding:10px 13px;border-radius:7px;margin:16px 0 20px;font-size:12px}
+.small{font-size:11px}
+.micro{font-size:10px}
+.kicker{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--sub);font-weight:750}
+.stategroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.stategroup .state{padding:8px 12px;font-size:12px}
+.columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.study{min-width:0;display:flex;flex-direction:column;gap:12px}
+.studyhead{display:flex;gap:14px;align-items:flex-start;justify-content:space-between}
+.studyhead .label{display:block;color:var(--blue);font-size:11px;letter-spacing:.06em;font-weight:800;text-transform:uppercase;margin-bottom:4px}
+.studyhead p{color:var(--sub);font-size:12px;margin-top:5px}
+.tag{font-size:10px;white-space:nowrap;padding:4px 7px;border-radius:6px;background:var(--blue2);color:var(--blue);font-weight:800}
+.inspector{width:100%;max-width:445px;background:var(--paper);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-height:560px}
+.inspector-head{padding:14px 16px;border-bottom:1px solid var(--border);background:var(--paper)}
+.identity{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}
+.identity h3{margin:3px 0;font-size:17px;line-height:1.25;letter-spacing:-.02em}
+.badge{border-radius:5px;background:var(--amberbg);color:var(--amber);font-size:10px;padding:4px 6px;font-weight:750;white-space:nowrap}
+.actions{display:flex;gap:7px;margin-top:11px}
+.actions span{border:1px solid var(--border);padding:6px 10px;border-radius:7px;font-size:11px;font-weight:600;color:var(--sub)}
+.inspector-scroll{min-height:0;padding:15px 16px;display:flex;flex-direction:column;gap:15px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fact{background:var(--soft);border:1px solid var(--border);padding:10px;border-radius:8px}
+.fact strong{display:block;font-size:13px;margin-top:3px}
+.section{border-top:1px solid var(--border);padding-top:14px}
+.section h4{font-size:12px;margin:0 0 10px}
+.timelinegroup{background:var(--soft);border:1px solid var(--border);border-radius:9px;padding:13px 12px}
+.timeline-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.remaining{font-size:12px;font-weight:750;text-align:center;color:var(--ink);margin-bottom:9px}
+.remaining .overdue{color:var(--red)}
+.dateedges{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.dateedges .date{font-size:12px;font-weight:750;white-space:nowrap}
+.dateedges .cap{display:block;font-size:10px;font-weight:650;color:var(--sub)}
+.dateedges .rightedge{text-align:right}
+.rail{position:relative;height:12px;background:#d7e2eb;border-radius:99px;overflow:visible;margin:8px 0 7px}
+[data-theme="dark"] .rail{background:#40576b}
+.rail .fill{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--blue)}
+.rail .today{position:absolute;z-index:2;top:-4px;width:2px;height:20px;background:var(--ink);left:36%;opacity:.65}
+.rail .today:after{content:"";position:absolute;top:-4px;left:-3px;width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.timeline-bottom{min-height:17px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.timeline-bottom .progress{font-size:11px;color:var(--blue);font-weight:750}
+.timeline-bottom .labeltoday{font-size:10px;color:var(--sub)}
+.timeline-bottom .quiet{visibility:hidden}
+.rail.notrecorded{height:3px;margin-top:13px;margin-bottom:11px}
+.rail.notrecorded .fill{display:none}
+.sep-progress{border-top:1px solid var(--border);padding-top:10px;margin-top:10px}
+.sep-progress .progressline{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:7px;font-size:11px}
+.sep-progress .progressline strong{color:var(--blue)}
+.mini-progress{height:6px;background:#d7e2eb;border-radius:99px;overflow:hidden}
+.mini-progress div{height:100%;background:var(--blue);border-radius:99px}
+[data-theme="dark"] .mini-progress{background:#40576b}
+.ghostprogress{height:28px;visibility:hidden}
+.milestone-track{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 0}
+.diamond{height:13px;width:13px;transform:rotate(45deg);background:var(--blue);border:2px solid var(--paper)}
+.empty-date{background:var(--paper);border:1px dashed var(--border);color:var(--sub);border-radius:7px;text-align:center;padding:20px 8px}
+.placeholder{color:var(--sub);font-size:12px}
+.footcopy{font-size:12px;color:var(--sub);background:var(--soft);border:1px solid var(--border);border-radius:8px;padding:12px;min-height:74px}
+.footcopy strong{color:var(--ink)}
+.recommend{margin-top:22px;background:var(--paper);border:1px solid var(--border);border-radius:12px;padding:18px;max-width:910px}
+.recommend ul{padding-left:20px;margin:8px 0;color:var(--sub)}
+.recommend li{margin:5px 0}
+.footer{margin-top:18px;font-size:11px;color:var(--sub)}
+@media(max-width:850px){.columns{grid-template-columns:1fr}.inspector{max-width:540px}.studyhead{max-width:540px}header{padding:12px 18px}.stategroup{align-items:stretch}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="logo" aria-hidden="true">≡</div><div>SPT-WBS <span class="muted small">/ Design Office</span></div></div><button id="theme" type="button">Dark theme</button></header>
+<main>
+<div class="kicker">Design Review 08 · Focused visual study · 2026-11-11</div>
+<h1>Task Detail — Timeline presentation</h1>
+<p class="lead muted">Two layout alternatives shown inside the same compact inspector proportions and Review 07 visual language. This is a fictional visual study, not the managed workbook editor. Schedule, Meeting Review and Reports layouts remain unchanged.</p>
+<div class="notice"><strong>Confirmed owner direction:</strong> Keep Owner and Priority as compact fields. Combine Planned Start, Planned Finish, Days Remaining and optional recorded Progress into one Timeline attribute group. The group must retain its structure when progress has not been recorded.</div>
+<div class="stategroup" role="group" aria-label="Preview task states">
+<span class="kicker" style="margin-right:4px">Preview state</span>
+<button class="state active" type="button" data-state="recorded" aria-pressed="true">Progress recorded</button>
+<button class="state" type="button" data-state="missing" aria-pressed="false">No progress recorded</button>
+<button class="state" type="button" data-state="overdue" aria-pressed="false">Overdue</button>
+<button class="state" type="button" data-state="milestone" aria-pressed="false">Milestone</button>
+<button class="state" type="button" data-state="unscheduled" aria-pressed="false">No schedule</button>
+</div>
+<div class="columns">
+<section class="study" aria-labelledby="a-title">
+<div class="studyhead"><div><span class="label">Option A · Integrated rail</span><h2 id="a-title">Single compact date-and-progress track</h2><p>Closest to your suggested visual; colored fill appears only when genuine progress is recorded.</p></div><span class="tag">Compact</span></div>
+<div class="inspector"><div class="inspector-head"><div class="identity"><div><div class="micro muted">Data Migration · WBS 3.2.1</div><h3>Data Migration Validation</h3></div><span class="badge">At Risk</span></div><div class="actions"><span>Edit</span><span>Task History</span></div></div>
+<div class="inspector-scroll">
+<div class="facts"><div class="fact"><div class="kicker">Owner</div><strong>Akira Tanaka</strong></div><div class="fact"><div class="kicker">Priority</div><strong>High</strong></div></div>
+<div class="section"><h4>Timeline</h4><div class="timelinegroup" id="timelineA"></div></div>
+<div class="section"><h4>Task information</h4><p class="placeholder">Task type · Parent relationship · Description</p></div>
+<div class="section"><h4>Dependencies</h4><p class="placeholder">Predecessors and downstream dependents</p></div>
+<div class="section"><h4>Updates</h4><p class="placeholder">Timestamped journal · Add update</p></div>
+</div></div>
+<div class="footcopy"><strong>Trade-off:</strong> Most space-efficient. Completion fill and date position use the same track, so the design must clearly distinguish reported progress from elapsed time.</div>
+</section>
+<section class="study" aria-labelledby="b-title">
+<div class="studyhead"><div><span class="label">Option B · Dual-layer</span><h2 id="b-title">Date track plus optional progress strip</h2><p>Separates scheduled time from completion progress while keeping both in one Timeline section.</p></div><span class="tag">Clearer semantics</span></div>
+<div class="inspector"><div class="inspector-head"><div class="identity"><div><div class="micro muted">Data Migration · WBS 3.2.1</div><h3>Data Migration Validation</h3></div><span class="badge">At Risk</span></div><div class="actions"><span>Edit</span><span>Task History</span></div></div>
+<div class="inspector-scroll">
+<div class="facts"><div class="fact"><div class="kicker">Owner</div><strong>Akira Tanaka</strong></div><div class="fact"><div class="kicker">Priority</div><strong>High</strong></div></div>
+<div class="section"><h4>Timeline</h4><div class="timelinegroup" id="timelineB"></div></div>
+<div class="section"><h4>Task information</h4><p class="placeholder">Task type · Parent relationship · Description</p></div>
+<div class="section"><h4>Dependencies</h4><p class="placeholder">Predecessors and downstream dependents</p></div>
+<div class="section"><h4>Updates</h4><p class="placeholder">Timestamped journal · Add update</p></div>
+</div></div>
+<div class="footcopy"><strong>Trade-off:</strong> Slightly taller but unambiguous: date track represents time, and completion strip is a separate optional measurement. With missing progress, its reserved spacing prevents layout jump.</div>
+</section>
+</div>
+<div class="recommend">
+<h2>Design Office recommendation</h2>
+<ul>
+<li><strong>Recommend Option B</strong> if clarity outweighs a few pixels of height; it makes it harder to confuse elapsed schedule time with recorded work completion.</li>
+<li>If the compact Option A is preferred, use a visible percentage label only for real recorded Progress; a neutral track must never mean 0%.</li>
+<li>The <strong>missing-progress state must remain distinct from recorded 0%</strong>. Do not fabricate progress or infer it from TaskStatus, the calendar or the date marker.</li>
+<li>The remaining-day label uses <strong>working-calendar days</strong> while displaying only “days,” consistent with the existing approved terminology. These prototype counts are illustrative.</li>
+<li>The milestone and unscheduled states avoid fabricated start/end dates and meaningless duration bars.</li>
+</ul>
+</div>
+<p class="footer">Design-only source. Approved Review 07 remains unchanged. No workbook write, no persistence, no report generation, and no production feature authorization.</p>
+</main>
+<script>
+const states={
+recorded:{start:"Nov 06, 2026",finish:"Nov 20, 2026",remaining:"7 days remaining",progress:65,today:36},
+missing:{start:"Nov 06, 2026",finish:"Nov 20, 2026",remaining:"7 days remaining",progress:null,today:36},
+overdue:{start:"Oct 28, 2026",finish:"Nov 09, 2026",remaining:"2 days overdue",progress:45,today:100,overdue:true},
+milestone:{finish:"Nov 17, 2026",remaining:"4 days remaining",milestone:true},
+unscheduled:{remaining:"Schedule not set",unscheduled:true}
+};
+let current="recorded";
+function rail(st,withProgress,compact){
+const fill=withProgress&&st.progress!==null?'<span class="fill" style="width:'+st.progress+'%"></span>':'';
+const today=st.today===undefined?'':'<span class="today" style="left:'+Math.min(99,st.today)+'%"></span>';
+return '<div class="rail '+(compact&&st.progress===null?'notrecorded':'')+'" role="img" aria-label="Scheduled time from '+st.start+' to '+st.finish+(withProgress&&st.progress!==null?'; '+st.progress+' percent complete':'')+'">'+fill+today+'</div>';
+}
+function dateEdges(st){return '<div class="dateedges"><div><span class="cap">Start</span><span class="date">'+st.start+'</span></div><div class="rightedge"><span class="cap">Finish</span><span class="date">'+st.finish+'</span></div></div>'}
+function draw(){
+const st=states[current];
+const remaining='<div class="remaining">'+(st.overdue?'<span class="overdue">'+st.remaining+'</span>':st.remaining)+'</div>';
+for(const option of ["A","B"]){
+let inner='';
+if(st.unscheduled){inner='<div class="empty-date">Schedule not set<br><span class="micro">No date or completion estimate inferred</span></div>'}
+else if(st.milestone){inner=remaining+'<div class="milestone-track"><span class="diamond" aria-hidden="true"></span><strong>'+st.finish+'</strong></div><div class="timeline-bottom"><span class="micro muted">Milestone · one effective date</span></div>'}
+else if(option==="A"){
+inner=remaining+dateEdges(st)+rail(st,true,true)+'<div class="timeline-bottom"><span class="progress">'+(st.progress===null?'':st.progress+'% complete')+'</span><span class="labeltoday">│ Today marker</span></div>';
+}else{
+inner=remaining+dateEdges(st)+rail(st,false,false)+'<div class="timeline-bottom"><span class="labeltoday">│ Today marker on schedule</span></div>';
+inner+=(st.progress===null?'<div class="ghostprogress" aria-hidden="true">No progress field</div>':'<div class="sep-progress"><div class="progressline"><span>Recorded completion</span><strong>'+st.progress+'%</strong></div><div class="mini-progress" role="progressbar" aria-valuenow="'+st.progress+'" aria-valuemin="0" aria-valuemax="100" aria-label="Recorded completion"><div style="width:'+st.progress+'%"></div></div></div>');
+}
+document.getElementById('timeline'+option).innerHTML=inner;
+}
+document.querySelectorAll('[data-state]').forEach(b=>{const on=b.dataset.state===current;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on))});
+}
+document.querySelectorAll('[data-state]').forEach(b=>b.addEventListener('click',()=>{current=b.dataset.state;draw()}));
+document.getElementById('theme').addEventListener('click',()=>{const dark=document.documentElement.dataset.theme!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';document.getElementById('theme').textContent=dark?'Light theme':'Dark theme'});
+draw();
+</script>
+</body></html>
