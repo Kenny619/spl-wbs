@@ -8,7 +8,7 @@
 
 | Decision | Owner selection | Binding direction | What it does **not** approve |
 |---|---|---|---|
-| **MR-D01: Meeting Review delivery** | **B** | **Do not ship a status-only first version of Meeting Review.** Under Watch determines central page UX; complete its source/lifecycle specification, then integrate Meeting Review and Watch **together** against approved Review 08 layout | “MR-01 first” recommendation now **REJECTED / SUPERSEDED**. Does not approve developing either feature before functional/data contracts freeze |
+| **MR-D01: Meeting Review delivery** | **B** | **Do not ship a status-only first version of Meeting Review. Preserve the approved Review 08 shell and styling, but permit an explicitly reviewed **targeted Meeting Review content/interaction refinement** to accommodate Watch reasons.** Under Watch determines central page UX; complete its source/lifecycle specification, then integrate Meeting Review and Watch **together** against approved Review 08 layout | “MR-01 first” recommendation now **REJECTED / SUPERSEDED**. Does not approve developing either feature before functional/data contracts freeze |
 | **WATCH-D01: shared storage ownership** | **A** | One person's risk/watch updates must be visible to other project members; watch state needs a **shared project-authoritative, auditable source** with reliable cross-user freshness | A single local XLSX copy or browser-local preferences **cannot** be advertised as shared multi-user visibility. No particular cloud, server or workbook schema approved |
 | **WATCH-D02: initial health/severity** | **A** | Initial Watch / Clear / Unknown evidence-based lifecycle, with independently attributable reasons; **no invented Red/Amber** absent separate approved source/threshold | Does not redefine existing `TaskStatus` or retrofit fabricated RAG into Report 1.1 |
 | **WATCH-D03: clearance** | **A** | One lightweight contextual Resolve action, traceable accepted revised commitments where applicable, automatic re-check of remaining independent reasons | No “Set Green”, no silent clearance through date edit, and no authority/persistence details yet approved |
@@ -18,7 +18,7 @@
 
 ## 2. Status distinctions
 
-- **Review 08 visual design** = APPROVED exact source; do not redesign.
+- **Review 08 visual design** = APPROVED exact source; protect the global shell/style and other page layouts. Because the Owner explicitly said Watch affects the *entire Meeting Review UX*, any necessary Watch-aware Meeting content/layout adjustment is a **new targeted design proposal** requiring separate explicit visual approval, not silent automatic permission to discard Review 08.
 - **MR-D01 B and WATCH-D01/D02/D03 A; CAL-D01 A** = OWNER-DECIDED **product directions**; preserve as hard scope constraints during requirements analysis.
 - **MR + Watch schemas, trigger thresholds, evidence sources, conflict semantics, and exact shared service** = OPEN DESIGN/ARCHITECTURE REQUIREMENTS, not frozen or authorized for product implementation.
 - **Session-only Calendar Settings relocation** = endorsed UI location change, still requires bounded technical integration scope and regression tests before production code mutation.
