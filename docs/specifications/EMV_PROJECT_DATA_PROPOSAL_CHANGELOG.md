@@ -10,7 +10,7 @@
 
 **SCH-01 approved:** five ordinary worksheets `ProjectMeta`, `ProjectCalendar`, `WatchReasons`, `ProjectCommitments`, `ProjectAudit` while protecting `ProjectWBS`/`UpdateHistory`.  **CAL-02 approved:** initial maximum one enabled inclusive blackout interval. **SEQ-01 approved:** persist Calendar with blackout-aware days as part of the integrated Watch and Meeting Review delivery package, not an interim session-only implementation. Previous after-Stage-C beta milestone unchanged unless separately reauthorized.
 
-**No implied field-level freeze or code authorization**. Machine JSON and human text advance to internal version `0.1.2`; proposal filename suffix `_0_1_PROPOSED` remains stable to preserve GitHub links and prior review evidence. Open: actor provenance, workbook multiwriter safety, automatic watch thresholds, Report 1.1 name-source compatibility, precise field validation and migration/defaults.
+**No implied field-level freeze or code authorization**. One additional **LEGACY-CAL-01 compatibility proposal** distinguishes a fully legacy workbook (calculate existing weekends/holidays with clearly unconfigured blackout) from an invalid partially present extension (fail-closed). Planned test matrix now contains **61 cases**, no executed PASS results. Machine JSON and human text advance to internal version `0.1.2`; proposal filename suffix `_0_1_PROPOSED` remains stable to preserve GitHub links and prior review evidence. Open: actor provenance, workbook multiwriter safety, automatic watch thresholds, Report 1.1 name-source compatibility, precise field validation and migration/defaults.
 
 ## 2026-11-12 — Revision 0.1.1 (Owner correction, NOT FROZEN)
 
