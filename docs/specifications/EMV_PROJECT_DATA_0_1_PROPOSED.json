@@ -447,7 +447,16 @@
     "automatic Watch checks, thresholds, and clearance completeness",
     "Report 1.1 ProjectName contract transition",
     "Watch-enabled Meeting Review content refinement",
-    "phase alignment without silently changing Stage A-C beta gate"
+    "phase alignment without silently changing Stage A-C beta gate",
+    "LEGACY-CAL-01 distinction between absent extension and invalid or partial calendar source"
   ],
-  "implementation_authorized": false
+  "implementation_authorized": false,
+  "legacy_calendar_compatibility_proposal": {
+    "state_when_missing_all_extension_sheets": "NOT_CONFIGURED",
+    "display_label": "Project blackout not configured",
+    "remaining_days_when_legacy": "preserve_existing_supported_weekend_and_japan_holiday_count_with_explicit_unconfigured_blackout_fallback",
+    "means_committed_empty_blackout": false,
+    "partial_or_malformed_extension": "REJECT_WRITE_AND_MARK_COUNT_UNKNOWN_WHEN_DATA_DEPENDENT",
+    "approval_state": "TECHNICAL_COMPATIBILITY_REVIEW_NOT_FROZEN"
+  }
 }
