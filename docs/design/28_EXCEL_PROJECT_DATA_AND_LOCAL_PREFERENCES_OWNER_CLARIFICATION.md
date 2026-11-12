@@ -10,6 +10,17 @@
 >
 > In this case, blackout date should be a common information shared across the project member. when it's set, it should be recorded in the excel
 
+## 2026-11-12 follow-up — specific owner corrections (supersede earlier Design Office assumptions)
+
+[Issue #25 comment #6812583483](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812583483) confirms two further business requirements:
+
+1. **Enabled project blackout dates are excluded from `remainingWorkdays`**: count eligible dates strictly after Today through Finish inclusive, excluding weekends, Japanese holidays, **and committed blackout dates** (each excluded once); display correct Days Remaining in Gantt and Task Detail. This **overrides** the earlier proposal to preserve the old non-blackout arithmetic. The current code has not been updated; the next functional implementation must explicitly change it and test holiday overlap and stale-source handling.
+2. **`ProjectMeta.ProjectName` is required shared Excel data**, displayed as the project identity in UI, Calendar and HTML/browser title. Workbook filename, local Report 1.1 naming preferences and personal browser settings must not silently override this value. Frozen Report 1.1 #7 needs a *targeted name-source compatibility amendment* before its local report-name input/output contract changes.
+
+See [proposed workbook extension v0.1.1](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.md), [machine contract](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.json), [proposal changelog](../specifications/EMV_PROJECT_DATA_PROPOSAL_CHANGELOG.md), and [60 proposed tests](../verification/EMV_PROJECT_DATA_0_1_ACCEPTANCE_PLAN.md).
+
+**Owner direction is clear; exact sheet schema and production implementation remain unapproved.**
+
 ## 1. Data ownership matrix (controlling concept)
 
 | Information | Authoritative persistence | All members opening same committed workbook | Notes |
