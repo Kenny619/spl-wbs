@@ -1,8 +1,10 @@
-# Shared Under Watch — architecture and cross-user integrity assessment, v0.1
+# Shared Under Watch — historical architecture options, v0.1 (SUPERSEDED BY OWNER WORKBOOK DIRECTION)
 
 **Prepared:** 2026-11-11 JST · **Status:** TECHNICAL OPTIONS / NOT approved storage design  
 **Owner direction:** [WATCH-D01 A](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6786902711): “One person's update needs to be visible by all project members.”  
 **Other binding decisions:** WATCH-D02 A (Watch/Clear/Unknown; no invented RAG), WATCH-D03 A (minimal auditable resolution), MR-D01 B (Meeting Review must ship with real Watch), CAL-D01 A (blackout UI into Settings, session only). See [decision record](26_2026-11-11_FUNCTIONAL_RECONCILIATION_OWNER_DISPOSITION.md).
+
+> **SUPERSEDED / retained as historical technical alternatives.** On **2026-11-12** the Product Owner explicitly directed that **all project data, including Under Watch reasons and project blackout dates, live inside the same Excel workbook**. Per-user visual settings (theme, visible columns, PGCM display) and recently opened file history live outside it (browser-local). This supersedes any recommendation here for a separate authenticated Watch service or browser-local Watch source as the default. The correct remaining technical problem is **shared workbook version/reload, conflict safety, audited schema extension and safe multi-user file access**, *not* selecting a new app backend. See [controlling owner clarification / Decision 28](28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md). **Do not use Option B/B1 as implementation guidance.**
 
 ## 1. Critical architectural finding
 
@@ -52,14 +54,14 @@ For **either**:
 
 **MR-D01 B makes these screens dependent:** the global Schedule and Reports visual patterns remain frozen, but the Meeting Review's task list/agenda may need new reason summaries, watch provenance, Unknown state and shared freshness indicators. Those are substantive *content and interaction* changes even if the approved three-page styling stays consistent. Prepare a **targeted watch-aware Meeting Review design revision** after defining the real Watch data contract; seek the Owner's specific approval of that revision before code, and do not treat the existing synthetic Review 08 indicators as a real shared Watch UI.
 
-## 6. Genuine remaining owner architecture choice (only when ready)
+## 6. Historical architecture choice (resolved in principle by owner; not an open B1 recommendation)
 
 **ARCH-D01 — Shared authoritative source and network policy.**
 
-- **Option B1 (recommended if organizational policy permits):** a small authenticated **shared Watch register** for project-scoped Watch events and accepted commitments, with a documented minimal transmitted data set; keep existing workbook editing/save source untouched until a separate design authorizes task-source synchronization. This is a meaningful change to the app's current local-only/privacy posture and requires approval.
-- **Option A1:** a single centrally managed **canonical project workbook** under an explicitly verified shared document service with conditional writes, concurrency and authorized access, extending the workbook contract through new specification approval.
+- **Option B1 (SUPERSEDED / not owner-selected):** a small authenticated **shared Watch register** for project-scoped Watch events and accepted commitments, with a documented minimal transmitted data set; keep existing workbook editing/save source untouched until a separate design authorizes task-source synchronization. This is a meaningful change to the app's current local-only/privacy posture and requires approval.
+- **Option A1 (needs technical workbook safety assessment, not necessarily a cloud API):** a single centrally managed **canonical project workbook** under an explicitly verified shared document service with conditional writes, concurrency and authorized access, extending the workbook contract through new specification approval.
 - **Neither / needs environment validation:** if the required shared service or network path is not permitted, **do not claim WATCH-D01 is implemented**; return to feasibility before assigning Watch development. Browser-local/source copy is not an equivalent substitute.
 
-**What requires confirmation from the Owner/IT before selecting one:** which organizational project-wide shared data store is supported/allowed, and whether project task identifiers and risk descriptions may be transmitted to it. Do not assume SharePoint, OneDrive sync, GitHub or a new SaaS endpoint is suitable simply because available in another context.
+**Current gate:** The owner has already chosen **workbook-authoritative project data**; do not reopen that storage-ownership choice. Determine only how the same authoritative workbook file will be accessed/shared without silent stale or concurrent-write loss. Do not assume SharePoint, OneDrive sync, GitHub or a new SaaS endpoint; the exact file-sharing environment and safe version-check/lock behavior are implementation feasibility facts to validate.
 
 **No implementation, plugin/backend deployment, data upload, PR merge, new UAT kit, or security waiver was authorized by preparing this assessment.**
