@@ -2,8 +2,8 @@
 
 **Prepared:** 2026-11-13 JST  
 **State:** DRAFT synthetic feasibility on [PR #48](https://github.com/Kenny619/spl-wbs/pull/48) stacked on [F4d #47](https://github.com/Kenny619/spl-wbs/pull/47); no merge, production approval or owner UAT.  
-**First complete test head:** `6bc91b0ab6cb5485758b56cd95de5a9b3b7a2e64`.  
-**CI run:** [#43310603128](https://github.com/Kenny619/spl-wbs/actions/runs/43310603128). **Unit and Windows results pending at first publication; verify exact job conclusions before PASS.**
+**Exact verified head:** `dd61321faeeb566d71883ee6c04eb19eb7700277`.  
+**Final CI:** [#43310858983](https://github.com/Kenny619/spl-wbs/actions/runs/43310858983) **SUCCESS at exact SHA**: Ubuntu **249/249 unit tests in 35 files**, including F5a **12/12**, managed/read-only TypeScript builds PASS; Windows Chromium **72/72 PASS**.
 
 ## Contract and permitted claim
 
@@ -27,4 +27,8 @@
 5. The approved DES-012 Review08 and Report Review02 appearance must be preserved; **MR-D01 B** prohibits shipping an interim status-only Meeting Review.
 6. CI is Node22/Windows Chromium; no physical corporate Node26.13.0/npm11.19.1 Edge, shared file lock or real user XLSX UAT proof is asserted.
 
-**Initial disposition:** implementation/test submitted; final exact-head CI and independent review pending.
+**Final technical disposition:** F5a read-only projection feasibility **PASS** at exact head **249 unit + 72 Windows browser**; no real project-file mutation, no integrated Watch UI/Meeting Review, no production acceptance. The structural schema and business evidence/actor policy remain unfrozen. PR #48 draft/unmerged.
+
+## Red-to-green build trace
+
+The initial F5a candidate at `6bc91b0ab6cb5485758b56cd95de5a9b3b7a2e64` passed **249 unit tests** but the strict TypeScript build failed because `TaskID` retained a nullable type after map lookup. This was corrected with an explicit verified task-id narrowing in `watchProjection.ts` at head `dd61321faeeb566d71883ee6c04eb19eb7700277`. A full new [exact-head run #43310858983](https://github.com/Kenny619/spl-wbs/actions/runs/43310858983) passed **249/249 unit, both builds and 72/72 Windows browser**. Preserve the first red/green evidence; it was a build typing defect, not incorrect Watch classification.
