@@ -1,4 +1,4 @@
-# EMV-PROJECT-DATA-0.1.1 — design-to-DEV/QA handoff (DRAFT / DO NOT IMPLEMENT YET)
+# EMV-PROJECT-DATA-0.1.2 — design-to-DEV/QA handoff (SCOPE APPROVED / DO NOT IMPLEMENT YET)
 
 **Prepared:** 2026-11-12 JST  
 **Controlling proposed spec:** [human contract](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.md), [machine contract](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.json), [acceptance matrix](../verification/EMV_PROJECT_DATA_0_1_ACCEPTANCE_PLAN.md).  
@@ -6,7 +6,7 @@
 **Approved UI:** exact [DES-012 Review 08](../../design/concepts/DES-012-consolidated-review08-task-detail.html) (verify source blob `de6ebaa63aa035ba741b4435cf1cdb9d1166d958`).  
 **Application source inspected:** draft PR #37 branch `feature/report-1-1-stakeholder-html` at `04e31d138d6aba5121ce397f2fde622e3bf6ef3d`, as of the Design Office prior source audit. **Refresh exact heads before any future coding.**
 
-This is a **pre-implementation feasibility/work breakdown proposal** only. The proposed five-sheet schema is not frozen, stages/priorities are not re-authorized, and no Cursor development task is assigned by this document. Never use new sheets on a real user workbook until the Owner freezes a versioned extension and explicitly authorizes a bounded implementation.
+This is a **pre-implementation feasibility/work breakdown proposal** only. The five-sheet architecture, one initially active interval, and Calendar+Watch+Meeting delivery coupling are Owner-approved scope choices; **exact field-level schema is not frozen** and stage dates/beta gates are not re-authorized, and no Cursor development task is assigned by this document. Never use new sheets on a real user workbook until the Owner freezes a versioned extension and explicitly authorizes a bounded implementation.
 
 ## Essential technical constraints found
 
@@ -56,4 +56,4 @@ This is a **pre-implementation feasibility/work breakdown proposal** only. The p
 - **Automatic Watch**: rule catalog/commitment impact/clearance thresholds remain to freeze.
 - **Report 1.1 name sourcing**: change browser-local name contract only through separate #7 approval and evidence.
 
-**Status:** REVISED v0.1.1 HANDOFF PREPARED against [Owner feedback](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812583483); no code assignment, PR modification, merge/release, QA result or UAT kit claimed.
+**Status:** REVISED v0.1.2 APPROVED-SCOPE FEASIBILITY HANDOFF against [Owner feedback](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812583483); no code assignment, PR modification, merge/release, QA result or UAT kit claimed.
