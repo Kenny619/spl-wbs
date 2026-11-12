@@ -7,6 +7,7 @@ import { spawn } from "node:child_process";
 
 let fileUrl = "";
 let base64 = "";
+let sharedProjectBase64 = "";
 let packagedUatBase64 = "";
 
 test.beforeAll(async () => {
@@ -17,6 +18,32 @@ test.beforeAll(async () => {
   sheet.addRow([501, "Synthetic milestone", "1.2", "Task", 20, "In Progress",
     "Owner A", "Initial update", "2026-11-02", "2026-11-06"]);
   base64 = Buffer.from(await book.xlsx.writeBuffer()).toString("base64");
+  // Same Task workbook with project-owned Excel extension. The displayed
+  // project name is deliberately different from the disk filename.
+  const meta = book.addWorksheet("ProjectMeta");
+  meta.addRow(["Key", "Value"]);
+  meta.addRow(["ProjectID", "bd95a399-257e-4b42-ac0e-fb6ee984c1aa"]);
+  meta.addRow(["ProjectName", "Tokyo & Global Initiative"]);
+  meta.addRow(["ProjectDataSchemaVersion", "0.1.2"]);
+  const calendar = book.addWorksheet("ProjectCalendar");
+  calendar.addRow(["BlackoutID", "Enabled", "StartDate", "EndDate", "Label", "ModifiedUTC"]);
+  calendar.addRow(["7e4d09da-832e-4647-9202-8cbb8f8704d2", true,
+    "2026-11-17", "2026-11-19", "Project closure", "2026-11-12T02:00:00.000Z"]);
+  book.addWorksheet("WatchReasons").addRow([
+    "ReasonID", "TaskID", "Origin", "RuleCode", "State", "Title",
+    "Details", "EvidenceRef", "OpenedUTC", "OpenedBy", "LastReviewedUTC",
+    "ResolvedUTC", "ResolvedBy", "ResolutionNote",
+  ]);
+  book.addWorksheet("ProjectCommitments").addRow([
+    "CommitmentID", "TaskID", "AcceptedFinishDate", "AcceptedUTC",
+    "AcceptedBy", "PreviousCommitmentID", "Rationale", "EvidenceRef",
+  ]);
+  book.addWorksheet("ProjectAudit").addRow([
+    "EventID", "ChangeSetID", "TimestampUTC", "EntityType", "EntityID",
+    "TaskID", "Action", "Field", "OldValue", "NewValue",
+    "ActorLabel", "ActorProvenance", "Source", "AppVersion",
+  ]);
+  sharedProjectBase64 = Buffer.from(await book.xlsx.writeBuffer()).toString("base64");
   await new Promise<void>((resolve, reject) => {
     const child = spawn("npm", ["run", "build:managed"], { shell: true, stdio: "inherit" });
     child.on("error", reject);
@@ -70,13 +97,64 @@ async function openManaged(page: import("@playwright/test").Page) {
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
-  await expect(page.locator("#title")).toHaveText("synthetic-demo");
+  await expect(page.locator("#title")).toHaveText("Project name not configured");
   await expect(page.locator(".task-row")).toHaveCount(1);
   await page.locator(".task-row").first().click();
   await expect(page.locator("#panel")).toHaveClass(/open/);
   await expect(page.getByRole("button", { name: "Edit task" })).toBeEnabled();
   await expect(page.locator(".source-record")).toBeHidden();
 }
+
+test("managed shared ProjectName and committed blackout come from Excel, not filename or local preferences", async ({ page }) => {
+  await page.addInitScript(({ encoded }) => {
+    const decoded = Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0));
+    const files = new Map<string, Uint8Array>([["fixture-not-project-name.xlsx", decoded]]);
+    const dir = {
+      kind: "directory", name: "shared-project-synthetic",
+      async getFileHandle(name: string, opts?: { create?: boolean }) {
+        if (!files.has(name)) {
+          if (!opts?.create) throw new DOMException("missing", "NotFoundError");
+          files.set(name, new Uint8Array());
+        }
+        return {
+          kind: "file", name,
+          async getFile() {
+            return new File([new Uint8Array(files.get(name)!)], name,
+              { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          },
+          async createWritable() {
+            let pending = new Uint8Array();
+            return {
+              async write(next: Uint8Array) { pending = Uint8Array.from(next); },
+              async close() { files.set(name, pending); },
+            };
+          },
+        };
+      },
+      async *entries() {
+        for (const name of files.keys()) yield [name, { kind: "file", name }];
+      },
+      async removeEntry(name: string) { files.delete(name); },
+    };
+    Object.defineProperty(window, "showDirectoryPicker", { configurable: true, value: async () => dir });
+  }, { encoded: sharedProjectBase64 });
+  await page.goto(fileUrl);
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Choose project folder" }).click();
+  await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
+  await expect(page).toHaveTitle("Tokyo & Global Initiative — SPT-WBS");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await expect(settings.getByText("Project Calendar", { exact: true })).toBeVisible();
+  await expect(settings).toContainText(
+    "Tokyo & Global Initiative · Committed blackout: 2026-11-17 – 2026-11-19",
+  );
+  await expect(settings).toContainText("read-only preview");
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Reload workbook" }).click();
+  await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
+  await expect(page).toHaveTitle("Tokyo & Global Initiative — SPT-WBS");
+});
 
 test("managed v18 detail editor protects unsaved changes on task-panel close", async ({ page }) => {
   await openManaged(page);
@@ -117,7 +195,7 @@ test("Save As creates verified new active workbook, keeps original unchanged, an
   await page.getByRole("button", { name: "Edit task" }).click();
   await page.getByLabel("Task title").fill("Copied milestone");
   await page.getByRole("button", { name: "Save As…" }).click();
-  await expect(page.locator("#title")).toHaveText("working-copy");
+  await expect(page.locator("#title")).toHaveText("Project name not configured");
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("working-copy.xlsx");
   await expect(page.getByText(/Save As verified: working-copy.xlsx is now active/)).toBeVisible();
   const sourceAndCopy = await page.evaluate(() => {
@@ -1003,7 +1081,7 @@ test("Owner UAT: native Edge AbortError reports diagnostic and safe read-only XL
     buffer: Buffer.from(packagedUatBase64, "base64"),
   });
   await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded", { timeout: 15000 });
-  await expect(page.locator("#title")).toHaveText("SPT-WBS_DES010_Synthetic_UAT");
+  await expect(page.locator("#title")).toHaveText("Project name not configured");
   await expect(page.locator(".task-row").first()).toBeVisible();
   await page.locator(".task-row").first().click();
   await expect(page.getByRole("button", { name: "Edit task" })).toBeDisabled();
@@ -1075,7 +1153,7 @@ test("Owner UAT kit: packaged 23-task XLSX imports, allows direct Save and write
   await expect(banner, "Packaged UAT workbook must import; browser errors: " + messages.join("; ")).toContainText(
     "Workbook ready", { timeout:15000 },
   );
-  await expect(page.locator("#title")).toHaveText("SPT-WBS_DES010_Synthetic_UAT");
+  await expect(page.locator("#title")).toHaveText("Project name not configured");
   await expect(page.locator(".task-row").first()).toBeVisible();
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue(fileName);
   // Must be writable; previous package mistakenly included unsupported AutoFilter.
