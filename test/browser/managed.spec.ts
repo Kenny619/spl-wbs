@@ -105,7 +105,7 @@ async function openManaged(page: import("@playwright/test").Page) {
   await expect(page.locator(".source-record")).toBeHidden();
 }
 
-test("managed shared ProjectName and committed blackout come from Excel, not filename or local preferences", async ({ page }) => {
+async function openSharedManaged(page: import("@playwright/test").Page) {
   await page.addInitScript(({ encoded }) => {
     const decoded = Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0));
     const files = new Map<string, Uint8Array>([["fixture-not-project-name.xlsx", decoded]]);
@@ -136,11 +136,18 @@ test("managed shared ProjectName and committed blackout come from Excel, not fil
       },
       async removeEntry(name: string) { files.delete(name); },
     };
+    Object.defineProperty(window, "__managedFixtureFiles", { configurable: true, value: files });
     Object.defineProperty(window, "showDirectoryPicker", { configurable: true, value: async () => dir });
   }, { encoded: sharedProjectBase64 });
   await page.goto(fileUrl);
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
+  await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
+}
+
+test("managed shared ProjectName and committed blackout come from Excel, not filename or local preferences", async ({ page }) => {
+  await openSharedManaged(page);
+
   await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
   await expect(page).toHaveTitle("Tokyo & Global Initiative — SPT-WBS");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
@@ -149,7 +156,7 @@ test("managed shared ProjectName and committed blackout come from Excel, not fil
   await expect(settings).toContainText(
     "Tokyo & Global Initiative · Committed blackout: 2026-11-17 – 2026-11-19",
   );
-  await expect(settings).toContainText("read-only preview");
+  await expect(settings).toContainText("Shared Excel workbook settings");
   await settings.getByRole("button", { name: "Close" }).click();
   const projectMenu = page.locator(".managed-project-menu");
   if (await projectMenu.getAttribute("open") === null) {
@@ -158,6 +165,102 @@ test("managed shared ProjectName and committed blackout come from Excel, not fil
   await page.locator("#reload").click();
   await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
   await expect(page).toHaveTitle("Tokyo & Global Initiative — SPT-WBS");
+});
+
+test("F4c Calendar Cancel discards draft without changing workbook, audit or local preferences", async ({ page }) => {
+  await openSharedManaged(page);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("button", { name: "Edit Project Calendar" }).click();
+  await settings.getByLabel("Blackout start").fill("2026-11-18");
+  await settings.getByLabel("Blackout end").fill("2026-11-20");
+  await settings.getByRole("button", { name: "Cancel calendar edit" }).click();
+  await expect(settings).toContainText("Shared workbook unchanged");
+  await expect(settings).toContainText("Committed blackout: 2026-11-17 – 2026-11-19");
+  const names = await page.evaluate(() =>
+    [...(window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles.keys()]);
+  expect(names).toEqual(["fixture-not-project-name.xlsx"]);
+});
+
+test("F4c Calendar Save commits verified workbook and project audit; Disable is a separate Save", async ({ page }) => {
+  page.on("dialog", async dialog => { await dialog.accept(); });
+  await openSharedManaged(page);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("button", { name: "Edit Project Calendar" }).click();
+  await settings.getByLabel("Blackout start").fill("2026-11-18");
+  await settings.getByLabel("Blackout end").fill("2026-11-20");
+  await settings.getByLabel("Blackout description").fill("Updated shared office closure");
+  await settings.getByRole("button", { name: "Save to shared workbook" }).click();
+  await expect(settings).toContainText("Committed blackout: 2026-11-18 – 2026-11-20", { timeout: 20_000 });
+  await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
+
+  await settings.getByRole("button", { name: "Edit Project Calendar" }).click();
+  await settings.getByLabel("Enable project blackout").uncheck();
+  await settings.getByRole("button", { name: "Save to shared workbook" }).click();
+  await expect(settings).toContainText("Committed blackout: No enabled blackout", { timeout: 20_000 });
+  const result = await page.evaluate(() => {
+    const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    return { names: [...files.keys()], source: Array.from(files.get("fixture-not-project-name.xlsx")!) };
+  });
+  expect(result.names).toContain("fixture-not-project-name.backup.xlsx");
+  expect(result.names).not.toContain("fixture-not-project-name.stage.xlsx");
+  expect(result.names).not.toContain("fixture-not-project-name.pending.json");
+  const saved = new ExcelJS.Workbook();
+  await saved.xlsx.load(Uint8Array.from(result.source) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  expect(saved.getWorksheet("ProjectCalendar")!.getCell("B2").value).toBe(false);
+  expect(saved.getWorksheet("ProjectCalendar")!.getCell("C2").value).toBe("2026-11-18");
+  expect(saved.getWorksheet("ProjectAudit")!.rowCount).toBeGreaterThan(1);
+  expect(saved.getWorksheet("UpdateHistory")!.rowCount).toBe(1);
+});
+
+test("F4c legacy first project Save requires name and creates all five audited sheets explicitly", async ({ page }) => {
+  page.on("dialog", async dialog => { await dialog.accept(); });
+  await openManaged(page);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("button", { name: "Edit Project Calendar" }).click();
+  await settings.getByRole("button", { name: "Save to shared workbook" }).click();
+  await expect(settings).toContainText("A shared project name is required");
+  await settings.getByLabel("New shared project name").fill("Team Delivery North");
+  await settings.getByLabel("Enable project blackout").check();
+  await settings.getByLabel("Blackout start").fill("2026-12-18");
+  await settings.getByLabel("Blackout end").fill("2026-12-21");
+  await settings.getByRole("button", { name: "Save to shared workbook" }).click();
+  await expect(page.locator("#title")).toHaveText("Team Delivery North", { timeout: 20_000 });
+  await expect(settings).toContainText("Committed blackout: 2026-12-18 – 2026-12-21");
+  const bytes = await page.evaluate(() => Array.from(
+    (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  const saved = new ExcelJS.Workbook();
+  await saved.xlsx.load(Uint8Array.from(bytes) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  for (const name of ["ProjectMeta", "ProjectCalendar", "WatchReasons", "ProjectCommitments", "ProjectAudit"]) {
+    expect(saved.getWorksheet(name)).toBeDefined();
+  }
+  expect(saved.getWorksheet("ProjectMeta")!.getCell("B3").value).toBe("Team Delivery North");
+  expect(saved.getWorksheet("UpdateHistory")!.rowCount).toBe(1);
+});
+
+test("F4c stale source refuses project Save and keeps the Calendar draft visible", async ({ page }) => {
+  page.on("dialog", async dialog => { await dialog.accept(); });
+  await openSharedManaged(page);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("button", { name: "Edit Project Calendar" }).click();
+  await settings.getByLabel("Blackout start").fill("2026-11-18");
+  await page.evaluate(() => {
+    const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    const name = "fixture-not-project-name.xlsx";
+    const original = Uint8Array.from(files.get(name)!);
+    original[0] ^= 1;
+    files.set(name, original);
+  });
+  await settings.getByRole("button", { name: "Save to shared workbook" }).click();
+  await expect(settings).toContainText("changed since it was loaded", { timeout: 20_000 });
+  await expect(settings.getByLabel("Blackout start")).toHaveValue("2026-11-18");
+  await expect(settings).toContainText("Committed blackout: 2026-11-17 – 2026-11-19");
+  const names = await page.evaluate(() =>
+    [...(window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles.keys()]);
+  expect(names).toEqual(["fixture-not-project-name.xlsx"]);
 });
 
 test("managed v18 detail editor protects unsaved changes on task-panel close", async ({ page }) => {
