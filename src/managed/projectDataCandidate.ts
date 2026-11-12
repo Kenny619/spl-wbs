@@ -5,9 +5,9 @@ import { inspectProjectData } from "./projectDataInspector";
 import { ManagedWorkbookError, preflightManagedWorkbook } from "./preflight";
 
 /**
- * F3b synthetic technical spike: a pure, in-memory ProjectMeta/ProjectCalendar
- * candidate + separate ProjectAudit. NOT connected to direct Save, Save As, UI,
- * automatic Watch, multiwriter locking or corporate real workbooks.
+ * Validated in-memory ProjectData candidate (F3b/F5c). Shared guarded direct
+ * Save is owned by directSave.ts. F5c adds MANUAL Watch reason mutations only:
+ * no UI or automatic triggers, identity verification, or production rollout.
  * The sheet/field contract v0.1.2 is STILL PROPOSED, NOT FROZEN.
  */
 const PROJECT_VERSION = "0.1.2";
@@ -42,7 +42,10 @@ export type ProjectEdit =
   | { kind: "initialize"; projectId: string; projectName: string; blackout?: Blackout }
   | { kind: "rename"; projectName: string }
   | { kind: "set-blackout"; blackout: Blackout }
-  | { kind: "disable-blackout"; blackoutId: string };
+  | { kind: "disable-blackout"; blackoutId: string }
+  | { kind: "add-watch-reason"; reasonId: string; taskId: string; title: string;
+      details?: string; evidenceRef?: string }
+  | { kind: "resolve-watch-reason"; reasonId: string; resolutionNote?: string };
 export type ProjectCandidateInput = {
   source: Uint8Array | ArrayBuffer;
   edit: ProjectEdit;
@@ -56,9 +59,10 @@ export type ProjectCandidateResult =
   | { kind: "candidate"; bytes: Uint8Array; auditCount: number; changeSetId: string; timestampUTC: string };
 
 type AuditEntry = {
-  entityType: "ProjectMeta" | "Blackout";
+  entityType: "ProjectMeta" | "Blackout" | "WatchReason";
   entityId: string;
-  action: "Create" | "Update" | "Disable";
+  taskId?: string;
+  action: "Create" | "Update" | "Disable" | "Resolve";
   field: string;
   oldValue: string;
   newValue: string;
@@ -138,6 +142,21 @@ function findBlackout(sheet: ExcelJS.Worksheet, c: Record<string, number>, id: s
 }
 function snapshot(sheet: ExcelJS.Worksheet): string {
   return JSON.stringify(sheet.getSheetValues());
+}
+/** Stable WBS identity, never WBSCode, task title or worksheet row number. */
+function watchTaskId(value: ExcelJS.CellValue): string | null {
+  if (typeof value === "number" && Number.isSafeInteger(value)) return String(value);
+  if (typeof value === "string" && value.trim()) return value.trim();
+  return null;
+}
+function watchRow(sheet: ExcelJS.Worksheet, c: Record<string, number>, id: string): ExcelJS.Row | null {
+  for (let i = 2; i <= sheet.rowCount; i++) {
+    const row = sheet.getRow(i);
+    if (row.hasValues && text(row.getCell(c.ReasonID).value)?.toLowerCase() === id.toLowerCase()) {
+      return row;
+    }
+  }
+  return null;
 }
 
 export async function buildProjectDataCandidate(input: ProjectCandidateInput): Promise<ProjectCandidateResult> {
@@ -284,6 +303,86 @@ export async function buildProjectDataCandidate(input: ProjectCandidateInput): P
         action: "Disable", oldValue: previous, newValue: input.timestampUTC });
     }
   }
+  // F5c bounded manual reason candidate: no automatic risk triggers, no
+  // auto-clear, no accepted-commitment mutation, and no fabricated Green.
+  if (edit.kind === "add-watch-reason" || edit.kind === "resolve-watch-reason") {
+    const watch = book.getWorksheet("WatchReasons")!;
+    const c = headerColumns(watch, WATCH_HEADERS);
+    if (!UUID.test(edit.reasonId)) error("INVALID_PROJECT_VALUE", "ReasonID must be a UUID.");
+    if (edit.kind === "add-watch-reason") {
+      if (watchRow(watch, c, edit.reasonId)) {
+        error("DUPLICATE_WATCH_REASON", "This reason identity already exists.");
+      }
+      // This check is intentionally independent of the task's TaskStatus or
+      // finish dates: a manual stakeholder risk can exist on a Completed task.
+      const wbs = book.worksheets.find(x => x.name.toLowerCase() === "projectwbs")!;
+      const w = headerColumns(wbs, ["ID"]);
+      const requested = edit.taskId.trim();
+      if (!requested) error("UNKNOWN_TASK", "Watch reason needs an existing stable TaskID.");
+      let found = false;
+      for (let i = 2; i <= wbs.rowCount; i++) {
+        const row = wbs.getRow(i);
+        if (row.hasValues && watchTaskId(row.getCell(w.ID).value) === requested) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) error("UNKNOWN_TASK", "Watch reason TaskID does not exist in ProjectWBS.");
+      safeText(edit.title, "Watch reason title", 180);
+      safeText(edit.details ?? "", "Watch reason details", 2000, true);
+      safeText(edit.evidenceRef ?? "", "Watch reason evidence", 500, true);
+      const record: Record<(typeof WATCH_HEADERS)[number], string | null> = {
+        ReasonID: edit.reasonId, TaskID: requested, Origin: "Manual",
+        RuleCode: null, State: "Open", Title: edit.title,
+        Details: edit.details ?? null, EvidenceRef: edit.evidenceRef ?? null,
+        OpenedUTC: input.timestampUTC, OpenedBy: input.actorLabel,
+        LastReviewedUTC: null, ResolvedUTC: null, ResolvedBy: null, ResolutionNote: null,
+      };
+      const row = watch.addRow([]);
+      for (const name of WATCH_HEADERS) {
+        const value = record[name];
+        row.getCell(c[name]).value = value;
+        if (value !== null) audit.push({
+          entityType: "WatchReason", entityId: edit.reasonId,
+          taskId: requested, field: name, action: "Create",
+          oldValue: "", newValue: value,
+        });
+      }
+    } else {
+      const row = watchRow(watch, c, edit.reasonId);
+      if (!row) error("UNKNOWN_WATCH_REASON", "Cannot resolve an unknown reason.");
+      if (text(row.getCell(c.Origin).value) !== "Manual") {
+        error("AUTO_RULE_UNAPPROVED", "Automatic reasons require an approved rule evaluator.");
+      }
+      if (text(row.getCell(c.State).value) !== "Open") {
+        error("WATCH_ALREADY_RESOLVED", "The recorded reason is not Open.");
+      }
+      const taskId = watchTaskId(row.getCell(c.TaskID).value);
+      if (!taskId) error("INVALID_PROJECT_DATA", "Watch reason has no stable TaskID.");
+      const opened = text(row.getCell(c.OpenedUTC).value);
+      if (!opened || input.timestampUTC < opened) {
+        error("INVALID_TRANSACTION", "A reason cannot resolve before its opening time.");
+      }
+      const note = edit.resolutionNote ?? "";
+      safeText(note, "Watch resolution note", 2000, true);
+      const changes: { field: (typeof WATCH_HEADERS)[number]; value: string }[] = [
+        { field: "State", value: "Resolved" },
+        { field: "LastReviewedUTC", value: input.timestampUTC },
+        { field: "ResolvedUTC", value: input.timestampUTC },
+        { field: "ResolvedBy", value: input.actorLabel },
+      ];
+      if (note) changes.push({ field: "ResolutionNote", value: note });
+      for (const item of changes) {
+        const cell = row.getCell(c[item.field]);
+        const oldValue = cell.value == null ? "" : String(cell.value);
+        if (oldValue === item.value) continue;
+        cell.value = item.value;
+        audit.push({ entityType: "WatchReason", entityId: edit.reasonId,
+          taskId, field: item.field, action: "Resolve",
+          oldValue, newValue: item.value });
+      }
+    }
+  }
   if (!audit.length) return { kind: "noop", auditCount: 0 };
 
   if (!existingHistory) addHeader(book, "UpdateHistory", HISTORY_COLUMNS);
@@ -293,7 +392,7 @@ export async function buildProjectDataCandidate(input: ProjectCandidateInput): P
     const record: Record<(typeof AUDIT_HEADERS)[number], string | null> = {
       EventID: crypto.randomUUID(), ChangeSetID: input.changeSetId,
       TimestampUTC: input.timestampUTC, EntityType: change.entityType,
-      EntityID: change.entityId, TaskID: null, Action: change.action,
+      EntityID: change.entityId, TaskID: change.taskId ?? null, Action: change.action,
       Field: change.field, OldValue: change.oldValue, NewValue: change.newValue,
       ActorLabel: input.actorLabel, ActorProvenance: "UnverifiedLocal",
       Source: "Web UI", AppVersion: input.appVersion,
@@ -330,6 +429,17 @@ export async function buildProjectDataCandidate(input: ProjectCandidateInput): P
   if (!history || (historySnapshot !== null && snapshot(history) !== historySnapshot) ||
       (historySnapshot === null && history.rowCount !== 1)) {
     error("READBACK_FAILED", "Frozen UpdateHistory changed during project-only candidate.");
+  }
+  // Validate that only the authorized Watch sheet changed for F5c and its
+  // independent audit was appended; do not rewrite metadata or commitments.
+  if (edit.kind === "add-watch-reason" || edit.kind === "resolve-watch-reason") {
+    for (const name of ["ProjectMeta", "ProjectCalendar", "ProjectCommitments"]) {
+      const previous = book.getWorksheet(name)!;
+      const roundTrip = after.getWorksheet(name)!;
+      if (snapshot(previous) !== snapshot(roundTrip)) {
+        error("READBACK_FAILED", "Unrelated project sheet changed: " + name);
+      }
+    }
   }
   const oldAudit = projectAudit.rowCount - audit.length;
   if (after.getWorksheet("ProjectAudit")!.rowCount !== oldAudit + audit.length) {
