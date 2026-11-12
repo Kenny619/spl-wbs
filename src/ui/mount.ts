@@ -38,6 +38,9 @@ export function mountGantt(doc: Document, controller: ImportController): void {
   if (subtitle) subtitle.textContent = CHROME_SUBTITLE;
 
   const blackout = createBlackout();
+  // Managed project data is published only after validated workbook load/Save.
+  // The legacy v18 viewer continues to own its separate session blackout.
+  let committedProjectBlackout = createBlackout();
   let calendar: HolidayCalendar = bundledHolidayCalendar();
   const pendingYears = new Set<number>();
   let fittedWidth = -1;
@@ -50,7 +53,9 @@ export function mountGantt(doc: Document, controller: ImportController): void {
   const paint = () => {
     const state = controller.getState();
     const tasks = state.tasks ?? [];
-    paintChrome(doc, state, tasks, blackout);
+    const managed = doc.body.classList.contains("spt-managed");
+    const effectiveBlackout = managed ? committedProjectBlackout : blackout;
+    paintChrome(doc, state, tasks, effectiveBlackout);
     const rows = visibleRows(tasks, state.view);
     const parents = new Set(tasks.map((task) => task.parentId).filter((id): id is string => Boolean(id)));
     const expanded = new Set(state.view.expandedIds);
@@ -91,7 +96,8 @@ export function mountGantt(doc: Document, controller: ImportController): void {
       showDependencies: state.view.showDependencies,
       selectedId: state.view.selectedId,
       today: todayInTimeZone(new Date()),
-      blackout,
+      blackout: effectiveBlackout,
+      committedBlackout: managed ? effectiveBlackout : undefined,
       calendar,
       onOpen: (id) => controller.patchView({ selectedId: id }),
     });
@@ -100,7 +106,9 @@ export function mountGantt(doc: Document, controller: ImportController): void {
     const selected = tasks.find((task) => task.id === state.view.selectedId) ?? null;
     panel.classList.toggle("open", Boolean(selected));
     backdrop.classList.toggle("open", Boolean(selected));
-    renderDetail(doc.getElementById("detailContent") as HTMLElement, selected, tasks, state.palette, todayInTimeZone(new Date()), calendar);
+    renderDetail(doc.getElementById("detailContent") as HTMLElement,
+      selected, tasks, state.palette, todayInTimeZone(new Date()), calendar,
+      managed ? effectiveBlackout : undefined);
     if (selected) {
       panel.removeAttribute("aria-hidden");
       panel.setAttribute("aria-labelledby", "detailTitle");
@@ -207,6 +215,17 @@ export function mountGantt(doc: Document, controller: ImportController): void {
       event.preventDefault();
       next.focus();
     }
+  });
+  // In managed mode the workbook (not the old session popover) owns blackout.
+  // Render immediately after an actual verified load/Save; no per-user local
+  // Calendar fallback and no automatic write back to the workbook.
+  doc.addEventListener("spt-wbs:managed-project-calendar", (event) => {
+    if (!doc.body.classList.contains("spt-managed")) return;
+    const detail = (event as CustomEvent<BlackoutInterval>).detail;
+    if (!detail || typeof detail.enabled !== "boolean" ||
+        typeof detail.start !== "string" || typeof detail.end !== "string") return;
+    committedProjectBlackout = { enabled: detail.enabled, start: detail.start, end: detail.end };
+    paint();
   });
   controller.subscribe(paint);
   paint();
