@@ -11,7 +11,7 @@ import { ManagedWorkbookError, preflightManagedWorkbook } from "./preflight";
  * The sheet/field contract v0.1.2 is STILL PROPOSED, NOT FROZEN.
  */
 const PROJECT_VERSION = "0.1.2";
-const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const CONTROL = /[\u0000-\u001f\u007f]/u;
@@ -63,9 +63,9 @@ type AuditEntry = {
   oldValue: string;
   newValue: string;
 };
-const error = (code: string, message: string): never => {
+function error(code: string, message: string): never {
   throw new ManagedWorkbookError(code, message);
-};
+}
 const text = (value: ExcelJS.CellValue): string | null =>
   typeof value === "string" ? value : null;
 const dayOK = (x: string): boolean =>
