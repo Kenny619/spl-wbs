@@ -3,7 +3,7 @@
 **Prepared:** 2026-11-12 JST  
 **Controlling proposed spec:** [human contract](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.md), [machine contract](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.json), [acceptance matrix](../verification/EMV_PROJECT_DATA_0_1_ACCEPTANCE_PLAN.md).  
 **Owner-approved data ownership:** [DEC-DATA-2026-11-12](../design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md).  
-**Approved UI:** exact [DES-012 Review 08](../design/../../design/concepts/DES-012-consolidated-review08-task-detail.html) (verify source blob `de6ebaa63aa035ba741b4435cf1cdb9d1166d958`).  
+**Approved UI:** exact [DES-012 Review 08](../../design/concepts/DES-012-consolidated-review08-task-detail.html) (verify source blob `de6ebaa63aa035ba741b4435cf1cdb9d1166d958`).  
 **Application source inspected:** draft PR #37 branch `feature/report-1-1-stakeholder-html` at `04e31d138d6aba5121ce397f2fde622e3bf6ef3d`, as of the Design Office prior source audit. **Refresh exact heads before any future coding.**
 
 This is a **pre-implementation feasibility/work breakdown proposal** only. The proposed five-sheet schema is not frozen, stages/priorities are not re-authorized, and no Cursor development task is assigned by this document. Never use new sheets on a real user workbook until the Owner freezes a versioned extension and explicitly authorizes a bounded implementation.
