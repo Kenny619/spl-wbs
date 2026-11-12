@@ -9,6 +9,8 @@ import { preflightManagedWorkbook } from "./preflight";
 import { openManagedHistory } from "./historyUi";
 import { ManagedSettings, type CalendarSaveOutcome } from "./settingsUi";
 import type { ProjectEdit } from "./projectDataCandidate";
+import { projectWatchProjection, type WatchProjection } from "./watchProjection";
+import { ManagedWatchPanel } from "./watchUi";
 import { readProjectContext, sharedProjectDisplayName, projectBrowserTitle, type ProjectContext } from "./projectContext";
 import { ManagedReports } from "./reportsUi";
 import { mountManagedShell } from "./shell";
@@ -58,6 +60,8 @@ export class ManagedEditor {
   private loadedHash: string | null = null;
   private loadedBytes: Uint8Array | null = null;
   private projectContext: ProjectContext | null = null;
+  private watchProjection: WatchProjection | null = null;
+  private readonly watchPanel: ManagedWatchPanel;
   private canWrite = false;
   private recoveryHold = false;
   private inspectionName: string | null = null;
@@ -86,6 +90,14 @@ export class ManagedEditor {
     topbar.after(this.banner);
     this.slot = element(doc, "div", "managed-editor");
     doc.getElementById("panel")?.append(this.slot);
+    this.watchPanel = new ManagedWatchPanel(doc, {
+      getProjection: () => this.watchProjection,
+      canEdit: () => this.canWrite && !this.recoveryHold && !this.busy &&
+        !this.isDirty() && !!this.directory && !!this.sourceName && !!this.loadedHash,
+      isBusy: () => this.busy,
+      onSave: (edit) => this.saveManualWatch(edit),
+      rerender: () => this.render(),
+    });
     this.dialog = element(doc, "dialog", "managed-dialog");
     this.dialog.setAttribute("aria-label", "Unsaved changes");
     doc.body.append(this.dialog);
@@ -184,6 +196,8 @@ export class ManagedEditor {
         this.loadedHash = null;
         this.loadedBytes = null;
         this.projectContext = null;
+        this.watchProjection = null;
+        this.watchPanel.cancel();
         this.publishCommittedCalendar();
         this.inspectionName = null;
         this.recoveryHold = false;
@@ -199,7 +213,7 @@ export class ManagedEditor {
     const originalPatch = controller.patchView.bind(controller);
     controller.patchView = (patch) => {
       if (patch.selectedId !== undefined && patch.selectedId !== controller.getState().view.selectedId
-        && this.isDirty()) {
+        && (this.isDirty() || this.watchPanel.hasDraft())) {
         this.guard(() => originalPatch(patch));
         return;
       }
@@ -223,7 +237,7 @@ export class ManagedEditor {
     mountManagedShell(doc, controller, this.reports, this.settings, (action) => this.guard(action));
     controller.subscribe(() => this.render());
     doc.defaultView?.addEventListener("beforeunload", (event) => {
-      if (!this.isDirty()) return;
+      if (!this.isDirty() && !this.watchPanel.hasDraft()) return;
       event.preventDefault();
       event.returnValue = "";
     });
@@ -252,6 +266,12 @@ export class ManagedEditor {
 
   private guard(action: () => void): void {
     if (this.busy) return;
+    if (this.watchPanel.hasDraft()) {
+      if (!this.doc.defaultView?.confirm(
+        "Discard unsaved Watch reason draft? The shared Excel workbook is unchanged.",
+      )) return;
+      this.watchPanel.cancel();
+    }
     if (!this.isDirty()) { action(); return; }
     this.pending = action;
     this.dialog.replaceChildren();
@@ -283,14 +303,16 @@ export class ManagedEditor {
   }
 
   private async previewWorkbook(file: File): Promise<void> {
-    if (this.busy || this.isDirty()) return;
+    if (this.busy || this.isDirty() || this.watchPanel.hasDraft()) return;
     // Preserve a previously verified editable source on failed import. The
     // preview never exposes writable handles even if the workbook passes preflight.
     this.busy = true;
     this.message = "Importing " + file.name + " in read-only preview…";
     this.render();
     try {
-      const previewContext = await readProjectContext(new Uint8Array(await file.arrayBuffer()));
+      const previewBytes = new Uint8Array(await file.arrayBuffer());
+      const previewContext = await readProjectContext(previewBytes);
+      const previewWatch = await projectWatchProjection(previewBytes);
       await this.controller.chooseFile(file);
       const loaded = this.controller.getState();
       if (!loaded.tasks || loaded.fileName !== file.name || loaded.loadError) {
@@ -303,6 +325,8 @@ export class ManagedEditor {
       this.loadedHash = null;
       this.loadedBytes = null;
       this.projectContext = previewContext;
+      this.watchProjection = previewWatch;
+      this.watchPanel.cancel();
       this.publishCommittedCalendar();
       this.inspectionName = null;
       this.names = [];
@@ -385,6 +409,7 @@ export class ManagedEditor {
       }
       const eligible = await preflightManagedWorkbook(bytes).then(() => true).catch(() => false);
       const projectContext = await readProjectContext(bytes);
+      const watchProjection = await projectWatchProjection(bytes);
       await this.controller.chooseFile(file);
       const loaded = this.controller.getState();
       if (!loaded.tasks || loaded.fileName !== name || loaded.loadError) {
@@ -400,6 +425,8 @@ export class ManagedEditor {
       this.loadedHash = hash;
       this.loadedBytes = bytes;
       this.projectContext = projectContext;
+      this.watchProjection = watchProjection;
+      this.watchPanel.cancel();
       this.publishCommittedCalendar();
       this.canWrite = eligible && (projectContext.kind === "legacy" || projectContext.kind === "valid");
       this.recoveryHold = false;
@@ -430,27 +457,42 @@ export class ManagedEditor {
    * exactly; never persist a browser-local Calendar copy. Task edits have
    * explicit precedence and cannot be silently discarded by project Save.
    */
-  private async saveProjectCalendar(edit: ProjectEdit): Promise<CalendarSaveOutcome> {
+  private saveProjectCalendar(edit: ProjectEdit): Promise<CalendarSaveOutcome> {
+    return this.saveProjectMutation(edit, "Project Calendar");
+  }
+
+  private saveManualWatch(edit: ProjectEdit): Promise<CalendarSaveOutcome> {
+    if (edit.kind !== "add-watch-reason" && edit.kind !== "resolve-watch-reason") {
+      return Promise.resolve({ kind: "blocked", message: "Only manual Watch reason actions are supported." });
+    }
+    return this.saveProjectMutation(edit, "Watch reason");
+  }
+
+  /** Same guarded project Save protocol for Calendar and manual Watch; no second writer. */
+  private async saveProjectMutation(edit: ProjectEdit, label: "Project Calendar" | "Watch reason"): Promise<CalendarSaveOutcome> {
     if (this.busy || this.recoveryHold || !this.directory || !this.sourceName ||
         !this.loadedHash || !this.canWrite || !this.loadedBytes) {
-      return { kind: "blocked", message: "Calendar Save blocked: choose a verified writable workbook first." };
+      return { kind: "blocked", message: label + " Save blocked: choose a verified writable workbook first." };
     }
     if (this.isDirty()) {
-      return { kind: "blocked", message: "Finish or discard unsaved task edits before saving Project Calendar." };
+      return { kind: "blocked", message: "Finish or discard unsaved task edits before saving " + label + "." };
+    }
+    if (label === "Project Calendar" && this.watchPanel.hasDraft()) {
+      return { kind: "blocked", message: "Cancel the unsaved Watch reason draft before editing Project Calendar." };
     }
     if (!this.doc.defaultView?.confirm(
       edit.kind === "initialize"
         ? "Development preview: initialize five project sheets in the selected disposable Excel workbook? A predecessor backup will be retained."
-        : "Development preview: save Project Calendar changes to the selected disposable Excel workbook? A predecessor backup will be retained.",
+        : "Development preview: save " + label + " changes to the selected disposable Excel workbook? A predecessor backup will be retained.",
     )) {
-      return { kind: "blocked", message: "Calendar Save cancelled. Shared workbook unchanged." };
+      return { kind: "blocked", message: label + " Save cancelled. Shared workbook unchanged." };
     }
 
     const directory = this.directory;
     const sourceName = this.sourceName;
     const originalHash = this.loadedHash;
     this.busy = true;
-    this.message = "Verifying shared Project Calendar Save and predecessor backup…";
+    this.message = "Verifying " + label + " Save and predecessor backup…";
     this.render();
     let committed = false;
     try {
@@ -460,7 +502,7 @@ export class ManagedEditor {
         actorLabel: "Unverified local editor", appVersion: APP_VERSION,
       });
       if (result.kind === "noop") {
-        this.message = "No Project Calendar changes; Excel workbook and audit were not written.";
+        this.message = "No " + label + " changes; Excel workbook and audit were not written.";
         return { kind: "noop", message: this.message };
       }
       committed = true;
@@ -470,7 +512,8 @@ export class ManagedEditor {
         throw new Error("Source changed after verified project Save. Inspect workbook before retrying.");
       }
       const committedContext = await readProjectContext(verified);
-      if (committedContext.kind !== "valid") {
+      const committedWatch = await projectWatchProjection(verified);
+      if (committedContext.kind !== "valid" || committedWatch.workbookState !== "valid") {
         throw new Error("Saved project data cannot be validated after reopening.");
       }
       const view = this.controller.getState().view;
@@ -482,9 +525,10 @@ export class ManagedEditor {
       this.loadedBytes = verified;
       this.loadedHash = result.sourceHash;
       this.projectContext = committedContext;
+      this.watchProjection = committedWatch;
       this.publishCommittedCalendar();
       this.controller.patchView({ ...view });
-      this.message = "Verified Project Calendar Save: shared workbook, project audit and predecessor backup persisted.";
+      this.message = "Verified " + label + " Save: shared workbook, project audit and predecessor backup persisted.";
       return { kind: "saved", message: this.message };
     } catch (error) {
       try {
@@ -493,7 +537,7 @@ export class ManagedEditor {
       } catch {
         this.recoveryHold = true;
       }
-      this.message = "Project Calendar Save NOT verified: " + errorMessage(error) +
+      this.message = label + " Save NOT verified: " + errorMessage(error) +
         ". Draft retained; inspect/reload the workbook before another write.";
       return { kind: "blocked", message: this.message };
     } finally {
@@ -536,6 +580,7 @@ export class ManagedEditor {
         throw new Error("Source changed after Save confirmation; do not retry without inspection.");
       }
       const savedContext = await readProjectContext(verified);
+      const savedWatch = await projectWatchProjection(verified);
       await this.controller.chooseFile(file);
       const reloaded = this.controller.getState();
       if (!reloaded.tasks || reloaded.loadError) {
@@ -545,6 +590,7 @@ export class ManagedEditor {
       this.loadedHash = result.sourceHash;
       this.loadedBytes = verified;
       this.projectContext = savedContext;
+      this.watchProjection = savedWatch;
       this.publishCommittedCalendar();
       this.clearDraft();
       this.controller.patchView({ ...view, selectedId: taskId });
@@ -647,6 +693,7 @@ export class ManagedEditor {
       }
       const view = this.controller.getState().view;
       const copyContext = await readProjectContext(verified);
+      const copyWatch = await projectWatchProjection(verified);
       await this.controller.chooseFile(file);
       const state = this.controller.getState();
       if (!state.tasks || state.fileName !== name || state.loadError) {
@@ -660,6 +707,8 @@ export class ManagedEditor {
       this.loadedHash = saved.destinationHash;
       this.loadedBytes = verified;
       this.projectContext = copyContext;
+      this.watchProjection = copyWatch;
+      this.watchPanel.cancel();
       this.publishCommittedCalendar();
       const targetNames = new Set<string>([name]);
       try {
@@ -740,7 +789,10 @@ export class ManagedEditor {
       const edit = element(this.doc, "button", "managed-action primary", "Edit task");
       edit.type = "button";
       edit.disabled = !this.canWrite || this.busy;
-      edit.addEventListener("click", () => { this.editing = true; this.render(); });
+      edit.addEventListener("click", () => this.guard(() => {
+        this.editing = true;
+        this.render();
+      }));
       const actions = element(this.doc, "div", "managed-actions");
       actions.append(edit);
       const taskHistory = element(this.doc, "button", "managed-action", "Task history");
@@ -750,6 +802,7 @@ export class ManagedEditor {
       });
       actions.append(taskHistory);
       this.slot.append(actions);
+      this.slot.append(this.watchPanel.render(task.id));
       if (!this.canWrite) this.slot.append(element(this.doc, "p", "managed-editor-message",
         "Editing is blocked until this workbook passes the restricted XLSX compatibility check."));
       return;
