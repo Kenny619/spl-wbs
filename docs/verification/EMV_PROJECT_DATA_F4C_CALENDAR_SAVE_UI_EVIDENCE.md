@@ -3,7 +3,7 @@
 **Prepared:** 2026-11-13 JST  
 **Classification:** Draft experimental managed-product functionality on [PR #46](https://github.com/Kenny619/spl-wbs/pull/46), stacked on F4b #45; **not an accepted production workbook migration, official corporate UAT or merge approval.**  
 **Initial exact head:** `62a1c67b5bff43fb5c1d7af4cfd52593887a5439`  
-**Initial CI:** [Actions run #43288334052](https://github.com/Kenny619/spl-wbs/actions/runs/43288334052) (**Ubuntu build/unit PASS, Windows Chromium pending at original report checkpoint**).  
+**Initial CI:** [Actions run #43288334052](https://github.com/Kenny619/spl-wbs/actions/runs/43288334052) (**completed SUCCESS: 237/237 unit and 71/71 Windows Chromium PASS**).  
 **Owner direction:** Excel is project-wide source for ProjectMeta, ProjectCalendar, Watch and audit; only theme, columns, PGCM display and recent-file history are browser-local. Five additive sheets and one active inclusive blackout were approved in principle; field-level schema v0.1.2 is still a PROPOSAL.  
 **Prior proof:** [F4a–F4b shared project context and read-only Settings](EMV_PROJECT_DATA_F4A_F4B_CONTEXT_UI_EVIDENCE.md), [F3c verified Save](EMV_PROJECT_DATA_F3C_VERIFIED_SAVE_SPIKE_EVIDENCE.md), [F3d audit collision remediation](EMV_PROJECT_DATA_F3D_CHANGESET_ID_QA.md).  
 **Approved visual shell:** DES-012 Review 08 remains frozen; this experimental managed drawer extends existing styling without replacing the accepted design.
@@ -21,7 +21,7 @@
 
 ## CI and synthetic end-to-end coverage
 
-Initial [run #43288334052](https://github.com/Kenny619/spl-wbs/actions/runs/43288334052): TypeScript + managed/read-only production builds PASS, **237/237 unit tests PASS**, including previous F3c/F3d/F4a safety cases. Windows Chromium full-suite result to be verified at exact head before final disposition.
+**Final exact-head result:** [run #43288334052](https://github.com/Kenny619/spl-wbs/actions/runs/43288334052) **completed SUCCESS** at `62a1c67b5bff43fb5c1d7af4cfd52593887a5439`. [Build + unit job #131427678786](https://github.com/Kenny619/spl-wbs/actions/runs/43288334052/job/131427678786): **237/237 unit tests PASS**, managed/read-only builds and TypeScript PASS. [Windows Chromium job #131427679193](https://github.com/Kenny619/spl-wbs/actions/runs/43288334052/job/131427679193): **71/71 Playwright tests PASS** (2.5m), including all four F4c B1–B4 browser tests.
 
 Added four targeted Windows Playwright browser cases using disposable XLSX + a File System Access in-memory directory:
 - **F4C-B1 Cancel:** modifying dates then cancelling leaves committed range, Excel bytes, ProjectAudit and sidecars untouched.
@@ -31,11 +31,11 @@ Added four targeted Windows Playwright browser cases using disposable XLSX + a F
 
 ## Open release/acceptance gates
 
-- **CI Windows final check pending** at initial evidence publication. If failed, record exact tests and fix/retest, do not claim PASS.
+- **CI Windows final check PASSED**: full 71/71 at exact head, including new B1 Cancel, B2 Save/Disable, B3 legacy Initialize, B4 stale-source blocked, without weakening original v18 or managed regression tests.
 - **Full schema and actor/audit contract not frozen**, full independent QA and real corporate Edge/Node26/Excel locking tests not completed; synthetic file handles do not establish multiwriter shared-file safety or real-time synchronization.
 - **F4d dependency open:** the committed blackout is stored and displayed but **not yet fed into actual managed Schedule/Task Detail/PGCM calculations**. F4a optional blackout-aware workday arithmetic is independently tested, not hooked to the visible managed Gantt.
 - No automatic Under Watch rule engine, shared commitment handling, watch-aware Meeting Review, approved Report 1.1 name-source amendment or full DES-012 Review08 visual parity acceptance.
 - **Project Save As remains a separate unsupported project-only workflow.** Existing Task Save As is unchanged.
 - Owner UAT kit/README latest-only link, merge/tag/release/beta milestone require separate governance; all PRs remain drafts.
 
-**Disposition:** F4c implementation and initial unit/build gate completed on draft. Final CI/QA disposition must be updated at exact successful head.
+**Disposition:** F4c **limited draft functional/technical CI PASS** for explicit Settings Calendar Save/Cancel and verified XLSX persistence: 237 unit + 71 Windows browser PASS at exact head. **No independent organizational QA acceptance or corporate-file/UAT approval.** PR #46 remains draft/unmerged; no release, real project-file migration or new UAT kit.
