@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
 import {
   captureManagedSourceHash, inspectManagedSave, managedFileNames,
-  saveManagedProjectDirect, sha256,
+  saveManagedProjectDirect, saveManagedDirect, sha256,
 } from "../../src/managed/directSave";
 import type { ProjectEdit } from "../../src/managed/projectDataCandidate";
 import { inspectProjectData } from "../../src/managed/projectDataInspector";
@@ -200,6 +200,41 @@ describe("F3c: project candidate through shared verified direct Save protocol (s
       .rejects.toMatchObject({ code: "INVALID_PROJECT_VALUE" });
     expect(dir.files.get(NAME)).toEqual(original);
     expect(dir.files.size).toBe(1);
+  });
+
+  it("refuses a second logical project Save reusing an already committed ChangeSetID", async () => {
+    const { dir, first } = await initialized();
+    const bytes = Uint8Array.from(dir.files.get(NAME)!);
+    // Distinct Save operations must never share one transaction identifier,
+    // even if an outdated/replayed client supplies the original same UTC.
+    await expect(run(dir, first.sourceHash, RENAME, ID1, T1))
+      .rejects.toMatchObject({ code: "DUPLICATE_CHANGESET" });
+    expect(dir.files.get(NAME)).toEqual(bytes);
+    expect((await inspectManagedSave(dir.handle(), NAME)).status).toBe("READY");
+    expect(dir.files.has(managedFileNames(NAME).stage)).toBe(false);
+    expect((await book(bytes)).getWorksheet("ProjectAudit")!.rowCount).toBe(10);
+  });
+
+  it("alternating project and task direct Saves retains both separate histories and latest backup", async () => {
+    const { dir, first } = await initialized();
+    const taskEdit = await saveManagedDirect({
+      directory: dir.handle(), sourceName: NAME, loadedHash: first.sourceHash,
+      taskId: "1", changes: { Title: "Updated milestone" },
+      appVersion: "f3d-qa", changeSetId: ID2, timestampUTC: T2,
+    });
+    expect(taskEdit.kind).toBe("saved");
+    if (taskEdit.kind !== "saved") return;
+    const beforeRename = Uint8Array.from(dir.files.get(NAME)!);
+    const renamed = await run(dir, taskEdit.sourceHash, RENAME, ID3, T3);
+    expect(renamed.kind).toBe("saved");
+    if (renamed.kind !== "saved") return;
+    const current = await book(dir.files.get(NAME)!);
+    expect(current.getWorksheet("ProjectWBS")!.getCell("B2").value).toBe("Updated milestone");
+    expect(current.getWorksheet("ProjectMeta")!.getCell("B3").value).toBe("Updated Shared Program");
+    expect(current.getWorksheet("UpdateHistory")!.rowCount).toBe(2);
+    expect(current.getWorksheet("ProjectAudit")!.rowCount).toBe(11);
+    expect(dir.files.get(managedFileNames(NAME).backup)).toEqual(beforeRename);
+    expect((await inspectManagedSave(dir.handle(), NAME)).status).toBe("READY");
   });
 
   it("source-close interruption retains predecessor stage and pending recovery, refuses retry", async () => {
