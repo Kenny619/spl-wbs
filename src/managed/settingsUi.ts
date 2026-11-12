@@ -74,9 +74,9 @@ export class ManagedSettings {
     const heading = make("h2", "Settings");
     const close = make("button", "Close", "managed-action");
     close.type = "button";
-    close.addEventListener("click", () => { if (!this.calendarSaving) this.dialog.close(); });
+    close.addEventListener("click", () => { if (this.allowLeavingCalendar()) this.dialog.close(); });
     this.dialog.addEventListener("cancel", (event) => {
-      if (this.calendarSaving) event.preventDefault();
+      if (!this.allowLeavingCalendar()) event.preventDefault();
     });
     header.append(heading, close);
     this.dialog.append(header);
@@ -88,7 +88,7 @@ export class ManagedSettings {
     const historyTab = make("button", "Change History", "managed-action");
     historyTab.type = "button";
     historyTab.addEventListener("click", () => {
-      if (this.calendarSaving) return;
+      if (!this.allowLeavingCalendar()) return;
       this.dialog.close();
       // Opens the real workbook-backed History surface, with no synthetic records.
       this.openHistory();
@@ -288,6 +288,32 @@ export class ManagedSettings {
     this.selector.value = this.preferences.timeZone;
     this.dialog.showModal();
     this.dialog.querySelector<HTMLButtonElement>(".managed-settings-head button")?.focus();
+  }
+
+  /** F5b: protect user input without confusing a draft with committed Excel. */
+  private hasUnsavedCalendarDraft(): boolean {
+    if (this.calendarEditor.hidden) return false;
+    const context = this.getProjectContext();
+    if (!context || (context.kind !== "legacy" && context.kind !== "valid")) return false;
+    if (context.kind === "legacy") {
+      return Boolean(this.calendarProjectName.value.trim() || this.calendarEnabled.checked ||
+        this.calendarStart.value || this.calendarEnd.value || this.calendarLabel.value);
+    }
+    const changedEnabled = this.calendarEnabled.checked !== context.blackout.enabled;
+    if (changedEnabled) return true;
+    if (!this.calendarEnabled.checked) return false;
+    return this.calendarStart.value !== context.blackout.start ||
+      this.calendarEnd.value !== context.blackout.end ||
+      this.calendarLabel.value !== context.blackoutLabel;
+  }
+
+  private allowLeavingCalendar(): boolean {
+    if (this.calendarSaving) return false;
+    if (!this.hasUnsavedCalendarDraft()) return true;
+    // Explicit Cancel remains one-click discard; navigation must not erase edits.
+    return !!this.doc.defaultView?.confirm(
+      "Discard unsaved Project Calendar changes? The shared Excel workbook is unchanged.",
+    );
   }
 
   private syncCalendarInputs(): void {
