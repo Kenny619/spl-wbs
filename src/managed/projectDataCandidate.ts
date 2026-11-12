@@ -210,6 +210,11 @@ export async function buildProjectDataCandidate(input: ProjectCandidateInput): P
   const wbsSnapshot = snapshot(wbsBefore);
   const existingHistory = book.worksheets.find(x => x.name.toLowerCase() === "updatehistory");
   const historySnapshot = existingHistory ? snapshot(existingHistory) : null;
+  const immutableProjectSnapshots = (input.edit.kind === "add-watch-reason" ||
+    input.edit.kind === "resolve-watch-reason")
+    ? ["ProjectMeta", "ProjectCalendar", "ProjectCommitments"].map(name =>
+      ({ name, cells: snapshot(book.getWorksheet(name)!) }))
+    : [];
   const nonTarget = book.worksheets.filter(x => ![
     "projectmeta", "projectcalendar", "watchreasons", "projectcommitments", "projectaudit", "updatehistory",
   ].includes(x.name.toLowerCase())).map(x => ({ name: x.name, cells: snapshot(x) }));
@@ -430,15 +435,12 @@ export async function buildProjectDataCandidate(input: ProjectCandidateInput): P
       (historySnapshot === null && history.rowCount !== 1)) {
     error("READBACK_FAILED", "Frozen UpdateHistory changed during project-only candidate.");
   }
-  // Validate that only the authorized Watch sheet changed for F5c and its
-  // independent audit was appended; do not rewrite metadata or commitments.
-  if (edit.kind === "add-watch-reason" || edit.kind === "resolve-watch-reason") {
-    for (const name of ["ProjectMeta", "ProjectCalendar", "ProjectCommitments"]) {
-      const previous = book.getWorksheet(name)!;
-      const roundTrip = after.getWorksheet(name)!;
-      if (snapshot(previous) !== snapshot(roundTrip)) {
-        error("READBACK_FAILED", "Unrelated project sheet changed: " + name);
-      }
+  // Compare the original workbook against the serialized result. Watch-only
+  // actions must not alter commitments, calendar, or project identity.
+  for (const original of immutableProjectSnapshots) {
+    const roundTrip = after.getWorksheet(original.name);
+    if (!roundTrip || snapshot(roundTrip) !== original.cells) {
+      error("READBACK_FAILED", "Unrelated project sheet changed: " + original.name);
     }
   }
   const oldAudit = projectAudit.rowCount - audit.length;
