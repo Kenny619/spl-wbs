@@ -8,7 +8,7 @@
 **Owner scope:** [Decision 29](../design/29_2026-11-12_PROJECT_DATA_SCOPE_DISPOSITION.md).  
 **Execution boundary:** no implementation of project-data writer; ten tests only on synthetic Excel workbooks in the existing repository test runner. No actual corporate XLSX or physical Edge UX test.
 
-## Actual observed results (as of Linux unit job; Windows result separately update)
+## Actual observed results (fully completed exact-head CI)
 
 | F1 question | Evidence and verdict | Caveat |
 |---|---|---|
@@ -26,7 +26,9 @@
 ### CI provenance at checkpoint
 
 - **Ubuntu Build + unit tests: PASS** on exact SHA (29 test files, **172/172 test cases**, including all 10 F1 tests); bounded UUID scan, read-only product build and managed build PASS.
-- **Windows Chromium browser regression:** **PENDING at initial documentation checkpoint**; update only after exact-run verification.
+- **Windows Chromium browser regression: PASS**, verified from [Windows job #130947542910](https://github.com/Kenny619/spl-wbs/actions/runs/43147141579/job/130947542910), **66/66 Playwright tests PASS** (reported `66 passed (2.2m)`). Windows production build, baseline package generation, diagnostics and artifact steps all succeeded. These are existing browser regressions; none prove corporate physical Edge or workbook-backed Watch UI.
+- **Overall CI conclusion: SUCCESS** on exact `5f81454a5a38db603533a10601c493259a2beb7c`, run #43147141579 (push, completed). Verified both job conclusions and logs.
+- This CI's suite used **Node 22** per existing `.github/workflows/ci.yml`; **it does not validate the corporate Node 26.13.0 / npm 11.19.1 pair**. Those have separate toolchain requirements and must be checked on relevant heads.
 - Baseline PR #37 remains draft/unmerged. F1 PR #38 is **draft** and does not modify source implementation.
 - Vitest/CI-generated artifacts are not published as an approved owner UAT package.
 
@@ -44,4 +46,8 @@
 5. Test actual Windows Edge workbook/file provider across two editors to determine whether sequential single-writer mode with refresh can guarantee no lost updates. Do not claim live synchronization.
 6. Maintain approved DES-012 Review 08 shell/layout and prior after-Stage-C beta gate; no new UAT kit before existing release constraints are cleared.
 
-**Classification:** Measured **limited technical feasibility** with explicit semantic, functional and physical-device blockers. Exact source write functionality for project settings is absent; do not call the feature done.
+**Final F1 classification — PASS, LIMITED FEASIBILITY ONLY:** Existing restricted XLSX preflight, task candidate and direct-Save backup can carry the proposed five ordinary project sheets through synthetic roundtrips without losing them. Full head CI **SUCCESS (172/172 unit, 66/66 Windows Chromium, 10/10 focused spike)**.
+
+**Explicit blockers for implementation readiness:** domain-aware project schema validator, project-level reader/candidate writer, typed ProjectAudit Save transaction, blackout-aware Days Remaining, committed ProjectName UI binding, Watch decision rules, real shared-file writer/concurrency fidelity, corporate physical Edge/Excel/UAT. None of these were implemented or accepted by F1.
+
+**No production feature code, test workbook deployment, merge/release or owner UAT package was authorized or delivered by this spike.**
