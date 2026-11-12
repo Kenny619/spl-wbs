@@ -33,7 +33,7 @@ This does **not** create another competing Save implementation; does **not** alt
 
 At exact `d1429360`, [Ubuntu Build + unit job #131101791058](https://github.com/Kenny619/spl-wbs/actions/runs/43194464559/job/131101791058) **PASS: 224/224 unit tests in 33 files**, including F3c **9/9**, F3b **14/14**, F3a **10/10**, F2 **19/19**, F1 **10/10**; TS/source checks, read-only and managed production builds PASS.
 
-**Windows Chromium job #131101791435:** **PENDING at initial documentation checkpoint**; update with exact job conclusion before claiming full CI success.
+**Windows Chromium job #131101791435: PASS** — [job #131101791435](https://github.com/Kenny619/spl-wbs/actions/runs/43194464559/job/131101791435), **66/66 Playwright PASS** (`66 passed (2.3m)`). **Overall [run #43194464559](https://github.com/Kenny619/spl-wbs/actions/runs/43194464559) completed SUCCESS** at exact `d14293600cb8cc5c0cfc3c2b9ad0996056ce4c3f`. CI Node22; physical corporate Edge/Node26 and actual shared file provider remain unverified.
 
 ## 3. Remaining product correctness and independent release gates
 
@@ -48,7 +48,7 @@ At exact `d1429360`, [Ubuntu Build + unit job #131101791058](https://github.com/
 
 ## 4. Technical disposition
 
-**Limited F3c direct-Save feasibility:** verified all nine synthetic scenarios through the **same existing guarded source/backup/recovery pipeline**, without changing the managed task candidate contract. This is materially beyond F3b in-memory-only proof but **not yet a production feature or owner acceptance**.
+**F3c limited verified direct-Save feasibility PASS:** exact-head **224/224 unit** (including 9 F3c) and **66/66 Windows Chromium**, read-only/managed builds all PASS. The same existing guarded source/backup/recovery pipeline handles synthetic project candidate writes without altering managed task edit semantics. This is materially beyond F3b in-memory-only proof but **not yet a production UI feature, field-contract freeze or owner acceptance**.
 
 **Next bounded technical review:** Independently assess changes to shared Save protocol against all historic task Save/Save As and interrupted write variants, then resolve outstanding detailed contract and scoped UI integration before promoting any real workbook UAT kit. Keep all stacked PRs as drafts and preserve prior exact-head QA evidence.
 
