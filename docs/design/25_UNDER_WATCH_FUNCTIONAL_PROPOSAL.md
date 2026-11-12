@@ -1,4 +1,6 @@
-# Under Watch — functional contract proposal WATCH-0.1 (OWNER DIRECTION SET; NOT FROZEN)
+# Under Watch — functional contract proposal WATCH-0.1 (OWNER WORKBOOK OWNERSHIP SET; NOT FROZEN)
+
+> **Nov 12 controlling Owner correction:** All Watch status/reasons, risk evidence, accepted commitments and lifecycle history **must persist in the project Excel workbook** so members loading the **same committed Excel** read the same information. The separate Watch service suggested as one technical option in [architecture option document 27](27_SHARED_WATCH_ARCHITECTURE_OPTIONS.md) is **not the chosen data owner**. Browser-local Watch is not allowed as shared state. [Owner clarification decision record](28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md). Keep Watch/Green/Unknown A and low-friction clearance A; schema and real-file consistency need distinct review.
 
 **Prepared:** 2026-11-11 JST · **Controlling issue:** [#25](https://github.com/Kenny619/spl-wbs/issues/25)  
 **Earlier design discovery:** [Risk Watch Model 0.4](05_RISK_WATCH_MODEL.md); [DES-012 visual approval](22_DES012_REVIEW08_OWNER_DESIGN_APPROVAL.md).  
@@ -68,10 +70,10 @@ Automatic watch should be based on **specified testable conditions**, not invent
 
 ## 4. Persistent storage / safety architecture (open)
 
-Recommended product direction: **project-portable persistence**, reviewed alongside managed workbook architecture, rather than browser-local watch entries that disappear on another device. A candidate is a separately validated workbook-owned watch/commitment data surface or explicit compatible companion data format, but **neither is approved**.
+**Owner-directed data source: the same project Excel workbook**, not a separate shared service, browser-local Watch store, or an independent companion file by default. Specific additional worksheet(s), columns, validation, audit linkage, migration and compatibility require a separate versioned workbook contract amendment and explicit approval.
 
 Before coding, architecture must establish:
-- Does it change/add a worksheet, field, sidecar or browser-local object? Compatibility with frozen [#3 workbook contract](https://github.com/Kenny619/spl-wbs/issues/3), optional custom columns, preflight, Save/Save As, versioned audit, backups, concurrent edits and readback.
+- Exactly which worksheet/field additions safely persist Watch in the Excel workbook? Compatibility with frozen [#3 workbook contract](https://github.com/Kenny619/spl-wbs/issues/3), optional custom columns, preflight, Save/Save As, versioned audit, backups, concurrent edits and readback.
 - Actor/source identity and how to avoid unauthorized overwrites, stale states and partial writes; no external service assumption.
 - Timezone is for presentation; original risk/acceptance instants remain canonical.
 - Existing SharePoint read-only variant continues to run without workbook write features.
@@ -92,7 +94,7 @@ Before coding, architecture must establish:
 ## 6. Owner-selected directions — functional details still to freeze
 
 **WATCH-D01 — persistence owner**  
-A **OWNER-SELECTED**: Project-portable, auditable watch/commitment state, with exact workbook/companion storage decided in a separate safe architecture review; do not ship local-only watch as the true shared register.  
+A **OWNER-SELECTED + Nov 12 clarified**: Watch/commitment state is stored **in the same Excel workbook** and audited, so members opening the same committed version see the same records; exact sheet/field schema and file concurrency remain open.  
 B: Browser-local watch as an explicitly personal aid; not portable/team-shared. If B, it cannot be presented as project-wide risk truth.
 
 **WATCH-D02 — initial severity policy**  
@@ -107,4 +109,4 @@ B: Require additional structured approval steps for every risk/commitment resolu
 A **REJECTED as written**: Freeze data/safety architecture independently, implement watch in a separate future feature branch after accepted Meeting Review core (if approved), then integrate watch indicators into the protected design under design change control.  
 B **OWNER-SELECTED via MR-D01**: Hold Meeting Review until watch architecture is complete, then implement together.
 
-**Disposition:** Watch A/A/A and integrated Meeting Review sequencing are directionally approved, but the shared source, exact schema, permission rules, actor identity, conflict handling, trigger conditions and thresholds remain open. Do not treat this as approval to add sheets, invent Green or begin production coding. Until then WATCH-0.1 remains a proposal.
+**Disposition:** Watch A/A/A and integrated Meeting Review sequencing are directionally approved, but the shared source, exact schema, permission rules, actor identity, conflict handling, trigger conditions and thresholds remain open. Do not treat this as approval to add sheets, invent Green or begin production coding. **Project blackout data also belongs in the Excel** and must be considered when defining valid automatic calendar-based risk evaluation. Until then WATCH-0.1 remains a proposal.
