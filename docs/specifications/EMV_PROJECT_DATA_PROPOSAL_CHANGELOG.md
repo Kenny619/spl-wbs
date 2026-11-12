@@ -4,6 +4,14 @@
 **Controlling Product Owner data direction:** [DEC-DATA-2026-11-12](../design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md).  
 **Current proposal:** [human specification](EMV_PROJECT_DATA_0_1_PROPOSED.md) · [machine contract](EMV_PROJECT_DATA_0_1_PROPOSED.json) · [QA plan](../verification/EMV_PROJECT_DATA_0_1_ACCEPTANCE_PLAN.md).
 
+## 2026-11-12 — Revision 0.1.2 (approved scope; full field contract still DRAFT)
+
+**Source:** Owner “proceed” following [Issue #25 scope decisions](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812740341); [canonical disposition](../design/29_2026-11-12_PROJECT_DATA_SCOPE_DISPOSITION.md).
+
+**SCH-01 approved:** five ordinary worksheets `ProjectMeta`, `ProjectCalendar`, `WatchReasons`, `ProjectCommitments`, `ProjectAudit` while protecting `ProjectWBS`/`UpdateHistory`.  **CAL-02 approved:** initial maximum one enabled inclusive blackout interval. **SEQ-01 approved:** persist Calendar with blackout-aware days as part of the integrated Watch and Meeting Review delivery package, not an interim session-only implementation. Previous after-Stage-C beta milestone unchanged unless separately reauthorized.
+
+**No implied field-level freeze or code authorization**. Machine JSON and human text advance to internal version `0.1.2`; proposal filename suffix `_0_1_PROPOSED` remains stable to preserve GitHub links and prior review evidence. Open: actor provenance, workbook multiwriter safety, automatic watch thresholds, Report 1.1 name-source compatibility, precise field validation and migration/defaults.
+
 ## 2026-11-12 — Revision 0.1.1 (Owner correction, NOT FROZEN)
 
 **Source:** [Issue #25 comment #6812583483](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812583483).
