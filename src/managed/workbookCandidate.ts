@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { importWorkbook } from "../data/normalize";
 import { KNOWN_STATUSES, TASK_TYPES } from "../data/types";
 import { ManagedWorkbookError, preflightManagedWorkbook } from "./preflight";
+import { inspectProjectData } from "./projectDataInspector";
 
 export const HISTORY_COLUMNS = [
   "ChangeSetID", "TimestampUTC", "TaskID", "WBSCode", "TaskTitle",
@@ -72,6 +73,11 @@ export async function buildManagedCandidate(input: CandidateInput): Promise<Cand
   } catch {
     fail("UNREADABLE_XLSX", "ExcelJS cannot load this XLSX; no changes were made.");
   }
+
+  // F3 guard: preserve v1 legacy files, but NEVER write an incompatible,
+  // partially present or newer project extension, even on a task-only or
+  // no-op edit. Both direct Save and Save As delegate to this candidate.
+  assertProjectDataForWrite(book);
 
   const taskSheet = book.worksheets.find((sheet) => sheet.name.toLowerCase() === "projectwbs");
   if (!taskSheet) fail("MISSING_SHEET", "A ProjectWBS worksheet is required for managed edits.");
@@ -165,6 +171,9 @@ export async function buildManagedCandidate(input: CandidateInput): Promise<Cand
   await preflightManagedWorkbook(bytes);
   const after = new ExcelJS.Workbook();
   await after.xlsx.load(bytes as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  // The serialized candidate must remain domain-valid after any task change.
+  // This happens before direct Save stages or Save As creates any target.
+  assertProjectDataForWrite(after);
   const newHistory = after.worksheets.find((sheet) => sheet.name.toLowerCase() === "updatehistory");
   if (!newHistory || newHistory.rowCount !== history.rowCount) {
     fail("READBACK_FAILED", "History was not preserved during XLSX serialization.");
@@ -174,6 +183,22 @@ export async function buildManagedCandidate(input: CandidateInput): Promise<Cand
     fail("READBACK_FAILED", "Saved field-level history has a different transaction ID.");
   }
   return { kind: "candidate", bytes, changeSetId, timestampUTC, changes: proposed };
+}
+
+/** Read-only gate for ALL existing task candidate paths; no new project writer. */
+function assertProjectDataForWrite(book: ExcelJS.Workbook): void {
+  const result = inspectProjectData(book);
+  if (result.kind === "legacy" || result.kind === "valid") return;
+  const first = result.findings[0];
+  const location = first
+    ? [first.sheet, first.row > 0 ? "row " + first.row : "", first.field].filter(Boolean).join(" / ")
+    : "ProjectData";
+  fail(
+    result.kind === "unsupported_future" ? "UNSUPPORTED_PROJECT_DATA_VERSION" : "INVALID_PROJECT_DATA",
+    "Workbook project metadata is not safe for editing (" + location + "). " +
+      (first?.message ?? "Unsupported project data extension.") +
+      " Preserve this workbook and review its project-data schema before saving.",
+  );
 }
 
 type TaskColumn = "ID" | EditableField;
