@@ -1,6 +1,6 @@
 # EMV-PROJECT-DATA-0.1.2 — verification matrix (APPROVED SCOPE / DETAILED CONTRACT DRAFT; no test execution yet)
 
-**Prepared:** 2026-11-12 JST · **Status:** Owner approved SCH-01/CAL-02/SEQ-01 scope. The 60 cases remain *planned*, not run. **No PASS claims.**  
+**Prepared:** 2026-11-12 JST · **Status:** Owner approved SCH-01/CAL-02/SEQ-01 scope. The **61 cases** remain *planned*, not run. **No PASS claims.**  
 **Human proposed schema:** [EMV_PROJECT_DATA_0_1_PROPOSED.md](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.md)  
 **Machine proposal:** [EMV_PROJECT_DATA_0_1_PROPOSED.json](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.json)  
 **Owner ownership:** [DEC-DATA-2026-11-12](../design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md) and [Issue #25 latest requirements](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812583483)  
@@ -30,6 +30,7 @@
 | **PWB-08** | Existing unsupported macros/formulas/drawings/relationships/unknown OOXML feature | Existing fail-closed XLSX preflight behavior retained; no bypass in “new sheet support” |
 | **PWB-09** | Open all sheets, Save As to an unused filename | Full project metadata/Watch/Calendar/Commitments/Audit copied with stable IDs; clearly a separate file, not live-synchronized |
 | **PWB-10** | “Create New Project” later from a template | Fresh `ProjectID` only through separately approved authoring flow; not silently reused across genuinely new projects |
+| **PWB-11** | Legacy workbook with no extension versus malformed partial `ProjectCalendar` extension | Legacy remains readable with supported weekend/holiday Days Remaining and **“Project blackout not configured”** qualifier; malformed partial extension rejects writes and cannot masquerade as empty blackout |
 
 ## B. Shared Calendar and personal preferences
 
