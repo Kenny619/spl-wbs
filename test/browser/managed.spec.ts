@@ -18,6 +18,8 @@ test.beforeAll(async () => {
   sheet.addRow([501, "Synthetic milestone", "1.2", "Task", 20, "In Progress",
     "Owner A", "Initial update", "2026-11-02", "2026-11-06"]);
   base64 = Buffer.from(await book.xlsx.writeBuffer()).toString("base64");
+  // Shared-project fixture alone has a future finish for calendar day-count UI tests.
+  sheet.getCell("J2").value = "2026-11-20";
   // Same Task workbook with project-owned Excel extension. The displayed
   // project name is deliberately different from the disk filename.
   const meta = book.addWorksheet("ProjectMeta");
@@ -165,6 +167,28 @@ test("managed shared ProjectName and committed blackout come from Excel, not fil
   await page.locator("#reload").click();
   await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
   await expect(page).toHaveTitle("Tokyo & Global Initiative — SPT-WBS");
+});
+
+test("F4d managed Schedule and Task Detail use saved Excel blackout and refresh after verified Disable", async ({ page }) => {
+  // 2026-11-16 in Tokyo; range November 17–20 contains four weekdays.
+  await page.clock.install({ time: new Date("2026-11-16T01:00:00Z") });
+  page.on("dialog", async dialog => { await dialog.accept(); });
+  await openSharedManaged(page);
+  await expect(page.locator("#calendarSettings")).toBeHidden();
+  await page.locator(".task-row").first().click();
+  await expect(page.locator(".workdays-detail strong")).toContainText("1 day remaining");
+  await expect(page.locator(".bar").first()).toHaveAttribute("title", /\+1 day/);
+
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await expect(settings).toContainText("Committed blackout: 2026-11-17 – 2026-11-19");
+  await settings.getByRole("button", { name: "Edit Project Calendar" }).click();
+  await settings.getByLabel("Enable project blackout").uncheck();
+  await settings.getByRole("button", { name: "Save to shared workbook" }).click();
+  await expect(settings).toContainText("Committed blackout: No enabled blackout", { timeout: 20_000 });
+  await settings.getByRole("button", { name: "Close" }).click();
+  await expect(page.locator(".workdays-detail strong")).toContainText("4 days remaining");
+  await expect(page.locator(".bar").first()).toHaveAttribute("title", /\+4 days/);
 });
 
 test("F4c Calendar Cancel discards draft without changing workbook, audit or local preferences", async ({ page }) => {
@@ -416,7 +440,7 @@ test("Settings relocates existing v18 columns, persists timezone and dark theme 
   await openManaged(page);
   await page.locator("#close").click();
   await expect(page.locator("#columnToggle")).toBeHidden();
-  await expect(page.locator("#calendarSettings")).toBeVisible();
+  await expect(page.locator("#calendarSettings")).toBeHidden();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const settings = page.getByRole("dialog", { name: "Settings" });
   await expect(settings).toBeVisible();
@@ -478,7 +502,7 @@ test("Settings System appearance follows device and Reset requires confirmation;
   await expect(settings.locator("#columnOptions input[data-column='status']")).toBeChecked();
   const detected = await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
   await expect(settings.getByLabel("Display timezone")).toHaveValue(detected);
-  await expect(page.locator("#calendarSettings")).toBeVisible();
+  await expect(page.locator("#calendarSettings")).toBeHidden();
   const after = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
