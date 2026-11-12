@@ -2,8 +2,8 @@
 
 **Prepared:** 13 November 2026 JST. **Technical draft**, not field-contract freeze, production implementation acceptance, owner UAT or live multiuser collaboration proof.  
 **PR:** [#50](https://github.com/Kenny619/spl-wbs/pull/50), stacked on draft [#49](https://github.com/Kenny619/spl-wbs/pull/49) and earlier project-data PRs.  
-**Initial corrected exact head:** `059f972563aa651374ed03220e7a1994f9266166`.  
-**CI run:** [#43315243737](https://github.com/Kenny619/spl-wbs/actions/runs/43315243737). **CI pending at document publication** — do not claim SUCCESS before final job outcomes are checked.  
+**Exact verified head:** `059f972563aa651374ed03220e7a1994f9266166`.  
+**Final CI:** [Actions run #43315243737](https://github.com/Kenny619/spl-wbs/actions/runs/43315243737) **completed SUCCESS** at exact SHA: **261/261 Ubuntu unit tests PASS** in 36 files including 12/12 new F5c, production/read-only and managed builds PASS; **74/74 Windows Chromium PASS** (2.5m).  
 **Governance:** [owner data ownership #28](../design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md), [approved sheet shape #29](../design/29_2026-11-12_PROJECT_DATA_SCOPE_DISPOSITION.md), [proposed exact field contract v0.1.2](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.md), [field-level review](../specifications/EMV_PROJECT_DATA_FIELD_FREEZE_REVIEW_2026-11-13.md), [Watch proposal](../design/25_UNDER_WATCH_FUNCTIONAL_PROPOSAL.md).
 
 ## Bounded implementation
@@ -43,4 +43,10 @@
 5. **Owner visual baseline** DES-012 Review08 / premium Report Review02 must be retained. Do not introduce a low-fidelity fallback Meeting Review or status-only fake risk signals.
 6. **No merge/release/UAT ZIP or README link** from synthetic CI alone. Keep this PR draft until separate contract freeze, independent QA, real file test and authorization.
 
-**Disposition at initial publication:** F5c feature candidate and 12 regression cases submitted; CI outcome pending.
+**Final technical disposition:** F5c candidate and shared direct Save **limited synthetic QA PASS** at exact draft head, 261/261 unit and 74/74 browser. No Watch UI, automatic rule/Green evaluator, authenticated actor, accepted commitments or integrated Meeting Review. No frozen field-level schema, independent organizational QA, corporate file-provider UAT or production owner acceptance. Draft PR #50 remains unmerged; no release, README/UAT kit or real corporate workbook migration.
+
+## CI provenance and exact boundaries
+
+Initial candidate at `78bf36438d02a4da2472fb40ed321367037d9875` had **261 unit tests PASS** but TypeScript failed at `test/unit/projectDataF5c.manualWatchCandidate.test.ts:173,175` because the `add()` test helper was typed as the broad `ProjectEdit` union; this was a **test typing issue**, not a failed manual Watch behavior case. The helper return type was narrowed to the exact `add-watch-reason` branch at `059f972563aa651374ed03220e7a1994f9266166`. A completely new [run #43315243737](https://github.com/Kenny619/spl-wbs/actions/runs/43315243737) passed **all 261 unit, both builds and 74 Windows Chromium tests**. Cancelled intermediate superseded workflows are not misreported as green.
+
+**Safety note:** the confirmed tests prove candidate/guarded Save behavior only against disposable XLSX and in-memory File System Access handles. They do not prove Office file locks, SharePoint/OneDrive simultaneous edits or safe migration of production workbooks, and the proposed Watch field limits/actor text must still be explicitly version-frozen.
