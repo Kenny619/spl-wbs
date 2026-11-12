@@ -1,9 +1,9 @@
 {
-  "spec_id": "EMV-PROJECT-DATA-0.1.1",
-  "version": "0.1.1",
-  "status": "PROPOSED_REVISED_NOT_FROZEN",
+  "spec_id": "EMV-PROJECT-DATA-0.1.2",
+  "version": "0.1.2",
+  "status": "OWNER_APPROVED_SCOPE_FIELD_CONTRACT_DRAFT_NOT_FROZEN",
   "prepared_date": "2026-11-12",
-  "approval_status": "OWNER_DATA_OWNERSHIP_ONLY_SCHEMA_PENDING",
+  "approval_status": "OWNER_APPROVED_SCH_01_CAL_02_SEQ_01_NO_IMPLEMENTATION_AUTHORIZATION",
   "owner_clarification": "docs/design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md",
   "human_contract": "docs/specifications/EMV_PROJECT_DATA_0_1_PROPOSED.md",
   "source_visual_git_blob": "de6ebaa63aa035ba741b4435cf1cdb9d1166d958",
@@ -47,7 +47,7 @@
       "required_keys": {
         "ProjectID": "uuid",
         "ProjectName": "required_nonblank_plain_text_unicode_max_180",
-        "ProjectDataSchemaVersion": "version_literal_0.1.1"
+        "ProjectDataSchemaVersion": "draft_version_literal_0.1.2_final_on_freeze"
       },
       "extra_compatible_keys": "preserve",
       "rows": [],
@@ -364,11 +364,8 @@
     "Report_1_1_local_project_name_conflict_requires_separate_frozen_report_contract_reconciliation"
   ],
   "open_decisions": [
-    "SCH-01",
-    "CAL-02",
     "ACT-01",
     "SYNC-01",
-    "SEQ-01",
     "WATCH-RULES-01",
     "NAME-REPORT-01"
   ],
@@ -406,5 +403,51 @@
     "inactive_status": "existing_inactive_behavior",
     "unsaved_draft": "not_committed; optional_explicitly_labeled_preview",
     "multiple_active_blackouts": "not_in_initial_approved_scope"
-  }
+  },
+  "owner_approval_reference": "docs/design/29_2026-11-12_PROJECT_DATA_SCOPE_DISPOSITION.md",
+  "approved_decisions": {
+    "SCH-01": {
+      "status": "OWNER_APPROVED_SCOPE",
+      "sheets": [
+        "ProjectMeta",
+        "ProjectCalendar",
+        "WatchReasons",
+        "ProjectCommitments",
+        "ProjectAudit"
+      ],
+      "keep_existing": [
+        "ProjectWBS",
+        "UpdateHistory"
+      ],
+      "fields_still_draft": true
+    },
+    "CAL-02": {
+      "status": "OWNER_APPROVED",
+      "max_simultaneously_enabled_blackout_intervals": 1,
+      "interval_boundaries": "inclusive",
+      "future_multiple_active_intervals": "separately_versioned_feature"
+    },
+    "SEQ-01": {
+      "status": "OWNER_APPROVED_DEPENDENCY",
+      "bundle": [
+        "Excel_backed_ProjectCalendar",
+        "blackout_aware_Days_Remaining",
+        "Excel_backed_Under_Watch",
+        "Watch_enabled_Meeting_Review"
+      ],
+      "stage_date": "NOT_APPROVED",
+      "changes_beta_after_stage_C": false
+    }
+  },
+  "constraints_to_freeze_before_production": [
+    "exact headers and cross-sheet validation",
+    "legacy workbook compatibility default for not configured calendar",
+    "actor identity provenance/authorization",
+    "safe file write and external-edit concurrency limitations",
+    "automatic Watch checks, thresholds, and clearance completeness",
+    "Report 1.1 ProjectName contract transition",
+    "Watch-enabled Meeting Review content refinement",
+    "phase alignment without silently changing Stage A-C beta gate"
+  ],
+  "implementation_authorized": false
 }
