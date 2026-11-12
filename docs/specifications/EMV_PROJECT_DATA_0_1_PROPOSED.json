@@ -1,7 +1,7 @@
 {
-  "spec_id": "EMV-PROJECT-DATA-0.1",
-  "version": "0.1.0",
-  "status": "PROPOSED_NOT_FROZEN",
+  "spec_id": "EMV-PROJECT-DATA-0.1.1",
+  "version": "0.1.1",
+  "status": "PROPOSED_REVISED_NOT_FROZEN",
   "prepared_date": "2026-11-12",
   "approval_status": "OWNER_DATA_OWNERSHIP_ONLY_SCHEMA_PENDING",
   "owner_clarification": "docs/design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md",
@@ -46,10 +46,20 @@
       ],
       "required_keys": {
         "ProjectID": "uuid",
-        "ProjectDataSchemaVersion": "version_literal_0.1.0"
+        "ProjectName": "required_nonblank_plain_text_unicode_max_180",
+        "ProjectDataSchemaVersion": "version_literal_0.1.1"
       },
       "extra_compatible_keys": "preserve",
-      "rows": []
+      "rows": [],
+      "constraints": [
+        "unique_required_keys",
+        "preserve_extra_compatible_keys",
+        "ProjectName_shared_and_not_derived_from_filename_or_local_preference",
+        "safe_plain_text_not_formula",
+        "ProjectName_change_requires_verified_project_Save",
+        "displayed_in_global_ui_calendar_and_document_title",
+        "legacy_missing_name_indicated_not_configured"
+      ]
     },
     {
       "name": "ProjectCalendar",
@@ -92,7 +102,9 @@
         "enabled_requires_valid_inclusive_dates",
         "initial_ui_zero_or_one_enabled_interval",
         "disabled_records_preserved",
-        "calendar_saved_only_after_explicit_confirmed_workbook_write"
+        "calendar_saved_only_after_explicit_confirmed_workbook_write",
+        "enabled_blackout_excluded_from_remaining_workday_count_once_per_date",
+        "never_count_blackout_twice_if_weekend_or_holiday"
       ]
     },
     {
@@ -342,9 +354,14 @@
     "read_current_source_hash_and_conflict_check_immediately_before_write",
     "source_hash_is_not_a_distributed_lock_or_realtime_sync",
     "missing_watch_metadata_means_unknown_not_green",
-    "blackout_storage_does_not_change_existing_remaining_workdays_rules",
     "personal_reset_never_modifies_workbook_project_data",
-    "read_only_sharepoint_variant_is_not_modified"
+    "read_only_sharepoint_variant_is_not_modified",
+    "remaining_days_excludes_weekends_japanese_holidays_and_committed_enabled_project_blackout_once_per_date",
+    "remaining_days_window_is_after_today_through_finish_inclusive_with_existing_inactive_and_unknown_rules",
+    "all_pages_display_committed_ProjectMeta_ProjectName_not_workbook_filename",
+    "document_title_reads_ProjectMeta_ProjectName_using_safe_dom_text",
+    "legacy_missing_ProjectName_has_unconfigured_state_not_filename_derived",
+    "Report_1_1_local_project_name_conflict_requires_separate_frozen_report_contract_reconciliation"
   ],
   "open_decisions": [
     "SCH-01",
@@ -352,7 +369,8 @@
     "ACT-01",
     "SYNC-01",
     "SEQ-01",
-    "WATCH-RULES-01"
+    "WATCH-RULES-01",
+    "NAME-REPORT-01"
   ],
   "limitations": {
     "automatic_watch_rules": "NOT_SPECIFIED",
@@ -360,7 +378,33 @@
     "authenticated_actor_identity": "NOT_AVAILABLE_IN_CURRENT_STANDALONE_APP",
     "commitment_acceptance_authority": "NOT_SPECIFIED",
     "simultaneous_distributed_excel_edits": "NOT_GUARANTEED",
-    "project_calendar_impact_on_remaining_workdays": "UNCHANGED_NOT_INPUT",
-    "supported_external_file_sync_provider": "NOT_VERIFIED"
+    "project_calendar_impact_on_remaining_workdays": "REQUIRED_OWNER_DECISION_EXCLUDE_COMMITTED_ENABLED_BLACKOUT",
+    "supported_external_file_sync_provider": "NOT_VERIFIED",
+    "project_name_report_1_1_interaction": "REQUIRES_SEPARATE_CHANGE_CONTROL_WITH_FROZEN_REPORT_1_1_LOCAL_PROJECT_NAME_SOURCE"
+  },
+  "owner_feedback": {
+    "issue": "https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812583483",
+    "project_name": "Required shared ProjectMeta.ProjectName in Excel; display in global UI, Calendar, HTML browser title",
+    "blackout": "Included in remaining working-days calculation with weekend/Japanese holiday overlap excluded once"
+  },
+  "display_contract": {
+    "project_name_source": "ProjectMeta.ProjectName",
+    "project_name_presence": "required_once_extension_created",
+    "legacy_without_extension": "Project name not configured; workbook filename shown separately as source identifier",
+    "global_ui": "Use same authoritative shared name in Schedule/Meeting Review/Reports header",
+    "calendar": "Use same authoritative shared name in Calendar section/title/context",
+    "html_document_title": "${ProjectName} — SPT-WBS",
+    "safe_rendering": "textContent/document.title; never innerHTML",
+    "personal_prefs_not_authoritative": true
+  },
+  "remaining_workdays_contract": {
+    "start_exclusive": "today",
+    "finish_inclusive": "planned_finish",
+    "count_date_when": "not_weekend_and_not_japanese_holiday_and_not_enabled_committed_blackout",
+    "deduplication": "one_excluded_date_at_most_once_even_if_multiple_nonworking_reasons",
+    "on_missing_necessary_coverage": "unknown_not_fabricated_numeric_count",
+    "inactive_status": "existing_inactive_behavior",
+    "unsaved_draft": "not_committed; optional_explicitly_labeled_preview",
+    "multiple_active_blackouts": "not_in_initial_approved_scope"
   }
 }
