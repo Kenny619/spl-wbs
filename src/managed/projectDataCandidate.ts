@@ -152,7 +152,10 @@ export async function buildProjectDataCandidate(input: ProjectCandidateInput): P
   await preflightManagedWorkbook(input.source);
   // Existing task audit must remain valid, and its existing rows must never
   // be rewritten or fabricated when only project settings are changed.
-  await readManagedHistoryWithPresence(input.source);
+  const taskHistory = await readManagedHistoryWithPresence(input.source);
+  if (taskHistory.events.some(event => event.changeSetId.toLowerCase() === input.changeSetId.toLowerCase())) {
+    error("DUPLICATE_CHANGESET", "The transaction ID was already committed in task Change History.");
+  }
   const book = new ExcelJS.Workbook();
   try {
     await book.xlsx.load(input.source as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
@@ -162,6 +165,20 @@ export async function buildProjectDataCandidate(input: ProjectCandidateInput): P
   const initial = inspectProjectData(book);
   if (initial.kind === "incompatible" || initial.kind === "unsupported_future") {
     error("INVALID_PROJECT_DATA", "Refusing an invalid or unsupported project-data extension.");
+  }
+  if (initial.kind === "valid") {
+    // Prevent two separately committed project Saves sharing one ChangeSetID,
+    // even when a caller reuses the same valid UTC timestamp. ChangeSetID is
+    // the logical Save identity, not merely a grouping label.
+    const audit = book.getWorksheet("ProjectAudit")!;
+    const columns = headerColumns(audit, AUDIT_HEADERS);
+    for (let index = 2; index <= audit.rowCount; index++) {
+      const row = audit.getRow(index);
+      if (!row.hasValues) continue;
+      if (text(row.getCell(columns.ChangeSetID).value)?.toLowerCase() === input.changeSetId.toLowerCase()) {
+        error("DUPLICATE_CHANGESET", "The transaction ID was already committed in ProjectAudit.");
+      }
+    }
   }
   if (input.edit.kind === "initialize" && initial.kind !== "legacy") {
     error("PROJECT_ALREADY_INITIALIZED", "Project metadata already exists.");
