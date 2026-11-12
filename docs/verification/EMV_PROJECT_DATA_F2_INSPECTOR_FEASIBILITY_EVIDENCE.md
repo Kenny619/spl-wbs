@@ -54,3 +54,11 @@ At source SHA `1527deff`, the GitHub Actions Ubuntu **Build + unit** job [#13103
 **F2 read-only inspection feasibility PASS (limited, exact CI SUCCESS):** 188/188 unit (16 new F2, 10 earlier F1), 66/66 Windows Chromium browser and read-only/managed builds. The draft schema can be inspected and differentiated using a side-effect-free typed component and synthetic tests. **Not production Save-integrated or accepted.** Independent QA and actual project metadata persistence/Save safety remain future release gates.
 
 No merge, tag, release, real workbook modification, corporate Edge UAT, UAT kit or README link change is authorized by this evidence.
+
+## Subsequent adversarial QA addendum — 2026-11-12 (do not replace initial historical evidence)
+
+After the original `1527deff` F2 feasibility PASS, three novel negative cases showed the inspector could accept audit rows with an existing but **incorrect** TaskID relative to the referenced WatchReason/Commitment, or a metadata audit entry pointing at a key that did not exist. The three test-first cases **failed at SHA `2aab82b3`** and were remediated at **`4887239736821383d3b44186326cad58cee282a8`** on the same draft PR #39.
+
+**Final exact-head QA CI:** [run #43177864095](https://github.com/Kenny619/spl-wbs/actions/runs/43177864095) **SUCCESS**, **191/191 unit tests** (19 F2 and 10 F1), **66/66 Windows Chromium**, production and managed builds PASS. [Full adversarial QA/red-to-green register](EMV_PROJECT_DATA_F2_ADVERSARIAL_QA_CROSS_SHEET.md).
+
+This is **still read-only inspection feasibility**, not a working project Save, schema freeze, independently signed organizational QA acceptance, or corporate physical Edge/UAT. Existing Save integrations remain untouched.
