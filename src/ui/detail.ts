@@ -2,6 +2,7 @@ import { renderUpdatesSection } from "./updates";
 import type { PaletteMap, Task } from "../data/types";
 import { paletteColor } from "../model/workstreamPalette";
 import type { HolidayCalendar } from "../calendar/jpHolidays";
+import type { BlackoutInterval } from "../calendar/blackout";
 import { detailRemaining, remainingWorkdays } from "../calendar/workdays";
 import { formatPlanDate, progressLabel, statusClass } from "./format";
 
@@ -14,6 +15,7 @@ export function renderDetail(
   palette: PaletteMap,
   today: string,
   calendar: HolidayCalendar,
+  committedBlackout?: BlackoutInterval,
 ): void {
   host.replaceChildren();
   if (!task) return;
@@ -44,7 +46,7 @@ export function renderDetail(
     grid.append(item);
   }
   host.append(grid);
-  const remainder = detailRemaining(remainingWorkdays(task.plannedEnd, today, task.status, calendar));
+  const remainder = detailRemaining(remainingWorkdays(task.plannedEnd, today, task.status, calendar, committedBlackout));
   if (remainder) {
     const workdays = document.createElement("div");
     workdays.className = "workdays-detail";

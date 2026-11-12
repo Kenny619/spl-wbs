@@ -595,3 +595,7 @@ body.spt-managed[data-managed-theme="dark"] .dep-layer path {
 .managed-calendar-editor .managed-calendar-check input { accent-color:#426bd1; }
 .managed-calendar-editor .managed-actions { display:flex; gap:9px; flex-wrap:wrap; }
 .managed-calendar-editor .managed-settings-hint { margin:0; }
+
+/* F4d: managed Calendar source is Excel in Settings, not the v18 session popup. */
+body.spt-managed #calendarSettings,
+body.spt-managed #calendarPopover { display:none !important; }
