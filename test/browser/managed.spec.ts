@@ -206,6 +206,50 @@ test("F4c Calendar Cancel discards draft without changing workbook, audit or loc
   expect(names).toEqual(["fixture-not-project-name.xlsx"]);
 });
 
+test("F5b dirty Calendar draft blocks Settings Close until explicit discard confirmation", async ({ page }) => {
+  await openSharedManaged(page);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("button", { name: "Edit Project Calendar" }).click();
+  await settings.getByLabel("Blackout start").fill("2026-11-18");
+
+  page.once("dialog", async dialog => {
+    expect(dialog.type()).toBe("confirm");
+    await dialog.dismiss();
+  });
+  await settings.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(settings).toBeVisible();
+  await expect(settings.getByLabel("Blackout start")).toHaveValue("2026-11-18");
+
+  page.once("dialog", async dialog => {
+    expect(dialog.type()).toBe("confirm");
+    await dialog.accept();
+  });
+  await settings.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(settings).toBeHidden();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await expect(settings).toContainText("Committed blackout: 2026-11-17 – 2026-11-19");
+});
+
+test("F5b Escape refuses to close unsaved Calendar edit without confirmation", async ({ page }) => {
+  await openSharedManaged(page);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("button", { name: "Edit Project Calendar" }).click();
+  await settings.getByLabel("Blackout description").fill("Uncommitted stakeholder hold");
+  page.once("dialog", async dialog => {
+    expect(dialog.type()).toBe("confirm");
+    await dialog.dismiss();
+  });
+  await page.keyboard.press("Escape");
+  await expect(settings).toBeVisible();
+  await expect(settings.getByLabel("Blackout description")).toHaveValue("Uncommitted stakeholder hold");
+  await settings.getByRole("button", { name: "Cancel calendar edit" }).click();
+  await expect(settings).toContainText("Shared workbook unchanged");
+  await settings.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(settings).toBeHidden();
+});
+
 test("F4c Calendar Save commits verified workbook and project audit; Disable is a separate Save", async ({ page }) => {
   page.on("dialog", async dialog => { await dialog.accept(); });
   await openSharedManaged(page);
