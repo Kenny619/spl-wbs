@@ -17,7 +17,7 @@
 
 ## F4b — managed-only project identity and read-only Calendar summary
 
-**Draft [PR #45](https://github.com/Kenny619/spl-wbs/pull/45)** stacked directly on F4a. **Exact result must be confirmed from its latest head CI before declaring PASS.**
+**Draft [PR #45](https://github.com/Kenny619/spl-wbs/pull/45)** stacked directly on F4a. **Exact verified head `80d71c00121eecb1107450f7c94c1995f61908ed`** · [GitHub Actions #43201112202](https://github.com/Kenny619/spl-wbs/actions/runs/43201112202) **SUCCESS** — **237/237 unit tests in 34 files**, **67/67 Windows Chromium**, read-only/managed builds PASS. Browser suite includes the new actual five-sheet Excel ProjectName/Calendar UI test.
 
 - `src/managed/main.ts` stores the authoritative project context from the successful verified workbook load/read-only preview and verified Save/Save As reload; failed workbook switches retain last-good context and Disconnect clears it. Invalid/partial project extension blocks editor Save while keeping viewable task data when safe. No localStorage ProjectName.
 - `src/ui/mount.ts` consults the shared-name override **only in `spt-managed` mode**; frozen v18 read-only viewer keeps the filename-derived title. The managed heading and browser `document.title` show actual `ProjectMeta.ProjectName`, or explicit **“Project name not configured”** for legacy files; a future/invalid extension says project-data unavailable.
@@ -36,3 +36,11 @@
 7. All PRs remain draft in stacked branches. No new UAT kit, README download link, merge, beta milestone or release has been authorized here.
 
 **Evidence status:** Synthetic technical and browser CI only. No production Save flow for Calendar is reachable from user interface yet.
+
+## F4b browser remediation provenance (historical results preserved)
+
+- Initial [F4b run #43200454268](https://github.com/Kenny619/spl-wbs/actions/runs/43200454268) had **65 browser PASS / 2 FAIL**. The new ProjectName/Calendar test successfully asserted loaded header, browser title and Settings committed blackout but timed out clicking **Reload workbook** after Settings had collapsed the project menu; the test needed to reopen that menu. A separate preexisting v18 **2,000-row virtualization** test encountered a detached-row scrolling timing failure; it did not touch F4b managed-only logic.
+- Test-navigation change at exact green head `80d71c00121eecb1107450f7c94c1995f61908ed` explicitly opens Project menu if closed before clicking Reload. The full subsequent [CI run #43201112202](https://github.com/Kenny619/spl-wbs/actions/runs/43201112202) had **67/67 Windows Chromium PASS**, including the 2,000-row existing test, and **237/237 unit PASS**, both builds PASS. No production code change was made to the old v18 virtualization test as part of this remediation.
+- This is **technical and automated browser QA on the isolated draft**, not separate signed-off organizational QA or a physical corporate Edge/Node26 UAT. Existing release gates and Report 1.1 frozen source rule remain.
+
+**F4a/F4b bounded disposition:** PASS for source-derived shared project identity, managed title and read-only committed Calendar summary in **synthetic draft**. Project Calendar Save/Cancel, actual Schedule/Detail blackout application, Watch and Meeting Review remain **NOT IMPLEMENTED**, not accepted for production. [F4c proposed integration and 12 checks](../implementation/EMV_F4C_PROJECT_CALENDAR_UI_INTEGRATION_PLAN.md).
