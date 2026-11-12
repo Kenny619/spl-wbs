@@ -11,7 +11,8 @@ import { inspectProjectData, type ProjectFinding } from "./projectDataInspector"
  */
 export type ProjectContext =
   | { kind: "legacy"; projectName: null; blackout: null; projectCalendarConfigured: false; findings: [] }
-  | { kind: "valid"; projectName: string; blackout: BlackoutInterval; projectCalendarConfigured: true; findings: [] }
+  | { kind: "valid"; projectName: string; blackout: BlackoutInterval; blackoutId: string | null;
+      blackoutLabel: string; projectCalendarConfigured: true; findings: [] }
   | { kind: "incompatible" | "unsupported_future"; projectName: null; blackout: null;
       projectCalendarConfigured: false; findings: ProjectFinding[] };
 
@@ -45,6 +46,8 @@ export async function readProjectContext(bytes: Uint8Array | ArrayBuffer): Promi
   const sheet = workbook.worksheets.find(x => x.name.toLowerCase() === "projectcalendar")!;
   const columns = calendarColumns(sheet);
   let blackout = createBlackout();
+  let blackoutId: string | null = null;
+  let blackoutLabel = "";
   for (let i = 2; i <= sheet.rowCount; i++) {
     const row = sheet.getRow(i);
     if (row.getCell(columns.enabled).value !== true) continue;
@@ -53,10 +56,12 @@ export async function readProjectContext(bytes: Uint8Array | ArrayBuffer): Promi
       start: String(row.getCell(columns.startdate).value),
       end: String(row.getCell(columns.enddate).value),
     };
+    blackoutId = String(row.getCell(columns.blackoutid).value);
+    blackoutLabel = String(row.getCell(columns.label).value ?? "");
     break;
   }
   return { kind: "valid", projectName: inspection.projectName,
-    blackout, projectCalendarConfigured: true, findings: [] };
+    blackout, blackoutId, blackoutLabel, projectCalendarConfigured: true, findings: [] };
 }
 
 /** Never infer shared project identity from a file path or local report preference. */

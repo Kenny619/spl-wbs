@@ -4,10 +4,11 @@ import { boot } from "../main";
 import type { ImportController } from "../data/importController";
 import { KNOWN_STATUSES, TASK_TYPES, type Task } from "../data/types";
 import { collectTaskChanges, hasTaskChanges, initialTaskDraft, type TaskDraft } from "./draft";
-import { captureManagedSourceHash, inspectManagedSave, saveManagedAsCopy, saveManagedDirect, sha256 } from "./directSave";
+import { captureManagedSourceHash, inspectManagedSave, saveManagedAsCopy, saveManagedDirect, saveManagedProjectDirect, sha256 } from "./directSave";
 import { preflightManagedWorkbook } from "./preflight";
 import { openManagedHistory } from "./historyUi";
-import { ManagedSettings } from "./settingsUi";
+import { ManagedSettings, type CalendarSaveOutcome } from "./settingsUi";
+import type { ProjectEdit } from "./projectDataCandidate";
 import { readProjectContext, sharedProjectDisplayName, projectBrowserTitle, type ProjectContext } from "./projectContext";
 import { ManagedReports } from "./reportsUi";
 import { mountManagedShell } from "./shell";
@@ -207,6 +208,9 @@ export class ManagedEditor {
       doc, controller, (action) => this.guard(action),
       () => this.guard(() => { void this.showHistory(); }),
       () => this.projectContext,
+      () => this.canWrite && !this.recoveryHold && !this.busy &&
+        !!this.directory && !!this.sourceName && !!this.loadedHash,
+      (edit) => this.saveProjectCalendar(edit),
     );
     this.reports = new ManagedReports(doc, () => ({
       fileName: this.sourceName,
@@ -402,6 +406,82 @@ export class ManagedEditor {
       this.message = "Managed workbook unavailable: " + errorMessage(error) +
         (this.sourceName ? ". Previous verified workbook remains active." :
           ". Choose a different workbook in this folder.");
+    } finally {
+      this.busy = false;
+      this.render();
+    }
+  }
+
+  /**
+   * F4c isolated project Settings commit. Reuse the F3c vetted transaction
+   * exactly; never persist a browser-local Calendar copy. Task edits have
+   * explicit precedence and cannot be silently discarded by project Save.
+   */
+  private async saveProjectCalendar(edit: ProjectEdit): Promise<CalendarSaveOutcome> {
+    if (this.busy || this.recoveryHold || !this.directory || !this.sourceName ||
+        !this.loadedHash || !this.canWrite || !this.loadedBytes) {
+      return { kind: "blocked", message: "Calendar Save blocked: choose a verified writable workbook first." };
+    }
+    if (this.isDirty()) {
+      return { kind: "blocked", message: "Finish or discard unsaved task edits before saving Project Calendar." };
+    }
+    if (!this.doc.defaultView?.confirm(
+      edit.kind === "initialize"
+        ? "Development preview: initialize five project sheets in the selected disposable Excel workbook? A predecessor backup will be retained."
+        : "Development preview: save Project Calendar changes to the selected disposable Excel workbook? A predecessor backup will be retained.",
+    )) {
+      return { kind: "blocked", message: "Calendar Save cancelled. Shared workbook unchanged." };
+    }
+
+    const directory = this.directory;
+    const sourceName = this.sourceName;
+    const originalHash = this.loadedHash;
+    this.busy = true;
+    this.message = "Verifying shared Project Calendar Save and predecessor backup…";
+    this.render();
+    let committed = false;
+    try {
+      const result = await saveManagedProjectDirect({
+        directory, sourceName, loadedHash: originalHash, edit,
+        changeSetId: crypto.randomUUID(), timestampUTC: new Date().toISOString(),
+        actorLabel: "Unverified local editor", appVersion: APP_VERSION,
+      });
+      if (result.kind === "noop") {
+        this.message = "No Project Calendar changes; Excel workbook and audit were not written.";
+        return { kind: "noop", message: this.message };
+      }
+      committed = true;
+      const file = await (await directory.getFileHandle(sourceName)).getFile();
+      const verified = new Uint8Array(await file.arrayBuffer());
+      if (await sha256(verified) !== result.sourceHash) {
+        throw new Error("Source changed after verified project Save. Inspect workbook before retrying.");
+      }
+      const committedContext = await readProjectContext(verified);
+      if (committedContext.kind !== "valid") {
+        throw new Error("Saved project data cannot be validated after reopening.");
+      }
+      const view = this.controller.getState().view;
+      await this.controller.chooseFile(file);
+      const state = this.controller.getState();
+      if (!state.tasks || state.fileName !== sourceName || state.loadError) {
+        throw new Error("Excel project data saved, but task view refresh failed.");
+      }
+      this.loadedBytes = verified;
+      this.loadedHash = result.sourceHash;
+      this.projectContext = committedContext;
+      this.controller.patchView({ ...view });
+      this.message = "Verified Project Calendar Save: shared workbook, project audit and predecessor backup persisted.";
+      return { kind: "saved", message: this.message };
+    } catch (error) {
+      try {
+        const state = await inspectManagedSave(directory, sourceName);
+        this.recoveryHold = committed || state.status !== "READY";
+      } catch {
+        this.recoveryHold = true;
+      }
+      this.message = "Project Calendar Save NOT verified: " + errorMessage(error) +
+        ". Draft retained; inspect/reload the workbook before another write.";
+      return { kind: "blocked", message: this.message };
     } finally {
       this.busy = false;
       this.render();
