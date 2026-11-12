@@ -107,7 +107,7 @@ async function openManaged(page: import("@playwright/test").Page) {
   await expect(page.locator(".source-record")).toBeHidden();
 }
 
-async function openSharedManaged(page: import("@playwright/test").Page) {
+async function openSharedManaged(page: import("@playwright/test").Page, fixture = sharedProjectBase64) {
   await page.addInitScript(({ encoded }) => {
     const decoded = Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0));
     const files = new Map<string, Uint8Array>([["fixture-not-project-name.xlsx", decoded]]);
@@ -140,12 +140,111 @@ async function openSharedManaged(page: import("@playwright/test").Page) {
     };
     Object.defineProperty(window, "__managedFixtureFiles", { configurable: true, value: files });
     Object.defineProperty(window, "showDirectoryPicker", { configurable: true, value: async () => dir });
-  }, { encoded: sharedProjectBase64 });
+  }, { encoded: fixture });
   await page.goto(fileUrl);
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
   await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
 }
+
+test("F5d manually Add and Resolve Watch reason through verified Excel Save and audit", async ({ page }) => {
+  page.on("dialog", async dialog => { await dialog.accept(); });
+  await openSharedManaged(page);
+  await page.locator(".task-row").first().click();
+  const watch = page.locator(".managed-watch");
+  await expect(watch).toContainText("Unknown");
+  await expect(watch).toContainText("not Green or Clear");
+  await watch.getByRole("button", { name: "Add manual reason" }).click();
+  await watch.getByLabel("Watch reason title").fill("Supplier delivery on hold");
+  await watch.getByLabel("Watch reason details").fill("Stakeholder escalation");
+  await watch.getByLabel("Watch evidence reference").fill("Meeting note 11/13");
+  await watch.getByRole("button", { name: "Save manual reason" }).click();
+  await expect(watch).toContainText("Under Watch · 1 open", { timeout: 20000 });
+  await expect(watch).toContainText("Supplier delivery on hold");
+  await expect(watch).toContainText("unverified");
+  await expect(watch).toContainText("Workbook audit reference recorded");
+  const first = await page.evaluate(() => Array.from(
+    (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("fixture-not-project-name.xlsx")!));
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(Uint8Array.from(first) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  expect(workbook.getWorksheet("WatchReasons")!.getCell("B2").value).toBe("501");
+  expect(workbook.getWorksheet("WatchReasons")!.getCell("C2").value).toBe("Manual");
+  expect(workbook.getWorksheet("WatchReasons")!.getCell("E2").value).toBe("Open");
+  expect(workbook.getWorksheet("WatchReasons")!.getCell("F2").value).toBe("Supplier delivery on hold");
+  expect(workbook.getWorksheet("ProjectAudit")!.rowCount).toBeGreaterThan(1);
+  expect(workbook.getWorksheet("ProjectCommitments")!.rowCount).toBe(1);
+  expect(workbook.getWorksheet("UpdateHistory")!.rowCount).toBe(1);
+
+  await watch.getByRole("button", { name: "Resolve this reason" }).click();
+  await watch.getByLabel("Watch resolution note").fill("Vendor delivered replacement");
+  await watch.getByRole("button", { name: "Confirm reason resolution" }).click();
+  await expect(watch).toContainText("Unknown", { timeout: 20000 });
+  await expect(watch).toContainText("Resolved history · 1");
+  await expect(watch).not.toContainText("Under Watch · 1 open");
+  await watch.locator("details.managed-watch-history summary").click();
+  await expect(watch).toContainText("Vendor delivered replacement");
+  const final = await page.evaluate(() => Array.from(
+    (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("fixture-not-project-name.xlsx")!));
+  const after = new ExcelJS.Workbook();
+  await after.xlsx.load(Uint8Array.from(final) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  expect(after.getWorksheet("WatchReasons")!.getCell("E2").value).toBe("Resolved");
+  expect(after.getWorksheet("WatchReasons")!.getCell("N2").value).toBe("Vendor delivered replacement");
+  expect(after.getWorksheet("ProjectAudit")!.rowCount).toBeGreaterThan(workbook.getWorksheet("ProjectAudit")!.rowCount);
+  expect(after.getWorksheet("UpdateHistory")!.rowCount).toBe(1);
+});
+
+test("F5d Cancel and stale-source refusal preserve the unsaved Watch draft", async ({ page }) => {
+  page.on("dialog", async dialog => { await dialog.accept(); });
+  await openSharedManaged(page);
+  await page.locator(".task-row").first().click();
+  const watch = page.locator(".managed-watch");
+  await watch.getByRole("button", { name: "Add manual reason" }).click();
+  await watch.getByLabel("Watch reason title").fill("Discarded draft");
+  await watch.getByRole("button", { name: "Cancel Watch edit" }).click();
+  await expect(watch).toContainText("Unknown");
+  const names = await page.evaluate(() =>
+    [...(window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.keys()]);
+  expect(names).toEqual(["fixture-not-project-name.xlsx"]);
+
+  await watch.getByRole("button", { name: "Add manual reason" }).click();
+  await watch.getByLabel("Watch reason title").fill("Keep unsaved input");
+  await page.evaluate(() => {
+    const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
+    const name = "fixture-not-project-name.xlsx";
+    const bytes = Uint8Array.from(files.get(name)!);
+    bytes[0] ^= 1; // Simulate a changed external canonical source.
+    files.set(name, bytes);
+  });
+  await watch.getByRole("button", { name: "Save manual reason" }).click();
+  await expect(watch).toContainText("NOT verified", { timeout: 20000 });
+  await expect(watch.getByLabel("Watch reason title")).toHaveValue("Keep unsaved input");
+  const afterNames = await page.evaluate(() =>
+    [...(window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.keys()]);
+  expect(afterNames).toEqual(["fixture-not-project-name.xlsx"]);
+});
+
+test("F5d recorded Automatic Watch reasons remain read-only, never inferred Green", async ({ page }) => {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(Buffer.from(sharedProjectBase64, "base64") as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  workbook.getWorksheet("WatchReasons")!.addRow([
+    "ed58f70a-126e-4dce-ace1-b578dc5c290e", "501", "Automatic",
+    "UNAPPROVED_RULE", "Open", "Recorded threshold event",
+    "Rule is not independently verified", null, "2026-11-12T02:00:00.000Z",
+    "Unverified editor", null, null, null, null,
+  ]);
+  await openSharedManaged(page, Buffer.from(await workbook.xlsx.writeBuffer()).toString("base64"));
+  await page.locator(".task-row").first().click();
+  const watch = page.locator(".managed-watch");
+  await expect(watch).toContainText("Under Watch · 1 open");
+  await expect(watch).toContainText("Recorded automatic");
+  await expect(watch).toContainText("read-only until its rule");
+  await expect(watch.getByRole("button", { name: "Resolve this reason" })).toHaveCount(0);
+  await expect(watch.getByRole("button", { name: "Add manual reason" })).toBeEnabled();
+});
 
 test("managed shared ProjectName and committed blackout come from Excel, not filename or local preferences", async ({ page }) => {
   await openSharedManaged(page);
