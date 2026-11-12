@@ -151,7 +151,11 @@ test("managed shared ProjectName and committed blackout come from Excel, not fil
   );
   await expect(settings).toContainText("read-only preview");
   await settings.getByRole("button", { name: "Close" }).click();
-  await page.getByRole("button", { name: "Reload workbook" }).click();
+  const projectMenu = page.locator(".managed-project-menu");
+  if (await projectMenu.getAttribute("open") === null) {
+    await projectMenu.locator("summary").click();
+  }
+  await page.locator("#reload").click();
   await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
   await expect(page).toHaveTitle("Tokyo & Global Initiative — SPT-WBS");
 });
