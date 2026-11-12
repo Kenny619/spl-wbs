@@ -1,5 +1,6 @@
 import { FUTURE_REMAINING_LABEL, TODAY_REMAINING_LABEL } from "../config/decisions";
 import { addCalendarDays } from "./dateOnly";
+import { blackoutContains, type BlackoutInterval } from "./blackout";
 import { holidayName, yearCovered, type HolidayCalendar } from "./jpHolidays";
 
 export type RemainingWork =
@@ -27,10 +28,14 @@ export function isInactiveStatus(status: string): boolean {
 
 /**
  * Weekdays strictly after today through finish, excluding Japanese holidays.
- * Blackout is intentionally not an input.
+ * An OPTIONAL committed project blackout excludes each overlapping weekday once.
+ * Existing v18 read-only callers omit it, preserving their frozen behavior.
  * A year outside the loaded holiday table yields `unknown` instead of a count.
  */
-export function remainingWorkdays(finish: string | null, today: string, status: string, calendar: HolidayCalendar): RemainingWork {
+export function remainingWorkdays(
+  finish: string | null, today: string, status: string,
+  calendar: HolidayCalendar, committedBlackout?: BlackoutInterval,
+): RemainingWork {
   if (isInactiveStatus(status)) return { kind: "hidden" };
   if (!finish) return { kind: "no-finish" };
   if (finish < today) return { kind: "overdue" };
@@ -38,7 +43,7 @@ export function remainingWorkdays(finish: string | null, today: string, status: 
   let count = 0;
   for (let cursor = addCalendarDays(today, 1); cursor <= finish; cursor = addCalendarDays(cursor, 1)) {
     if (!yearCovered(calendar, cursor)) return { kind: "unknown" };
-    if (isWorkday(cursor, calendar)) count += 1;
+    if (isWorkday(cursor, calendar) && (!committedBlackout || !blackoutContains(committedBlackout, cursor))) count += 1;
   }
   return { kind: "count", days: count };
 }
