@@ -1,8 +1,8 @@
 # F5b — Settings unsaved Project Calendar navigation guard
 
 **Prepared:** 2026-11-13 JST. **Draft [PR #49](https://github.com/Kenny619/spl-wbs/pull/49)**, stacked on F5a #48 and earlier F4c/d. **Not merged or owner-UAT accepted.**
-**Final guard head (pending CI at initial reporting):** `bc4f1b7bb6927332518ec806475901419de3017d`.
-**CI:** [GitHub Actions #43311453401](https://github.com/Kenny619/spl-wbs/actions/runs/43311453401), unit/build initially passed; Windows browser completion to be verified at exact head.
+**Exact verified guard head:** `bc4f1b7bb6927332518ec806475901419de3017d`.
+**Final CI:** [GitHub Actions #43311453401](https://github.com/Kenny619/spl-wbs/actions/runs/43311453401) **completed SUCCESS**: **249/249 Ubuntu unit tests** in 35 files and managed/read-only TypeScript/builds PASS; **74/74 Windows Chromium browser tests PASS** (2.5m), including both new F5b cases.
 
 ## Discovered behavior and user impact
 
@@ -20,4 +20,4 @@ The accepted F4c Project Calendar editing flow had explicit **Save to shared wor
 - **Fix commit:** `bc4f1b7bb6927332518ec806475901419de3017d`. The latest exact-head CI must be checked and used as the final test verdict.
 - There is still no independent organizational QA signoff or physical corporate Edge+Excel/Node26 test, and v0.1.2 project fields remain a proposed contract. No merge, UAT kit, release or README link was authorized.
 
-**Disposition at initial report:** corrective guard implemented, awaiting exact-head final Windows browser evidence before declaring full PASS.
+**Final disposition:** F5b unsaved Calendar draft-navigation guard **technical/browser PASS** at exact SHA; 249 unit and 74 Windows Chromium tests. Separate organizational independent QA, production field-contract freeze, corporate physical Edge/Node26/Excel provider tests and owner UAT remain open. PR #49 remains draft/unmerged; no release, real workbook migration or README/UAT link was created.
