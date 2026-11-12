@@ -68,6 +68,7 @@ export class ManagedEditor {
   private names: string[] = [];
   private editing = false;
   private busy = false;
+  private restoringVerifiedSelection = false;
   private selectedId: string | null = null;
   private initial: TaskDraft | null = null;
   private draft: TaskDraft | null = null;
@@ -212,11 +213,10 @@ export class ManagedEditor {
 
     const originalPatch = controller.patchView.bind(controller);
     controller.patchView = (patch) => {
-      // Only user navigation is guarded. During a verified workbook Save,
-      // the controller restores its prior selectedId while a Watch form is
-      // still pending successful completion. Blocking that internal restore
-      // would leave the inspector empty after a real committed Save.
-      if (!this.busy && patch.selectedId !== undefined &&
+      // Keep the normal user-navigation guard even while the writer is busy:
+      // only an explicitly scoped, verified post-save selection restore may
+      // bypass it. Do not let unrelated clicks switch tasks during a Save.
+      if (!this.restoringVerifiedSelection && patch.selectedId !== undefined &&
           patch.selectedId !== controller.getState().view.selectedId &&
           (this.isDirty() || this.watchPanel.hasDraft())) {
         this.guard(() => originalPatch(patch));
@@ -532,7 +532,12 @@ export class ManagedEditor {
       this.projectContext = committedContext;
       this.watchProjection = committedWatch;
       this.publishCommittedCalendar();
-      this.controller.patchView({ ...view });
+      this.restoringVerifiedSelection = true;
+      try {
+        this.controller.patchView({ ...view });
+      } finally {
+        this.restoringVerifiedSelection = false;
+      }
       this.message = "Verified " + label + " Save: shared workbook, project audit and predecessor backup persisted.";
       return { kind: "saved", message: this.message };
     } catch (error) {
