@@ -35,7 +35,7 @@ Exactly **two changed files**:
 ### CI execution checkpoint
 
 - At exact head, [Ubuntu job #131050611026](https://github.com/Kenny619/spl-wbs/actions/runs/43179141176/job/131050611026) **PASS: 201/201 unit tests in 31 files**, including F3 10/10, F2 19/19, F1 10/10; read-only and managed builds PASS; source UUID screen PASS.
-- **Windows Chromium job:** **PENDING at time of original recording**. Update separately with exact SHA/job evidence before asserting overall CI PASS.
+- **Windows Chromium job PASS:** [job #131050611468](https://github.com/Kenny619/spl-wbs/actions/runs/43179141176/job/131050611468), **66/66 Playwright PASS** (`66 passed (1.8m)`). [Overall run #43179141176](https://github.com/Kenny619/spl-wbs/actions/runs/43179141176) completed **SUCCESS** at exact head `5c2058a80319a7e92561587a019748df24332c57`. Both jobs confirmed success; CI uses Node22, not corporate Node26.
 - CI uses Node22; neither corporate Node26.13.0/npm11.19.1 nor physical Edge/Excel shared-file permissions are established.
 
 ## 3. Scope boundaries and remaining gaps
@@ -54,4 +54,4 @@ Exactly **two changed files**:
 4. Verify physical corporate Edge, Excel open-file lock, shared workbook staleness/conflicts and Node26 toolchain before claiming owner-ready UAT.
 5. Protect frozen Review 08 visual design and beta-after-Stage-C milestone; do not publish a new UAT ZIP or merge test/spike branches by implication.
 
-**Initial disposition:** Domain guard integrated on isolated draft PR #40 and Ubuntu CI PASS. Pending exact-head Windows regression and independent QA. Not production-accepted.
+**Final F3a synthetic disposition: PASS (bounded, not production-accepted).** The project-domain guard operates in the real candidate shared by existing direct Save and Save As; complete exact-head CI **201/201 unit, 66/66 Windows Chromium**, both builds PASS. Independent QA and field-level contract freeze, project-only writer and physical corporate Edge/Excel remain OPEN. PR #40 remains draft/unmerged.
