@@ -16,7 +16,7 @@ const T1 = "2026-11-12T02:00:00.000Z";
 const T2 = "2026-11-12T03:00:00.000Z";
 const T3 = "2026-11-12T04:00:00.000Z";
 const ACTOR = "Unverified local user";
-const add = (reasonId = R1, taskId = "1"): ProjectEdit => ({
+const add = (reasonId = R1, taskId = "1"): Extract<ProjectEdit, { kind: "add-watch-reason" }> => ({
   kind: "add-watch-reason", reasonId, taskId, title: "Vendor delivery concern",
   details: "Stakeholder flagged potential delay", evidenceRef: "Meeting note",
 });
