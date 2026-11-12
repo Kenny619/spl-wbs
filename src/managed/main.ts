@@ -8,6 +8,7 @@ import { captureManagedSourceHash, inspectManagedSave, saveManagedAsCopy, saveMa
 import { preflightManagedWorkbook } from "./preflight";
 import { openManagedHistory } from "./historyUi";
 import { ManagedSettings } from "./settingsUi";
+import { readProjectContext, sharedProjectDisplayName, projectBrowserTitle, type ProjectContext } from "./projectContext";
 import { ManagedReports } from "./reportsUi";
 import { mountManagedShell } from "./shell";
 import { MANAGED_APP_VERSION as APP_VERSION } from "./version";
@@ -55,6 +56,7 @@ export class ManagedEditor {
   private sourceName: string | null = null;
   private loadedHash: string | null = null;
   private loadedBytes: Uint8Array | null = null;
+  private projectContext: ProjectContext | null = null;
   private canWrite = false;
   private recoveryHold = false;
   private inspectionName: string | null = null;
@@ -180,6 +182,7 @@ export class ManagedEditor {
         this.sourceName = null;
         this.loadedHash = null;
         this.loadedBytes = null;
+        this.projectContext = null;
         this.inspectionName = null;
         this.recoveryHold = false;
         this.names = [];
@@ -203,6 +206,7 @@ export class ManagedEditor {
     this.settings = new ManagedSettings(
       doc, controller, (action) => this.guard(action),
       () => this.guard(() => { void this.showHistory(); }),
+      () => this.projectContext,
     );
     this.reports = new ManagedReports(doc, () => ({
       fileName: this.sourceName,
@@ -271,6 +275,7 @@ export class ManagedEditor {
     this.message = "Importing " + file.name + " in read-only preview…";
     this.render();
     try {
+      const previewContext = await readProjectContext(new Uint8Array(await file.arrayBuffer()));
       await this.controller.chooseFile(file);
       const loaded = this.controller.getState();
       if (!loaded.tasks || loaded.fileName !== file.name || loaded.loadError) {
@@ -282,6 +287,7 @@ export class ManagedEditor {
       this.sourceName = null;
       this.loadedHash = null;
       this.loadedBytes = null;
+      this.projectContext = previewContext;
       this.inspectionName = null;
       this.names = [];
       this.canWrite = false;
@@ -362,6 +368,7 @@ export class ManagedEditor {
         throw new Error("Workbook changed while loading; reload before editing.");
       }
       const eligible = await preflightManagedWorkbook(bytes).then(() => true).catch(() => false);
+      const projectContext = await readProjectContext(bytes);
       await this.controller.chooseFile(file);
       const loaded = this.controller.getState();
       if (!loaded.tasks || loaded.fileName !== name || loaded.loadError) {
@@ -376,13 +383,14 @@ export class ManagedEditor {
       this.inspectionName = name;
       this.loadedHash = hash;
       this.loadedBytes = bytes;
-      this.canWrite = eligible;
+      this.projectContext = projectContext;
+      this.canWrite = eligible && (projectContext.kind === "legacy" || projectContext.kind === "valid");
       this.recoveryHold = false;
       this.clearDraft();
       try { localStorage.setItem(STORAGE_PREFIX + targetDir.name, name); } catch { /* best effort */ }
-      this.message = eligible
+      this.message = this.canWrite
         ? "Workbook ready. Select a task. Save only disposable copies in this development build."
-        : "Viewing allowed, but Save blocked: this workbook uses unsupported Excel features.";
+        : "Viewing allowed, but Save blocked: unsupported Excel features or incomplete/invalid project-data extension.";
     } catch (error) {
       if (!this.directory && !this.sourceName) {
         // No last-good workbook exists. Keep this folder available to pick
@@ -433,6 +441,7 @@ export class ManagedEditor {
       if (await sha256(verified) !== result.sourceHash) {
         throw new Error("Source changed after Save confirmation; do not retry without inspection.");
       }
+      const savedContext = await readProjectContext(verified);
       await this.controller.chooseFile(file);
       const reloaded = this.controller.getState();
       if (!reloaded.tasks || reloaded.loadError) {
@@ -441,6 +450,7 @@ export class ManagedEditor {
       }
       this.loadedHash = result.sourceHash;
       this.loadedBytes = verified;
+      this.projectContext = savedContext;
       this.clearDraft();
       this.controller.patchView({ ...view, selectedId: taskId });
       this.message = "Verified Save: task and UpdateHistory persisted; predecessor backup retained.";
@@ -541,6 +551,7 @@ export class ManagedEditor {
         throw new Error("Save As destination changed after verification; original remains active.");
       }
       const view = this.controller.getState().view;
+      const copyContext = await readProjectContext(verified);
       await this.controller.chooseFile(file);
       const state = this.controller.getState();
       if (!state.tasks || state.fileName !== name || state.loadError) {
@@ -553,6 +564,7 @@ export class ManagedEditor {
       this.recoveryHold = false;
       this.loadedHash = saved.destinationHash;
       this.loadedBytes = verified;
+      this.projectContext = copyContext;
       const targetNames = new Set<string>([name]);
       try {
         for await (const [foundName, handle] of (directory as DirectoryWithEntries).entries()) {
@@ -596,6 +608,19 @@ export class ManagedEditor {
     this.fileSelect.disabled = this.busy || !this.names.length;
     if (this.sourceName && this.names.includes(this.sourceName)) this.fileSelect.value = this.sourceName;
     const state = this.controller.getState();
+    // Managed-only shared identity. Never use filename or browser-local report
+    // name as authoritative. v18 read-only painting consults this dataset only
+    // when the managed app has explicitly provided committed workbook context.
+    if (state.tasks) {
+      const identity = this.projectContext
+        ? sharedProjectDisplayName(this.projectContext) : "Project name not configured";
+      this.doc.body.dataset.managedProjectTitle = identity;
+      this.doc.getElementById("title")!.textContent = identity;
+      this.doc.title = this.projectContext
+        ? projectBrowserTitle(this.projectContext) : "Project name not configured — SPT-WBS";
+    } else {
+      delete this.doc.body.dataset.managedProjectTitle;
+    }
     const meta = this.doc.getElementById("rangeMeta");
     if (meta && state.tasks) meta.textContent = "Planned project schedule · Excel Managed preview";
 
