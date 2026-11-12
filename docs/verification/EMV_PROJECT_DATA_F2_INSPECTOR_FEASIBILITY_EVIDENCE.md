@@ -23,7 +23,7 @@ At source SHA `1527deff`, the GitHub Actions Ubuntu **Build + unit** job [#13103
 - **188/188 unit tests PASS in 30 files**, including F2 **16/16** and F1 **10/10**.
 - UUID bounded screen PASS; `tsc --noEmit`/read-only production build and managed production build PASS.
 - The initial attempt `f05dbe221a9161b638b9a83463f4f6f37dfd2095` found a **TypeScript narrowing error only in the new inspector** after all unit tests passed; it was corrected at `1527deff` and the exact-head Ubuntu build was independently verified. Do not use the earlier head as production build-pass evidence.
-- **Windows Chromium browser CI:** pending when this evidence file was first authored. Update only upon exact-run result. Windows CI uses Node22; corporate Node26.13.0/npm11.19.1 not verified by this run.
+- **Windows Chromium CI: PASS** at exact HEAD [job #131035802050](https://github.com/Kenny619/spl-wbs/actions/runs/43174632840/job/131035802050): **66/66 Playwright** PASS, Windows product build and artifact steps succeeded. [Overall run #43174632840](https://github.com/Kenny619/spl-wbs/actions/runs/43174632840): **SUCCESS** at SHA `1527deff498c2532503e43cb04db0fc5bd631f55`. CI uses Node 22; corporate Node 26.13.0/npm 11.19.1 not verified by this run.
 
 ## Matrix — feasibility proof versus product contract
 
@@ -38,7 +38,7 @@ At source SHA `1527deff`, the GitHub Actions Ubuntu **Build + unit** job [#13103
 | Accepted commitments | **PASS** predecessor target and cycles checked | Commit authority/actual accepted baseline semantics and writer absent |
 | ProjectAudit | **PASS** entity IDs, fake project TaskID, action kind, timestamp consistency and UnverifiedLocal provenance checked | New audit append-only transaction/immutability is not provable from a single loaded XLSX snapshot and not implemented |
 | Side-effect protection | **PASS** inspector does not mutate workbook cells | No all-write-path fail-closed wiring tested |
-| Existing UI regression | Pending Windows run | No physical Edge, no current Report 1.1 workbook name-source amendment, no Design Review 08 pixel parity acceptance |
+| Existing UI regression | **PASS: 66/66 Windows Chromium at exact F2 head** | Still no physical Edge, current Report 1.1 workbook name-source amendment, or Review 08 pixel-parity acceptance |
 
 ## Independent-source review findings and bounded F3 requirements
 
@@ -51,6 +51,6 @@ At source SHA `1527deff`, the GitHub Actions Ubuntu **Build + unit** job [#13103
 
 ## Disposition
 
-**Limited F2 validation feasibility**: the draft schema can be inspected and differentiated using a side-effect-free typed component and synthetic tests. **Not production-integrated or approved.** Independent QA and actual project metadata persistence/Save safety remain future release gates.
+**F2 read-only inspection feasibility PASS (limited, exact CI SUCCESS):** 188/188 unit (16 new F2, 10 earlier F1), 66/66 Windows Chromium browser and read-only/managed builds. The draft schema can be inspected and differentiated using a side-effect-free typed component and synthetic tests. **Not production Save-integrated or accepted.** Independent QA and actual project metadata persistence/Save safety remain future release gates.
 
 No merge, tag, release, real workbook modification, corporate Edge UAT, UAT kit or README link change is authorized by this evidence.
