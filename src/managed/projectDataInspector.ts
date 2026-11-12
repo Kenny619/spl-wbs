@@ -250,7 +250,7 @@ export function inspectProjectData(book: ExcelJS.Workbook): ProjectInspection {
     if (change && isUTC(stamp)) {
       const before = times.get(change);
       if (before && before !== stamp) note("CHANGESET_TIME", r.sheet.name, r.i, "TimestampUTC", "Mismatched same-save timestamp.");
-      else times.set(change, stamp);
+      else times.set(change, String(stamp));
     }
     const type = requiredText(r, "EntityType");
     if (!["ProjectMeta", "Blackout", "WatchReason", "Commitment"].includes(type ?? "")) note("BAD_ENTITY_TYPE", r.sheet.name, r.i, "EntityType", "Invalid audit entity.");
