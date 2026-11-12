@@ -121,7 +121,7 @@ export async function projectWatchProjection(source: Uint8Array | ArrayBuffer): 
     const id = stringAt(reasons, row, "ReasonID");
     const taskId = taskIdValue(at(reasons, row, "TaskID"));
     const task = taskId ? tasks.get(taskId) : undefined;
-    if (!task) continue; // References are checked before projection.
+    if (!task || !taskId) continue; // References are checked before projection.
     const origin = stringAt(reasons, row, "Origin") as RecordedWatchReason["origin"];
     const state = stringAt(reasons, row, "State") as RecordedWatchReason["state"];
     const reason: RecordedWatchReason = {
