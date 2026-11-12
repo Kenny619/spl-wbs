@@ -1,5 +1,6 @@
 import { buildManagedCandidate, type CandidateInput, type CandidateResult } from "./workbookCandidate";
 import { ManagedWorkbookError } from "./preflight";
+import { buildProjectDataCandidate, type ProjectCandidateInput, type ProjectCandidateResult } from "./projectDataCandidate";
 
 const PROTOCOL = "spt-wbs-managed-v1";
 const encoder = new TextEncoder();
@@ -196,8 +197,39 @@ export async function captureManagedSourceHash(
  * received user permission. Does not auto-reconcile any uncertain prior save.
  * Source is never reported saved until source AND prior backup readbacks succeed.
  */
+/**
+ * One vetted File System Access transaction protocol for task edits and
+ * (draft F3c) project-data edits. Only candidate construction differs.
+ * A project candidate is always built/validated BEFORE stage/source writes.
+ */
+type GuardedCandidate = CandidateResult | ProjectCandidateResult;
+type CandidateBuilder = (source: Uint8Array) => Promise<GuardedCandidate>;
+
 export async function saveManagedDirect(input: DirectSaveInput): Promise<DirectSaveResult> {
   const { directory, sourceName, loadedHash, ...edit } = input;
+  return saveVerifiedCandidate(directory, sourceName, loadedHash,
+    (source) => buildManagedCandidate({ ...edit, source }));
+}
+
+export type ProjectDirectSaveInput = Omit<ProjectCandidateInput, "source"> & {
+  directory: FileSystemDirectoryHandle;
+  sourceName: string;
+  loadedHash: string;
+};
+
+/** F3c draft: explicit verified project-data disk Save; not wired to UI. */
+export async function saveManagedProjectDirect(input: ProjectDirectSaveInput): Promise<DirectSaveResult> {
+  const { directory, sourceName, loadedHash, ...projectEdit } = input;
+  return saveVerifiedCandidate(directory, sourceName, loadedHash,
+    (source) => buildProjectDataCandidate({ ...projectEdit, source }));
+}
+
+async function saveVerifiedCandidate(
+  directory: FileSystemDirectoryHandle,
+  sourceName: string,
+  loadedHash: string,
+  buildCandidate: CandidateBuilder,
+): Promise<DirectSaveResult> {
   const names = managedFileNames(sourceName);
   if (!isHash(loadedHash)) stop("MISSING_LOAD_FINGERPRINT", "Load the active workbook before saving.");
   const state = await inspectManagedSave(directory, sourceName);
@@ -206,7 +238,7 @@ export async function saveManagedDirect(input: DirectSaveInput): Promise<DirectS
   const before = await sha256(predecessor);
   if (before !== loadedHash) stop("STALE_SOURCE", "The workbook changed since it was loaded; direct Save is blocked.");
 
-  const candidate: CandidateResult = await buildManagedCandidate({ ...edit, source: predecessor });
+  const candidate = await buildCandidate(predecessor);
   if (candidate.kind === "noop") return { kind: "noop", sourceHash: before };
   const after = await sha256(candidate.bytes);
   const priorOwner = await verifiedOwner(directory, names);
