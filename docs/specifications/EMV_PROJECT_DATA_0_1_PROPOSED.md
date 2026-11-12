@@ -1,6 +1,7 @@
-# EMV-PROJECT-DATA-0.1 — Proposed Excel shared-project extension
+# EMV-PROJECT-DATA-0.1.1 — Proposed Excel shared-project extension
 
-**Status:** **PROPOSED / NOT FROZEN / NO IMPLEMENTATION AUTHORIZATION**  
+**Status:** **PROPOSED v0.1.1 / NOT FROZEN / NO IMPLEMENTATION AUTHORIZATION**  
+**Owner feedback incorporated:** [Issue #25 comment #6812583483](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812583483) — blackout must affect remaining workdays; shared project name must reside in `ProjectMeta` and populate UI, Calendar and HTML document title. These two requested changes supersede the prior proposal's contrary rules; see [proposal changelog](EMV_PROJECT_DATA_PROPOSAL_CHANGELOG.md).  
 **Prepared:** 2026-11-12 JST · **Owner data-ownership decision:** [DEC-DATA-2026-11-12](../design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md)  
 **Controlling visual baseline:** [DES-012 approved Review 08](../../design/concepts/DES-012-consolidated-review08-task-detail.html), Git blob `de6ebaa63aa035ba741b4435cf1cdb9d1166d958`.  
 **Baseline to protect:** frozen [#3 / EMV-WB-1.0](https://github.com/Kenny619/spl-wbs/issues/3), [#4 Edit](https://github.com/Kenny619/spl-wbs/issues/4), [#5 History](https://github.com/Kenny619/spl-wbs/issues/5), [#6 personal Settings](https://github.com/Kenny619/spl-wbs/issues/6), [#2/#11 file safety](https://github.com/Kenny619/spl-wbs/issues/2), existing read-only v18.  
@@ -13,7 +14,7 @@ All **project facts** are carried by one Excel workbook. Members loading **the s
 
 **Not promised:** automatic live push between browsers, simultaneous multi-writer editing of synced copies, server data storage, authenticated actor identity, a risk score, automatic risk trigger thresholds, or a silent schema migration. These require their own proof/approval.
 
-The current code supports one session-only inclusive blackout interval. It shades days and influences PGCM/calendar presentation, **but the existing working-day remaining calculation intentionally excludes blackout** (`src/calendar/workdays.ts`). Persisting blackouts must preserve that behavior until a separately approved date/risk-calculation rule supersedes it. Calendar input is not a status flag or automatic proof of a delay.
+The current code supports one session-only inclusive blackout interval and influences Gantt shading and PGCM presentation; **the existing `remainingWorkdays` currently excludes blackout because it does not receive that input**. **Owner explicitly requires a functional change:** the new workbook-backed blackout **must also reduce remaining working days**. On a date excluded as a weekend, Japanese holiday or enabled project blackout, exclude it **once**; neither double-subtract nor include it as available working capacity. Retain the approved counting window **strictly after Today through the Planned Finish, inclusive**, excluding inactive statuses and maintaining safe Unknown when required source/holiday information is unavailable. This is a deliberate **proposed amendment** to the previous function's behavior, not merely a persistence change. Calendar blackout alone does not prove a schedule slip or a risk severity.
 
 ## 1. Additive workbook structure — proposal
 
@@ -21,7 +22,7 @@ The current code supports one session-only inclusive blackout interval. It shade
 
 | New worksheet | Primary key / model | What it holds | Write type |
 |---|---|---|---|
-| `ProjectMeta` | Unique `Key` | Stable project UUID, extension schema version and supported format metadata | Explicit creation/metadata updates only |
+| `ProjectMeta` | Unique `Key` | Stable project UUID, **shared project name** and extension schema version | Explicit creation/metadata updates only |
 | `ProjectCalendar` | `BlackoutID` UUID | Shared inclusive blackout ranges, enabled state and label | Current records plus project audit |
 | `WatchReasons` | `ReasonID` UUID | Separate manual/automatic watch reasons and their current resolution state | Current records plus project audit |
 | `ProjectCommitments` | `CommitmentID` UUID | Versioned accepted reference finish dates and provenance | Append-only decision records |
@@ -34,9 +35,14 @@ The current code supports one session-only inclusive blackout interval. It shade
 | Key | Proposed value |
 |---|---|
 | `ProjectID` | Project-owned UUID, created on the first explicitly confirmed extension write |
-| `ProjectDataSchemaVersion` | Exact value `0.1.0` for this **proposal** (replace with final approved version on freeze) |
+| `ProjectName` | **Required shared project display name**, nonblank after trimming, plain text, up to 180 Unicode characters (matching current report input limit); stored in Excel, not filename-derived or user-local |
+| `ProjectDataSchemaVersion` | Exact value `0.1.1` for this **proposal** (replace with final approved version on freeze) |
 
-Required keys are case-insensitive exact matches, unique and nonblank; extra compatible keys may be preserved. Neither filename nor local browser path is ProjectID. `Save As` retains ProjectID as a **copy/version** of the same logical project, **not** as proof the copies will synchronize; future **Create New Project** must allocate a fresh ID through its own approved workflow.
+Required keys are case-insensitive exact matches, unique and nonblank; extra compatible keys may be preserved. Validate `ProjectName` as Unicode plain text (reject blank/control characters and unsupported rich-value/formula types; render as inert text, not injected HTML). Neither filename nor local browser path is ProjectID or ProjectName. `Save As` retains both ProjectID and ProjectName as a **copy/version** of the same logical project, **not** as proof the copies synchronize; a later explicit rename changes only ProjectName through an audited project Save. A future **Create New Project** must allocate a fresh ID through its own approved workflow.
+
+**Authoritative display binding:** Load ProjectName from the **committed `ProjectMeta`** and display the same string in (a) the global application/project title on Schedule, Meeting Review and Reports, (b) Calendar workspace/section heading and calendar context, and (c) the browser HTML document's `<title>` (e.g. `ProjectName — SPT-WBS`). Escape/inject safely via `textContent` / `document.title` rather than `innerHTML`; changes propagate only after a successful verified Save/reload and across all workspaces without touching personal browser preferences. Do **not** use the workbook filename or a browser-local report-name entry as a competing authoritative project name.
+
+**Legacy display:** Without `ProjectMeta.ProjectName`, show **“Project name not configured”** clearly and keep the workbook filename only as a separately labeled **source file identifier**; do not silently assign a project name from filename or an old local preference. The first explicit project-metadata Save supplies a required name and creates the extension atomically. **Report 1.1 impact:** its currently frozen report-only project-name input/local preference must be reconciled under a separate, narrow update to [#7](https://github.com/Kenny619/spl-wbs/issues/7) before reusing ProjectName in exported report headers; do not silently change an already frozen reporting contract.
 
 ### 1B. `ProjectCalendar` — shared blackout records
 
@@ -47,6 +53,8 @@ Required keys are case-insensitive exact matches, unique and nonblank; extra com
 - **Initial UI scope:** at most **one enabled** interval, matching the real existing control. The table permits disabled historical records; a later separately approved multiple-range UI can increase the number without replacing this sheet. Do not silently enable additional ranges.
 - Calendar Setting changes occur inside **Settings → Project Calendar**, separately from personal **Appearance / Columns / Timezone**.
 - On a successful Save, show the persisted range. A no-op does not write. Cancel/discard leaves the workbook and display at the prior committed value.
+- **Owner-required Days Remaining behavior:** Calculate eligible days strictly after Today through Finish (inclusive) excluding **weekends OR Japanese holidays OR any date covered by the enabled, workbook-committed blackout interval**, once per date. The persisted blackout is the authoritative calculation input for both Schedule Gantt and Task Detail, rather than a separate browser/session-only setting. Do not let an unsaved Calendar draft masquerade as committed days remaining; if a draft preview is offered it must be explicitly labeled. Missing/invalid/unsupported project calendar must not generate an invented numeric count.
+- Calendar title/context displays `ProjectMeta.ProjectName`; the Calendar setting remains project-owned while theme/columns/PGCM *display preferences* remain personal.
 - Existing blackout's impact on Gantt shading and PGCM remains. Do **not** change the independently frozen working-day/Due Today calculations under this storage amendment alone.
 - Removal/disable must preserve project audit; never hide another member's new range through stale last-writer-wins.
 
@@ -98,6 +106,7 @@ Required keys are case-insensitive exact matches, unique and nonblank; extra com
 7. **Save As** makes a full copy of project data and audit, with stable ProjectID and historical IDs; this is **a separate workbook copy**, not a live-synced replica. New-project/template creation is a separate workflow with fresh ID and separately authorized initial project config.
 8. **Personal “Reset settings”** must not remove blackout ranges, Watch reasons, commitments, task history, project metadata, audit or any other workbook data.
 9. Date-only values stay date-only regardless of selected display timezone. UTC instants display in each user's local preference only, without altering stored values.
+10. Once `ProjectMeta.ProjectName` is configured, it is the sole authoritative project display name in the global UI, Calendar title/context and browser `document.title`. A legacy workbook lacking ProjectName shows an explicit unconfigured state and a separately labeled source filename, not a falsely saved project name.
 
 ## 3. Shared workbook Save/reload transaction
 
@@ -124,8 +133,8 @@ Required keys are case-insensitive exact matches, unique and nonblank; extra com
 ## 4. Product and architecture boundaries to retain
 
 - **Meeting Review** ships **with genuine workbook-backed Under Watch**; status-only interim MR is rejected (MR-D01 B). A watch-aware refinement of Meeting content/UX requires targeted separate visual signoff; do not replace the approved 3-page visual language.
-- **Personal UI settings** stay browser-local: Theme, columns, PGCM display, zoom, search/filter state if saved, timezone and recent workbook history. **PGCM display** option is local even when the date/meeting facts it shows are project facts.
-- **Calendar** is inside Settings but clearly separated as a **shared project setting**, with its own explicit Save/Cancel. The formerly proposed session-only storage is superseded.
+- **Personal UI settings** stay browser-local: Theme, columns, PGCM display, zoom, search/filter state if saved, timezone and recent workbook history. **PGCM display** option is local even when the date/meeting facts it shows are project facts. **ProjectName is not a view preference** and must not use the existing browser-local Report 1.1 project name as a competing source.
+- **Calendar** is inside Settings but clearly separated as a **shared project setting**, with its own explicit Save/Cancel. The formerly proposed session-only storage is superseded. **Owner-required amendment:** enabled blackout dates also reduce the same centrally calculated **Days Remaining** values (no double-count of overlapping weekends/holidays) across views.
 - **Under Watch** status is not `TaskStatus`. Existing `At Risk`/`Blocked` statuses do not establish saved Watch reason evidence. No unsourced Red/Amber score or unapproved automatic risk algorithm.
 - **Reports 1.1** remains governed by the frozen source/health rules. Never inject synthetic RAG from a new Watch sheet into a status report unless the report contract and verified source semantics are separately amended.
 - **Read-only v18** and the SharePoint viewer must never write to workbook, change its local data contract or receive managed-only configuration.
@@ -134,8 +143,10 @@ Required keys are case-insensitive exact matches, unique and nonblank; extra com
 
 | ID | Design Office recommendation | Owner decision needed? |
 |---|---|---|
-| **SCH-01 Additive sheet schema** | Five typed project worksheets, preserved frozen `ProjectWBS`/`UpdateHistory`, separate `ProjectAudit`; future-compatible but fail-closed | **Yes — proposed contract, not yet PO-approved** |
+| **SCH-01 Additive sheet schema** | Five typed project worksheets, **ProjectMeta.ProjectName required**, preserved frozen `ProjectWBS`/`UpdateHistory`, separate `ProjectAudit`; future-compatible but fail-closed | **Yes — proposed contract, not yet PO-approved** |
+| **NAME-01 Project-name source** | Shared `ProjectMeta.ProjectName` is authoritative for app header, Calendar and browser HTML document title; old local Report 1.1 name setting requires separate #7 compatibility review | **Owner direction received; technical/report migration still to reconcile** |
 | **CAL-02 Active blackout scope** | **One enabled inclusive range initially** (the real existing control), while table can represent multiple later; do not pretend multiple active intervals already exist | **Yes** if user expects multiple concurrent ranges immediately |
+| **CAL-RULE-01 Blackout affects remaining days** | **Owner-directed: YES.** Exclude enabled project blackout from Days Remaining in addition to weekends/Japanese holidays, once per date; preserve other counting and Unknown rules | **Decision confirmed by owner; no longer an open preserve-old-rule question** |
 | **ACT-01 Actor identity truth** | Store a plain actor label with **`UnverifiedLocal` provenance**, do not claim authenticated corporate identity without a permitted source | **Yes** if verifiable attribution is mandatory for this version |
 | **SYNC-01 Shared edit policy** | Same-file reload consistency, fail-closed external changes, **one editor at a time** unless verified locking/CAS; not live simultaneous editing | **Yes** if true concurrent multiuser writes are required |
 | **SEQ-01 Calendar delivery timing** | The new shared Calendar ownership rule is final; reconcile earlier Stage D delay with dependency on Watch/calendar and desired beta scope. **No silent roadmap priority change.** | **Yes** before changing roadmap/stage |
@@ -144,10 +155,10 @@ Required keys are case-insensitive exact matches, unique and nonblank; extra com
 
 ## 6. Approval/release gates
 
-1. Owner reviews/finalizes extension schema and choices; record precise change to frozen #3 without mutating the prior record.
+1. Owner reviews/finalizes extension schema and choices, including the newly required `ProjectName` and blackout-aware remaining-day behavior; record precise versioned changes to frozen #3 and affected calendar/date semantics without mutating prior accepted history. Assess frozen Report #7's local-name preference separately.
 2. Independent technical feasibility on disposable **Windows/Edge** workbooks: new plain sheets/OOXML preflight, preserving extra columns and unsupported-feature fail-closed; two-authority/copy conflict and Excel-open lock tests.
 3. Only after explicit coding authorization: isolated feature branch, versioned machine JSON/human spec synchronization, code/tests and independent QA, exact-head UI parity.
 4. Owner UAT only after verified real workbook roundtrip and source/safety gates, with only one latest approved UAT kit advertised in README. Do not publish a new kit during the current reconciliation hold.
 5. No PR merge/release/beta authorization follows from this proposal.
 
-**Record status:** PREPARED FOR OWNER REVIEW; no schema freeze or implementation has occurred.
+**Record status:** REVISED 0.1.1 AFTER OWNER COMMENTS; proposed and awaiting disposition of remaining choices. Owner-directed `ProjectName` and blackout-aware days requirements are recorded, but neither the five-sheet schema nor implementation is frozen/authorized.
