@@ -37,6 +37,8 @@ export function renderTimeline(options: {
   selectedId: string | null;
   today: string;
   blackout: BlackoutInterval;
+  /** Managed-only Excel ProjectCalendar; read-only v18 must not pass this. */
+  committedBlackout?: BlackoutInterval;
   calendar: HolidayCalendar;
   onOpen: (id: string) => void;
 }): void {
@@ -63,7 +65,7 @@ export function renderTimeline(options: {
     background.addEventListener("click", () => options.onOpen(task.id));
     options.rows.append(background);
     if (task.scheduled && task.plannedStart && task.plannedEnd && bounds) {
-      options.rows.append(taskBar(task, index, bounds.start, px, options.palette, options.onOpen, options.today, options.calendar));
+      options.rows.append(taskBar(task, index, bounds.start, px, options.palette, options.onOpen, options.today, options.calendar, options.committedBlackout));
     }
   });
   if (bounds) appendToday(options.rows, bounds, px, options.today);
@@ -205,6 +207,7 @@ function taskBar(
   onOpen: (id: string) => void,
   today: string,
   calendar: HolidayCalendar,
+  committedBlackout?: BlackoutInterval,
 ): HTMLElement {
   const color = paletteColor(palette, task.workstream);
   const geometry = barGeometry(task.plannedStart as string, task.plannedEnd as string, spanStart, px);
@@ -224,7 +227,7 @@ function taskBar(
     fill.style.background = color;
     bar.append(fill);
   }
-  const remainder = compactRemaining(remainingWorkdays(task.plannedEnd, today, task.status, calendar));
+  const remainder = compactRemaining(remainingWorkdays(task.plannedEnd, today, task.status, calendar, committedBlackout));
   bar.title = `${task.wbsCode} ${task.taskName} | ${formatPlanDate(task.plannedStart)} → ${formatPlanDate(task.plannedEnd)} | ${progressLabel(task.progress)}${remainder ? ` | ${remainder}` : ""}`;
   bar.dataset.taskId = task.id;
   bar.tabIndex = 0;
