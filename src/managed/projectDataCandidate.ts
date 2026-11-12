@@ -1,5 +1,4 @@
 import ExcelJS from "exceljs";
-import { importWorkbook } from "../data/normalize";
 import { HISTORY_COLUMNS } from "./workbookCandidate";
 import { readManagedHistoryWithPresence } from "./history";
 import { inspectProjectData } from "./projectDataInspector";
@@ -237,7 +236,7 @@ export async function buildProjectDataCandidate(input: ProjectCandidateInput): P
     for (const item of changes) {
       const cell = row.getCell(c[item.column]);
       const old = cell.value;
-      if (old === item.value) continue;
+      if ((old == null ? "" : String(old)) === String(item.value)) continue;
       cell.value = item.value;
       audit.push({
         entityType: "Blackout", entityId: interval.blackoutId,
@@ -246,11 +245,11 @@ export async function buildProjectDataCandidate(input: ProjectCandidateInput): P
       });
     }
     if (audit.some(x => x.entityType === "Blackout")) {
+      const oldModifiedUTC = prior ? String(row.getCell(c.ModifiedUTC).value ?? "") : "";
       row.getCell(c.ModifiedUTC).value = input.timestampUTC;
       audit.push({ entityType: "Blackout", entityId: interval.blackoutId,
         field: "ModifiedUTC", action: prior ? "Update" : "Create",
-        oldValue: prior ? String(prior.getCell(c.ModifiedUTC).value ?? "") : "",
-        newValue: input.timestampUTC });
+        oldValue: oldModifiedUTC, newValue: input.timestampUTC });
     }
   }
   if (edit.kind === "disable-blackout") {
@@ -315,10 +314,7 @@ export async function buildProjectDataCandidate(input: ProjectCandidateInput): P
       (historySnapshot === null && history.rowCount !== 1)) {
     error("READBACK_FAILED", "Frozen UpdateHistory changed during project-only candidate.");
   }
-  const oldAudit = initial.kind === "valid"
-    ? (input.source instanceof Uint8Array || input.source instanceof ArrayBuffer
-      ? book.getWorksheet("ProjectAudit")!.rowCount - audit.length : 0)
-    : 1;
+  const oldAudit = projectAudit.rowCount - audit.length;
   if (after.getWorksheet("ProjectAudit")!.rowCount !== oldAudit + audit.length) {
     error("READBACK_FAILED", "ProjectAudit rows changed during candidate readback.");
   }
