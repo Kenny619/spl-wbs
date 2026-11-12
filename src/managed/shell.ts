@@ -255,7 +255,7 @@ export function mountManagedShell(
   syncDetail();
   const calendarHint = doc.querySelector<HTMLElement>(".calendar-hint");
   if (calendarHint) calendarHint.textContent =
-    "Dates inclusive · remaining days exclude weekends and holidays · blackout does not affect the count · session only";
+    "Dates inclusive · remaining days exclude weekends, holidays and saved project blackout · shared Excel source";
   const backdrop = doc.getElementById("backdrop");
   if (backdrop) backdrop.setAttribute("hidden", "");
 
