@@ -1,4 +1,5 @@
 import type { ImportController } from "../data/importController";
+import { sharedProjectDisplayName, type ProjectContext } from "./projectContext";
 import { MANAGED_APP_VERSION, MANAGED_APPROVED_UI_BASELINE } from "./version";
 import {
   DEFAULT_COLUMNS, defaultPreferences, effectiveAppearance, loadPreferences,
@@ -14,6 +15,7 @@ export class ManagedSettings {
   private readonly launch: HTMLButtonElement;
   private readonly selector: HTMLSelectElement;
   private readonly saveNote: HTMLParagraphElement;
+  private readonly calendarInfo: HTMLParagraphElement;
   private readonly appearanceInputs: HTMLInputElement[] = [];
   private readonly scheme: MediaQueryList | null;
 
@@ -22,6 +24,7 @@ export class ManagedSettings {
     private readonly controller: ImportController,
     navigate: (action: () => void) => void,
     private readonly openHistory: () => void = () => {},
+    private readonly getProjectContext: () => ProjectContext | null = () => null,
   ) {
     try { this.storage = doc.defaultView?.localStorage ?? null; } catch { /* unavailable */ }
     this.preferences = loadPreferences(this.storage);
@@ -107,6 +110,16 @@ export class ManagedSettings {
     if (oldToggle) oldToggle.style.display = "none";
     body.append(columns);
 
+    const calendar = make("section", undefined, "managed-settings-section");
+    calendar.append(make("h3", "Project Calendar"),
+      make("p", "Shared workbook data · read-only preview. " +
+        "Calendar Save/Cancel requires the separately reviewed project-data UI.",
+        "managed-settings-hint"));
+    this.calendarInfo = make("p", "Load a workbook to inspect its project blackout.",
+      "managed-settings-hint");
+    calendar.append(this.calendarInfo);
+    body.append(calendar);
+
     const appearance = make("section", undefined, "managed-settings-section");
     appearance.append(make("h3", "Appearance"));
     const radioGroup = make("fieldset", undefined, "managed-settings-appearance");
@@ -191,6 +204,22 @@ export class ManagedSettings {
 
   open(): void {
     if (this.dialog.open) return;
+    const context = this.getProjectContext();
+    if (!context) {
+      this.calendarInfo.textContent = "Load a workbook to inspect project calendar data.";
+    } else if (context.kind === "legacy") {
+      this.calendarInfo.textContent =
+        "Project name not configured · Project blackout not configured (legacy workbook).";
+    } else if (context.kind !== "valid") {
+      this.calendarInfo.textContent =
+        "Project data unavailable: workbook extension is incompatible or unsupported.";
+    } else {
+      const range = context.blackout.enabled
+        ? context.blackout.start + " – " + context.blackout.end
+        : "No enabled blackout";
+      this.calendarInfo.textContent =
+        sharedProjectDisplayName(context) + " · Committed blackout: " + range;
+    }
     this.selector.value = this.preferences.timeZone;
     this.dialog.showModal();
     this.dialog.querySelector<HTMLButtonElement>(".managed-settings-head button")?.focus();
