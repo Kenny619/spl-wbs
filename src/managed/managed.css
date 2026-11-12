@@ -580,3 +580,18 @@ body.spt-managed[data-managed-theme="dark"] .dep-layer path {
   stroke-width:2 !important;
   filter:drop-shadow(0 0 1px #07182a);
 }
+
+/* F4c — shared Excel Project Calendar, distinct from local user preferences. */
+.managed-calendar-editor { display:grid; gap:11px; padding:12px 0 4px; }
+.managed-calendar-editor[hidden] { display:none; }
+.managed-calendar-editor .managed-settings-label { max-width:100%; }
+.managed-calendar-editor .managed-settings-label input {
+  min-width:0; width:100%; padding:8px 11px; border:1px solid var(--line);
+  background:var(--panel); color:var(--ink); border-radius:6px;
+}
+.managed-calendar-editor .managed-calendar-check {
+  display:flex; gap:9px; align-items:center; font-size:13px; font-weight:650;
+}
+.managed-calendar-editor .managed-calendar-check input { accent-color:#426bd1; }
+.managed-calendar-editor .managed-actions { display:flex; gap:9px; flex-wrap:wrap; }
+.managed-calendar-editor .managed-settings-hint { margin:0; }
