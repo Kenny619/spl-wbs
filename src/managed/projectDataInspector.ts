@@ -194,8 +194,11 @@ export function inspectProjectData(book: ExcelJS.Workbook): ProjectInspection {
   if (active > 1) note("MULTIPLE_ACTIVE_BLACKOUT", "ProjectCalendar", 0, "Enabled", "One active interval max.");
 
   const reasonIDs = new Set<string>();
+  const reasonTasks = new Map<string, string>();
   for (const r of rows("WatchReasons")) {
-    unique(reasonIDs, requiredUUID(r, "ReasonID"), r, "ReasonID");
+    const reasonId = requiredUUID(r, "ReasonID");
+    unique(reasonIDs, reasonId, r, "ReasonID");
+    if (reasonId) reasonTasks.set(reasonId, taskKey(value(r, "TaskID")) ?? "");
     refTask(r, true);
     const origin = requiredText(r, "Origin");
     const code = value(r, "RuleCode");
@@ -258,9 +261,20 @@ export function inspectProjectData(book: ExcelJS.Workbook): ProjectInspection {
     if (entityId && type === "Blackout" && !blackoutIDs.has(entityId.toLowerCase())) note("UNKNOWN_AUDIT_ENTITY", r.sheet.name, r.i, "EntityID", "Missing blackout record.");
     if (entityId && type === "WatchReason" && !reasonIDs.has(entityId.toLowerCase())) note("UNKNOWN_AUDIT_ENTITY", r.sheet.name, r.i, "EntityID", "Missing reason.");
     if (entityId && type === "Commitment" && !commitments.has(entityId.toLowerCase())) note("UNKNOWN_AUDIT_ENTITY", r.sheet.name, r.i, "EntityID", "Missing commitment.");
+    if (entityId && type === "ProjectMeta" && !meta.has(entityId.toLowerCase())) note("UNKNOWN_AUDIT_ENTITY", r.sheet.name, r.i, "EntityID", "Unknown metadata key.");
     if (type === "ProjectMeta" || type === "Blackout") {
       if (!blank(value(r, "TaskID"))) note("FAKE_PROJECT_TASK", r.sheet.name, r.i, "TaskID", "Project event cannot invent task ID.");
-    } else refTask(r, true);
+    } else {
+      refTask(r, true);
+      const expectedTask = type === "WatchReason" ? reasonTasks.get(entityId?.toLowerCase() ?? "")
+        : type === "Commitment" ? commitments.get(entityId?.toLowerCase() ?? "")?.taskId
+        : undefined;
+      const actualTask = taskKey(value(r, "TaskID"));
+      if (expectedTask && actualTask && expectedTask !== actualTask) {
+        note("AUDIT_TASK_MISMATCH", r.sheet.name, r.i, "TaskID",
+          "Audit TaskID differs from the referenced Watch reason or commitment.");
+      }
+    }
     if (!["Create", "Update", "Resolve", "AcceptCommitment", "Disable"].includes(requiredText(r, "Action") ?? "")) {
       note("BAD_AUDIT_ACTION", r.sheet.name, r.i, "Action", "Unsupported action.");
     }
