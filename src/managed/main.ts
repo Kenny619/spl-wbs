@@ -212,8 +212,13 @@ export class ManagedEditor {
 
     const originalPatch = controller.patchView.bind(controller);
     controller.patchView = (patch) => {
-      if (patch.selectedId !== undefined && patch.selectedId !== controller.getState().view.selectedId
-        && (this.isDirty() || this.watchPanel.hasDraft())) {
+      // Only user navigation is guarded. During a verified workbook Save,
+      // the controller restores its prior selectedId while a Watch form is
+      // still pending successful completion. Blocking that internal restore
+      // would leave the inspector empty after a real committed Save.
+      if (!this.busy && patch.selectedId !== undefined &&
+          patch.selectedId !== controller.getState().view.selectedId &&
+          (this.isDirty() || this.watchPanel.hasDraft())) {
         this.guard(() => originalPatch(patch));
         return;
       }
