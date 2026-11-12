@@ -1,4 +1,4 @@
-# EMV-PROJECT-DATA-0.1 — design-to-DEV/QA handoff (DRAFT / DO NOT IMPLEMENT YET)
+# EMV-PROJECT-DATA-0.1.1 — design-to-DEV/QA handoff (DRAFT / DO NOT IMPLEMENT YET)
 
 **Prepared:** 2026-11-12 JST  
 **Controlling proposed spec:** [human contract](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.md), [machine contract](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.json), [acceptance matrix](../verification/EMV_PROJECT_DATA_0_1_ACCEPTANCE_PLAN.md).  
@@ -15,8 +15,10 @@ This is a **pre-implementation feasibility/work breakdown proposal** only. The p
 - `src/managed/directSave.ts`: source bytes/hash, verified staging and predecessor backup, source conflict checks, pending/recovery metadata. Reuse the same guarded transaction mechanism without diluting its fallbacks or assuming distributed file locking.
 - `src/managed/preflight.ts`: explicit fail-closed supported-OOXML allowlist. Do not bypass it or downgrade unknown workbook-part handling because new sheets are requested.
 - `src/calendar/blackout.ts` + `src/ui/mount.ts`: currently one **session-only** enabled inclusive range. Target is Excel-persistent Project Calendar in Settings; keep current visual/business effect unless separately approved.
-- `src/calendar/workdays.ts`: `remainingWorkdays` intentionally does **not** take blackout input. Persisting blackout must not quietly change Days Remaining.
-- `src/managed/settingsUi.ts`: the personal timezone/columns/Light-Dark-System settings are browser-local and should stay so. **Project Calendar needs a separate draft/Save path, not localStorage.**
+- `src/calendar/workdays.ts`: current `remainingWorkdays` ignores blackout, but the Owner now requires exclusion of workbook-committed enabled blackout dates in addition to weekends/Japanese holidays, once per calendar day. Preserve counting window and Unknown/inactive semantics. Update all real Gantt and Task Detail callers consistently after spec/implementation authorization; do not silently modify unrelated PGCM scheduling rules.
+- `src/managed/settingsUi.ts`: personal timezone, columns and appearance remain browser-local; Project Calendar has a separate verified draft/Save path and persists blackouts used by Days Remaining.
+- `src/ui/mount.ts`: currently shows `fileTitle(state.fileName)` in #title and document.title. Owner now requires shared Excel `ProjectMeta.ProjectName` in global UI, Calendar and HTML document title. Legacy missing metadata must be explicit.
+- `src/managed/reportsUi.ts` and `src/managed/report11ProjectName.ts`: Report 1.1 uses a browser-local project name under frozen #7; propose separate narrow change control before changing output.
 - `src/managed/shell.ts`: real Gantt present, Meeting Review absent, Exceptions currently status-only. Owner selected integrated Watch+Meeting, no interim status-only Meeting Review.
 - No current safe authenticated network identity or verified multiuser lock. “ActorLabel” is informational until a real provider and role contract are approved; no invented verified attribution.
 
@@ -26,11 +28,13 @@ This is a **pre-implementation feasibility/work breakdown proposal** only. The p
 |---|---|---|
 | **F0 spec gate** | Owner dispositions of proposal and genuine open decisions; version bump, frozen human+machine contract; exact workbook field types/validation and stage ordering | Do not code or alter frozen #3–#7 body as if approved |
 | **F1 safe OOXML feasibility** | Disposable sample workbook with new ordinary sheets; preflight→ExcelJS roundtrip→re-preflight; no style/custom loss, no unsupported features silently tolerated | Do not modify v18 read-only viewer or a corporate workbook |
-| **F2 reader/validator only** | Parse extension and legacy/partial/unknown schema with explicit Unknown/Not Configured states, no writes | No implicit sheet creation on import/view |
+| **F2 reader/validator only** | Read and validate `ProjectMeta.ProjectName` (nonblank ≤180 Unicode characters), legacy/partial/unknown schema, unconfigured state, and safe source identity; no writes | No filename or local-report preference promoted to authoritative project name |
 | **F3 project mutation candidate** | New typed project-data commands that generate a **single candidate** for project fields and project audit, with shared transaction ID/timestamp; no-op safe; merge only if task Save is included and verified | No fake task history entries, no “Save success” from browser memory |
 | **F4 guarded workbook Save/reload** | Adapt existing staged/backup/conflict/recovery pipeline and test full snapshots; retain single-writer safety; verify two-user workbook handoff | No claims of realtime sync or CAS guarantee in OneDrive/local copies |
-| **F5 Project Calendar UI** | Settings section uses draft / Save / Cancel with actual workbook-backed values and explicit persistence state, leaving user-local preference Reset untouched | No unaudited local-only blackout state or unapproved Days Remaining math change |
-| **F6 Watch + Meeting** | Only after the risk checks, reason lifecycle, accepted commitment semantics, role/provenance and targeted Watch-aware Meeting design are frozen; use approved Review 08 shell | No status-only Meeting Review presented as full Watch, no invented Green/Amber severity |
+| **F5 Project Calendar UI and workday math** | Real Excel-backed project blackout under Settings with draft/Save/Cancel, verified reload, and Days Remaining excluding blackout/weekend/holiday once per date | No browser-only saved state, double-excluded day or regressed Unknown handling |
+| **F6 Watch + Meeting** | After reason/threshold contract freeze, use consistent project calendar and protected Review 08 shell | No status-only fake Watch or invented Green/Amber |
+| **F6a Shared ProjectName UI** | Source global UI, Calendar and browser document title from saved ProjectMeta.ProjectName | Never silently use filename or local report name as shared identity |
+| **F6b Report 1.1 name reconciliation** | Separate #7 contract amendment and regression test for workbook project name in reporting | Do not silently change draft PR #37's frozen local name behavior |
 | **F7 QA and controlled Owner UAT** | Independent validator and safety QA, test plan scenario matrix, exact-head screenshots at approved widths/themes, physical Edge + shared-file handoff/lock tests, read-only regression | No README-promoted UAT kit until ongoing hold and precise release gates are cleared |
 
 ## Transaction design sketch to prove, not implement blindly
@@ -44,11 +48,12 @@ This is a **pre-implementation feasibility/work breakdown proposal** only. The p
 
 ## Separate genuine product decisions
 
-- **Schema**: additive worksheet proposal and audit model, old-file migration/unknown-state rules.
-- **One vs multiple active blackout intervals**: default to current single range for initial implementation, despite table extensibility.
+- **Schema**: additive five-sheet extension with **required ProjectMeta.ProjectName**, typed audit, legacy/migration and validation.
+- **One vs multiple active blackout intervals**: one enabled interval initially, extensible later. Blackout exclusion from Days Remaining is already an explicit owner requirement.
 - **Actor identity**: never call a local manually entered name authenticated.
 - **Multi-user access**: same committed workbook version + serialized safe edits; test chosen file-sharing provider, no live sync claim.
 - **Delivery sequencing**: move shared blackout earlier than roadmap Stage D only by a separate Product Owner priority decision.
-- **Automatic Watch**: exact source/check catalog, accepted-commitment severity and clearance semantics must freeze before implementation.
+- **Automatic Watch**: rule catalog/commitment impact/clearance thresholds remain to freeze.
+- **Report 1.1 name sourcing**: change browser-local name contract only through separate #7 approval and evidence.
 
-**Status:** HANDOFF PREPARED; no work assignment, PR modification, merge/release, QA result or downloadable UAT kit is claimed.
+**Status:** REVISED v0.1.1 HANDOFF PREPARED against [Owner feedback](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812583483); no code assignment, PR modification, merge/release, QA result or UAT kit claimed.
