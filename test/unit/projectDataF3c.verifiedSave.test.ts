@@ -215,6 +215,24 @@ describe("F3c: project candidate through shared verified direct Save protocol (s
     expect((await book(bytes)).getWorksheet("ProjectAudit")!.rowCount).toBe(10);
   });
 
+  it("refuses a project Save when its ChangeSetID is already committed by task UpdateHistory", async () => {
+    const dir = await fixture();
+    const loadedHash = await captureManagedSourceHash(dir.handle(), NAME);
+    const task = await saveManagedDirect({
+      directory: dir.handle(), sourceName: NAME, loadedHash,
+      taskId: "1", changes: { Title: "Task saved first" },
+      appVersion: "f3d-qa", changeSetId: ID1, timestampUTC: T1,
+    });
+    expect(task.kind).toBe("saved");
+    if (task.kind !== "saved") return;
+    const before = Uint8Array.from(dir.files.get(NAME)!);
+    await expect(run(dir, task.sourceHash, INITIAL, ID1, T1))
+      .rejects.toMatchObject({ code: "DUPLICATE_CHANGESET" });
+    expect(dir.files.get(NAME)).toEqual(before);
+    expect(dir.files.has(managedFileNames(NAME).stage)).toBe(false);
+    expect((await inspectManagedSave(dir.handle(), NAME)).status).toBe("READY");
+  });
+
   it("alternating project and task direct Saves retains both separate histories and latest backup", async () => {
     const { dir, first } = await initialized();
     const taskEdit = await saveManagedDirect({
