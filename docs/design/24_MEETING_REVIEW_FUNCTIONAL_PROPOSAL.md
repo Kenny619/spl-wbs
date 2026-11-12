@@ -1,4 +1,6 @@
-# Meeting Review — functional specification proposal MR-0.1 (SUPERSEDED delivery alternative; NOT FROZEN)
+# Meeting Review — functional specification proposal MR-0.1 (INTEGRATED EXCEL-BACKED WATCH DEPENDENCY; NOT FROZEN)
+
+> **Nov 12 Owner data-source clarification:** Shared Watch reasons, watch history and project blackout dates will be read from the **same authoritative Excel workbook** as WBS entities; only individual layout/filter/PGCM display preferences and recently opened file history remain browser-local. Do **not** introduce a separate Watch service or browser-local project risk store. Meet the Owner's MR-D01 B integrated Watch-first dependency. See [controlling owner data decision](28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md).
 
 **Prepared:** 2026-11-11 JST · **Controlling issue:** [#25](https://github.com/Kenny619/spl-wbs/issues/25)  
 **Design authority:** Owner-approved [DES-012 Consolidated Review 08](../../design/concepts/DES-012-consolidated-review08-task-detail.html), exact HTML blob `de6ebaa63aa035ba741b4435cf1cdb9d1166d958` (no visual redesign authorized).  
@@ -40,7 +42,7 @@ During a weekly project status meeting, make the most consequential open items e
 
 ## MR-02 future watch integration (dependent on separate owner functional approval)
 
-Once the risk/watch source is approved and implemented, augment the same accepted visual Meeting Review with active watch reasons, source reliability, risk history and context actions. Do **not** replace At Risk / Blocked status semantics. Distinguish **Under Watch**, **prioritized for this meeting** and **discussed in this meeting** as different concepts. Discussion alone never clears risk.
+**Under MR-D01 B, watch integration is a prerequisite to the first functional Meeting Review.** The data source is Excel (subject to approved schema and reliable reload). Include active watch reasons, source reliability, risk history and context actions in the first real Meeting Review; do not label a status-only interim page as complete. Do **not** replace At Risk / Blocked status semantics. Distinguish **Under Watch**, **prioritized for this meeting** and **discussed in this meeting** as different concepts. Discussion alone never clears risk.
 
 ## Proposed acceptance evidence (if implementation is later authorized)
 
