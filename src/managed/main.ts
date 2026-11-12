@@ -615,7 +615,8 @@ export class ManagedEditor {
       const identity = this.projectContext
         ? sharedProjectDisplayName(this.projectContext) : "Project name not configured";
       this.doc.body.dataset.managedProjectTitle = identity;
-      this.doc.getElementById("title")!.textContent = identity;
+      const title = this.doc.getElementById("title");
+      if (title) title.textContent = identity;
       this.doc.title = this.projectContext
         ? projectBrowserTitle(this.projectContext) : "Project name not configured — SPT-WBS";
     } else {
