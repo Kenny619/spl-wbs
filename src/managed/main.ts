@@ -184,6 +184,7 @@ export class ManagedEditor {
         this.loadedHash = null;
         this.loadedBytes = null;
         this.projectContext = null;
+        this.publishCommittedCalendar();
         this.inspectionName = null;
         this.recoveryHold = false;
         this.names = [];
@@ -227,6 +228,16 @@ export class ManagedEditor {
       event.returnValue = "";
     });
     this.render();
+  }
+
+  /** Publish only the committed/validated Excel-owned blackout to managed views. */
+  private publishCommittedCalendar(): void {
+    const blackout = this.projectContext?.kind === "valid"
+      ? this.projectContext.blackout
+      : { enabled: false, start: "", end: "" };
+    this.doc.dispatchEvent(new CustomEvent("spt-wbs:managed-project-calendar", {
+      detail: { ...blackout },
+    }));
   }
 
   private isDirty(): boolean {
@@ -292,6 +303,7 @@ export class ManagedEditor {
       this.loadedHash = null;
       this.loadedBytes = null;
       this.projectContext = previewContext;
+      this.publishCommittedCalendar();
       this.inspectionName = null;
       this.names = [];
       this.canWrite = false;
@@ -388,6 +400,7 @@ export class ManagedEditor {
       this.loadedHash = hash;
       this.loadedBytes = bytes;
       this.projectContext = projectContext;
+      this.publishCommittedCalendar();
       this.canWrite = eligible && (projectContext.kind === "legacy" || projectContext.kind === "valid");
       this.recoveryHold = false;
       this.clearDraft();
@@ -469,6 +482,7 @@ export class ManagedEditor {
       this.loadedBytes = verified;
       this.loadedHash = result.sourceHash;
       this.projectContext = committedContext;
+      this.publishCommittedCalendar();
       this.controller.patchView({ ...view });
       this.message = "Verified Project Calendar Save: shared workbook, project audit and predecessor backup persisted.";
       return { kind: "saved", message: this.message };
@@ -531,6 +545,7 @@ export class ManagedEditor {
       this.loadedHash = result.sourceHash;
       this.loadedBytes = verified;
       this.projectContext = savedContext;
+      this.publishCommittedCalendar();
       this.clearDraft();
       this.controller.patchView({ ...view, selectedId: taskId });
       this.message = "Verified Save: task and UpdateHistory persisted; predecessor backup retained.";
@@ -645,6 +660,7 @@ export class ManagedEditor {
       this.loadedHash = saved.destinationHash;
       this.loadedBytes = verified;
       this.projectContext = copyContext;
+      this.publishCommittedCalendar();
       const targetNames = new Set<string>([name]);
       try {
         for await (const [foundName, handle] of (directory as DirectoryWithEntries).entries()) {
