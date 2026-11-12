@@ -224,9 +224,13 @@ export function mountGantt(doc: Document, controller: ImportController): void {
 function paintChrome(doc: Document, state: SessionState, tasks: readonly Task[], blackout: BlackoutInterval): void {
   doc.body.dataset.status = state.status;
   const title = doc.getElementById("title");
-  const activeTitle = state.fileName ? fileTitle(state.fileName) : "Gantt Viewer";
+  // Do not alter frozen v18 read-only viewer. Only the managed app may
+  // provide a workbook-validated shared project identity here.
+  const managedTitle = doc.body.classList.contains("spt-managed")
+    ? doc.body.dataset.managedProjectTitle : undefined;
+  const activeTitle = managedTitle ?? (state.fileName ? fileTitle(state.fileName) : "Gantt Viewer");
   if (title) title.textContent = activeTitle;
-  doc.title = activeTitle;
+  doc.title = managedTitle ? managedTitle + " — SPT-WBS" : activeTitle;
   const provenance = doc.getElementById("provenance");
   if (provenance) provenance.textContent = state.status === "ready" && state.loadedAt ? provenanceText(state) : "";
   const notice = doc.getElementById("notice");
