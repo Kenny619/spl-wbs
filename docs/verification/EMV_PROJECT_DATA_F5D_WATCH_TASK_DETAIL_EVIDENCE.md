@@ -2,7 +2,7 @@
 
 **Prepared:** 13 November 2026 JST.  
 **Classification:** DRAFT technical/UI experiment on [PR #51](https://github.com/Kenny619/spl-wbs/pull/51), stacked on F5c [PR #50](https://github.com/Kenny619/spl-wbs/pull/50). **Not a production migration, approved detailed schema, owner visual acceptance, independent organizational QA or release.**  
-**First exact-head under test:** `20fe1eab51ffe4376cf10ce1117669da55c72f2a` · [GitHub Actions #43318362460](https://github.com/Kenny619/spl-wbs/actions/runs/43318362460). **Final Windows result pending at this document's initial publication.**
+**Final exact-head verified:** `b995a116643be70646197e1fd7d4c532a9b55f46` · [GitHub Actions #43319342268](https://github.com/Kenny619/spl-wbs/actions/runs/43319342268) **completed SUCCESS**: 261/261 Ubuntu unit tests (36 files), managed/read-only builds PASS and **77/77 Windows Chromium PASS** (2.2m), including 3 new F5d browser cases.
 
 ## Functional boundaries
 
@@ -24,15 +24,15 @@
 
 ## Test and acceptance constraints
 
-**At initial checkpoint:** application Build + unit PASS with existing **261 unit tests**, while Windows Chromium run and exact new browser count awaited. Do not conflate a green unit job with a complete CI pass.
+**Final exact-head CI:** [Build + unit job #131535645959](https://github.com/Kenny619/spl-wbs/actions/runs/43319342268/job/131535645959) **261/261 unit PASS**, strict TS and read-only/managed builds PASS. [Windows Chromium #131535646265](https://github.com/Kenny619/spl-wbs/actions/runs/43319342268/job/131535646265) **77/77 PASS** including the 3 new UI scenarios. This is synthetic technical/browser evidence only.
 
 | Gate | Requirement | Status |
 |---|---|---|
-| F5D-UI-01 | Real browser manual Add, structural project audit, correct stable TaskID, frozen TaskHistory unaffected | PENDING final browser result |
-| F5D-UI-02 | Single manual reason Resolve retains opening fields, full project audit, resolved history; zero Open → Unknown not Green | PENDING final browser result |
-| F5D-UI-03 | Cancel no disk write; stale external source refuses write and preserves user draft | PENDING final browser result |
-| F5D-UI-04 | Recorded Automatic reason visible read-only; no unsupported manual clearance | PENDING final browser result |
-| F5D-UI-05 | Original 74 browser regressions for v18/managed/Calendar/Reports, including 2000-row virtualization | PENDING final browser result |
+| F5D-UI-01 | Real browser manual Add, structural project audit, correct stable TaskID, frozen TaskHistory unaffected | **PASS — 77-browser run** |
+| F5D-UI-02 | Single manual reason Resolve retains opening fields, full project audit, resolved history; zero Open → Unknown not Green | **PASS — 77-browser run** |
+| F5D-UI-03 | Cancel no disk write; stale external source refuses write and preserves user draft | **PASS — 77-browser run** |
+| F5D-UI-04 | Recorded Automatic reason visible read-only; no unsupported manual clearance | **PASS — 77-browser run** |
+| F5D-UI-05 | Original 74 browser regressions for v18/managed/Calendar/Reports, including 2000-row virtualization | **PASS — 74 baseline + 3 new = 77/77** |
 | F5D-UX-01 | DES-012 Review08 full visual parity, accessible focus/scroll/dark mode and nonintrusive inspector | Engineering CSS only; owner UAT remains OPEN |
 | F5D-CORP-01 | Actual corporate Edge/Node26, Excel locked/shared canonical file and two-editor reload/concurrency safety | NOT TESTED |
 
@@ -44,4 +44,12 @@
 4. Only a genuinely Watch-integrated Meeting Review (MR-D01 B) and distinct accepted revised commitment workflow can progress to release after their rules are approved. Existing frozen Report 1.1 output naming remains unchanged until a narrow Issue #7 amendment.
 5. Keep all stacked project-data PRs **draft and unmerged**. No production XLSX, real corporate shared file, UAT ZIP or README download link should be published as an implied acceptance.
 
-**Initial disposition:** implementation submitted and unit/build gate green; browser and independent QA/UAT gates open.
+**Final bounded disposition:** **F5d synthetic functional/browser CI PASS** at exact SHA `b995a116643be70646197e1fd7d4c532a9b55f46` (261 unit and 77 Windows Chromium). No independent organizational QA, corporate Edge/Node26 Excel provider concurrency/UAT, final field-level contract/actor authority freeze, fully reviewed DES-012 Review08 visual parity or acceptance/release authorization. All stacked project PRs remain DRAFT/unmerged; no production workbook, README/UAT ZIP, beta or release change.
+
+## Red-to-green browser provenance — selected task restore
+
+The initial F5d head `20fe1eab51ffe4376cf10ce1117669da55c72f2a` passed **261/261 unit tests** but [Windows run #43318362460](https://github.com/Kenny619/spl-wbs/actions/runs/43318362460) completed **FAIL** with **76 browser PASS / 1 new F5d FAIL**. Add/Resolve verification could not locate `.managed-watch` **after a successful source Save**. The saved task selection was not restored because the Watch draft navigation guard intercepted the Save coordinator's internal `controller.patchView`, while the task was still flagged as an unsaved Watch draft. The failure was therefore an actual UI workflow integration defect, not a risk-rule or Excel audit failure.
+
+First corrective attempt `ff7b7ab96d06de687e4b29d265377dce172a3b1a` allowed restore while globally busy, but was superseded before CI completion to avoid allowing unrelated user selection during a write. Final fix at **`b995a116643be70646197e1fd7d4c532a9b55f46`** uses an explicit **`restoringVerifiedSelection` scope flag** only around the verified post-commit task selection restore; all ordinary user navigation continues to pass through the unsaved draft/busy guards. [Fresh exact-head run #43319342268](https://github.com/Kenny619/spl-wbs/actions/runs/43319342268) completed **SUCCESS**, 261 unit + **77/77 Windows Chromium**, including the previously failing Add→Save→Resolve case (2.7s). Preserve the historical red run; do not backfill PASS onto it.
+
+**Actor/evidence caution:** the UI makes recorded project audit references visible but explicitly labels actor identity as **unverified**. The audit is not cryptographically immutable and no complete automatic rule or trusted Green evaluator exists. Corporate Excel shared-file safety is not proven by Windows Chromium synthetic folder handles.
