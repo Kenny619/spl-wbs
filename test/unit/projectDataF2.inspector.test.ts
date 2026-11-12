@@ -174,6 +174,35 @@ describe("F2 READ-ONLY ProjectData schema inspection (not yet wired into Save)",
     expect(errors(book)).toContain("CHANGESET_TIME");
   });
 
+  it("rejects WatchReason ProjectAudit rows attributed to a different existing TaskID", () => {
+    const b = complete();
+    b.getWorksheet("ProjectWBS")!.addRow([2, "Another Task", "2", "Task"]);
+    const audit = b.getWorksheet("ProjectAudit")!;
+    audit.getCell("D2").value = "WatchReason";
+    audit.getCell("E2").value = IDs.watch;
+    audit.getCell("F2").value = "2";
+    expect(errors(b)).toContain("AUDIT_TASK_MISMATCH");
+  });
+
+  it("rejects Commitment ProjectAudit rows attributed to a different existing TaskID", () => {
+    const b = complete();
+    b.getWorksheet("ProjectWBS")!.addRow([2, "Another Task", "2", "Task"]);
+    const audit = b.getWorksheet("ProjectAudit")!;
+    audit.getCell("D2").value = "Commitment";
+    audit.getCell("E2").value = IDs.commitment;
+    audit.getCell("F2").value = "2";
+    expect(errors(b)).toContain("AUDIT_TASK_MISMATCH");
+  });
+
+  it("rejects ProjectMeta audit references to non-existent metadata keys", () => {
+    const b = complete();
+    const audit = b.getWorksheet("ProjectAudit")!;
+    audit.getCell("D2").value = "ProjectMeta";
+    audit.getCell("E2").value = "InventedProjectField";
+    audit.getCell("H2").value = "ProjectName";
+    expect(errors(b)).toContain("UNKNOWN_AUDIT_ENTITY");
+  });
+
   it("all invalid inspections are read-only and leave worksheet names/row values unchanged", () => {
     const book = complete();
     const before = book.worksheets.map(s => [s.name, s.rowCount]);
