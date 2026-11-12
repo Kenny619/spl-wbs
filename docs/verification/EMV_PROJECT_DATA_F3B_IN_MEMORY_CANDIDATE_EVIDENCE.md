@@ -26,7 +26,7 @@ The first run at `5937bcf221af4fc2579cbc285e020e8174c4cd4a` correctly **FAILED**
 At corrected commit `13e30cc2ac5c8e9ca37c943b90dd144b176eba3a`, [Ubuntu CI unit/build job #131098120743](https://github.com/Kenny619/spl-wbs/actions/runs/43193399656/job/131098120743):
 - **PASS: 215/215 unit tests in 32 files**, including all **14/14 new F3b**, **10 F3a**, **19 F2** and **10 F1**.
 - TypeScript/production build and managed variant build PASS; existing UUID source scanning PASS.
-- **Windows Chromium:** PENDING at first evidence publication, verify separately before saying overall CI SUCCESS.
+- **Windows Chromium: PASS** — [job #131098120305](https://github.com/Kenny619/spl-wbs/actions/runs/43193399656/job/131098120305), **66/66 Playwright PASS** (`66 passed (1.8m)`). **Overall [run #43193399656](https://github.com/Kenny619/spl-wbs/actions/runs/43193399656) completed SUCCESS** at exact SHA `13e30cc2ac5c8e9ca37c943b90dd144b176eba3a`. Existing CI runs Node22; corporate Node26/Edge and actual shared file provider concurrency are not covered.
 
 The new F3b synthetic test suite covers first Save metadata-only and with blackout, audit provenance/UUID/time, safe Unicode rename, exact old/new ModifiedUTC, double-blackout refusal, explicit disable and next interval after disable, no-op, preservation of unrelated cells/task history, partial extension, malformed history and unsafe project fields.
 
@@ -46,4 +46,4 @@ The new F3b synthetic test suite covers first Save metadata-only and with blacko
 
 **Recommended next bounded slice:** F3c verified project-only direct-Save adapter built by reusing the existing recovery/backup pipeline without a competing implementation, plus negative tests for stale file, no-op, locks and interrupted save. **Not yet authorized for real user files.**
 
-**Status:** F3b in-memory candidate feasibility only; no product acceptance, UAT ZIP, release or merge.
+**Final F3b classification: limited feasibility PASS** — 215/215 unit (including F3b 14/14), 66/66 Windows Chromium and both managed/read-only builds at exact head, **no production project Save**. No independent organizational QA acceptance, product UAT ZIP, release or merge.
