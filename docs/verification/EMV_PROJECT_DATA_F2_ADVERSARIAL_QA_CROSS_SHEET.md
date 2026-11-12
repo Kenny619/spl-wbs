@@ -34,7 +34,7 @@
 **Pinned CI:** [GitHub Actions #43177864095](https://github.com/Kenny619/spl-wbs/actions/runs/43177864095), head `4887239736821383d3b44186326cad58cee282a8`.
 
 - **Ubuntu Build + unit PASS:** [job #131046425860](https://github.com/Kenny619/spl-wbs/actions/runs/43177864095/job/131046425860), **191/191 unit tests** in 30 files; **19/19 F2**, **10/10 F1**. Read-only production build and managed variant build PASS; bounded UUID source screen PASS.
-- **Windows Chromium regression:** **pending at original evidence checkpoint**; add exact-job confirmation before closing the overall CI result.
+- **Windows Chromium regression PASS:** [job #131046425451](https://github.com/Kenny619/spl-wbs/actions/runs/43177864095/job/131046425451), **66/66 Playwright PASS** (`66 passed (2.3m)`). **Overall [run #43177864095](https://github.com/Kenny619/spl-wbs/actions/runs/43177864095): completed SUCCESS** at exact remediation SHA `4887239736821383d3b44186326cad58cee282a8`. GitHub CI remains Node22, not physical corporate Edge/Node26 validation.
 - Automated test evidence does **not** establish real browser multiuser file locking, corporate Edge/node runtime UAT or the field-level Excel schema freeze.
 
 ## 4. Remaining technical QA / design gates
@@ -49,6 +49,6 @@
 
 ## Disposition
 
-**F2-QA-01 to 03: identified, demonstrated with failing tests, remediated in read-only inspector, and Ubuntu regression PASS at the exact remediation SHA.** Do not call this a merged, production-released or fully independent QA-approved feature. PR #39 remains draft on top of F1 PR #38; original read-only v18 and the existing managed Save pipeline are unchanged.
+**F2-QA-01 to 03: identified, reproduced RED in CI, remediated in read-only inspector, and full exact-head CI PASS (191 unit + 66 Windows browser) at the remediation SHA.** Do not call this a merged, production-released or fully independent QA-approved feature. PR #39 remains draft on top of F1 PR #38; original read-only v18 and the existing managed Save pipeline are unchanged.
 
 **Next controlled gate:** After this QA work, review/freeze field-level audit semantics, actor/automatic rule handling and legacy compatibility; only then separately authorize F3 **all-write-path** integration with synthetic Save/recovery evidence and physical shared-file tests. Do not publish new UAT ZIPs or merge these draft spikes by implication.
