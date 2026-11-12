@@ -1,10 +1,12 @@
-# EMV-PROJECT-DATA-0.1.1 — verification matrix (PROPOSED; no test execution yet)
+# EMV-PROJECT-DATA-0.1.2 — verification matrix (APPROVED SCOPE / DETAILED CONTRACT DRAFT; no test execution yet)
 
-**Prepared:** 2026-11-12 JST · **Status:** Test planning only. **No PASS claims.**  
+**Prepared:** 2026-11-12 JST · **Status:** Owner approved SCH-01/CAL-02/SEQ-01 scope. The 60 cases remain *planned*, not run. **No PASS claims.**  
 **Human proposed schema:** [EMV_PROJECT_DATA_0_1_PROPOSED.md](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.md)  
 **Machine proposal:** [EMV_PROJECT_DATA_0_1_PROPOSED.json](../specifications/EMV_PROJECT_DATA_0_1_PROPOSED.json)  
 **Owner ownership:** [DEC-DATA-2026-11-12](../design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md) and [Issue #25 latest requirements](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812583483)  
 **Test gate baseline:** existing #2/#11, #3–#6, original read-only v18, accepted Review 08. No source/workbook mutation in this design branch.
+
+**Owner scope decision:** [DEC-EMV-PROJECT-DATA-SCOPE-2026-11-12](../design/29_2026-11-12_PROJECT_DATA_SCOPE_DISPOSITION.md); 5-sheet structure and one active blackout interval confirmed; Calendar + Watch + Meeting are coupled. **Full field contract, implementation and test execution remain unapproved.**
 
 ## Test principles
 
