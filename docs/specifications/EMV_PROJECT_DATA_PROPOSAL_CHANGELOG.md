@@ -4,6 +4,16 @@
 **Controlling Product Owner data direction:** [DEC-DATA-2026-11-12](../design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md).  
 **Current proposal:** [human specification](EMV_PROJECT_DATA_0_1_PROPOSED.md) · [machine contract](EMV_PROJECT_DATA_0_1_PROPOSED.json) · [QA plan](../verification/EMV_PROJECT_DATA_0_1_ACCEPTANCE_PLAN.md).
 
+## 2026-11-13 — F6c proposed v0.1.2 commitment-chain integrity (NOT FROZEN)
+
+**Source:** [F6c recorded commitment lineage QA](../verification/EMV_PROJECT_DATA_F6C_COMMITMENT_HISTORY_QA.md) · [draft PR #55](https://github.com/Kenny619/spl-wbs/pull/55). The initial 11 new synthetic unit cases and strict build passed; use the final exact-head CI report for the full browser outcome.
+
+**Old proposed validation:** `ProjectCommitments` required stable TaskID, unique commitment ID, an existing same-task predecessor (or blank), and no cycles. The inspector accepted multiple independently rooted histories for one task, two successors to one prior version, and a revision dated before/equal to its predecessor—so no unambiguous latest recorded reference could be selected.
+
+**Clarified proposed rule:** at most one blank-predecessor root per task, at most one successor per prior CommitmentID, and successor `AcceptedUTC` **strictly greater** than its predecessor's canonical UTC. These apply to **imported and externally edited** workbook rows as well as future project-data candidates, with explicit fail-closed diagnostics before staging. A pure read-only `projectCommitmentProjection` now presents individual records as **“Recorded (unverified)”** and the chain tail as **latest recorded only**, never as authorized accepted business baseline. No implicit task date rebaseline or Green health.
+
+**Traceability/impact:** synchronized both human and JSON proposed v0.1.2 validators. Frozen `ProjectWBS`/`UpdateHistory` unchanged; the exact actor/acceptance authority, automatic thresholds, corporate file locks and Report 1.1 name-source amendment remain separate unapproved gates. No real workbook, merge, release or detailed field-contract freeze is implied.
+
 ## 2026-11-13 — F6b proposed v0.1.2 Watch chronology clarification (NOT FROZEN)
 
 **Source:** [F6b exact-head integrity QA](../verification/EMV_PROJECT_DATA_F6B_WATCH_CHRONOLOGY_QA.md) · [draft PR #54](https://github.com/Kenny619/spl-wbs/pull/54). Exact SHA `96125391d09409fc93657f8a62cc67fb973faed0` [CI #43374712341](https://github.com/Kenny619/spl-wbs/actions/runs/43374712341) **SUCCESS (275 unit / 80 Windows Chromium)**.
