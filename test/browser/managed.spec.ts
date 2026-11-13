@@ -1127,7 +1127,13 @@ test("DES-012 column markers follow real visible-column preferences; hide inacti
     mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     buffer: Buffer.from(packagedUatBase64, "base64"),
   });
+  // setInputFiles returns after dispatch, not when the async XLSX import has
+  // committed. Without this real readiness gate, a later import publication
+  // resets the new session's ViewState and makes Hide inactive appear lost.
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
   await page.locator("#hideInactive").check();
+  await expect(page.locator("#hideInactive")).toBeChecked();
   await expect(page.locator("#filterCount")).toBeHidden();
   await expect(page.locator("#clearFilters")).toBeVisible();
   await page.locator("#filterToggle").click();
