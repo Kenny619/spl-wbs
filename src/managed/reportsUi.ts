@@ -97,7 +97,7 @@ export class ManagedReports {
       option.value = value;
       this.mode.append(option);
     }
-    this.mode.value = "progress";
+    this.mode.value = "status"; // DES-012 Review08 shows Latest Status selected initially.
     this.mode.addEventListener("change", () => this.updateMode());
     controls.append(field("Mode", this.mode));
 
