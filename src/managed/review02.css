@@ -1,6 +1,8 @@
-/* Owner-approved Review 02 design language, applied only to the Excel Managed UI.
- * The read-only v18 viewer, Gantt logic, source workbook and Save engine are unchanged.
- * Reference: docs/prototypes/SPT-WBS_Report_1.1_Interactive_Prototype_Review02.html
+/* HISTORICAL Report Review02 visual layer, retained for non-Reports legacy styling.
+ * SUPERSEDED as a current UI baseline by DES-012 Consolidated Review08
+ * (including Reports), per November 13 Product Owner direction.
+ * src/managed/des012Reports.css loads AFTER this file and owns current Report UI.
+ * Frozen Report1.1 behavior and the separate read-only v18 viewer are unaffected.
  */
 body.spt-managed {
   --r11-surface:#ffffff; --r11-raised:#f5f9fd; --r11-stage:#e9f1fa;
