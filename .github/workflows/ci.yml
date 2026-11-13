@@ -45,8 +45,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: managed-v1-development-preview
-          path: dist-managed/
+          name: stage-a-des012-functional-uat-candidate
+          path: dist-managed/stage-a-uat/
           if-no-files-found: ignore
           retention-days: 7
       - name: Unit diagnostics
