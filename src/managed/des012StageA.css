@@ -464,3 +464,58 @@ body.spt-managed.spt-managed-des012-live .grid-header .managed-filtered-column-m
   letter-spacing:0;
   pointer-events:none;
 }
+
+/* DES-012 Review08 Gantt: ONE chart-local control line. The WBS/Gantt chart
+ * must not lose its usable height to a second toolbar row at laptop widths.
+ * If controls exceed available chart width, the toolbar itself scrolls
+ * horizontally (keyboard + trackpad) instead of clipping real actions. */
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .toolbar {
+  display:flex; flex-direction:row; flex-wrap:nowrap;
+  justify-content:flex-start; align-items:center; gap:9px;
+  overflow-x:auto; overflow-y:hidden; scrollbar-width:thin;
+  overscroll-behavior-x:contain; min-width:0; max-width:100%;
+  padding-bottom:3px;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-time-controls,
+body.spt-managed.spt-managed-des012-live .managed-review08-task-controls {
+  flex:none; display:flex; flex-direction:row; flex-wrap:nowrap;
+  align-items:center; gap:6px; padding:0; white-space:nowrap;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-time-controls {
+  border:0; border-right:1px solid var(--des12-edge);
+  padding-right:10px;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-task-controls .search {
+  flex:none; width:clamp(135px,15vw,185px);
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-period {
+  min-width:29px; padding:5px 7px;
+  font-size:17px; font-weight:800; line-height:1;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-time-controls #today {
+  min-width:49px;
+}
+/* Keep selected task title, state and real actions together in the fixed
+ * inspector header — one title/action band, not detached action rows. */
+@media(min-width:1021px) {
+ body.spt-managed.spt-managed-des012-live .managed-inspector-head {
+   grid-template-columns:minmax(0,1fr) auto auto;
+   grid-template-areas:"identity actions close";
+   align-items:center; gap:8px;
+ }
+ body.spt-managed.spt-managed-des012-live .managed-inspector-actions {
+   justify-content:flex-end; flex-wrap:nowrap; padding:0;
+ }
+ body.spt-managed.spt-managed-des012-live .managed-inspector-actions button {
+   padding:5px 7px;
+ }
+}
+@media(max-width:1020px) {
+ body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .toolbar {
+   gap:7px;
+ }
+ body.spt-managed.spt-managed-des012-live .managed-review08-time-controls,
+ body.spt-managed.spt-managed-des012-live .managed-review08-task-controls {
+   gap:5px;
+ }
+}
