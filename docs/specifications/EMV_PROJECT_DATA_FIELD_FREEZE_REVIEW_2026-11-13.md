@@ -25,6 +25,8 @@
 | Safe writes | Preserve any unknown compatible worksheets/extra columns; fail on reserved-name collisions and unsupported OOXML; preflight→candidate validation→verified Save/backup/readback; never replace source on stale SHA | Current local SHA is **not** distributed CAS; multiuser shared provider must have separate real Edge/Excel lock tests |
 | Read/Watch evaluation | F5a conservatively renders recorded Open reasons and unresolved/legacy/invalid states, with `hasRecordedProjectAudit` meaning only a trace reference exists | Automatic rule evaluation and reliable Green computation must remain separate, not smuggled into structural field freeze |
 
+**F6b field-validation addendum (proposed, 2026-11-13):** in the `WatchReasons` row, canonical `LastReviewedUTC` and `ResolvedUTC` must not precede the corresponding `OpenedUTC` when populated; equal timestamps are valid. The F6b inspector now applies this to **imported or manually altered workbook rows as well as newly saved episodes**, blocking an inconsistent extension before any managed Save. [Exact-head QA](../verification/EMV_PROJECT_DATA_F6B_WATCH_CHRONOLOGY_QA.md) PASS (275 unit/80 Windows browser). This consistency check does **not** add risk thresholds, authenticated actors, rebaseline authority or a final field-level approval.
+
 ## Product choices that must NOT be inferred from schema approval
 
 1. **Automatic risk rule registry:** exact conditions, acceptance of baseline, data freshness/holiday coverage, when to open/close, and whether an already-recorded automatic reason can be safely resolved. **Recommended:** defer rule activation; all unchecked tasks remain Unknown. Shipping “Green” before this decision is prohibited.
