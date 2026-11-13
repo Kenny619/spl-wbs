@@ -132,11 +132,13 @@ export function inspectProjectData(book: ExcelJS.Workbook): ProjectInspection {
   }
   const projectName = meta.get("projectname");
   if (!isUUID(meta.get("projectid") ?? null)) note("BAD_PROJECT_ID", "ProjectMeta", 0, "ProjectID", "Missing/invalid project UUID.");
-  // Match the project-name writer: imported names must also refuse C0/DEL controls.
-  // Other project text fields retain their independently supported multiline content.
+  // Mirror the existing project-name writer's lexical safety policy on import:
+  // reject controls and spreadsheet formula-trigger prefixes, including after
+  // leading whitespace. Other project text still allows legitimate multiline notes.
   if (!projectName || Array.from(projectName).length > 180 || !projectName.trim() ||
-      /[\u0000-\u001f\u007f]/u.test(projectName)) {
-    note("BAD_PROJECT_NAME", "ProjectMeta", 0, "ProjectName", "ProjectName is required, at most 180 characters.");
+      /[\u0000-\u001f\u007f]/u.test(projectName) ||
+      /^[=+\-@]/u.test(projectName.trimStart())) {
+    note("BAD_PROJECT_NAME", "ProjectMeta", 0, "ProjectName", "Missing or unsafe ProjectName.");
   }
   const version = meta.get("projectdataschemaversion") ?? "";
   if (version !== "0.1.2") {
