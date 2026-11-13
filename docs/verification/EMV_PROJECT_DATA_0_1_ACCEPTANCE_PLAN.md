@@ -111,4 +111,6 @@
 
 Use a machine-readable UAT evidence register with **test ID, exact app SHA, workbook fixture checksum, workbook version, expected and actual values, Windows/Edge build, Result PASS/FAIL/CONCERN/NOT RUN, repro and independent reviewer**. The states above are **planned acceptance criteria**, not historical test results.
 
-**No automated or physical tests were executed as part of authoring this plan.**
+**No automated or physical tests were executed as part of authoring this plan.** This sentence is historical to this plan's initial preparation, not a denial of later isolated draft-branch technical CI.
+
+**Later evidence cross-reference (2026-11-13):** [Stage A 61-case evidence-to-acceptance trace](EMV_PROJECT_DATA_STAGE_A_ACCEPTANCE_TRACE_2026_11_13.md) maps subsequent synthetic technical checks to all planned IDs. It makes **no final owner/production acceptance PASS claims**. Original expected outcomes and case IDs above are unchanged.
