@@ -164,6 +164,11 @@ test("F5e Change folder refuses to drop an unsaved manual Watch draft", async ({
   await expect(watch.getByLabel("Watch reason title")).toHaveValue("Pending client decision");
   await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
 
+  // Project actions intentionally auto-dismiss the menu after each click.
+  // Reopen it to simulate the user's separate confirmation/discard action.
+  await expect(menu).not.toHaveAttribute("open", "");
+  await menu.locator("summary").click();
+  await expect(menu).toHaveAttribute("open", "");
   page.once("dialog", async dialog => { await dialog.accept(); });
   await page.locator("#change").click();
   await expect(watch.getByRole("button", { name: "Add manual reason" })).toBeVisible();
