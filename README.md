@@ -13,19 +13,21 @@ Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address
 
 The page title is the file name without `.xlsx`.
 
-## Latest UAT download — Stage A live Schedule/Task Detail + Report 1.1
+## Latest UI design review — UAT paused
 
-**[Download the latest complete Stage A functional UAT ZIP](https://github.com/Kenny619/spl-wbs/actions/runs/43400644793/artifacts/14024902596)**
+**The Product Owner has put application UAT and further UI integration on hold until the complete latest approved visual baseline is reconfirmed.**
 
-**Current functional development candidate — November 13, 2026.** Stage A Schedule and Task Detail now use the **DES-012 Review 08** visual direction, with working Excel-backed Gantt, filters, task editor, Settings and Change History; **Report 1.1 Review02** keeps its live three-mode Report Studio, executive paper layout, and Outlook copy. This is a managed-app integration candidate for Product Owner UAT, **not** an accepted final visual release or a production build.
+**[Open the approved interactive Schedule + Meeting Review + Task Detail HTML — DES-012 Review 08](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/design/concepts/DES-012-consolidated-review08-task-detail.html)**
 
-- **Exact packaged application SHA:** `8bcf5c4d905cb1003549caea8134f15576e0a8e0` · [CI run #43400644793](https://github.com/Kenny619/spl-wbs/actions/runs/43400644793): **162/162 unit and 68/68 Windows Chromium browser PASS**, both builds and bounded source check PASS. [Draft integration PR #60](https://github.com/Kenny619/spl-wbs/pull/60); no main merge or release.
-- **Verified ZIP contents (five files only):** `managed.html`, `SPT-WBS_Report11_Synthetic_UAT.xlsx`, `START_HERE.txt`, `STAGE_A_UAT_CHECKLIST.md`, `SHA256SUMS.txt`. The downloaded archive was opened and every listed checksum passed; no obsolete DES-010 UAT materials are included. **Artifact expires November 20, 2026 at 18:22 JST.**
-- **Corporate Edge UAT:** Download the ZIP through GitHub Actions and **extract everything**. Create a *new empty disposable local folder* and place **only** the provided fictional Report11 workbook in it. Open extracted `managed.html` in Edge (Ctrl+O) and use **Project → Choose project folder** to select the disposable folder, then the workbook. If your corporate Edge denies folder access, use **Project → Open XLSX read-only**; it shows the *same latest UI* but workbook Save, backups and write/recovery tests are **BLOCKED**, not PASS.
-- **Review:** On **Schedule**, inspect the real Gantt controls, scope, search and filters, fixed/scrollable Task Detail, edit guard, light/dark and laptop/meeting-screen layouts against [approved DES-012 Review08](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/design/concepts/DES-012-consolidated-review08-task-detail.html). On **Reports**, check all three Report 1.1 modes and copy formatted HTML into an **unsent** Outlook draft. Use `2026-11-09` through `2026-11-10` for historical reports, and `Fictional Enterprise Program` as the report project name. Record results in the included checklist and comment on [Issue #7](https://github.com/Kenny619/spl-wbs/issues/7) (UI/Reports) or [Issue #11](https://github.com/Kenny619/spl-wbs/issues/11) (physical Excel Save/locks).
-- **Scope:** The approved **Watch-backed Meeting Review and workbook-owned Project Calendar** are a separate, currently stage-unassigned integrated package and do **not** appear as fake controls in this Stage A build. The original read-only v18 app remains separate. No real company workbook should be used for this UAT.
+**[Open the separately approved Report 1.1 Review 02 HTML](https://github.com/Kenny619/spl-wbs/blob/docs/report-1-1-po-approved-direction/docs/prototypes/SPT-WBS_Report_1.1_Interactive_Prototype_Review02.html)**
 
-**README download policy:** Keep this as the **single current UAT/mock download link** on both default and active feature READMEs. When a newer verified kit is published, replace this entry and accompanying instructions rather than accumulating older download links; historical evidence remains in Issues, PRs and Actions runs.
+To review on a corporate PC, select **Download raw** from the GitHub HTML page, then open the saved file locally in Edge. These are **standalone fictional interactive visual prototypes**; no Excel workbook, project folder, or UAT ZIP is needed.
+
+**What must be visible:** All **three pages** (Schedule / Meeting Review / Reports), and the same Task Detail across Schedule/Meeting Review with the owner-approved **Option A integrated Start → Finish rail** (Days Remaining above; recorded Progress fill only if present), fixed task identity header, Owner/Priority, real relationship navigation, Updates, and in-place demo edit. WBS **3.2** demonstrates missing recorded progress without a fake 0% fill. The **Report 1.1 Review02** reference remains the authority for the full reporting layout. Shared workbook-backed Watch/Calendar and final Meeting Review business rules have separate specification gates.
+
+**[Complete approved UI baseline and PR #60 gap matrix](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/docs/design/31_DES012_FULL_UI_RECONFIRMATION_AND_PR60_GAP_2026_11_13.md)** · [Comment on visual confirmation in Issue #25](https://github.com/Kenny619/spl-wbs/issues/25).
+
+**Withdrawn UAT promotion:** The previously linked Stage A ZIP from CI #43400644793 and draft PR #60 **omitted the integrated timeline and entire Meeting Review page**. Its scoped automated CI results remain valid for their tests, but the package is **not suitable for approval of the latest UI** and has been removed from this README's current-download section. There is **no current app UAT download** until the visual baseline and implementation sequence are confirmed. No main application code, beta/release, or production workbook is changed by this documentation correction.
 
 ## Excel setup
 
