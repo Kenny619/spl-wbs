@@ -3,8 +3,9 @@ import type { ImportController } from "../data/importController";
 import type { ManagedSettings } from "./settingsUi";
 
 /**
- * DES-010 UI-INT-01: managed-only presentation adapter around the already-mounted
- * v18 viewer. Move the original DOM nodes; NEVER clone file, Gantt, or editor controls.
+ * Stage A DES-012 Schedule/Task Detail presentation adapter around the already-mounted
+ * v18 viewer. Move ORIGINAL live nodes, preserving Gantt, editor and file listeners.
+ * This is not the separately gated Watch-backed Meeting Review implementation.
  * The regular read-only viewer never imports this module.
  */
 export function mountManagedShell(
@@ -22,6 +23,8 @@ export function mountManagedShell(
   if (!main || !topbar || !originalActions || !chart || !inspector) {
     throw new Error("Managed shell requires the approved v18 core layout.");
   }
+
+  doc.body.classList.add("spt-managed-des012-live");
 
   const brand = doc.createElement("div");
   brand.className = "managed-brand";
@@ -115,7 +118,7 @@ export function mountManagedShell(
   scope.append(exceptionButton, workstreamButton);
   const scopeHint = doc.createElement("span");
   scopeHint.className = "managed-gantt-scope-note";
-  scopeHint.textContent = "Existing status-based exceptions only";
+  scopeHint.textContent = "Exceptions use recorded TaskStatus only; Under Watch evaluation is not included in Stage A.";
   scope.append(scopeHint);
   const chartTitle = doc.querySelector<HTMLElement>(".chart-top");
   const toolbar = doc.querySelector<HTMLElement>(".chart-top .toolbar");
@@ -218,6 +221,33 @@ export function mountManagedShell(
   };
   controller.subscribe(syncOverview);
   syncOverview();
+  // The approved Review08 Task Detail uses a fixed heading and a single
+  // scroll-contained live detail/editor body. Move existing editor and close
+  // nodes (never clone them) so their workbook handlers stay attached.
+  const detailContent = doc.getElementById("detailContent");
+  const editor = inspector.querySelector<HTMLElement>(".managed-editor");
+  const close = inspector.querySelector<HTMLButtonElement>("#close");
+  if (!detailContent || !editor || !close) {
+    throw new Error("Managed Task Detail needs live editor, detail and close controls.");
+  }
+  const inspectorHead = doc.createElement("div");
+  inspectorHead.className = "managed-inspector-head";
+  const inspectorHeading = doc.createElement("div");
+  const inspectorKicker = doc.createElement("span");
+  inspectorKicker.className = "managed-inspector-kicker";
+  inspectorKicker.textContent = "TASK INSPECTOR";
+  const inspectorTitle = doc.createElement("strong");
+  inspectorTitle.textContent = "Task Detail";
+  const inspectorTrail = doc.createElement("small");
+  inspectorTrail.className = "managed-inspector-trail";
+  inspectorTrail.textContent = "Select a task to inspect";
+  inspectorHeading.append(inspectorKicker, inspectorTitle, inspectorTrail);
+  inspectorHead.append(inspectorHeading, close);
+  const detailScroll = doc.createElement("div");
+  detailScroll.className = "managed-inspector-scroll";
+  detailScroll.append(detailContent, editor);
+  inspector.append(inspectorHead, detailScroll);
+
   // The approved managed view keeps the inspector visible even with no task
   // selected. v18's overlay controller sets aria-hidden=true when empty,
   // which would hide our visible empty state from assistive technology.
@@ -226,10 +256,13 @@ export function mountManagedShell(
   emptyDetail.className = "managed-empty-detail";
   emptyDetail.setAttribute("role", "status");
   emptyDetail.textContent = "Select a task to inspect its details.";
-  inspector.prepend(emptyDetail);
+  detailScroll.prepend(emptyDetail);
   const syncDetail = () => {
     const selected = inspector.classList.contains("open");
     emptyDetail.hidden = selected;
+    inspectorTrail.textContent = selected
+      ? (detailContent.querySelector<HTMLElement>(".panel-kicker")?.textContent ?? "Selected task")
+      : "Select a task to inspect";
     if (!selected) {
       inspector.setAttribute("aria-label", "Selected task details");
       if (inspector.getAttribute("aria-hidden") === "true") {
