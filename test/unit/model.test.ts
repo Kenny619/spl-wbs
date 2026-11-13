@@ -127,6 +127,28 @@ describe("tree filters", () => {
     expect(rows.map((row) => row.id)).toEqual(["1", "10", "2", "3"]);
   });
 
+  it("filters real Finish dates with ancestor context and ignores a hidden Finish column", () => {
+    const scheduled = [
+      task({ id: "p", taskType: "Summary", wbsCode: "1", plannedEnd: "2026-12-31" }),
+      task({ id: "a", taskType: "Task", parentId: "p", wbsCode: "1.1", plannedEnd: "2026-11-18" }),
+      task({ id: "b", taskType: "Task", parentId: "p", wbsCode: "1.2", plannedEnd: "2026-11-19" }),
+      task({ id: "c", taskType: "Task", parentId: "p", wbsCode: "1.3", plannedEnd: null }),
+    ];
+    const open = new Set(["p"]);
+    expect(flattenVisible(scheduled, open, {
+      finishes: ["2026-11-18"], columns: { finish: true },
+    }).map(t => t.id)).toEqual(["p", "a"]);
+    expect(flattenVisible(scheduled, open, {
+      finishes: ["2026-11-18", "2026-11-19"], columns: { finish: true },
+    }).map(t => t.id)).toEqual(["p", "a", "b"]);
+    expect(flattenVisible(scheduled, open, {
+      finishes: [""], columns: { finish: true },
+    }).map(t => t.id)).toEqual(["p", "c"]);
+    expect(flattenVisible(scheduled, open, {
+      finishes: ["2026-11-18"], columns: { finish: false },
+    }).map(t => t.id)).toEqual(["p", "a", "b", "c"]);
+  });
+
   it("counts risk and overdue separately and skips summaries", () => {
     const dated = tasks.map((item) =>
       item.id === "2" ? { ...item, plannedEnd: "2026-10-01", status: "At Risk" as const } : item,
