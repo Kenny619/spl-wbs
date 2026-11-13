@@ -523,3 +523,51 @@ body.spt-managed.spt-managed-des012-live .managed-review08-time-controls
     font-size:14px;
   }
 }
+
+/* Review08 final responsive parity: the approved Gantt control strip is one
+ * horizontally scrollable row at laptop widths as well as desktop. Preserve
+ * all REAL original actions, their focus order, and the ≥260px Gantt body. */
+@media (max-width:1199px) {
+  body.spt-managed.spt-managed-des012-live
+    .managed-schedule-body .chart-top > .toolbar {
+    display:flex; flex-direction:row; flex-wrap:nowrap;
+    align-items:center; justify-content:flex-start;
+    gap:8px; padding:4px 1px 6px;
+    min-width:0; max-width:100%; min-height:40px;
+    overflow-x:auto; overflow-y:hidden; scrollbar-width:thin;
+    overscroll-behavior-inline:contain; white-space:nowrap;
+  }
+  body.spt-managed.spt-managed-des012-live
+    .managed-review08-time-controls,
+  body.spt-managed.spt-managed-des012-live
+    .managed-review08-task-controls {
+    display:flex; flex:0 0 auto;
+    flex-wrap:nowrap; align-items:center;
+    gap:6px; min-width:max-content; margin:0;
+    padding:0; border:0; white-space:nowrap;
+  }
+  body.spt-managed.spt-managed-des012-live
+    .managed-review08-time-controls {
+    padding-right:8px;
+    border-right:1px solid var(--des12-edge);
+  }
+  body.spt-managed.spt-managed-des012-live
+    .managed-review08-task-controls .search {
+    width:135px; min-width:135px; flex:0 0 135px;
+  }
+}
+/* Real Edit/Task History actions sit beside identity, not stacked into two
+ * right-hand lines. Only smaller inspectors use the original second row. */
+@media (min-width:1280px) {
+  body.spt-managed.spt-managed-des012-live .managed-inspector-head {
+    align-items:center;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-actions {
+    flex-direction:row; align-items:center;
+    justify-content:flex-end; flex-wrap:nowrap;
+    gap:5px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-actions button {
+    white-space:nowrap;
+  }
+}
