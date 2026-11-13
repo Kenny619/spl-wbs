@@ -248,6 +248,10 @@
         "append_only",
         "tasklink_stable",
         "previous_commitment_same_task_or_blank",
+        "one_initial_root_commitment_per_task",
+        "every_predecessor_has_at_most_one_successor",
+        "revision_acceptedutc_strictly_after_predecessor_acceptedutc",
+        "latest_recorded_is_not_verified_acceptance_authority",
         "no_cycle",
         "date_edit_does_not_accept_commitment",
         "no_row_means_commitment_unconfirmed"
