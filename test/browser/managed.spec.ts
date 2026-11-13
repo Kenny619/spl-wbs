@@ -863,7 +863,7 @@ test("DES-012 compact Gantt controls scroll horizontally without losing inspecto
   await page.setViewportSize({ width: 1440, height: 900 });
   await openManaged(page);
   const head = page.locator(".managed-schedule-body .managed-inspector-head");
-  const identity = head.locator("> div:first-child");
+  const identity = head.locator(":scope > div:first-child");
   const actions = head.locator(".managed-inspector-actions");
   await expect(head.getByRole("button", { name: "Edit task" })).toHaveText("Edit");
   await expect(head.getByRole("button", { name: "Task history" })).toHaveText("History");
