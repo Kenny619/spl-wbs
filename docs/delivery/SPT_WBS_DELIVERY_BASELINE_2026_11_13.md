@@ -4,6 +4,8 @@
 
 > **Product Owner priority override — 2026-11-13:** Close **Stage A** before resuming new Stage B, Stage C, or the separately unassigned Excel-owned Calendar + Under Watch + Meeting Review program. Previously completed F-series QA remains archived and CI evidence valid **only at its pinned head**; do not create more F-series increments as a substitute for Stage A acceptance. This focus changes *execution priority*, not the approved A→B→C→beta roadmap, frozen contracts or full-scope future product obligations.
 
+> **UAT gate correction (2026-11-13, owner feedback):** The owner opened Report11 ZIP `13757420806` with read-only workbook import and observed the **old application UI**. Direct ZIP inspection proves the functional Report Review02 is present, but the Schedule/Task Detail shell is still DES-010; DES-012 Review08 is only a separate interactive design reference. Therefore **A-01 overall latest UI/Owner UAT = BLOCKED / NOT ACCEPTED**; the available ZIP is a targeted Report 1.1 investigation artifact **not** an eligible current integrated UI UAT candidate. Do **not** count link availability/green Report-specific CI as owner UI validation, and do not ask the owner to retest the same old ZIP. This correction overrides the older A-01 row/link below where it says current. [Exact implementation and replacement ZIP gate](../implementation/STAGE_A_LATEST_APPROVED_UI_FUNCTIONAL_UAT_GATE.md) · [PR #37 handoff](https://github.com/Kenny619/spl-wbs/pull/37#issuecomment-6848436391). Read-only file import independently blocks **all workbook write tests**; it does not cause older appearance.
+
 ### Stage A closure board — executable next actions
 
 | Priority / issue | Verified as of 2026-11-13 | Next action / acceptance boundary |
