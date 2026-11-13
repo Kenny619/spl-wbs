@@ -3,7 +3,7 @@
 **Prepared:** 2026-11-13 JST. **Technical draft**, not an approved acceptance authority/commitment workflow, field-level contract freeze, owner UAT, or production rollout.  
 **PR:** [#55](https://github.com/Kenny619/spl-wbs/pull/55), stacked on F6b [#54](https://github.com/Kenny619/spl-wbs/pull/54); PRs are DRAFT/unmerged.  
 **Corrected tested head:** `4d94cd1dd8865d470e2a7be22c12db3316c7a732`.  
-**CI run:** [#43376877253](https://github.com/Kenny619/spl-wbs/actions/runs/43376877253) — **286/286 Ubuntu unit tests PASS (39 files, 11 new F6c)**, strict TypeScript/managed and read-only builds in progress/pending final confirmation at initial publication; **Windows Chromium pending**.
+**Final CI:** [#43376877253](https://github.com/Kenny619/spl-wbs/actions/runs/43376877253) **completed SUCCESS at exact head**: [Ubuntu #131725308184](https://github.com/Kenny619/spl-wbs/actions/runs/43376877253/job/131725308184) **286/286 unit tests PASS in 39 files** (11 F6c), strict TypeScript and managed/read-only builds PASS; [Windows Chromium #131725308498](https://github.com/Kenny619/spl-wbs/actions/runs/43376877253/job/131725308498) **80/80 browser PASS (2.6m)**.
 
 ## Finding: the proposed commitment chain could be ambiguous
 
@@ -38,8 +38,8 @@ These issues are **record consistency validation only**; they do not establish w
 
 ## Execution provenance and release limits
 
-Initial head `f8e53f75e18ad8c5d509a536872bb7c8100b3657` [CI #43376721949](https://github.com/Kenny619/spl-wbs/actions/runs/43376721949) **FAILED at test compile**, because the newly added synthetic test file declared identical `T4` twice. No F6c behavior tests executed in that attempt; previously existing 275 unit tests passed. The duplicate test-only constant was removed at `4d94cd1dd8865d470e2a7be22c12db3316c7a732`, and the new exact-head CI passed **all 286 unit tests**, including 11/11 F6c. The full Windows test result must be checked before final PASS.
+Initial head `f8e53f75e18ad8c5d509a536872bb7c8100b3657` [CI #43376721949](https://github.com/Kenny619/spl-wbs/actions/runs/43376721949) **FAILED at test compile**, because the newly added synthetic test file declared identical `T4` twice. No F6c behavior tests executed in that attempt; previously existing 275 unit tests passed. The duplicate test-only constant was removed at `4d94cd1dd8865d470e2a7be22c12db3316c7a732`, and the new exact-head [full CI #43376877253](https://github.com/Kenny619/spl-wbs/actions/runs/43376877253) completed **SUCCESS**, with all 286 unit and 80 Windows tests PASS, including 11/11 F6c. The initial red head remains historical failure evidence, not retroactive PASS.
 
 **Hard boundaries:** an Excel row and an `UnverifiedLocal` actor label are not a corporate authorization; `ProjectAudit` is not cryptographically immutable. The safe linear-chain structure helps readers but does **not authorize a new Accept Commitment action or determine the current trusted baseline**. The owner-approved five-sheet shape is not a field-level freeze. Real Excel open-file locks, separate synced copies, corporate Node26/Edge file-provider interactions, independent organizational QA and DES-012 Review08 visual acceptance remain OPEN. No production file, merge, beta/release, README/UAT kit or automatic Green/Report name change.
 
-**Initial disposition:** scoped functional/synthetic unit QA PASS; full CI, contract freeze and non-synthetic release gates remain open.
+**Final technical disposition:** F6c synthetic functional/data-integrity and Windows regression **PASS at exact SHA `4d94cd1dd8865d470e2a7be22c12db3316c7a732`** — 286/286 unit, 80/80 Windows Chromium and both builds. This does **not** mean accepted commitment authority/automatic Watch thresholds are approved, nor independent organizational or physical corporate Excel/Edge QA. Draft PR #55 unmerged; v0.1.2 field-level contract remains proposed, with owner freeze and release/UAT gates still open.
