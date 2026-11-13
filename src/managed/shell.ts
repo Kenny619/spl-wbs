@@ -189,10 +189,36 @@ export function mountManagedShell(
     const timelineControls = doc.createElement("div");
     timelineControls.className = "managed-review08-time-controls";
     timelineControls.setAttribute("aria-label", "Timeline zoom and navigation");
-    for (const selector of [".zoom-group", "#today", "#fitTop"]) {
+    const zoom = chartToolbar.querySelector<HTMLElement>(".zoom-group");
+    if (zoom) timelineControls.append(zoom);
+    // DES-012 Review08 requires previous/today/next in the chart control row.
+    // Page the *existing live* Gantt timeline viewport; never fabricate dates
+    // or shift an XLSX task/schedule. Native scroll listeners own header sync.
+    const timeViewport = doc.getElementById("timeScroll");
+    const makePeriod = (direction: -1 | 1) => {
+      const button = doc.createElement("button");
+      button.type = "button";
+      button.className = "tool managed-review08-period";
+      button.dataset.timelinePeriod = direction < 0 ? "previous" : "next";
+      button.textContent = direction < 0 ? "‹" : "›";
+      button.setAttribute("aria-label", direction < 0 ? "Previous timeline period" : "Next timeline period");
+      button.title = direction < 0 ? "Previous timeline period" : "Next timeline period";
+      button.addEventListener("click", () => {
+        if (!timeViewport) return;
+        const available = Math.max(0, timeViewport.scrollWidth - timeViewport.clientWidth);
+        const step = Math.max(1, Math.floor(timeViewport.clientWidth * .75));
+        timeViewport.scrollLeft = Math.max(0, Math.min(available, timeViewport.scrollLeft + direction * step));
+      });
+      return button;
+    };
+    timelineControls.append(makePeriod(-1));
+    for (const selector of ["#today"]) {
       const node = chartToolbar.querySelector<HTMLElement>(selector);
       if (node) timelineControls.append(node);
     }
+    timelineControls.append(makePeriod(1));
+    const fitNode = chartToolbar.querySelector<HTMLElement>("#fitTop");
+    if (fitNode) timelineControls.append(fitNode);
     const taskControls = doc.createElement("div");
     taskControls.className = "managed-review08-task-controls";
     taskControls.setAttribute("aria-label", "Gantt filtering and display");
