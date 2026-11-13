@@ -2,6 +2,7 @@ import "./managed.css";
 import "./review02.css";
 import "./des012StageA.css";
 import "./des012Reports.css";
+import "./des012ScheduleControls.css";
 import { boot } from "../main";
 import type { ImportController } from "../data/importController";
 import { KNOWN_STATUSES, TASK_TYPES, type Task } from "../data/types";
@@ -668,15 +669,19 @@ export class ManagedEditor {
     // their action buttons to DES012's non-scrolling identity header.
     const headActions = inspector.querySelector<HTMLElement>(".managed-inspector-actions");
     if (!headActions) throw Error("Review08 fixed header actions are missing.");
-    const edit = element(this.doc, "button", "managed-action primary", "Edit task");
+    const edit = element(this.doc, "button", "managed-action primary", "Edit");
     edit.type = "button";
+    edit.setAttribute("aria-label", "Edit task");
+    edit.title = "Edit task";
     edit.disabled = this.editing || !this.canWrite || this.busy || this.recoveryHold;
     edit.addEventListener("click", () => {
       this.editing = true;
       this.render();
     });
-    const taskHistory = element(this.doc, "button", "managed-action", "Task history");
+    const taskHistory = element(this.doc, "button", "managed-action", "History");
     taskHistory.type = "button";
+    taskHistory.setAttribute("aria-label", "Task history");
+    taskHistory.title = "Task history";
     taskHistory.addEventListener("click", () => {
       this.guard(() => { void this.showHistory(task.id); });
     });
