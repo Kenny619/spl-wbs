@@ -1,4 +1,6 @@
 import type { ViewState } from "../app/state";
+import type { Task } from "../data/types";
+import { formatPlanDate } from "../ui/format";
 import { activeColumns } from "../ui/grid";
 
 /**
@@ -15,6 +17,7 @@ const supported = [
   { column: "owner", key: "owners" },
   { column: "type", key: "types" },
   { column: "workstream", key: "workstreams" },
+  { column: "finish", key: "finishes" },
 ] as const;
 
 export function syncManagedReview08FilterIndicators(doc: Document, view: ViewState): void {
@@ -22,8 +25,8 @@ export function syncManagedReview08FilterIndicators(doc: Document, view: ViewSta
   const active = activeColumns(view.columns);
   const filtering = new Map<string, number>();
   for (const { column, key } of supported) {
-    if (view.columns.includes(column) && view[key].length) {
-      filtering.set(column, view[key].length);
+    if (view.columns.includes(column) && (view[key]?.length ?? 0)) {
+      filtering.set(column, view[key]?.length ?? 0);
     }
   }
   const count = filtering.size;
@@ -64,5 +67,73 @@ export function syncManagedReview08FilterIndicators(doc: Document, view: ViewSta
     indicator.setAttribute("aria-label", `${column.title} filtered`);
     indicator.textContent = "▼";
     cell.append(indicator);
+  }
+}
+
+/**
+ * Live Finish-date filter control, matching the approved DES-012 per-column
+ * multi-select behavior. ISO dates are preserved as XLSX calendar dates, not
+ * timezone-shifted timestamps; the empty value represents a blank finish.
+ * This fieldset is injected only when the managed shell is mounted.
+ */
+export function syncManagedReview08FinishFilter(
+  doc: Document,
+  tasks: readonly Task[],
+  view: ViewState,
+  readView: () => ViewState,
+  onChange: (patch: Partial<ViewState>) => void,
+): void {
+  const groups = doc.querySelector<HTMLElement>("#filterPopover .filter-groups");
+  if (!groups) return;
+  let group = doc.getElementById("managedFinishFilterGroup");
+  if (!group) {
+    group = doc.createElement("fieldset");
+    group.id = "managedFinishFilterGroup";
+    group.className = "filter-group";
+    const legend = doc.createElement("legend");
+    legend.append(doc.createTextNode("Finish "));
+    const selected = doc.createElement("span");
+    selected.id = "managedFinishSelection";
+    legend.append(selected);
+    const options = doc.createElement("div");
+    options.id = "managedFinishOptions";
+    options.className = "filter-options";
+    group.append(legend, options);
+    groups.append(group);
+  }
+
+  const showing = view.columns.includes("finish");
+  group.hidden = !showing;
+  doc.getElementById("managedFinishSelection")!.textContent =
+    view.finishes?.length ? `(${view.finishes.length})` : "";
+  if (!showing) return;
+  const container = doc.getElementById("managedFinishOptions");
+  if (!container) return;
+  const values = [...new Set(tasks.map(task => task.plannedEnd ?? ""))].sort();
+  const signature = values.join("\n");
+  if (container.dataset.values !== signature) {
+    container.dataset.values = signature;
+    container.replaceChildren();
+    for (const date of values) {
+      const label = doc.createElement("label");
+      label.className = "filter-option";
+      const input = doc.createElement("input");
+      input.type = "checkbox";
+      input.value = date;
+      input.setAttribute("aria-label", date ? `Finish date ${formatPlanDate(date)}` : "No finish date");
+      input.addEventListener("change", () => {
+        const selected = new Set(readView().finishes ?? []);
+        if (input.checked) selected.add(date);
+        else selected.delete(date);
+        onChange({ finishes: [...selected] });
+      });
+      const text = doc.createElement("span");
+      text.textContent = date ? formatPlanDate(date) : "No finish date";
+      label.append(input, text);
+      container.append(label);
+    }
+  }
+  for (const input of Array.from(container.querySelectorAll<HTMLInputElement>("input"))) {
+    input.checked = (view.finishes ?? []).includes(input.value);
   }
 }
