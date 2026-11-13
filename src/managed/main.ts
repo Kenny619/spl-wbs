@@ -143,8 +143,8 @@ export class ManagedEditor {
     previewButton.title = "Import a disposable workbook without folder write permission. Saving remains disabled.";
     previewButton.addEventListener("click", () => {
       if (this.busy) return;
-      if (this.isDirty()) {
-        this.message = "Discard or save unsaved changes before opening a different preview.";
+      if (this.isDirty() || this.watchPanel.hasDraft()) {
+        this.message = "Save or discard unsaved task/Watch changes before opening a different preview.";
         this.render();
         return;
       }
@@ -180,7 +180,10 @@ export class ManagedEditor {
     });
 
     for (const id of ["choose", "change"]) doc.getElementById(id)?.addEventListener("click", () => {
-      if (this.isDirty()) {
+      // The folder picker needs fresh user activation. Resolve any Watch or
+      // task draft first, then explicitly require a second folder click:
+      // never switch the shared workbook from under an unsaved reason.
+      if (this.isDirty() || this.watchPanel.hasDraft()) {
         this.guard(() => {
           this.message = "Changes resolved. Click Change folder again to choose a directory.";
           this.render();

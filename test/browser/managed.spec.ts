@@ -147,6 +147,84 @@ async function openSharedManaged(page: import("@playwright/test").Page, fixture 
   await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
 }
 
+test("F5e Change folder refuses to drop an unsaved manual Watch draft", async ({ page }) => {
+  await openSharedManaged(page);
+  await page.locator(".task-row").first().click();
+  const watch = page.locator(".managed-watch");
+  await watch.getByRole("button", { name: "Add manual reason" }).click();
+  await watch.getByLabel("Watch reason title").fill("Pending client decision");
+  const menu = page.locator(".managed-project-menu");
+  if (await menu.getAttribute("open") === null) await menu.locator("summary").click();
+  page.once("dialog", async dialog => {
+    expect(dialog.type()).toBe("confirm");
+    expect(dialog.message()).toContain("Discard unsaved Watch reason draft");
+    await dialog.dismiss();
+  });
+  await page.locator("#change").click();
+  await expect(watch.getByLabel("Watch reason title")).toHaveValue("Pending client decision");
+  await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
+
+  // Project actions intentionally auto-dismiss the menu after each click.
+  // Reopen it to simulate the user's separate confirmation/discard action.
+  await expect(menu).not.toHaveAttribute("open", "");
+  await menu.locator("summary").click();
+  await expect(menu).toHaveAttribute("open", "");
+  page.once("dialog", async dialog => { await dialog.accept(); });
+  await page.locator("#change").click();
+  await expect(watch.getByRole("button", { name: "Add manual reason" })).toBeVisible();
+  await expect(page.getByText("Click Change folder again to choose a directory.")).toBeVisible();
+  const names = await page.evaluate(() => [...(window as unknown as {
+    __managedFixtureFiles: Map<string, Uint8Array>
+  }).__managedFixtureFiles.keys()]);
+  expect(names).toEqual(["fixture-not-project-name.xlsx"]);
+});
+
+test("F5e opening read-only XLSX picker is blocked without discarding a Watch draft", async ({ page }) => {
+  await openSharedManaged(page);
+  await page.locator(".task-row").first().click();
+  const watch = page.locator(".managed-watch");
+  await watch.getByRole("button", { name: "Add manual reason" }).click();
+  await watch.getByLabel("Watch reason title").fill("Preserve this entry");
+  const menu = page.locator(".managed-project-menu");
+  if (await menu.getAttribute("open") === null) await menu.locator("summary").click();
+  await page.getByRole("button", { name: "Open XLSX read-only…" }).click();
+  await expect(page.getByText("Save or discard unsaved task/Watch changes before opening a different preview."))
+    .toBeVisible();
+  await expect(watch.getByLabel("Watch reason title")).toHaveValue("Preserve this entry");
+  await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
+});
+
+test("F5e same-workbook reload reconstructs saved Watch facts without adding audit rows", async ({ page }) => {
+  page.on("dialog", async dialog => { await dialog.accept(); });
+  await openSharedManaged(page);
+  await page.locator(".task-row").first().click();
+  const watch = page.locator(".managed-watch");
+  await watch.getByRole("button", { name: "Add manual reason" }).click();
+  await watch.getByLabel("Watch reason title").fill("Shared operations dependency");
+  await watch.getByRole("button", { name: "Save manual reason" }).click();
+  await expect(watch).toContainText("Under Watch · 1 open", { timeout: 20_000 });
+  const sourceBefore = await page.evaluate(() => Array.from((window as unknown as {
+    __managedFixtureFiles: Map<string, Uint8Array>
+  }).__managedFixtureFiles.get("fixture-not-project-name.xlsx")!));
+  const beforeBook = new ExcelJS.Workbook();
+  await beforeBook.xlsx.load(Uint8Array.from(sourceBefore) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  const auditRowCount = beforeBook.getWorksheet("ProjectAudit")!.rowCount;
+  const menu = page.locator(".managed-project-menu");
+  if (await menu.getAttribute("open") === null) await menu.locator("summary").click();
+  await page.locator("#reload").click();
+  await expect(page.locator("#title")).toHaveText("Tokyo & Global Initiative");
+  await page.locator(".task-row").first().click();
+  await expect(watch).toContainText("Under Watch · 1 open");
+  await expect(watch).toContainText("Shared operations dependency");
+  const sourceAfter = await page.evaluate(() => Array.from((window as unknown as {
+    __managedFixtureFiles: Map<string, Uint8Array>
+  }).__managedFixtureFiles.get("fixture-not-project-name.xlsx")!));
+  expect(sourceAfter).toEqual(sourceBefore);
+  const afterBook = new ExcelJS.Workbook();
+  await afterBook.xlsx.load(Uint8Array.from(sourceAfter) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+  expect(afterBook.getWorksheet("ProjectAudit")!.rowCount).toBe(auditRowCount);
+});
+
 test("F5d manually Add and Resolve Watch reason through verified Excel Save and audit", async ({ page }) => {
   page.on("dialog", async dialog => { await dialog.accept(); });
   await openSharedManaged(page);
