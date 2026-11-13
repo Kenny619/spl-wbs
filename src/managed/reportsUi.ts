@@ -226,7 +226,9 @@ export class ManagedReports {
     // Retain accessible native selector for keyboard and existing UAT scripts.
     const nativeMode = controls.querySelector("label")!;
     nativeMode.classList.add("report11-native-mode");
-    nativeMode.setAttribute("title", "Keyboard-accessible report mode selector");
+    // Visible mode cards are keyboard-accessible; do not create a hidden tab stop.
+    this.mode.tabIndex = -1;
+    nativeMode.setAttribute("title", "Report mode compatibility selector");
     modeArea.append(nativeMode);
     sidebar.append(modeArea);
     const inputSection = make("section", undefined, "report11-builder-section");
@@ -267,6 +269,7 @@ export class ManagedReports {
     }
     toolbar.append(formatChoices);
     this.format.classList.add("report11-native-format");
+    this.format.tabIndex = -1; // Visible HTML/plain buttons own keyboard focus.
     this.format.title = "Report format (keyboard selector)";
     toolbar.append(this.format, this.copy, this.download);
     panelHead.append(toolbar);
