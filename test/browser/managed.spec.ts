@@ -522,7 +522,7 @@ test("DES-012 Reports visual parity: one baseline across Schedule, Report Studio
   await expect(reports.locator(".report11-mode-card")).toHaveCount(3);
   await expect(reports.locator(".report11-native-mode select")).toHaveAttribute("tabindex", "-1");
   await expect(reports.locator(".report11-mode-card")).toHaveCount(3);
-  await expect(reports.locator(".report11-mode-card.active")).toContainText("Progress & Risks Update");
+  await expect(reports.locator(".report11-mode-card.active")).toContainText("Latest Status");
   await expect(reports.locator(".report11-format-choices")).toBeVisible();
 
   const left = await sidebar.boundingBox();
@@ -596,9 +596,21 @@ test("DES-012 Reports compact layout stays functional at 1024 and 720 without lo
   expect(compactWorkspace!.y).toBeGreaterThan(compactBuilder!.y + compactBuilder!.height - 2);
   await expect(reports.locator(".report11-mode-card")).toHaveCount(3);
   await expect(documentStage.getByRole("heading", { name: "Document preview" })).toBeVisible();
+  // In compact mode the report builder and preview form a single scrollable
+  // workspace inside the fixed 100dvh managed app. An off-viewport Generate
+  // button must remain reachable by the same scrolling a real user performs.
+  const scroll = await reports.evaluate((node) => ({
+    overflow: getComputedStyle(node).overflowY,
+    extra: node.scrollHeight - node.clientHeight,
+  }));
+  expect(scroll.overflow).toBe("auto");
+  expect(scroll.extra).toBeGreaterThan(40);
   await reports.getByLabel("Project name").fill("Responsive Reporting Program");
   await reports.locator("[data-report11-mode='status']").click();
-  await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  const generate = reports.locator(".report11-generate");
+  await generate.scrollIntoViewIfNeeded();
+  await expect(generate).toBeVisible();
+  await generate.click();
   const html = await reports.locator('iframe[title="Formatted report preview"]').getAttribute("srcdoc");
   expect(html).toContain("Responsive Reporting Program");
   await reports.locator("[data-report11-format='text']").click();
