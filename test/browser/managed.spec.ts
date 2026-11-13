@@ -948,8 +948,18 @@ test("DES-012 laptop Gantt retains one horizontally scrollable control row and r
   expect(gantt).toBeTruthy();
   expect(gantt!.height).toBeGreaterThan(260);
   const head = page.locator(".managed-inspector-head");
-  await expect(head.getByRole("button", { name: "Edit task" })).toBeVisible();
-  await expect(head.getByRole("button", { name: "Task history" })).toBeVisible();
+  const compactActions = head.locator(".managed-inspector-actions");
+  const edit = head.getByRole("button", { name: "Edit task" });
+  const history = head.getByRole("button", { name: "Task history" });
+  await expect(edit).toBeVisible();
+  await expect(history).toBeVisible();
+  expect(await compactActions.evaluate(node => getComputedStyle(node).flexDirection)).toBe("row");
+  const editBox = await edit.boundingBox();
+  const historyBox = await history.boundingBox();
+  expect(editBox && historyBox).toBeTruthy();
+  expect(Math.abs(editBox!.y - historyBox!.y)).toBeLessThan(3);
+  expect(editBox!.width).toBeLessThan(160);
+  expect(historyBox!.width).toBeLessThan(160);
   await testInfo.attach("des012-860-single-toolbar-with-real-controls", {
     body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
   });
