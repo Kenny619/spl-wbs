@@ -563,9 +563,13 @@ body.spt-managed.spt-managed-des012-live .managed-review08-time-controls
     align-items:center;
   }
   body.spt-managed.spt-managed-des012-live .managed-inspector-actions {
-    flex-direction:row; align-items:center;
-    justify-content:flex-end; flex-wrap:nowrap;
-    gap:5px;
+    /* The older Review08 desktop rule declared `flex-direction:column`.
+     * Explicitly override that historical rule at the controlling breakpoint.
+     * !important is deliberately limited to this single managed-only property,
+     * so the actual Edit/History buttons remain horizontally grouped. */
+    flex-direction:row !important;
+    align-items:center; justify-content:flex-end;
+    flex-wrap:nowrap; gap:5px;
   }
   body.spt-managed.spt-managed-des012-live .managed-inspector-actions button {
     white-space:nowrap;
