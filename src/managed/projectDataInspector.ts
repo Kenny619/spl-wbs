@@ -212,6 +212,20 @@ export function inspectProjectData(book: ExcelJS.Workbook): ProjectInspection {
     const reviewed = value(r, "LastReviewedUTC");
     if (!blank(reviewed) && !isUTC(reviewed)) note("BAD_REVIEW_TIME", r.sheet.name, r.i, "LastReviewedUTC", "Invalid review time.");
     const resolved = value(r, "ResolvedUTC"), actor = value(r, "ResolvedBy");
+    const opened = value(r, "OpenedUTC");
+    // Existing workbook rows can be externally edited. The manual Save
+    // candidate already blocks backward resolution, but readers and ALL
+    // managed write paths must reject impossible recorded chronology as well.
+    // Equality is permitted (an immediate review/resolve). Do not infer an
+    // automatic rule, date-based threshold, or authenticated actor.
+    if (isUTC(opened) && isUTC(reviewed) && String(reviewed) < String(opened)) {
+      note("WATCH_TIME_ORDER", r.sheet.name, r.i, "LastReviewedUTC",
+        "Watch review timestamp cannot precede the reason's opening.");
+    }
+    if (isUTC(opened) && isUTC(resolved) && String(resolved) < String(opened)) {
+      note("WATCH_TIME_ORDER", r.sheet.name, r.i, "ResolvedUTC",
+        "Watch resolution timestamp cannot precede the reason's opening.");
+    }
     if (state === "Resolved") {
       if (!isUTC(resolved)) note("MISSING_RESOLUTION", r.sheet.name, r.i, "ResolvedUTC", "Missing UTC.");
       if (!isText(actor) || !actor.trim()) note("MISSING_RESOLVER", r.sheet.name, r.i, "ResolvedBy", "Missing actor.");
