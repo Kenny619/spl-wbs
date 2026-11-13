@@ -217,7 +217,12 @@ body.spt-managed.spt-managed-des012-live .report11-des012 :is(input,select,texta
 }
 @media(max-width:730px) {
   body.spt-managed.spt-managed-des012-live .managed-reports.report11-des012[open] {
-    overflow-y:auto; min-height:680px; margin:9px 12px 14px;
+    /* The managed .main is 100dvh with overflow hidden; constrain this flex
+     * child so its stacked Report08 panels scroll INSIDE the visible page,
+     * rather than extending Generate beyond the reachable viewport. */
+    display:block; flex:1 1 0; min-height:0; height:0;
+    overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain;
+    margin:9px 12px 14px;
   }
   body.spt-managed.spt-managed-des012-live .report11-des012 .report11-layout {
     display:grid; grid-template-columns:minmax(0,1fr);
