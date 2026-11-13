@@ -862,6 +862,64 @@ test("DES-012 Stage A live Schedule preserves Gantt actions and scroll-contained
   await expect(inspector.locator(".managed-empty-detail")).toBeVisible();
 });
 
+test("DES-012 Gantt has one chart-local control row with real previous/next timeline paging", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  const toolbar = page.locator(".managed-schedule-body .chart-top > .toolbar");
+  const time = toolbar.locator(".managed-review08-time-controls");
+  const tasks = toolbar.locator(".managed-review08-task-controls");
+  await expect(toolbar).toBeVisible();
+  await expect(time.locator(".zoom-choice")).toHaveCount(4);
+  await expect(time.getByRole("button", { name: "Previous timeline period" })).toBeVisible();
+  await expect(time.getByRole("button", { name: "Next timeline period" })).toBeVisible();
+  await expect(tasks.locator("#filterToggle")).toBeAttached();
+  expect(await toolbar.evaluate(node => getComputedStyle(node).flexDirection)).toBe("row");
+  expect(await toolbar.evaluate(node => getComputedStyle(node).overflowX)).toBe("auto");
+  const a = await time.boundingBox(), b = await tasks.boundingBox();
+  expect(a && b).toBeTruthy();
+  expect(Math.abs(a!.y - b!.y)).toBeLessThanOrEqual(3);
+
+  await time.locator('[data-zoom="day"]').click();
+  await expect(time.locator('[data-zoom="day"]')).toHaveAttribute("aria-pressed", "true");
+  const viewport = page.locator("#timeScroll");
+  await expect.poll(async () => viewport.evaluate(node => node.scrollWidth - node.clientWidth))
+    .toBeGreaterThan(100);
+  await viewport.evaluate(node => { node.scrollLeft = 0; });
+  await expect(time.getByRole("button", { name: "Previous timeline period" })).toBeDisabled();
+  await expect(time.getByRole("button", { name: "Next timeline period" })).toBeEnabled();
+  await time.getByRole("button", { name: "Next timeline period" }).click();
+  const next = await viewport.evaluate(node => node.scrollLeft);
+  expect(next).toBeGreaterThan(0);
+  await expect(time.getByRole("button", { name: "Previous timeline period" })).toBeEnabled();
+  await time.getByRole("button", { name: "Previous timeline period" }).click();
+  await expect.poll(async () => viewport.evaluate(node => node.scrollLeft)).toBe(0);
+  await testInfo.attach("des012-single-chart-toolbar", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+});
+
+test("DES-012 inspector identity and edit/history controls share the fixed desktop header", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page);
+  const head = page.locator("#panel .managed-inspector-head");
+  const title = head.locator(".panel-title");
+  const actions = head.locator(".managed-inspector-actions");
+  await expect(title).toHaveText("Synthetic milestone");
+  await expect(actions.getByRole("button", { name: "Edit task" })).toBeVisible();
+  await expect(actions.getByRole("button", { name: "Task history" })).toBeVisible();
+  const identity = await title.boundingBox(), edit = await actions.boundingBox();
+  expect(identity && edit).toBeTruthy();
+  expect(Math.abs(identity!.y - edit!.y)).toBeLessThan(50);
+  await actions.getByRole("button", { name: "Edit task" }).click();
+  await expect(page.getByLabel("Task title")).toBeVisible();
+});
+
 test("DES-012 Option A uses recorded progress but does not fabricate 0% for an absent value", async ({ page }) => {
   page.on("dialog", async (dialog) => { await dialog.accept(); });
   await openManaged(page);
