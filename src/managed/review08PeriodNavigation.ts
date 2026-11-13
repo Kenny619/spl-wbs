@@ -70,7 +70,10 @@ export function mountReview08PeriodNavigation(
   previous.addEventListener("click", () => move(-1));
   next.addEventListener("click", () => move(1));
   timeScroll.addEventListener("scroll", sync);
-  controller.subscribe(sync);
+  controller.subscribe(() => {
+    sync();
+    requestAnimationFrame(sync); // after existing v18 timeline paint
+  });
   const resized = new ResizeObserver(sync);
   resized.observe(timeScroll);
   // View-state publications may occur just before the original v18 timeline
