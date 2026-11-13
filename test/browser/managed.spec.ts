@@ -756,9 +756,9 @@ test("DES-012 Stage A live Schedule preserves Gantt actions and scroll-contained
   const inspector = page.locator(".managed-schedule-body #panel");
   const head = inspector.locator(".managed-inspector-head");
   const scroll = inspector.locator(".managed-inspector-scroll");
-  await expect(head).toContainText("Task Detail");
-  await expect(head).toContainText("Work breakdown");
-  await expect(scroll.locator(".panel-title")).toHaveText("Synthetic milestone");
+  await expect(head.locator(".panel-title")).toHaveText("Synthetic milestone");
+  await expect(head).toContainText("WBS 1.2");
+  await expect(scroll.locator(".dt-rail[data-progress-recorded='true']")).toBeVisible();
   await expect(scroll.locator(".detail-grid")).toContainText("Owner A");
   const header = await head.boundingBox();
   const detailBox = await scroll.boundingBox();
@@ -791,6 +791,61 @@ test("DES-012 Stage A live Schedule preserves Gantt actions and scroll-contained
   await expect(inspector.locator(".managed-empty-detail")).toBeVisible();
 });
 
+test("DES-012 Option A uses recorded progress but does not fabricate 0% for an absent value", async ({ page }) => {
+  page.on("dialog", async (dialog) => { await dialog.accept(); });
+  await openManaged(page);
+  const rail = page.locator(".managed-inspector-scroll .dt-rail");
+  const card = page.locator(".managed-inspector-scroll .dt-rail-card");
+  await expect(rail).toHaveAttribute("data-progress-recorded", "true");
+  await expect(card.locator(".dt-rail-fill")).toHaveCount(1);
+  await expect(card.locator(".dt-progressline")).toContainText("20%");
+  const withProgress = await card.boundingBox();
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Progress (%)").fill("");
+  await page.getByRole("button", { name: "Save to workbook" }).click();
+  await expect(page.locator(".managed-banner")).toContainText("Verified Save:", { timeout: 15000 });
+  await expect(rail).toHaveAttribute("data-progress-recorded", "false");
+  await expect(card.locator(".dt-rail-fill")).toHaveCount(0);
+  await expect(card.locator(".dt-progressline")).not.toContainText("0%");
+  const withoutProgress = await card.boundingBox();
+  expect(withProgress && withoutProgress).toBeTruthy();
+  expect(Math.abs(withoutProgress!.height - withProgress!.height)).toBeLessThanOrEqual(2);
+});
+
+test("DES-012 Task Detail renders a real milestone diamond without a fictional progress bar", async ({ page }) => {
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await page.locator(".task-row").filter({ hasText: "Readiness decision" }).click();
+  await expect(page.locator(".managed-inspector-head .panel-title")).toContainText("Readiness decision");
+  await expect(page.locator(".dt-rail-card")).toHaveAttribute("data-schedule", "milestone");
+  await expect(page.locator(".dt-diamond")).toBeVisible();
+  await expect(page.locator(".dt-rail")).toHaveCount(0);
+});
+
+test("DES-012 relationships use workbook Task IDs with guarded drill-down and Back", async ({ page }) => {
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await page.locator(".task-row").filter({ hasText: "Prototype schedule workspace" }).click();
+  await expect(page.locator(".dt-relation-group")).toHaveCount(3);
+  await expect(page.locator(".dt-relation-group").nth(1)).toContainText("Define navigation architecture");
+  await expect(page.locator(".dt-relation-group").nth(2)).toContainText("Accessibility and keyboard review");
+  await page.locator(".dt-related-task[data-related-task='201']").click();
+  await expect(page.locator(".managed-inspector-head .panel-title")).toHaveText("Define navigation architecture");
+  await page.getByRole("button", { name: "← Back" }).click();
+  await expect(page.locator(".managed-inspector-head .panel-title")).toHaveText("Prototype schedule workspace");
+  await expect(page.getByRole("button", { name: "← Back" })).toHaveCount(0);
+});
+
 test("DES-012 Stage A shell is identical for read-only XLSX and writable directory imports", async ({ page }) => {
   await openManaged(page);
   const before = await page.locator(".managed-schedule-body").evaluate(x => ({
@@ -815,7 +870,7 @@ test("DES-012 Stage A shell is identical for read-only XLSX and writable directo
   await expect(page.locator("body")).toHaveClass(/spt-managed-des012-live/);
   await expect(page.locator(".task-row")).toHaveCount(23);
   await page.locator(".task-row").first().click();
-  await expect(page.locator(".managed-inspector-scroll .panel-title")).not.toBeEmpty();
+  await expect(page.locator(".managed-inspector-head .panel-title")).not.toBeEmpty();
   await expect(page.getByRole("button", { name: "Edit task" })).toBeDisabled();
   await page.locator(".managed-main-nav [data-managed-view='reports']").click();
   await expect(page.locator(".report11-builder")).toBeVisible();
@@ -922,9 +977,9 @@ test("UAT-02: managed dark theme has restrained day markers, semantic statuses a
   await settings.getByRole("button", { name: "Close" }).click();
   await page.locator(".zoom-choice").filter({ hasText: "Day" }).click();
   await page.locator(".task-row").filter({ hasText: "Requirements sign-off" }).click();
-  await expect(page.locator(".workdays-detail small")).toHaveText("Days left");
-  await expect(page.locator(".workdays-detail strong")).toContainText("4 days remaining");
-  await expect(page.locator(".workdays-detail strong")).not.toContainText(/workdays?/i);
+  await expect(page.locator(".dt-remaining")).toBeVisible();
+  await expect(page.locator(".dt-remaining")).toContainText("4 days remaining");
+  await expect(page.locator(".dt-remaining")).not.toContainText(/workdays?/i);
   await expect(page.locator(".calendar-hint")).not.toContainText(/workdays?/i);
   await page.locator("#deps").check();
   await expect(page.locator(".dep-layer path").first()).toBeAttached();
@@ -936,8 +991,8 @@ test("UAT-02: managed dark theme has restrained day markers, semantic statuses a
     });
     return {
       weekend: css(".holiday-overlay").backgroundColor,
-      remaining: css(".workdays-detail").backgroundColor,
-      remainingText: css(".workdays-detail strong").color,
+      remaining: css(".dt-rail-card").backgroundColor,
+      remainingText: css(".dt-remaining").color,
       separator: css(".zoom-choice").borderRightColor,
       dependency: css(".dep-layer path").stroke,
       statuses,
@@ -1030,7 +1085,7 @@ for (const width of [1440, 1024, 860]) {
     await expect(inspector).toBeVisible();
     await expect(page.locator(".managed-global-settings")).toBeVisible();
     await expect(page.locator(".managed-main-nav [data-managed-view='reports']")).toBeVisible();
-    await expect(inspector.locator(".workdays-detail small")).toHaveText("Days left");
+    await expect(inspector.locator(".dt-rail-card")).toBeVisible();
     const panelBox = await inspector.boundingBox();
     expect(panelBox).not.toBeNull();
     expect(panelBox!.x + panelBox!.width).toBeLessThanOrEqual(width + 2);
