@@ -864,7 +864,17 @@ test("DES-012 Stage A live Schedule preserves Gantt actions and scroll-contained
 
 test("DES-012 chart-local Prev/Today/Next navigates one real zoom period and honors Fit bounds", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await openManaged(page);
+  // Period-navigation is only applicable when a Gantt actually exceeds its
+  // visible viewport. The one-task Save fixture has a five-day span and cannot
+  // scroll even at Day zoom; use the real 23-task XLSX schedule spanning Oct-Dec.
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
   const chart = page.locator(".managed-schedule-body .chart-card");
   const nav = chart.locator(".managed-review08-time-controls");
   const previous = nav.getByRole("button", { name: "Previous timeline period" });
@@ -899,6 +909,15 @@ test("DES-012 chart-local Prev/Today/Next navigates one real zoom period and hon
   await testInfo.attach("des012-single-row-real-period-navigation", {
     body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
   });
+});
+
+test("DES-012 period navigation correctly disables both ends for a short five-day schedule", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page); // One real XLSX task, five-day span
+  const chart = page.locator(".managed-schedule-body .chart-card");
+  await chart.locator(".zoom-choice[data-zoom='day']").click();
+  await expect(chart.getByRole("button", { name: "Previous timeline period" })).toBeDisabled();
+  await expect(chart.getByRole("button", { name: "Next timeline period" })).toBeDisabled();
 });
 
 test("DES-012 desktop Task Detail aligns real Edit and History beside selected-task identity", async ({ page }) => {
