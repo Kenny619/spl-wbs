@@ -228,3 +228,27 @@ body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .managed-empt
     min-height:280px; max-height:440px; height:auto;
   }
 }
+/* The source template still renders zoom/navigation alongside task filtering.
+ * Live nodes are reparented into balanced lines by mountManagedShell, not copied. */
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .toolbar {
+  display:flex; flex-direction:column; align-items:stretch;
+  gap:8px; justify-content:flex-start;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-time-controls,
+body.spt-managed.spt-managed-des012-live .managed-review08-task-controls {
+  display:flex; flex-wrap:wrap; align-items:center; gap:7px;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-time-controls {
+  justify-content:flex-start; padding-bottom:6px;
+  border-bottom:1px solid var(--des12-edge);
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-task-controls {
+  justify-content:flex-start;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-task-controls .search {
+  width:clamp(140px,15vw,190px);
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll
+  .section-label:has(+ .source-record) {
+  display:none; /* Read-only SharePoint link is intentionally suppressed in managed mode. */
+}
