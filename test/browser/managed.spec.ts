@@ -767,6 +767,13 @@ test("DES-012 Stage A live Schedule preserves Gantt actions and scroll-contained
   expect(await scroll.evaluate(x => getComputedStyle(x).overflowY)).toBe("auto");
   expect(await chart.evaluate(x => getComputedStyle(x).borderRadius)).toBe("12px");
   const ganttTop = chart.locator(".chart-top");
+  const timelineControls = ganttTop.locator(".managed-review08-time-controls");
+  const taskControls = ganttTop.locator(".managed-review08-task-controls");
+  await expect(timelineControls.locator(".zoom-choice")).toHaveCount(4);
+  await expect(timelineControls.locator("#today")).toBeVisible();
+  await expect(timelineControls.locator("#fitTop")).toBeVisible();
+  await expect(taskControls.locator("#search")).toBeVisible();
+  await expect(taskControls.locator("#filterToggle")).toBeVisible();
   await expect(ganttTop.locator(".managed-gantt-scope")).toBeVisible();
   await expect(ganttTop.locator("#search")).toBeVisible();
   await expect(ganttTop.locator("#filterToggle")).toBeVisible();
