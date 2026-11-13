@@ -1,6 +1,6 @@
 import type ExcelJS from "exceljs";
 
-/** READ-ONLY F2 proof against proposed 0.1.2; NOT wired into managed Save. */
+/** F2+ shared Excel project-data validation, used for read-only projection and guarded managed Save. Detailed v0.1.2 remains proposed. */
 export const PROJECT_DATA_SHEETS = [
   "ProjectMeta", "ProjectCalendar", "WatchReasons", "ProjectCommitments", "ProjectAudit",
 ] as const;
@@ -234,7 +234,9 @@ export function inspectProjectData(book: ExcelJS.Workbook): ProjectInspection {
     }
   }
 
-  const commitments = new Map<string, { taskId: string; previous: string | null }>();
+  const commitments = new Map<string, {
+    taskId: string; previous: string | null; acceptedUTC: string | null; row: number;
+  }>();
   for (const r of rows("ProjectCommitments")) {
     const id = requiredUUID(r, "CommitmentID");
     if (id && commitments.has(id)) note("DUPLICATE_ID", r.sheet.name, r.i, "CommitmentID", "Duplicate commitment.");
@@ -242,8 +244,39 @@ export function inspectProjectData(book: ExcelJS.Workbook): ProjectInspection {
     requiredText(r, "AcceptedBy"); optionalText(r, "Rationale"); optionalText(r, "EvidenceRef");
     const prior = value(r, "PreviousCommitmentID");
     if (!blank(prior) && !isUUID(prior)) note("BAD_PRIOR", r.sheet.name, r.i, "PreviousCommitmentID", "Invalid prior ID.");
-    if (id) commitments.set(id, { taskId: taskKey(value(r, "TaskID")) ?? "",
-      previous: isUUID(prior) ? String(prior).toLowerCase() : null });
+    if (id) commitments.set(id, {
+      taskId: taskKey(value(r, "TaskID")) ?? "",
+      previous: isUUID(prior) ? String(prior).toLowerCase() : null,
+      acceptedUTC: isUTC(value(r, "AcceptedUTC")) ? String(value(r, "AcceptedUTC")) : null,
+      row: r.i,
+    });
+  }
+
+  // A recorded accepted-commitment series is an immutable linear chain.
+  // "PreviousCommitmentID points to the last version" means a task cannot
+  // have multiple roots or competing children from the same predecessor.
+  // Otherwise the latest accepted reference cannot be determined safely.
+  // Identity and actor authority remain *unverified* until separately approved.
+  const roots = new Map<string, string>();
+  const children = new Map<string, string>();
+  for (const [id, c] of commitments) {
+    if (!c.previous) {
+      if (c.taskId && roots.has(c.taskId) && roots.get(c.taskId) !== id) {
+        note("MULTIPLE_COMMITMENT_ROOTS", "ProjectCommitments", c.row,
+          "PreviousCommitmentID", "Task has competing initial commitment records.");
+      } else if (c.taskId) roots.set(c.taskId, id);
+    } else {
+      const existingChild = children.get(c.previous);
+      if (existingChild && existingChild !== id) {
+        note("FORKED_COMMITMENT_CHAIN", "ProjectCommitments", c.row,
+          "PreviousCommitmentID", "Two revisions reference the same predecessor.");
+      } else children.set(c.previous, id);
+      const parent = commitments.get(c.previous);
+      if (parent?.acceptedUTC && c.acceptedUTC && c.acceptedUTC <= parent.acceptedUTC) {
+        note("COMMITMENT_TIME_ORDER", "ProjectCommitments", c.row, "AcceptedUTC",
+          "Revised commitment must follow its predecessor in UTC time.");
+      }
+    }
   }
   for (const [id, c] of commitments) {
     if (c.previous && (!commitments.has(c.previous) || commitments.get(c.previous)?.taskId !== c.taskId)) {
