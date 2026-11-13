@@ -1,7 +1,7 @@
 # Stage A — latest approved UI and functional Excel UAT reconciliation
 
 **Date:** 2026-11-13 JST  
-**Status:** UAT BLOCKED for current/latest-UI acceptance; narrow Stage A UI integration/QA handoff, **not** a new design choice, production release, beta change or authority to merge.  
+**Status (updated 2026-11-13):** Revised functional Stage A UAT candidate **READY FOR OWNER UAT** after scoped exact-code CI PASS; **actual owner latest-UI/Outlook/physical-file UAT NOT YET ACCEPTED**. Original older DES-010 ZIP was invalid for current UI; this document retains its root-cause record. Not a new design choice, release, beta change or merge authority.  
 **Source:** Product Owner: “UAT package opened the excel with read-only, but the UI seems to be the old version. Is this intentional? I'd prefer to conduct UAT in the latest UI.”
 
 ## Verified root cause and correction
@@ -13,6 +13,14 @@ The actual **ZIP contents were inspected**: it contains `managed.html`, Report11
 The UAT read-only import is separate: `Project → Open XLSX read-only` supports a compatible .xlsx selection when folder access is blocked. It intentionally has **no Save/Save As/backup/history-write capability**. Read-only mode is not the reason Schedule UI looks older; it is an import permission fallback, **not** an alternate newer/older interface switch. If Owner uses read-only fallback, data/report/appearance tests may proceed, but all write/backup/recovery tests are BLOCKED.
 
 **Disposition:** Owner did not accept the older UI. Do **not** count the previous Report11 package as current/latest integrated Stage A UI acceptance. Prior automated Report11 CI stays valid for its own source SHA and scoped functions.
+
+## Verified replacement functional candidate — November 13, 2026
+
+- **New functional source:** [draft PR #60](https://github.com/Kenny619/spl-wbs/pull/60), packaged application exact `8bcf5c4d905cb1003549caea8134f15576e0a8e0` on an isolated branch. Live DES-012 Schedule/Task Detail DOM reorganized while real task editor, Timeline, File System Access and Report Review02 engine are preserved. No fake Meeting Review.
+- **Verified CI:** [run #43400644793](https://github.com/Kenny619/spl-wbs/actions/runs/43400644793), both jobs **SUCCESS**, raw logs **162/162 unit** + **68/68 Windows Chromium** including exact new DES012 functional tests, Report11 Review02 and 2,000-row read-only stress.
+- **Actual downloaded [GitHub ZIP #14024902596](https://github.com/Kenny619/spl-wbs/actions/runs/43400644793/artifacts/14024902596):** members verified to be `managed.html`, `SPT-WBS_Report11_Synthetic_UAT.xlsx`, `START_HERE.txt`, `STAGE_A_UAT_CHECKLIST.md`, `SHA256SUMS.txt`. All four SHA256 checks validated; built HTML has DES012 live Schedule markers and Report11 studio; no obsolete DES010 artifacts. Expires **2026-11-20 18:22 JST**.
+- **README handoff:** single new ZIP link replaces old one on main, Report PR #37 branch and UI PR #60 branch. New docs-only HEAD changes after application SHA are distinguishable; no product code changes between packaged app SHA and README update.
+- **Remaining:** Owner's actual corporate Edge latest-UI parity, physical save/Excel locks and Outlook rich-paste evidence, independent UAT disposition. Formal visual acceptance and Stage A acceptance remain **OPEN**; do not relabel hosted CI as owner PASS.
 
 ## Stage A latest integrated functional UAT: minimum change set
 
