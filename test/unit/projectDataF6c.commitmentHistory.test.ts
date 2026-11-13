@@ -351,4 +351,40 @@ describe("F6c: conservative Excel-recorded commitment histories (NOT approval au
     const textCell = b.getWorksheet("WatchReasons")!.getCell("G2").value;
     expect(textCell).toBe("First line\nSecond line");
   });
+  
+  it.each([
+    ["equals", "=1+1"],
+    ["plus", "+SUM(A1:A2)"],
+    ["minus", "-1+2"],
+    ["at", "@SUM(A1)"],
+    ["whitespace prefix", "  =HYPERLINK(A1)"],
+  ])("F6f rejects imported plain-text ProjectName with %s formula prefix", async (_kind, value) => {
+    const b = await workbook(await fixture());
+    b.getWorksheet("ProjectMeta")!.getCell("B3").value = value;
+    const serialized = new Uint8Array(await b.xlsx.writeBuffer());
+    expect(await findings(serialized)).toContain("BAD_PROJECT_NAME");
+    const projection = await projectCommitmentProjection(serialized);
+    expect(projection.workbookState).toBe("incompatible");
+    expect(projection.schemaValidated).toBe(false);
+    expect(projection.tasks).toEqual([]);
+  });
+
+  it("F6f rejects an actual imported Excel formula cell as ProjectName", async () => {
+    const b = await workbook(await fixture());
+    b.getWorksheet("ProjectMeta")!.getCell("B3").value = {
+      formula: "1+1", result: "2",
+    };
+    const serialized = new Uint8Array(await b.xlsx.writeBuffer());
+    expect(await findings(serialized)).toContain("BAD_TEXT");
+    expect((await projectCommitmentProjection(serialized)).workbookState).toBe("incompatible");
+  });
+
+  it("F6f preserves ordinary punctuation inside a plain-text project name", async () => {
+    const b = await workbook(await fixture());
+    b.getWorksheet("ProjectMeta")!.getCell("B3").value = "Project-A + B @ East";
+    const projection = await projectCommitmentProjection(new Uint8Array(await b.xlsx.writeBuffer()));
+    expect(projection.workbookState).toBe("valid");
+    expect(projection.projectName).toBe("Project-A + B @ East");
+  });
+
 });
