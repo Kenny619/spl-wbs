@@ -310,17 +310,20 @@ describe("F6c: conservative Excel-recorded commitment histories (NOT approval au
     expect(projection.tasks).toEqual([]);
   });
   
-  it("F6e fails closed on externally injected ProjectName control characters", async () => {
-    for (const importedName of ["Launch\nScope", "Launch\tScope", "Launch\rScope", "Launch\u007fScope"]) {
-      const b = await workbook(await fixture());
-      b.getWorksheet("ProjectMeta")!.getCell("B3").value = importedName;
-      const data = new Uint8Array(await b.xlsx.writeBuffer());
-      expect(await findings(data)).toContain("BAD_PROJECT_NAME");
-      const projection = await projectCommitmentProjection(data);
-      expect(projection.workbookState).toBe("incompatible");
-      expect(projection.tasks).toEqual([]);
-      expect(projection.schemaValidated).toBe(false);
-    }
+  it.each([
+    ["LF", "Launch\nScope"],
+    ["TAB", "Launch\tScope"],
+    ["CR", "Launch\rScope"],
+    ["DEL", "Launch\u007fScope"],
+  ])("F6e rejects imported ProjectName with %s control character", async (_code, importedName) => {
+    const b = await workbook(await fixture());
+    b.getWorksheet("ProjectMeta")!.getCell("B3").value = importedName;
+    const data = new Uint8Array(await b.xlsx.writeBuffer());
+    expect(await findings(data)).toContain("BAD_PROJECT_NAME");
+    const projection = await projectCommitmentProjection(data);
+    expect(projection.workbookState).toBe("incompatible");
+    expect(projection.tasks).toEqual([]);
+    expect(projection.schemaValidated).toBe(false);
   });
 
   it("F6e preserves valid multiline Watch reason details during imported-name hardening", async () => {
