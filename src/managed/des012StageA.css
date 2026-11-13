@@ -211,13 +211,28 @@ body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .managed-empt
     grid-template-columns:minmax(0,1fr) minmax(245px,42%);
   }
   body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top {
-    grid-template-columns:1fr; grid-template-areas:"heading" "scope" "controls";
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"heading scope" "controls controls";
+    padding:8px 10px; gap:5px 8px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .managed-gantt-scope {
+    justify-content:flex-end;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-review08-time-controls {
+    padding-bottom:4px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-review08-task-controls {
+    gap:5px;
+  }
+}
+@media(max-width:640px) {
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top {
+    grid-template-columns:1fr;
+    grid-template-areas:"heading" "scope" "controls";
   }
   body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .managed-gantt-scope {
     justify-content:flex-start;
   }
-}
-@media(max-width:640px) {
   body.spt-managed.spt-managed-des012-live .managed-schedule-body {
     display:flex; flex-direction:column;
   }
