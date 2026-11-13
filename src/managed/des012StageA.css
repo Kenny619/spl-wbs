@@ -575,3 +575,29 @@ body.spt-managed.spt-managed-des012-live .managed-review08-time-controls
     white-space:nowrap;
   }
 }
+
+/* Review08 compact inspector: two actual editor/history controls share the
+ * second header row at laptop width. Do not turn them into full-width bars,
+ * which formerly stole vertical space from the Option A timeline. */
+@media (max-width:1279px) {
+  body.spt-managed.spt-managed-des012-live .managed-inspector-actions {
+    display:flex;
+    flex-direction:row !important;
+    flex-wrap:wrap;
+    justify-content:flex-start;
+    align-items:center;
+    gap:6px;
+    width:100%;
+    min-width:0;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-actions button {
+    flex:0 1 auto;
+    width:auto;
+    max-width:100%;
+    min-height:28px;
+    padding:5px 10px;
+    font-size:11px;
+    line-height:1.4;
+    white-space:nowrap;
+  }
+}
