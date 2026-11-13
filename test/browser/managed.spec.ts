@@ -862,6 +862,136 @@ test("DES-012 Stage A live Schedule preserves Gantt actions and scroll-contained
   await expect(inspector.locator(".managed-empty-detail")).toBeVisible();
 });
 
+test("DES-012 chart-local Prev/Today/Next navigates one real zoom period and honors Fit bounds", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  // Period-navigation is only applicable when a Gantt actually exceeds its
+  // visible viewport. The one-task Save fixture has a five-day span and cannot
+  // scroll even at Day zoom; use the real 23-task XLSX schedule spanning Oct-Dec.
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  const chart = page.locator(".managed-schedule-body .chart-card");
+  const nav = chart.locator(".managed-review08-time-controls");
+  const previous = nav.getByRole("button", { name: "Previous timeline period" });
+  const next = nav.getByRole("button", { name: "Next timeline period" });
+  const timeline = chart.locator("#timeScroll");
+  await expect(previous).toBeVisible();
+  await expect(next).toBeVisible();
+  const toolbar = chart.locator(".chart-top > .toolbar");
+  expect(await toolbar.evaluate(node => getComputedStyle(node).flexDirection)).toBe("row");
+
+  // Fit means the entire schedule is already visible, so moving is a no-op.
+  await chart.locator("#fitTop").click();
+  await expect(previous).toBeDisabled();
+  await expect(next).toBeDisabled();
+
+  // Day is a real zoom state owned by the v18 viewer; DES012 period nav only
+  // moves the already-rendered scroll position by one calendar-day cell.
+  await chart.locator(".zoom-choice[data-zoom='day']").click();
+  await expect(next).toBeEnabled();
+  await timeline.evaluate(node => { node.scrollLeft = 0; });
+  await expect(previous).toBeDisabled();
+  const before = await timeline.evaluate(node => node.scrollLeft);
+  await next.click();
+  await expect.poll(async () => timeline.evaluate(node => node.scrollLeft)).toBeGreaterThan(before + 20);
+  const after = await timeline.evaluate(node => node.scrollLeft);
+  expect(after - before).toBeCloseTo(27, 0);
+  await previous.click();
+  await expect.poll(async () => timeline.evaluate(node => node.scrollLeft)).toBeLessThan(after - 20);
+  await expect(previous).toBeDisabled();
+  await expect(chart.locator(".zoom-choice[data-zoom='day']")).toHaveAttribute("aria-pressed", "true");
+
+  await testInfo.attach("des012-single-row-real-period-navigation", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+});
+
+test("DES-012 period navigation correctly disables both ends for a short five-day schedule", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page); // One real XLSX task, five-day span
+  const chart = page.locator(".managed-schedule-body .chart-card");
+  await chart.locator(".zoom-choice[data-zoom='day']").click();
+  await expect(chart.getByRole("button", { name: "Previous timeline period" })).toBeDisabled();
+  await expect(chart.getByRole("button", { name: "Next timeline period" })).toBeDisabled();
+});
+
+test("DES-012 laptop Gantt retains one horizontally scrollable control row and readable Task Detail", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 860, height: 760 });
+  await openManaged(page);
+  const chart = page.locator(".managed-schedule-body .chart-card");
+  const toolbar = chart.locator(".chart-top > .toolbar");
+  const timeControls = toolbar.locator(".managed-review08-time-controls");
+  const taskControls = toolbar.locator(".managed-review08-task-controls");
+  const boxes = await Promise.all([toolbar.boundingBox(), timeControls.boundingBox(), taskControls.boundingBox()]);
+  expect(boxes.every(Boolean)).toBe(true);
+  expect(Math.abs(boxes[1]!.y - boxes[2]!.y)).toBeLessThanOrEqual(3);
+  expect(boxes[0]!.height).toBeLessThan(54);
+  const layout = await toolbar.evaluate((node) => ({
+    overflow: getComputedStyle(node).overflowX,
+    content: node.scrollWidth,
+    visible: node.clientWidth,
+  }));
+  expect(layout.overflow).toBe("auto");
+  expect(layout.content).toBeGreaterThan(layout.visible + 30);
+  // Controls remain reachable inside the chart, never removed at 860px.
+  for (const selector of ["#today", "#fitTop", "#filterToggle", "#search", "#deps", "#hideInactive"]) {
+    const control = toolbar.locator(selector);
+    await control.scrollIntoViewIfNeeded();
+    await expect(control).toBeVisible();
+  }
+  const gantt = await chart.locator("#gantt").boundingBox();
+  expect(gantt).toBeTruthy();
+  expect(gantt!.height).toBeGreaterThan(260);
+  const head = page.locator(".managed-inspector-head");
+  const compactActions = head.locator(".managed-inspector-actions");
+  const edit = head.getByRole("button", { name: "Edit task" });
+  const history = head.getByRole("button", { name: "Task history" });
+  await expect(edit).toBeVisible();
+  await expect(history).toBeVisible();
+  expect(await compactActions.evaluate(node => getComputedStyle(node).flexDirection)).toBe("row");
+  const editBox = await edit.boundingBox();
+  const historyBox = await history.boundingBox();
+  expect(editBox && historyBox).toBeTruthy();
+  expect(Math.abs(editBox!.y - historyBox!.y)).toBeLessThan(3);
+  expect(editBox!.width).toBeLessThan(160);
+  expect(historyBox!.width).toBeLessThan(160);
+  await testInfo.attach("des012-860-single-toolbar-with-real-controls", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+});
+
+test("DES-012 desktop Task Detail aligns real Edit and History beside selected-task identity", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page);
+  const header = page.locator(".managed-inspector-head");
+  const title = header.locator(".panel-title");
+  const actions = header.locator(".managed-inspector-actions");
+  expect(await page.evaluate(() => matchMedia("(min-width:1280px)").matches)).toBe(true);
+  expect(await actions.evaluate(node => getComputedStyle(node).flexDirection)).toBe("row");
+  await expect(title).toHaveText("Synthetic milestone");
+  await expect(actions.getByRole("button", { name: "Edit task" })).toBeEnabled();
+  await expect(actions.getByRole("button", { name: "Task history" })).toBeVisible();
+  const areas = await header.evaluate(node => getComputedStyle(node).gridTemplateAreas);
+  expect(areas).toContain("identity actions close");
+  const titleBox = await title.boundingBox();
+  const actionBox = await actions.boundingBox();
+  expect(titleBox && actionBox).toBeTruthy();
+  expect(actionBox!.x).toBeGreaterThan(titleBox!.x);
+  expect(actionBox!.y).toBeLessThan(titleBox!.y + 25);
+
+  await page.setViewportSize({ width: 860, height: 760 });
+  expect(await header.evaluate(node => getComputedStyle(node).gridTemplateAreas)).toContain("actions actions");
+  await expect(actions.getByRole("button", { name: "Edit task" })).toBeVisible();
+  await expect(actions.getByRole("button", { name: "Task history" })).toBeVisible();
+  // Review08 keeps one horizontally scrollable Gantt control row at 860px too.
+  expect(await page.locator(".chart-top > .toolbar").evaluate(node => getComputedStyle(node).flexDirection)).toBe("row");
+});
+
 test("DES-012 Option A uses recorded progress but does not fabricate 0% for an absent value", async ({ page }) => {
   page.on("dialog", async (dialog) => { await dialog.accept(); });
   await openManaged(page);
