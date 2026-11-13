@@ -170,6 +170,24 @@ export function mountManagedShell(
     fit.classList.add("tool");
     doc.querySelector<HTMLElement>(".chart-top .toolbar")?.append(fit);
   }
+  // Review08 chart-local toolbar groups: timeline navigation and task controls.
+  // Reparent ONLY the existing live inputs/buttons, retaining their listeners.
+  const chartToolbar = doc.querySelector<HTMLElement>(".chart-top .toolbar");
+  if (chartToolbar) {
+    const timelineControls = doc.createElement("div");
+    timelineControls.className = "managed-review08-time-controls";
+    timelineControls.setAttribute("aria-label", "Timeline zoom and navigation");
+    for (const selector of [".zoom-group", "#today", "#fitTop"]) {
+      const node = chartToolbar.querySelector<HTMLElement>(selector);
+      if (node) timelineControls.append(node);
+    }
+    const taskControls = doc.createElement("div");
+    taskControls.className = "managed-review08-task-controls";
+    taskControls.setAttribute("aria-label", "Gantt filtering and display");
+    while (chartToolbar.firstChild) taskControls.append(chartToolbar.firstChild);
+    chartToolbar.append(timelineControls, taskControls);
+  }
+
   // Preserve the original task-selection and editor nodes and all their handlers.
   const workspace = doc.createElement("div");
   workspace.className = "managed-schedule-body";
