@@ -11,6 +11,8 @@ import { openManagedHistory } from "./historyUi";
 import { ManagedSettings } from "./settingsUi";
 import { ManagedReports } from "./reportsUi";
 import { mountManagedShell } from "./shell";
+import { renderManagedReview08Header, renderManagedReview08TaskDetail } from "./review08TaskDetail";
+import { todayInTimeZone } from "../calendar/dateOnly";
 import { MANAGED_APP_VERSION as APP_VERSION } from "./version";
 import { openManagedRecovery } from "./recoveryUi";
 import type { EditableField, EditValue } from "./workbookCandidate";
@@ -63,6 +65,8 @@ export class ManagedEditor {
   private editing = false;
   private busy = false;
   private selectedId: string | null = null;
+  private detailReturn: string[] = [];
+  private navigationTarget: string | null = null;
   private initial: TaskDraft | null = null;
   private draft: TaskDraft | null = null;
   private message = "";
@@ -596,39 +600,87 @@ export class ManagedEditor {
     }
     this.fileSelect.disabled = this.busy || !this.names.length;
     if (this.sourceName && this.names.includes(this.sourceName)) this.fileSelect.value = this.sourceName;
+
     const state = this.controller.getState();
     const meta = this.doc.getElementById("rangeMeta");
     if (meta && state.tasks) meta.textContent = "Planned project schedule · Excel Managed preview";
-
     const task = state.tasks?.find((t) => t.id === state.view.selectedId) ?? null;
+    const inspector = this.doc.getElementById("panel");
+    const details = this.doc.getElementById("detailContent");
     this.slot.replaceChildren();
+    if (!inspector || !details) throw Error("Review08 requires a real selected-task inspector.");
     if (!task) {
+      this.detailReturn = [];
+      this.navigationTarget = null;
       if (!this.isDirty()) this.clearDraft();
-      this.doc.getElementById("detailContent")?.style.removeProperty("display");
+      details.style.removeProperty("display");
+      renderManagedReview08Header(inspector, null, { canBack: false, onBack: () => {} });
       return;
     }
+
+    // Distinguish relationship navigation from a fresh Gantt selection.
+    // Back context never survives an unrelated task switch.
     if (this.selectedId !== task.id) {
+      if (this.selectedId && this.navigationTarget !== task.id) this.detailReturn = [];
+      this.navigationTarget = null;
       this.selectedId = task.id;
       this.initial = initialTaskDraft(task);
       this.draft = { ...this.initial };
       this.editing = false;
     }
-    const details = this.doc.getElementById("detailContent");
-    if (details) details.style.display = this.editing ? "none" : "";
+    const goBack = () => this.guard(() => {
+      const previous = this.detailReturn.at(-1);
+      if (!previous || !this.controller.getState().tasks?.some((t) => t.id === previous)) return;
+      this.detailReturn.pop();
+      this.navigationTarget = previous;
+      this.controller.patchView({ selectedId: previous });
+    });
+    renderManagedReview08Header(inspector, task, {
+      canBack: this.detailReturn.length > 0, onBack: goBack,
+    });
+
+    details.style.display = this.editing ? "none" : "";
     if (!this.editing) {
-      const edit = element(this.doc, "button", "managed-action primary", "Edit task");
-      edit.type = "button";
-      edit.disabled = !this.canWrite || this.busy;
-      edit.addEventListener("click", () => { this.editing = true; this.render(); });
-      const actions = element(this.doc, "div", "managed-actions");
-      actions.append(edit);
-      const taskHistory = element(this.doc, "button", "managed-action", "Task history");
-      taskHistory.type = "button";
-      taskHistory.addEventListener("click", () => {
-        this.guard(() => { void this.showHistory(task.id); });
+      renderManagedReview08TaskDetail(details, task, state.tasks ?? [], {
+        today: todayInTimeZone(new Date(), this.settings.getTimeZone()),
+        canEdit: this.canWrite && !this.busy && !this.recoveryHold,
+        canBack: this.detailReturn.length > 0,
+        onRelated: (id) => this.guard(() => {
+          if (id === task.id || !this.controller.getState().tasks?.some((t) => t.id === id)) return;
+          this.detailReturn.push(task.id);
+          this.navigationTarget = id;
+          this.controller.patchView({ selectedId: id });
+        }),
+        onBack: goBack,
+        onAddUpdate: () => this.guard(() => {
+          this.editing = true;
+          this.render();
+          const input = Array.from(this.slot.querySelectorAll("label"))
+            .find((node) => node.textContent?.includes("Append update"))
+            ?.querySelector("textarea");
+          input?.focus();
+        }),
       });
-      actions.append(taskHistory);
-      this.slot.append(actions);
+    }
+
+    // Original real editor and task History callbacks remain wired; move only
+    // their action buttons to DES012's non-scrolling identity header.
+    const headActions = inspector.querySelector<HTMLElement>(".managed-inspector-actions");
+    if (!headActions) throw Error("Review08 fixed header actions are missing.");
+    const edit = element(this.doc, "button", "managed-action primary", "Edit task");
+    edit.type = "button";
+    edit.disabled = this.editing || !this.canWrite || this.busy || this.recoveryHold;
+    edit.addEventListener("click", () => {
+      this.editing = true;
+      this.render();
+    });
+    const taskHistory = element(this.doc, "button", "managed-action", "Task history");
+    taskHistory.type = "button";
+    taskHistory.addEventListener("click", () => {
+      this.guard(() => { void this.showHistory(task.id); });
+    });
+    headActions.append(edit, taskHistory);
+    if (!this.editing) {
       if (!this.canWrite) this.slot.append(element(this.doc, "p", "managed-editor-message",
         "Editing is blocked until this workbook passes the restricted XLSX compatibility check."));
       return;
