@@ -819,6 +819,92 @@ test("Failed new-folder import does not half-switch active directory or lose las
 });
 
 
+test("DES-012 single-row Schedule controls drive real Gantt Previous/Today/Next navigation", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page);
+  const top = page.locator(".managed-schedule-body .chart-top");
+  const toolbar = top.locator(".toolbar");
+  const timeline = top.locator(".managed-review08-time-controls");
+  const tasks = top.locator(".managed-review08-task-controls");
+  const scroll = page.locator("#timeScroll");
+  const previous = top.getByRole("button", { name: "Previous timeline period" });
+  const next = top.getByRole("button", { name: "Next timeline period" });
+  await expect(previous).toBeVisible();
+  await expect(next).toBeVisible();
+  await expect(previous).toBeDisabled(); // Fit: no hidden off-screen schedule.
+  await expect(next).toBeDisabled();
+  await expect(toolbar).toHaveAttribute("aria-label", /Gantt chart controls/);
+  const desktop = await Promise.all([timeline.boundingBox(), tasks.boundingBox(), toolbar.boundingBox()]);
+  expect(desktop.every(Boolean)).toBe(true);
+  // DES012 uses one chart-local horizontal control strip, not two stacked rows.
+  expect(Math.abs(desktop[0]!.y - desktop[1]!.y)).toBeLessThanOrEqual(3);
+  expect(desktop[2]!.height).toBeLessThan(60);
+
+  await top.locator(".zoom-choice[data-zoom='day']").click();
+  await expect(previous).toBeDisabled();
+  await expect(next).toBeEnabled();
+  const before = await scroll.evaluate((el) => el.scrollLeft);
+  await next.click();
+  await expect.poll(async () => scroll.evaluate((el) => el.scrollLeft)).toBeGreaterThan(before + 20);
+  await expect(previous).toBeEnabled();
+  const afterNext = await scroll.evaluate((el) => el.scrollLeft);
+  await previous.click();
+  await expect.poll(async () => scroll.evaluate((el) => el.scrollLeft)).toBeLessThan(afterNext - 20);
+  await top.locator("#fitTop").click();
+  await expect(previous).toBeDisabled();
+  await expect(next).toBeDisabled();
+  await expect(top.locator("#today")).toHaveCount(1); // original v18 live handler reparented.
+  await testInfo.attach("des012-single-row-live-gantt-controls", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+});
+
+test("DES-012 compact Gantt controls scroll horizontally without losing inspector controls or chart height", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page);
+  const head = page.locator(".managed-schedule-body .managed-inspector-head");
+  const identity = head.locator("> div:first-child");
+  const actions = head.locator(".managed-inspector-actions");
+  await expect(head.getByRole("button", { name: "Edit task" })).toHaveText("Edit");
+  await expect(head.getByRole("button", { name: "Task history" })).toHaveText("History");
+  const desktopIdentity = await identity.boundingBox();
+  const desktopActions = await actions.boundingBox();
+  expect(desktopIdentity && desktopActions).toBeTruthy();
+  expect(desktopActions!.x).toBeGreaterThan(desktopIdentity!.x);
+  expect(desktopActions!.y).toBeLessThan(desktopIdentity!.y + desktopIdentity!.height + 2);
+
+  await page.setViewportSize({ width: 860, height: 760 });
+  const toolbar = page.locator(".managed-schedule-body .chart-top > .toolbar");
+  const strip = await toolbar.evaluate(el => ({
+    overflowX: getComputedStyle(el).overflowX,
+    width: el.clientWidth, total: el.scrollWidth,
+  }));
+  expect(strip.overflowX).toBe("auto");
+  expect(strip.total).toBeGreaterThan(strip.width + 20);
+  const time = await toolbar.locator(".managed-review08-time-controls").boundingBox();
+  const task = await toolbar.locator(".managed-review08-task-controls").boundingBox();
+  expect(time && task).toBeTruthy();
+  expect(Math.abs(time!.y - task!.y)).toBeLessThanOrEqual(3);
+  await toolbar.locator("#filterToggle").scrollIntoViewIfNeeded();
+  await expect(toolbar.locator("#filterToggle")).toBeVisible();
+  await toolbar.locator("#search").scrollIntoViewIfNeeded();
+  await expect(toolbar.locator("#search")).toBeVisible();
+  const chart = page.locator(".managed-schedule-body .chart-card");
+  const gantt = chart.locator("#gantt");
+  const chartBox = await gantt.boundingBox();
+  expect(chartBox).toBeTruthy();
+  expect(chartBox!.height).toBeGreaterThan(260);
+  const mobileIdentity = await identity.boundingBox();
+  const mobileActions = await actions.boundingBox();
+  expect(mobileIdentity && mobileActions).toBeTruthy();
+  expect(mobileActions!.y).toBeGreaterThanOrEqual(mobileIdentity!.y + mobileIdentity!.height - 2);
+  await expect(head.getByRole("button", { name: "Edit task" })).toBeVisible();
+  await expect(head.getByRole("button", { name: "Task history" })).toBeVisible();
+  await testInfo.attach("des012-compact-gantt-and-task-header", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+});
+
 test("DES-012 Stage A live Schedule preserves Gantt actions and scroll-contained Task Detail", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openManaged(page);
