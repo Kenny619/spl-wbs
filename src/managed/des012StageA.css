@@ -267,3 +267,177 @@ body.spt-managed.spt-managed-des012-live .managed-inspector-scroll
   .section-label:has(+ .source-record) {
   display:none; /* Read-only SharePoint link is intentionally suppressed in managed mode. */
 }
+
+/* DES-012 approved Task Detail — real Excel data, never the static design demo.
+ * Fixed task identity/actions, compact Owner/Priority and integrated Option A rail.
+ */
+body.spt-managed.spt-managed-des012-live .managed-inspector-head {
+  display:grid; grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:"identity close" "actions actions";
+  align-items:start; gap:8px;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-head > div:first-child {
+  grid-area:identity;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-head .panel-title {
+  font-size:15px; line-height:1.3; color:var(--des12-ink);
+  letter-spacing:-.2px; overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-head #close {
+  grid-area:close;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-actions {
+  grid-area:actions; display:flex; gap:5px; flex-wrap:wrap;
+  justify-content:flex-start; min-width:0;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-actions button {
+  padding:5px 8px; min-height:27px; font-size:11px;
+  white-space:nowrap;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-status {
+  align-self:flex-start; width:max-content; margin-top:5px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root {
+  display:flex; flex-direction:column; gap:0;
+  min-width:0; color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll
+  .detail-facts.detail-grid {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px; margin:0; padding:0 0 15px;
+  background:transparent; border:0;
+}
+body.spt-managed.spt-managed-des012-live .detail-fact label {
+  display:block; color:var(--des12-sub);
+  font-size:10px; font-weight:700; margin-bottom:4px;
+}
+body.spt-managed.spt-managed-des012-live .detail-fact strong {
+  display:block; font-size:13px; overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .detail-section {
+  border-top:1px solid var(--des12-edge);
+  padding:14px 0; min-width:0;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .detail-section h3 {
+  font-size:12px; font-weight:800; margin:0 0 10px;
+  color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-rail-card {
+  padding:12px 13px; border:1px solid var(--des12-edge);
+  border-radius:9px; background:var(--des12-raised); min-height:103px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-remaining {
+  font-size:13px; font-weight:750; text-align:center;
+  min-height:21px; line-height:1.5; color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-remaining.overdue {
+  color:#b94d57;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"]
+  .task-detail-root .dt-remaining.overdue {color:#f69ca4;}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-dateedges {
+  display:flex; justify-content:space-between; align-items:flex-end;
+  gap:12px; margin:10px 0 7px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-dateedges > div:last-child {
+  text-align:right;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-dateedges span {
+  display:block; font-size:10px; font-weight:700; color:var(--des12-sub);
+  margin-bottom:3px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-dateedges strong {
+  font-size:12px; color:var(--des12-ink);
+  overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-rail {
+  height:12px; width:100%; margin:7px 0 4px;
+  overflow:hidden; border-radius:99px; position:relative;
+  background:#d2e0e9;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"]
+  .task-detail-root .dt-rail {background:#3b506b;}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-rail-fill {
+  height:100%; position:absolute; left:0; top:0;
+  background:var(--des12-blue); border-radius:99px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-progressline {
+  min-height:18px; display:flex; justify-content:space-between;
+  gap:10px; color:var(--des12-blue);
+  font-weight:750; font-size:11px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-progressline.is-absent {
+  visibility:hidden; /* reserve rail geometry without implying 0% */
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-empty {
+  color:var(--des12-sub); text-align:center; padding:23px 8px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-milestone {
+  min-height:46px; display:flex; align-items:center;
+  justify-content:center; gap:11px; font-weight:800;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-diamond {
+  display:inline-block; width:13px; height:13px;
+  transform:rotate(45deg); border:2px solid var(--des12-blue);
+  background:var(--des12-paper);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .detail-keyval {
+  display:flex; justify-content:space-between; gap:10px;
+  padding:6px 0; color:var(--des12-sub);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .detail-keyval strong {
+  color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .fieldlabel {
+  color:var(--des12-sub); font-size:10px; font-weight:700;
+  margin:8px 0 5px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .detail-description {
+  white-space:pre-wrap; line-height:1.65; overflow-wrap:anywhere;
+  color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .relation-caption {
+  font-weight:750; font-size:10px; color:var(--des12-sub);
+  margin:12px 0 5px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .relation-empty {
+  color:var(--des12-sub); font-size:11px; margin:2px 0 8px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-related-task {
+  width:100%; display:flex; flex-direction:column;
+  align-items:flex-start; gap:3px; text-align:left;
+  border:1px solid var(--des12-edge); background:var(--des12-paper);
+  border-radius:8px; padding:9px; margin-bottom:5px;
+  font-size:11px; overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-related-task:hover,
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-related-task:focus-visible {
+  border-color:var(--des12-blue); background:var(--des12-raised);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-related-task span {
+  color:var(--des12-sub); font-size:10px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .updates-heading {
+  display:flex; justify-content:space-between; gap:10px;
+  align-items:center;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .updates-heading button {
+  padding:5px 9px; font-size:11px; min-height:27px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .updates-section {
+  margin-top:7px;
+}
+@media (max-width:880px) {
+  body.spt-managed.spt-managed-des012-live .managed-inspector-head {
+    padding:8px 10px; gap:5px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-actions button {
+    font-size:10px; padding:4px 6px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-scroll {
+    padding:10px 12px 15px;
+  }
+  body.spt-managed.spt-managed-des012-live .task-detail-root .dt-dateedges strong {
+    font-size:11px;
+  }
+}
