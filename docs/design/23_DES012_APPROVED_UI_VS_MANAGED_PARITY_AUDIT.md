@@ -1,5 +1,7 @@
 # DES-012 Review 08 — Approved UI vs real managed application: evidence-based parity audit
 
+> **CURRENT VISUAL AUTHORITY CORRECTION (Owner decision, November 13, 2026):** [DES-012 Consolidated Review08](../../design/concepts/DES-012-consolidated-review08-task-detail.html) is the **sole UI baseline including the Reports page**. The earlier Report Review02 HTML is historical only, NOT a separate reporting design standard; Report 1.1 functional requirements remain frozen separately. Any historical wording in this audit implying Review02 visual precedence is superseded by [DEC-UI-2026-11-13](32_DES012_SOLE_CROSS_VIEW_UI_BASELINE_OWNER_DIRECTIVE_2026_11_13.md). PR #60 remains partial/noncompliant; newer [gap matrix](31_DES012_FULL_UI_RECONFIRMATION_AND_PR60_GAP_2026_11_13.md) contains current status.
+
 > **New owner architecture decision (Nov 12):** This source inspection predates [workbook-authoritative data clarification](28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md). **Watch reasons and blackout dates must be persisted in the same project Excel workbook.** Browser-local session-only blackout is no longer the required end state; project display preferences, PGCM display and file-open recents remain local. Existing code gaps are historical inspection facts, not a proposed separate service or session-only contract.
 
 **Audit version:** 0.1 · **Prepared:** 2026-11-11 JST · **State:** DESIGN OFFICE AUDIT / NOT implementation or UAT acceptance  
