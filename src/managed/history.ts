@@ -59,6 +59,13 @@ function positionsFor(sheet: ExcelJS.Worksheet): Map<string, number> {
 
 /** Read persisted audit data only, without modifying workbook bytes or inferred task state. */
 export async function readManagedHistory(data: Uint8Array | ArrayBuffer): Promise<HistoryEvent[]> {
+  return (await readManagedHistoryWithPresence(data)).events;
+}
+
+/** Distinguish a missing UpdateHistory sheet from an existing but empty one. */
+export async function readManagedHistoryWithPresence(
+  data: Uint8Array | ArrayBuffer,
+): Promise<{ events: HistoryEvent[]; present: boolean }> {
   const book = new ExcelJS.Workbook();
   try {
     await book.xlsx.load(data as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
@@ -66,7 +73,7 @@ export async function readManagedHistory(data: Uint8Array | ArrayBuffer): Promis
     throw new ManagedWorkbookError("UNREADABLE_HISTORY", "Unable to read the selected workbook's Change History.");
   }
   const sheet = book.worksheets.find((item) => item.name.toLowerCase() === "updatehistory");
-  if (!sheet) return [];
+  if (!sheet) return { events: [], present: false };
   const columns = positionsFor(sheet);
   const groups = new Map<string, HistoryEvent>();
   for (let n = 2; n <= sheet.rowCount; n++) {
@@ -102,8 +109,8 @@ export async function readManagedHistory(data: Uint8Array | ArrayBuffer): Promis
     });
     groups.set(id, event);
   }
-  return [...groups.values()].sort((a, b) =>
-    b.timestampUTC.localeCompare(a.timestampUTC) || a.changeSetId.localeCompare(b.changeSetId));
+  return { events: [...groups.values()].sort((a, b) =>
+    b.timestampUTC.localeCompare(a.timestampUTC) || a.changeSetId.localeCompare(b.changeSetId)), present: true };
 }
 
 function localDay(timestampUTC: string, timeZone: string): string {

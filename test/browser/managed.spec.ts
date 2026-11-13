@@ -321,7 +321,7 @@ test("Change History uses the Settings timezone without mutating saved UTC audit
 });
 
 
-test("Output Reports uses committed data only with unsaved draft, then copies exactly the fixed preview", async ({ page }) => {
+test("Report 1.1 keeps committed-only snapshot after mode changes, and copies exact text", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -339,16 +339,21 @@ test("Output Reports uses committed data only with unsaved draft, then copies ex
   const report = page.getByRole("dialog", { name: "Output Reports" });
   await expect(report).toBeVisible();
   await expect(report.getByText(/Unsaved task edits exist/)).toBeVisible();
+  await report.getByLabel("Project name").fill("Synthetic Program");
+  await report.getByLabel("Report mode").selectOption("status");
+  await report.getByLabel("Report format").selectOption("text");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const preview = report.getByRole("textbox", { name: "Report preview" });
-  await expect(preview).toHaveValue(/Latest Status Report/);
-  await expect(preview).toHaveValue(/Synthetic milestone/);
+  await expect(preview).toHaveValue(/LATEST STATUS/);
+  await expect(preview).toHaveValue(/Project: Synthetic Program/);
+  await expect(preview).toHaveValue(/DAYS TO GO-LIVE:/);
   expect(await preview.inputValue()).not.toContain("Not yet committed");
+  expect(await preview.inputValue()).not.toContain("Workbook:");
   const snapshot = await preview.inputValue();
-  await report.getByLabel("Report mode").selectOption("updates");
-  await expect(preview).toHaveValue(snapshot); // options alone do not refresh snapshot
+  await report.getByLabel("Report mode").selectOption("progress");
+  await expect(preview).toHaveValue(snapshot);
   await report.getByRole("button", { name: "Copy Report" }).click();
-  await expect(report.getByText(/Copied exactly/)).toBeVisible();
+  await expect(report.getByText(/Exact plain-text preview copied/)).toBeVisible();
   const copied = await page.evaluate(() =>
     (window as unknown as { __copiedReport: string }).__copiedReport);
   expect(copied).toBe(snapshot);
@@ -358,7 +363,7 @@ test("Output Reports uses committed data only with unsaved draft, then copies ex
   await expect(page.getByText("Unsaved changes", { exact: true })).toBeVisible();
 });
 
-test("Update Report generates from persisted history only, honors selected timezone and never rewrites workbook", async ({ page }) => {
+test("Report 1.1 Detailed Audit preserves history, timezone and workbook bytes", async ({ page }) => {
   page.on("dialog", async (dialog) => { await dialog.accept(); });
   await openManaged(page);
   await page.getByRole("button", { name: "Edit task" }).click();
@@ -377,29 +382,31 @@ test("Update Report generates from persisted history only, honors selected timez
   await settings.getByRole("button", { name: "Close" }).click();
   await page.getByRole("button", { name: "Output Reports" }).click();
   const report = page.getByRole("dialog", { name: "Output Reports" });
-  await report.getByLabel("Report mode").selectOption("updates");
+  await report.getByLabel("Project name").fill("Synthetic Program");
+  await report.getByLabel("Report mode").selectOption("audit");
+  await report.getByLabel("Report format").selectOption("text");
   await report.getByLabel("Report start date").fill("2026-01-01");
   await report.getByLabel("Report end date").fill("2027-12-31");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const preview = report.getByRole("textbox", { name: "Report preview" });
-  await expect(preview).toHaveValue(/Update Report/);
-  await expect(preview).toHaveValue(/Logical Save events: 1/);
-  await expect(preview).toHaveValue(/Field-change rows: 2/);
-  await expect(preview).toHaveValue(/ChangeSetID:/);
+  await expect(preview).toHaveValue(/Detailed Change Audit/);
+  await expect(preview).toHaveValue(/Save events: 1/);
+  await expect(preview).toHaveValue(/Field changes: 2/);
+  await expect(preview).toHaveValue(/Save ID/);
   await expect(preview).toHaveValue(/Confirmed progress review/);
   await expect(preview).toHaveValue(/Asia\/Tokyo/);
   const text = await preview.inputValue();
   await report.getByLabel("Report end date").fill("1900-01-01");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   await expect(report.getByText(/Report not generated: Choose valid start\/end dates/)).toBeVisible();
-  await expect(preview).toHaveValue(text); // failed refresh retains verified snapshot
+  await expect(preview).toHaveValue(text);
   const afterReport = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
   expect(afterReport).toEqual(beforeReport);
 });
 
-test("Output Report clipboard denied shows accurate failure and keeps snapshot available for manual copy", async ({ page }) => {
+test("Report 1.1 denied clipboard shows accurate failure and retains the snapshot", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -412,6 +419,9 @@ test("Output Report clipboard denied shows accurate failure and keeps snapshot a
   await page.locator("#close").click();
   await page.getByRole("button", { name: "Output Reports" }).click();
   const report = page.getByRole("dialog", { name: "Output Reports" });
+  await report.getByLabel("Project name").fill("Synthetic Program");
+  await report.getByLabel("Report mode").selectOption("status");
+  await report.getByLabel("Report format").selectOption("text");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const preview = report.getByRole("textbox", { name: "Report preview" });
   const original = await preview.inputValue();
@@ -420,6 +430,125 @@ test("Output Report clipboard denied shows accurate failure and keeps snapshot a
   await expect(preview).toHaveValue(original);
 });
 
+test("Report 1.1 HTML preview and Outlook dual MIME copy keep an immutable snapshot", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "ClipboardItem", {
+      configurable: true,
+      value: class FakeClipboardItem {
+        data: Record<string, Blob>;
+        constructor(data: Record<string, Blob>) { this.data = data; }
+      },
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        write: async (items: Array<{ data: Record<string, Blob> }>) => {
+          const mime = items[0].data;
+          (window as unknown as { __copiedHtml: string; __copiedPlain: string }).__copiedHtml =
+            await mime["text/html"].text();
+          (window as unknown as { __copiedPlain: string }).__copiedPlain =
+            await mime["text/plain"].text();
+        },
+      },
+    });
+  });
+  await openManaged(page);
+  await page.locator("#close").click();
+  await page.getByRole("button", { name: "Output Reports" }).click();
+  const report = page.getByRole("dialog", { name: "Output Reports" });
+  await expect(report.getByLabel("Report task limit")).toHaveValue("all");
+  await report.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(report.getByText(/Enter a Project name before generating/)).toBeVisible();
+  await report.getByLabel("Project name").fill("Project Orion & Launch");
+  await report.getByLabel("Report mode").selectOption("status");
+  await report.getByLabel("Report format").selectOption("html");
+  await report.getByRole("button", { name: "Generate / Refresh" }).click();
+  const iframe = report.locator("iframe[title='Formatted report preview']");
+  const srcdoc = await iframe.getAttribute("srcdoc");
+  expect(srcdoc).toContain("Project Orion &amp; Launch");
+  expect(srcdoc).not.toContain("Workbook:");
+  expect(srcdoc).not.toContain("<script");
+  await report.getByLabel("Report format").selectOption("text");
+  const plain = await report.getByRole("textbox", { name: "Report preview" }).inputValue();
+  expect(plain).toContain("Project: Project Orion & Launch");
+  await report.getByLabel("Report format").selectOption("html");
+  expect(await iframe.getAttribute("srcdoc")).toBe(srcdoc);
+  await report.getByRole("button", { name: "Copy for Outlook" }).click();
+  await expect(report.getByText(/HTML and matching plain text copied/)).toBeVisible();
+  const clipboard = await page.evaluate(() => {
+    const holder = window as unknown as { __copiedHtml: string; __copiedPlain: string };
+    return { html: holder.__copiedHtml, plain: holder.__copiedPlain };
+  });
+  expect(clipboard.html).toBe(srcdoc);
+  expect(clipboard.plain).toBe(plain);
+});
+
+test("Review 02 visual parity: report studio and Schedule share design language", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page);
+
+  const chart = page.locator(".managed-schedule-body .chart-card");
+  const detail = page.locator(".managed-schedule-body .detail-panel");
+  await expect(chart).toBeVisible();
+  await expect(detail).toBeVisible();
+  const priority = page.locator(".managed-schedule-summary");
+  await expect(priority).toBeVisible();
+  await expect(priority).toContainText("Blocked");
+  await expect(priority).toContainText("At Risk");
+  await expect(priority).toContainText("Open milestones");
+  const scheduleRadius = await chart.evaluate((node) => getComputedStyle(node).borderRadius);
+  expect(scheduleRadius).toBe("11px");
+  const scheduleToolbar = page.locator(".managed-schedule-body .managed-gantt-scope");
+  await expect(scheduleToolbar).toBeVisible();
+  await testInfo.attach("review02-schedule-light", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+
+  await page.getByRole("button", { name: "Output Reports" }).last().click();
+  const reports = page.getByRole("dialog", { name: "Output Reports" });
+  await expect(priority).toBeHidden();
+  const sidebar = reports.locator(".report11-builder");
+  const workspace = reports.locator(".report11-workspace");
+  await expect(sidebar).toBeVisible();
+  await expect(workspace).toBeVisible();
+  await expect(sidebar.getByRole("heading", { name: "Build a report" })).toBeVisible();
+  await expect(reports.locator(".report11-mode-card")).toHaveCount(3);
+  await expect(reports.locator(".report11-mode-card.active")).toContainText("Progress & Risks Update");
+  await expect(reports.locator(".report11-format-choices")).toBeVisible();
+
+  const left = await sidebar.boundingBox();
+  const right = await workspace.boundingBox();
+  expect(left && right).toBeTruthy();
+  expect(left!.x + left!.width).toBeLessThan(right!.x);
+  expect(left!.width).toBeGreaterThan(250);
+  expect(right!.width).toBeGreaterThan(520);
+
+  await reports.getByLabel("Project name").fill("Design Parity Program");
+  await reports.getByLabel("Report mode").selectOption("status");
+  await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  const srcdoc = await reports.locator('iframe[title="Formatted report preview"]').getAttribute("srcdoc");
+  expect(srcdoc).toContain('class="report-paper"');
+  expect(srcdoc).toContain('class="metric go-live"');
+  expect(srcdoc).toContain('class="metric red"');
+  expect(srcdoc).toContain('class="metric amber"');
+  expect(srcdoc).toContain("Executive snapshot");
+  expect(srcdoc).not.toContain("Overall progress");
+  await testInfo.attach("review02-reports-light", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+
+  await page.evaluate(() => { document.body.dataset.managedTheme = "dark"; });
+  const background = await sidebar.evaluate((node) => getComputedStyle(node).backgroundColor);
+  expect(background).toBe("rgb(29, 43, 62)");
+  await testInfo.attach("review02-reports-dark", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  await reports.locator("[data-report11-mode='audit']").click();
+  await expect(reports.getByLabel("Report mode")).toHaveValue("audit");
+  await page.locator(".managed-main-nav [data-managed-view='schedule']").click();
+  await expect(chart).toBeVisible();
+  await expect(reports).toBeHidden();
+});
 
 test("Stage A inspector shows READY state without modifying any workbook bytes", async ({ page }) => {
   await openManaged(page);
@@ -683,9 +812,12 @@ test("DES-010 real Reports uses fixed navigation and committed-only scroll works
   const report = page.getByRole("dialog", { name: "Output Reports" });
   await expect(report).toBeVisible();
   await expect(page.locator(".managed-schedule-body")).toBeHidden();
+  await report.getByLabel("Project name").fill("Synthetic Program");
+  await report.getByLabel("Report mode").selectOption("status");
+  await report.getByLabel("Report format").selectOption("text");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const preview = report.getByRole("textbox", { name: "Report preview" });
-  await expect(preview).toHaveValue(/Synthetic milestone/);
+  await expect(preview).toHaveValue(/DAYS TO GO-LIVE:/);
   const after = await nav.boundingBox();
   expect(Math.abs(before!.x - after!.x)).toBeLessThanOrEqual(2);
   expect(Math.abs(before!.y - after!.y)).toBeLessThanOrEqual(2);
@@ -753,7 +885,7 @@ test("UAT-02: Reports uses global Schedule navigation and no redundant Close but
   const report = page.getByRole("dialog", { name: "Output Reports" });
   await expect(report).toBeVisible();
   await expect(report.getByRole("button", { name: "Close", exact: true })).toHaveCount(0);
-  await expect(report.getByLabel("Report mode")).toBeFocused();
+  await expect(report.locator(".report11-mode-card.active")).toBeFocused();
   await page.locator(".managed-main-nav [data-managed-view='schedule']").click();
   await expect(report).toBeHidden();
 });

@@ -1,4 +1,5 @@
 import "./managed.css";
+import "./review02.css";
 import { boot } from "../main";
 import type { ImportController } from "../data/importController";
 import { KNOWN_STATUSES, TASK_TYPES, type Task } from "../data/types";

@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, feature/excel-managed-des010-ui, feature/des010-uat-edge-picker-fallback]
+    branches: [main, feature/excel-managed-des010-ui, feature/des010-uat-edge-picker-fallback, feature/des010-uat02-visual-fixes]
   push:
     branches:
       - main

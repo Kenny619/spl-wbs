@@ -2,20 +2,6 @@
 
 # Gantt Viewer
 
-## Excel Managed Variant — DES-010 owner UAT (development only)
-
-**Corrected corporate Edge picker kit (2026-11-09):** [Download complete six-file ZIP from Actions run #42576183324](https://github.com/Kenny619/spl-wbs/actions/runs/42576183324/artifacts/13655660880). This supersedes the initial DES-010 package and previous corrected kit. If the native folder picker returns `AbortError`, use **Project → Open XLSX read-only…** to view the supplied synthetic XLSX without writing. This does not authorize Save/backup UAT or physical Edge filesystem acceptance. All six ZIP contents and manifest checksums were verified and exact source CI passed **134/134 unit, 62/62 Chromium**.
-
-**Current corrected UAT kit:** [Download the complete six-file ZIP from GitHub Actions run #42552811227](https://github.com/Kenny619/spl-wbs/actions/runs/42576183324/artifacts/13655660880). Includes `managed.html`, `SPT-WBS_DES010_Synthetic_UAT.xlsx`, `START-HERE.txt`, `README-OWNER-UAT.txt`, `UAT-RESULTS-TEMPLATE.md`, and `SHA256SUMS.txt`. The earlier kit is **superseded** because the initial project picker was misplaced and the example workbook included unsupported AutoFilter metadata.
-
-1. Download and **extract** the ZIP; do not open HTML from inside the archive.
-2. Create an **empty disposable local folder** and **copy only the supplied XLSX** into it.
-3. Open the newly extracted `managed.html` in Microsoft Edge (Ctrl+O).
-4. Open **Project → Choose project folder**, choose the disposable folder, and confirm the workbook name and 23 task rows appear.
-5. If the banner reports `AbortError` or the folder was not granted, the browser/native picker has not given a writable directory handle. Do **not** repeatedly retry Save or infer an XLSX parsing failure. Use **Project → Open XLSX read-only…**, select the supplied `SPT-WBS_DES010_Synthetic_UAT.xlsx` directly, and confirm the 23 tasks are visible. This is a safe **view-only** UAT fallback; edit, Save, Save As, backups and write-history UAT remain blocked until corporate Edge folder permission is resolved. Report the **exact diagnostic banner**, Edge version, whether any permission prompt appeared and whether direct read-only import succeeded. Do **not** use corporate production workbooks.
-
-This kit was verified for ZIP integrity, file checksums and supported XLSX sample structure, and the packaged workbook passed automated Chromium import and disposable Save/History regression at [PR #32 commit `52fdb617`](https://github.com/Kenny619/spl-wbs/pull/32). It still needs actual corporate Edge UAT; no release or write-safety acceptance is implied. This managed UAT is separate from the read-only `dist/index.html` viewer described below.
-
 Read-only schedule viewer for one project. Open a SharePoint List `.xlsx` export and review the WBS, dates, progress, and calendar in the browser. The viewer never writes back to the workbook or to SharePoint.
 
 Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address. Choose **Choose workbook**, or drop an `.xlsx` file onto the page.
@@ -26,6 +12,18 @@ Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address
 - On a compatible browser, the previous file can be offered again after you return. Permission is requested only after you click. Task rows are not stored.
 
 The page title is the file name without `.xlsx`.
+
+## Current approved UI baseline — DES-012 Review 08
+
+**[Open the single approved interactive UI baseline (Schedule, Meeting Review, Task Detail and Reports)](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/design/concepts/DES-012-consolidated-review08-task-detail.html)**
+
+**Product Owner visual decision — November 13, 2026:** This exact **DES-012 Review08** design is the **sole controlling UI reference across ALL pages, including Reports**. [Approved cross-view baseline / precedence record](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/docs/design/32_DES012_SOLE_CROSS_VIEW_UI_BASELINE_OWNER_DIRECTIVE_2026_11_13.md). The earlier Report 1.1 Review02 prototype is historical design evidence **only** and must not be substituted for or layered over the DES-012 Reporting page.
+
+**Review:** On your corporate PC, open the GitHub HTML link, choose **Download raw**, then open the standalone HTML in Edge. No workbook is required. Navigate all three pages. **Task Detail** must show fixed task identity, Owner/Priority, approved **Option A Start-to-Finish timeline** with Days Remaining and progress only when recorded (check WBS 3.2 missing-progress example), relationships and Updates. **Meeting Review** must have its full page and the same Task Detail. **Reports** must follow the Report Studio and document layout *inside this exact HTML*. Fictional demo interactions are not proof of Excel-backed persistence or risk status.
+
+**Implementation status:** The previously promoted Stage A app UAT ZIP was withdrawn because the PR #60 functional UI lacked the approved Option A timeline and Meeting Review. Green automated tests cover only that partial implementation, not full DES-012 visual parity. **No active app UAT ZIP is offered.** First prepare a complete DES-012-to-real-code/visual-test mapping, respecting frozen Report1.1 functionality and separate Watch-backed Meeting/Calendar implementation gates. Only a fully visually reconciled candidate should be repackaged for UAT; no product merge or release is authorized.
+
+**[Complete current UI parity and source gap matrix](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/docs/design/31_DES012_FULL_UI_RECONFIRMATION_AND_PR60_GAP_2026_11_13.md)** · [Visual design discussion and owner feedback — Issue #25](https://github.com/Kenny619/spl-wbs/issues/25)
 
 ## Excel setup
 

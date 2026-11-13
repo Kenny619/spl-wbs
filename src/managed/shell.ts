@@ -173,6 +173,51 @@ export function mountManagedShell(
   main.insertBefore(workspace, chart);
   workspace.append(chart, inspector);
   inspector.setAttribute("role", "region");
+
+  // Review 02 principle in Schedule: a compact, evidence-backed priority strip
+  // above the Gantt. Counts reflect only existing committed TaskStatus/TaskType
+  // values — no inferred RAG, scheduling changes or new filters.
+  const overview = doc.createElement("section");
+  overview.className = "managed-schedule-summary";
+  overview.setAttribute("aria-label", "Schedule priority summary");
+  const overviewHeading = doc.createElement("div");
+  overviewHeading.className = "managed-schedule-summary-heading";
+  const eyebrow = doc.createElement("span");
+  eyebrow.textContent = "SCHEDULE OVERVIEW";
+  eyebrow.className = "managed-schedule-eyebrow";
+  const headingText = doc.createElement("strong");
+  headingText.textContent = "Priority attention";
+  overviewHeading.append(eyebrow, headingText);
+  const summaryCounts = doc.createElement("div");
+  summaryCounts.className = "managed-schedule-summary-counts";
+  const countBlocks = new Map<string, HTMLElement>();
+  for (const [key, label] of [
+    ["blocked", "Blocked"], ["risk", "At Risk"], ["milestone", "Open milestones"],
+  ] as const) {
+    const countBlock = doc.createElement("div");
+    countBlock.className = "managed-schedule-summary-item " + key;
+    const value = doc.createElement("strong");
+    value.textContent = "0";
+    const caption = doc.createElement("span");
+    caption.textContent = label;
+    countBlock.append(value, caption);
+    summaryCounts.append(countBlock);
+    countBlocks.set(key, value);
+  }
+  overview.append(overviewHeading, summaryCounts);
+  main.insertBefore(overview, workspace);
+  const syncOverview = () => {
+    const tasks = controller.getState().tasks;
+    overview.hidden = !tasks;
+    if (!tasks) return;
+    const leaf = tasks.filter((task) => task.taskType !== "Summary" &&
+      task.status !== "Completed" && task.status !== "Cancelled");
+    countBlocks.get("blocked")!.textContent = String(leaf.filter((task) => task.status === "Blocked").length);
+    countBlocks.get("risk")!.textContent = String(leaf.filter((task) => task.status === "At Risk").length);
+    countBlocks.get("milestone")!.textContent = String(leaf.filter((task) => task.taskType === "Milestone").length);
+  };
+  controller.subscribe(syncOverview);
+  syncOverview();
   // The approved managed view keeps the inspector visible even with no task
   // selected. v18's overlay controller sets aria-hidden=true when empty,
   // which would hide our visible empty state from assistive technology.
