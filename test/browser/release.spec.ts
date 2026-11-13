@@ -113,8 +113,14 @@ test("renders 2000 synthetic rows", async ({ page }) => {
   test.setTimeout(90_000);
   const elapsed = await timeOpen(page, rows2000, "2000");
   expect(elapsed).toBeLessThan(20_000);
+  // Scroll the stable container instead of a row that may be detached while
+  // the 2,000-row layout completes. Preserve last-row visibility and content
+  // assertions; do not weaken the stress/render-time thresholds.
+  const scroll = page.locator("#gridScroll");
+  await expect(scroll).toBeVisible();
+  await scroll.evaluate((node) => { node.scrollTop = node.scrollHeight; });
   const last = page.locator(".task-row").last();
-  await last.scrollIntoViewIfNeeded();
+  await expect(last).toBeVisible();
   await expect(last).toContainText("Synthetic 2000");
   console.log(`2000 rows rendered in ${elapsed}ms`);
 });

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/checksum-dist.mjs",
-    "build:managed": "node scripts/prepare-managed-html.mjs && tsc --noEmit && vite build --config vite.managed.config.ts && node scripts/package-des010-uat.mjs && node scripts/package-report11-uat.mjs",
+    "build:managed": "node scripts/prepare-managed-html.mjs && tsc --noEmit && vite build --config vite.managed.config.ts && node scripts/package-des010-uat.mjs && node scripts/package-report11-uat.mjs && node scripts/package-stage-a-des012-uat.mjs",
     "extract:css": "node scripts/extract-baseline-css.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",

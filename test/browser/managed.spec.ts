@@ -497,7 +497,7 @@ test("Review 02 visual parity: report studio and Schedule share design language"
   await expect(priority).toContainText("At Risk");
   await expect(priority).toContainText("Open milestones");
   const scheduleRadius = await chart.evaluate((node) => getComputedStyle(node).borderRadius);
-  expect(scheduleRadius).toBe("11px");
+  expect(scheduleRadius).toBe("12px");
   const scheduleToolbar = page.locator(".managed-schedule-body .managed-gantt-scope");
   await expect(scheduleToolbar).toBeVisible();
   await testInfo.attach("review02-schedule-light", {
@@ -747,6 +747,81 @@ test("Failed new-folder import does not half-switch active directory or lose las
   await expect(page.getByLabel("Task title")).toHaveValue("Still editing last-good workbook");
 });
 
+
+test("DES-012 Stage A live Schedule preserves Gantt actions and scroll-contained Task Detail", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page);
+  await expect(page.locator("body")).toHaveClass(/spt-managed-des012-live/);
+  const chart = page.locator(".managed-schedule-body .chart-card");
+  const inspector = page.locator(".managed-schedule-body #panel");
+  const head = inspector.locator(".managed-inspector-head");
+  const scroll = inspector.locator(".managed-inspector-scroll");
+  await expect(head).toContainText("Task Detail");
+  await expect(head).toContainText("Work breakdown");
+  await expect(scroll.locator(".panel-title")).toHaveText("Synthetic milestone");
+  await expect(scroll.locator(".detail-grid")).toContainText("Owner A");
+  const header = await head.boundingBox();
+  const detailBox = await scroll.boundingBox();
+  expect(header && detailBox).toBeTruthy();
+  expect(detailBox!.y).toBeGreaterThan(header!.y + header!.height - 2);
+  expect(await scroll.evaluate(x => getComputedStyle(x).overflowY)).toBe("auto");
+  expect(await chart.evaluate(x => getComputedStyle(x).borderRadius)).toBe("12px");
+  const ganttTop = chart.locator(".chart-top");
+  const timelineControls = ganttTop.locator(".managed-review08-time-controls");
+  const taskControls = ganttTop.locator(".managed-review08-task-controls");
+  await expect(timelineControls.locator(".zoom-choice")).toHaveCount(4);
+  await expect(timelineControls.locator("#today")).toBeVisible();
+  await expect(timelineControls.locator("#fitTop")).toBeVisible();
+  await expect(taskControls.locator("#search")).toBeVisible();
+  await expect(taskControls.locator("#filterToggle")).toBeVisible();
+  await expect(ganttTop.locator(".managed-gantt-scope")).toBeVisible();
+  await expect(ganttTop.locator("#search")).toBeVisible();
+  await expect(ganttTop.locator("#filterToggle")).toBeVisible();
+  await expect(ganttTop.locator("#deps")).toBeAttached();
+  await ganttTop.locator(".zoom-choice[data-zoom='month']").click();
+  await expect(ganttTop.locator(".zoom-choice[data-zoom='month']")).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Review08 live editor");
+  await expect(scroll.getByLabel("Task title")).toHaveValue("Review08 live editor");
+  await testInfo.attach("des012-stage-a-live-schedule", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  await page.locator("#close").click();
+  await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Discard" }).click();
+  await expect(inspector.locator(".managed-empty-detail")).toBeVisible();
+});
+
+test("DES-012 Stage A shell is identical for read-only XLSX and writable directory imports", async ({ page }) => {
+  await openManaged(page);
+  const before = await page.locator(".managed-schedule-body").evaluate(x => ({
+    classes: x.className,
+    chart: Boolean(x.querySelector(".chart-card")),
+    inspector: Boolean(x.querySelector(".managed-inspector-head")),
+  }));
+  await page.locator(".managed-project-menu summary").click();
+  const input = page.getByLabel("Choose an XLSX for read-only preview");
+  await input.setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  const after = await page.locator(".managed-schedule-body").evaluate(x => ({
+    classes: x.className,
+    chart: Boolean(x.querySelector(".chart-card")),
+    inspector: Boolean(x.querySelector(".managed-inspector-head")),
+  }));
+  expect(after).toEqual(before);
+  await expect(page.locator("body")).toHaveClass(/spt-managed-des012-live/);
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await page.locator(".task-row").first().click();
+  await expect(page.locator(".managed-inspector-scroll .panel-title")).not.toBeEmpty();
+  await expect(page.getByRole("button", { name: "Edit task" })).toBeDisabled();
+  await page.locator(".managed-main-nav [data-managed-view='reports']").click();
+  await expect(page.locator(".report11-builder")).toBeVisible();
+  await page.locator(".managed-main-nav [data-managed-view='schedule']").click();
+  await expect(page.locator(".managed-inspector-head")).toBeVisible();
+});
 
 test("DES-010 real managed shell anchors inspector, navigation and local Gantt controls", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1366, height: 768 });
