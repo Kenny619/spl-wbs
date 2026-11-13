@@ -2,8 +2,8 @@
 
 **Date:** 2026-11-13 JST. **Classification:** draft technical QA; not independent organizational signoff, physical corporate-file UAT, field-level contract freeze or release.
 **PR:** [draft #53](https://github.com/Kenny619/spl-wbs/pull/53), based on [draft #52](https://github.com/Kenny619/spl-wbs/pull/52).
-**Initial head:** bcfe08160ab6aba02435c6778bd3a6e70f407a8f.
-**CI:** [Actions #43373292438](https://github.com/Kenny619/spl-wbs/actions/runs/43373292438): **269/269 Ubuntu unit tests in 37 files and managed/read-only builds PASS**; Windows Chromium still running at first evidence publication.
+**Exact verified head:** bcfe08160ab6aba02435c6778bd3a6e70f407a8f.
+**Final CI:** [Actions #43373292438](https://github.com/Kenny619/spl-wbs/actions/runs/43373292438) **completed SUCCESS at exact head**: [Ubuntu job #131713884527](https://github.com/Kenny619/spl-wbs/actions/runs/43373292438/job/131713884527) **269/269 unit tests PASS in 37 files**, strict TypeScript and managed/read-only builds PASS; [Windows Chromium #131713884232](https://github.com/Kenny619/spl-wbs/actions/runs/43373292438/job/131713884232) **80/80 browser tests PASS (2.8m)**.
 
 ## Independent fault-injection matrix
 
@@ -28,4 +28,4 @@ Synthetic File System Access handles do **not** establish atomic distributed loc
 
 **Remaining gates:** exact-head Windows browser CI; reviewer-independent test audit; corporate disposable shared-file sequential/locked-file UAT; owner contract freeze and DES-012 Review08 visual acceptance. No release, merge, production workbook writes or README/UAT kit.
 
-**Initial disposition:** unit/build PASS; full CI and non-synthetic gates pending.
+**Final technical disposition:** the eight new F6a synthetic adversarial cases and all existing tests PASS at exact head **269/269 unit, 80/80 Windows browser**; [draft PR #53](https://github.com/Kenny619/spl-wbs/pull/53) changes **only the new QA test file**, not production code. No independent organizational QA signoff, corporate Edge/Node26/Office lock proof, owner field-level schema freeze or production migration acceptance. All stacked branches stay draft and unmerged; no UAT kit/README/download, actual project workbook, beta/release or report output change.
