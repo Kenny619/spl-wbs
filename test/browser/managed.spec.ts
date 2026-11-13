@@ -1041,6 +1041,73 @@ test("DES-010 Project menu dismisses on outside, Escape and action while retaini
 });
 
 
+test("DES-012 Gantt filter badge counts filtered columns, not checked values, and marks each filtered heading", async ({ page }) => {
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  const badge = page.locator("#filterCount");
+  const headers = page.locator("#gridHeader");
+  await expect(badge).toBeHidden();
+  await expect(headers.locator(".managed-filtered-column")).toHaveCount(0);
+  await page.locator("#filterToggle").click();
+  await page.locator('#filterStatuses input[value="At Risk"]').check();
+  await page.locator('#filterStatuses input[value="Blocked"]').check();
+  await expect(page.locator("#statusSelection")).toHaveText("(2)");
+  await expect(badge).toHaveText("1");
+  await expect(badge).toHaveAttribute("data-filter-meaning", "columns");
+  await expect(page.locator("#filterToggle")).toHaveAttribute("aria-label", "Filters, 1 column filtered");
+  await expect(headers.locator(".managed-filtered-column")).toHaveCount(1);
+  await expect(headers.locator('[data-filtered-column="status"] .managed-filtered-column-mark')).toHaveText("▼");
+  await expect(headers.locator('[data-filtered-column="status"]')).toHaveAttribute("title", "Status: 2 filter values selected");
+
+  await page.locator("#filterOwners input").first().check();
+  await expect(badge).toHaveText("2");
+  await expect(page.locator("#filterToggle")).toHaveAttribute("aria-label", "Filters, 2 columns filtered");
+  await expect(headers.locator(".managed-filtered-column")).toHaveCount(2);
+  await expect(headers.locator('[data-filtered-column="owner"] .managed-filtered-column-mark')).toHaveText("▼");
+  await expect(headers.locator('[data-filtered-column="wbs"]')).toHaveCount(0);
+  await expect(headers.locator('[data-filtered-column="task"]')).toHaveCount(0);
+  await expect(headers.locator('[data-filtered-column="finish"]')).toHaveCount(0);
+
+  await page.locator("#clearInPopover").click();
+  await expect(badge).toBeHidden();
+  await expect(headers.locator(".managed-filtered-column")).toHaveCount(0);
+  await expect(page.locator("#filterToggle")).toHaveAttribute("aria-label", "Filters");
+  await expect(page.locator("#clearFilters")).toBeHidden();
+});
+
+test("DES-012 column markers follow real visible-column preferences; hide inactive is not a filtered column", async ({ page }) => {
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await page.locator("#hideInactive").check();
+  await expect(page.locator("#filterCount")).toBeHidden();
+  await expect(page.locator("#clearFilters")).toBeVisible();
+  await page.locator("#filterToggle").click();
+  await page.locator('#filterStatuses input[value="At Risk"]').check();
+  await expect(page.locator("#filterCount")).toHaveText("1");
+  await expect(page.locator('#gridHeader [data-filtered-column="status"]')).toBeVisible();
+  await page.locator("#filterDone").click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.locator('#columnOptions input[data-column="status"]').uncheck();
+  await expect(page.locator("#filterCount")).toBeHidden();
+  await expect(page.locator('#gridHeader [data-filtered-column="status"]')).toHaveCount(0);
+  await settings.getByRole("button", { name: "Close" }).click();
+  await expect(page.locator("#hideInactive")).toBeChecked();
+  await expect(page.locator("#clearFilters")).toBeVisible();
+  await page.locator("#clearFilters").click();
+  await expect(page.locator("#hideInactive")).not.toBeChecked();
+  await expect(page.locator("#clearFilters")).toBeHidden();
+});
+
 test("DES-010 Gantt scope keeps manual status filters and avoids no-op draft warnings", async ({ page }) => {
   await openManaged(page);
   await page.locator("#filterToggle").click();

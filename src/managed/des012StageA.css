@@ -441,3 +441,26 @@ body.spt-managed.spt-managed-des012-live .task-detail-root .updates-section {
     font-size:11px;
   }
 }
+
+/* Review08 filter state: ▼ identifies filtered columns, never individual
+ * selected values. Only the Excel-managed header receives these indicators. */
+body.spt-managed.spt-managed-des012-live .grid-header > span.managed-filtered-column {
+  position:relative;
+  color:var(--des12-blue);
+  padding-right:17px;
+}
+body.spt-managed.spt-managed-des012-live .grid-header .managed-filtered-column-mark {
+  position:absolute;
+  right:3px;
+  bottom:9px;
+  width:10px;
+  padding:0;
+  margin:0;
+  font-size:9px;
+  font-weight:900;
+  line-height:1;
+  color:var(--des12-blue);
+  text-transform:none;
+  letter-spacing:0;
+  pointer-events:none;
+}
