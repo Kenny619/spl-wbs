@@ -4,6 +4,16 @@
 **Controlling Product Owner data direction:** [DEC-DATA-2026-11-12](../design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md).  
 **Current proposal:** [human specification](EMV_PROJECT_DATA_0_1_PROPOSED.md) · [machine contract](EMV_PROJECT_DATA_0_1_PROPOSED.json) · [QA plan](../verification/EMV_PROJECT_DATA_0_1_ACCEPTANCE_PLAN.md).
 
+## 2026-11-13 — F6b proposed v0.1.2 Watch chronology clarification (NOT FROZEN)
+
+**Source:** [F6b exact-head integrity QA](../verification/EMV_PROJECT_DATA_F6B_WATCH_CHRONOLOGY_QA.md) · [draft PR #54](https://github.com/Kenny619/spl-wbs/pull/54). Exact SHA `96125391d09409fc93657f8a62cc67fb973faed0` [CI #43374712341](https://github.com/Kenny619/spl-wbs/actions/runs/43374712341) **SUCCESS (275 unit / 80 Windows Chromium)**.
+
+**Old drafted validation:** `WatchReasons` required canonical UTC timestamps and complete closure provenance; the new manual Save candidate rejected a new resolution before its opening, but the read-only inspector could accept an externally edited historical row where `LastReviewedUTC` or `ResolvedUTC` preceded `OpenedUTC`.
+
+**Clarified proposed rule:** a populated canonical review or resolution UTC must be **at or after** its reason's `OpenedUTC` (equality allowed), including imported/external rows. Such a contradiction is a fail-closed `WATCH_TIME_ORDER` finding: no valid Watch projection and no subsequent managed write until the workbook is reconciled. This neither approves automatic thresholds nor authenticates actor labels.
+
+**Traceability/impact:** synchronized the human proposal and JSON Watch constraints while retaining proposal version `0.1.2` and unchanged approved sheet shape. Six synthetic QA scenarios added; no legacy `ProjectWBS`/`UpdateHistory` change, release, main merge or corporate workbook migration. **Product Owner field-level review still required** before freezing the additive extension.
+
 ## 2026-11-12 — Revision 0.1.2 (approved scope; full field contract still DRAFT)
 
 **Source:** Owner “proceed” following [Issue #25 scope decisions](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812740341); [canonical disposition](../design/29_2026-11-12_PROJECT_DATA_SCOPE_DISPOSITION.md).
