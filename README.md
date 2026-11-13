@@ -13,9 +13,13 @@ Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address
 
 The page title is the file name without `.xlsx`.
 
-## Latest UAT download — SPT-WBS Report 1.1
+## Report 1.1 targeted preview — not current full-UI UAT
 
-**[Download the latest complete Report 1.1 UAT ZIP](https://github.com/Kenny619/spl-wbs/actions/runs/42803451878/artifacts/13757420806)**
+**[Report 1.1 targeted development-preview ZIP (older Schedule shell)](https://github.com/Kenny619/spl-wbs/actions/runs/42803451878/artifacts/13757420806)**
+
+**CURRENT UI ACCEPTANCE BLOCKED:** The linked ZIP is **not** the latest integrated Schedule/Task Detail UI. It packages the approved Report Review02 studio, but its Schedule shell is still **DES-010**, not the latest approved [DES-012 Review08 reference](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/design/concepts/DES-012-consolidated-review08-task-detail.html). This older ZIP is suitable **only for targeted Report 1.1 functional investigation**, not for the final Schedule/overall UI acceptance. The replacement functional Excel UAT must first integrate Review08 while preserving Report Review02; see [current UI integration gate](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/docs/implementation/STAGE_A_LATEST_APPROVED_UI_FUNCTIONAL_UAT_GATE.md). **Do not repeat full owner UI UAT on this package.** The DES-012 prototype is a visual reference, not a workbook-connected functional build.
+
+**Read-only XLSX import** is a separate fallback when Edge folder permission fails; it can test browsing/report rendering, but does not test workbook Save, audit append or backup/recovery. Do not mark write-based UAT PASS in that mode.
 
 Review 02 design-restored development preview · **November 10, 2026** · packaged source `85218fd629e50bf1ae17f22c5d2dd8f86ebb8eef` · [CI evidence](https://github.com/Kenny619/spl-wbs/actions/runs/42803451878) (**162/162 unit and 66/66 Windows Chromium tests passed**).
 
@@ -25,7 +29,7 @@ The ZIP contains the **Review 02 two-column Report Studio and matching Schedule 
 
 **Visual baseline:** Approved Review 02 report prototype is preserved as the controlling design in [Design Office Issue #25](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6765376047). The latest ZIP incorporates the paper-style report, four exception-focused KPI cards, compact tables, dark/light treatment and the Schedule priority summary; at narrow laptop widths, controls compress to preserve the Gantt height.
 
-**Status:** Draft [implementation PR #37](https://github.com/Kenny619/spl-wbs/pull/37), unmerged; independent QA and corporate Edge/Outlook UAT remain open. Use synthetic data only; no release authorized.
+**Status:** OUTDATED SHELL FOR MAIN UI UAT — Draft [implementation PR #37](https://github.com/Kenny619/spl-wbs/pull/37), unmerged; independent QA and corporate Edge/Outlook UAT remain open. Use synthetic data only; no release authorized.
 
 **README download policy:** This is the **single current UAT/mock download entry**. Whenever a revised mock or UAT package is available, replace this link, version, evidence and instructions **in the default-branch README and active feature-branch README** in the same handoff. Remove outdated README download entries rather than stacking links. Historical evidence stays in issues, PRs and CI records, not in this download section.
 
