@@ -614,7 +614,7 @@ test("DES-012 Reports compact layout stays functional at 1024 and 720 without lo
   const html = await reports.locator('iframe[title="Formatted report preview"]').getAttribute("srcdoc");
   expect(html).toContain("Responsive Reporting Program");
   await reports.locator("[data-report11-format='text']").click();
-  await expect(reports.getByLabel("Report preview")).toHaveValue(/Responsive Reporting Program/);
+  await expect(reports.getByRole("textbox", { name: "Report preview" })).toHaveValue(/Responsive Reporting Program/);
   await expect(documentStage.getByRole("button", { name: "Download text" })).toBeVisible();
   await testInfo.attach("des012-report-720", {
     body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
