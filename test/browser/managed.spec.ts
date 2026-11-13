@@ -483,7 +483,7 @@ test("Report 1.1 HTML preview and Outlook dual MIME copy keep an immutable snaps
   expect(clipboard.plain).toBe(plain);
 });
 
-test("Review 02 visual parity: report studio and Schedule share design language", async ({ page }, testInfo) => {
+test("DES-012 Reports visual parity: one baseline across Schedule, Report Studio and dark theme", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openManaged(page);
 
@@ -500,7 +500,7 @@ test("Review 02 visual parity: report studio and Schedule share design language"
   expect(scheduleRadius).toBe("12px");
   const scheduleToolbar = page.locator(".managed-schedule-body .managed-gantt-scope");
   await expect(scheduleToolbar).toBeVisible();
-  await testInfo.attach("review02-schedule-light", {
+  await testInfo.attach("des012-schedule-light", {
     body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
   });
 
@@ -512,15 +512,25 @@ test("Review 02 visual parity: report studio and Schedule share design language"
   await expect(sidebar).toBeVisible();
   await expect(workspace).toBeVisible();
   await expect(sidebar.getByRole("heading", { name: "Build a report" })).toBeVisible();
+  await expect(reports).toHaveClass(/report11-des012/);
+  await expect(sidebar).toContainText("Choose the perspective, set your scope and preview a stakeholder-ready document.");
+  await expect(sidebar).toContainText("Executive snapshot, key exceptions and upcoming commitments.");
+  await expect(workspace.getByRole("heading", { name: "Document preview" })).toBeVisible();
+  await expect(workspace.locator(".report11-panel-subtitle")).toContainText("STATIC SNAPSHOT");
+  await expect(reports.locator(".report11-preview-top")).toBeHidden();
+  await expect(reports.locator(".report11-settings-section")).toContainText("Reporting period");
   await expect(reports.locator(".report11-mode-card")).toHaveCount(3);
-  await expect(reports.locator(".report11-mode-card.active")).toContainText("Progress & Risks Update");
+  await expect(reports.locator(".report11-native-mode select")).toHaveAttribute("tabindex", "-1");
+  await expect(reports.locator(".report11-mode-card")).toHaveCount(3);
+  await expect(reports.locator(".report11-mode-card.active")).toContainText("Latest Status");
   await expect(reports.locator(".report11-format-choices")).toBeVisible();
 
   const left = await sidebar.boundingBox();
   const right = await workspace.boundingBox();
   expect(left && right).toBeTruthy();
   expect(left!.x + left!.width).toBeLessThan(right!.x);
-  expect(left!.width).toBeGreaterThan(250);
+  expect(left!.width).toBeGreaterThanOrEqual(300);
+  expect(left!.width).toBeLessThanOrEqual(304);
   expect(right!.width).toBeGreaterThan(520);
 
   await reports.getByLabel("Project name").fill("Design Parity Program");
@@ -533,21 +543,82 @@ test("Review 02 visual parity: report studio and Schedule share design language"
   expect(srcdoc).toContain('class="metric amber"');
   expect(srcdoc).toContain("Executive snapshot");
   expect(srcdoc).not.toContain("Overall progress");
-  await testInfo.attach("review02-reports-light", {
+  expect(srcdoc).toContain("Design Parity Program");
+  await expect(workspace.locator(".report11-format-choice.active")).toContainText("HTML preview");
+  await expect(workspace.getByRole("button", { name: "Download HTML" })).toBeVisible();
+  const paperStyle = await reports.locator(".report11-paper-stage").evaluate((node) => getComputedStyle(node).backgroundColor);
+  expect(paperStyle).toBe("rgb(233, 239, 243)");
+  await testInfo.attach("des012-reports-light", {
     body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
   });
 
   await page.evaluate(() => { document.body.dataset.managedTheme = "dark"; });
   const background = await sidebar.evaluate((node) => getComputedStyle(node).backgroundColor);
-  expect(background).toBe("rgb(29, 43, 62)");
-  await testInfo.attach("review02-reports-dark", {
+  expect(background).toBe("rgb(28, 41, 59)");
+  const darkPaper = await reports.locator(".report11-paper-stage").evaluate((node) => getComputedStyle(node).backgroundColor);
+  expect(darkPaper).toBe("rgb(16, 32, 45)");
+  await testInfo.attach("des012-reports-dark", {
     body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
   });
   await reports.locator("[data-report11-mode='audit']").click();
   await expect(reports.getByLabel("Report mode")).toHaveValue("audit");
+  await expect(workspace.getByRole("heading", { name: "Document preview" })).toBeVisible();
+  // An ungenerated mode change must not rewrite the prior committed snapshot.
+  expect(await reports.locator('iframe[title="Formatted report preview"]').getAttribute("srcdoc")).toBe(srcdoc);
   await page.locator(".managed-main-nav [data-managed-view='schedule']").click();
   await expect(chart).toBeVisible();
   await expect(reports).toBeHidden();
+});
+
+test("DES-012 Reports compact layout stays functional at 1024 and 720 without losing mode controls", async ({ page }, testInfo) => {
+  await openManaged(page);
+  await page.getByRole("button", { name: "Output Reports" }).last().click();
+  const reports = page.getByRole("dialog", { name: "Output Reports" });
+  const builder = reports.locator(".report11-builder");
+  const documentStage = reports.locator(".report11-workspace");
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(builder).toBeVisible();
+  await expect(documentStage).toBeVisible();
+  const left = await builder.boundingBox();
+  const right = await documentStage.boundingBox();
+  expect(left && right).toBeTruthy();
+  expect(left!.x + left!.width).toBeLessThan(right!.x);
+  expect(left!.width).toBeGreaterThanOrEqual(258);
+  await testInfo.attach("des012-report-1024", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+
+  await page.setViewportSize({ width: 720, height: 900 });
+  const compactBuilder = await builder.boundingBox();
+  const compactWorkspace = await documentStage.boundingBox();
+  expect(compactBuilder && compactWorkspace).toBeTruthy();
+  expect(compactWorkspace!.y).toBeGreaterThan(compactBuilder!.y + compactBuilder!.height - 2);
+  await expect(reports.locator(".report11-mode-card")).toHaveCount(3);
+  await expect(documentStage.getByRole("heading", { name: "Document preview" })).toBeVisible();
+  // In compact mode the report builder and preview form a single scrollable
+  // workspace inside the fixed 100dvh managed app. An off-viewport Generate
+  // button must remain reachable by the same scrolling a real user performs.
+  const scroll = await reports.evaluate((node) => ({
+    overflow: getComputedStyle(node).overflowY,
+    extra: node.scrollHeight - node.clientHeight,
+  }));
+  expect(scroll.overflow).toBe("auto");
+  expect(scroll.extra).toBeGreaterThan(40);
+  await reports.getByLabel("Project name").fill("Responsive Reporting Program");
+  await reports.locator("[data-report11-mode='status']").click();
+  const generate = reports.locator(".report11-generate");
+  await generate.scrollIntoViewIfNeeded();
+  await expect(generate).toBeVisible();
+  await generate.click();
+  const html = await reports.locator('iframe[title="Formatted report preview"]').getAttribute("srcdoc");
+  expect(html).toContain("Responsive Reporting Program");
+  await reports.locator("[data-report11-format='text']").click();
+  await expect(reports.getByRole("textbox", { name: "Report preview" })).toHaveValue(/Responsive Reporting Program/);
+  await expect(documentStage.getByRole("button", { name: "Download text" })).toBeVisible();
+  await testInfo.attach("des012-report-720", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
 });
 
 test("Stage A inspector shows READY state without modifying any workbook bytes", async ({ page }) => {

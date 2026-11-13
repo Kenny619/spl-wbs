@@ -97,7 +97,7 @@ export class ManagedReports {
       option.value = value;
       this.mode.append(option);
     }
-    this.mode.value = "progress";
+    this.mode.value = "status"; // DES-012 Review08 shows Latest Status selected initially.
     this.mode.addEventListener("change", () => this.updateMode());
     controls.append(field("Mode", this.mode));
 
@@ -115,6 +115,7 @@ export class ManagedReports {
     this.through.type = "date";
     this.through.setAttribute("aria-label", "Report end date");
     this.range = make("div", undefined, "managed-reports-period");
+    this.range.append(make("div", "Reporting period", "report11-period-heading"));
     this.range.append(field("From (inclusive)", this.from), field("Through (inclusive)", this.through));
     controls.append(this.range);
 
@@ -126,7 +127,7 @@ export class ManagedReports {
       this.limit.append(option);
     }
     this.limit.value = "all";
-    controls.append(field("Task listings", this.limit));
+    controls.append(field("Task details", this.limit));
 
     const fullLabel = make("label", undefined, "managed-report-check");
     this.full = make("input");
@@ -185,26 +186,27 @@ export class ManagedReports {
     this.htmlPreview.style.border = "1px solid #c9d7e5";
     this.dialog.append(this.htmlPreview);
 
-    // Owner-accepted Review 02 visual composition: persistent compact report
-    // builder at left and a document-stage preview at right. Reparent the real
-    // controls; do not fork any workbook, export or event handler logic.
-    this.dialog.classList.add("report11-studio");
+    // DES-012 Review08 is the sole current visual authority, INCLUDING Reports.
+    // Reparent ONLY the existing live report controls/preview; original
+    // reporting, clipboard, download and workbook snapshot handlers stay intact.
+    this.dialog.classList.add("report11-studio", "report11-des012");
     const studio = make("div", undefined, "report11-layout");
     const sidebar = make("aside", undefined, "report11-builder");
     sidebar.setAttribute("aria-label", "Report builder");
     const intro = make("div", undefined, "report11-builder-intro");
-    intro.append(make("span", "REPORT STUDIO", "report11-eyebrow"));
     head.querySelector("h2")!.textContent = "Build a report";
-    intro.append(head, make("p", "Create a leadership-ready update from the last verified workbook.", "report11-intro-copy"));
+    intro.append(head, make("p",
+      "Choose the perspective, set your scope and preview a stakeholder-ready document.",
+      "report11-intro-copy"));
     sidebar.append(intro);
 
     const modeArea = make("section", undefined, "report11-builder-section");
-    modeArea.append(make("div", "REPORT TYPE", "report11-control-heading"));
+    // Review08 places the three report perspectives immediately below the intro.
     const modes = make("div", undefined, "report11-modes");
     for (const [value, title, description, symbol] of [
-      ["status", "Latest Status", "Current health, exceptions and milestones", "◫"],
-      ["progress", "Progress & Risks Update", "Recorded changes and upcoming commitments", "↗"],
-      ["audit", "Detailed Change Audit", "Saved fields and original audit references", "☷"],
+      ["status", "Latest Status", "Executive snapshot, key exceptions and upcoming commitments.", "◫"],
+      ["progress", "Progress & Risks Update", "Recorded achievements, emerging concerns and schedule changes.", "↗"],
+      ["audit", "Detailed Change Audit", "Time-stamped historical field changes with linked saves.", "≡"],
     ] as const) {
       const button = make("button", undefined, "report11-mode-card");
       button.type = "button";
@@ -224,12 +226,17 @@ export class ManagedReports {
     // Retain accessible native selector for keyboard and existing UAT scripts.
     const nativeMode = controls.querySelector("label")!;
     nativeMode.classList.add("report11-native-mode");
+    // Visible mode cards are keyboard-accessible; do not create a hidden tab stop.
+    this.mode.tabIndex = -1;
+    nativeMode.setAttribute("title", "Report mode compatibility selector");
     modeArea.append(nativeMode);
     sidebar.append(modeArea);
     const inputSection = make("section", undefined, "report11-builder-section");
-    inputSection.append(make("div", "REPORT SETTINGS", "report11-control-heading"), controls);
+    inputSection.classList.add("report11-settings-section");
+    inputSection.append(controls);
     sidebar.append(inputSection);
     const generateSection = make("div", undefined, "report11-generate-area");
+    generate.textContent = "Generate / Refresh preview";
     generate.classList.add("report11-generate");
     generate.prepend(make("span", "↻", "report11-button-icon"));
     generateSection.append(generate, this.warning, this.status);
@@ -242,14 +249,14 @@ export class ManagedReports {
     workspace.setAttribute("aria-label", "Report document workspace");
     const panelHead = make("div", undefined, "report11-panel-head");
     const heading = make("div", undefined, "report11-heading");
-    heading.append(make("h2", "Progress & Risks Update", "report11-panel-title"));
-    heading.append(make("p", "Generate a fixed report snapshot; switch formats without recalculation.", "report11-panel-subtitle"));
+    heading.append(make("h2", "Document preview", "report11-panel-title"));
+    heading.append(make("p", "STATIC SNAPSHOT · Generate to apply current settings", "report11-panel-subtitle"));
     panelHead.append(heading);
     const toolbar = make("div", undefined, "report11-toolbar");
     const formatChoices = make("div", undefined, "report11-format-choices");
     formatChoices.setAttribute("role", "group");
     formatChoices.setAttribute("aria-label", "Preview format");
-    for (const [value, title] of [["html", "◫ HTML"], ["text", "☷ Plain text"]] as const) {
+    for (const [value, title] of [["html", "HTML preview"], ["text", "Plain text"]] as const) {
       const button = make("button", title, "report11-format-choice");
       button.type = "button";
       button.dataset.report11Format = value;
@@ -262,6 +269,7 @@ export class ManagedReports {
     }
     toolbar.append(formatChoices);
     this.format.classList.add("report11-native-format");
+    this.format.tabIndex = -1; // Visible HTML/plain buttons own keyboard focus.
     this.format.title = "Report format (keyboard selector)";
     toolbar.append(this.format, this.copy, this.download);
     panelHead.append(toolbar);
@@ -332,11 +340,8 @@ export class ManagedReports {
       button.classList.toggle("active", active);
       button.setAttribute("aria-pressed", String(active));
     });
-    const titles: Record<string, string> = {
-      status: "Latest Status", progress: "Progress & Risks Update", audit: "Detailed Change Audit",
-    };
-    const heading = this.dialog.querySelector<HTMLElement>(".report11-panel-title");
-    if (heading) heading.textContent = titles[this.mode.value] ?? "Reports";
+    // Keep the approved "Document preview" heading fixed when changing modes:
+    // preview content remains the last GENERATED snapshot until Generate is clicked.
   }
 
   private showFormat(): void {
@@ -344,6 +349,7 @@ export class ManagedReports {
     this.htmlPreview.hidden = !html;
     this.preview.parentElement!.hidden = html;
     this.copy.textContent = html ? "Copy for Outlook" : "Copy Report";
+    this.download.textContent = html ? "Download HTML" : "Download text";
     this.dialog.querySelectorAll<HTMLButtonElement>("[data-report11-format]").forEach((button) => {
       const active = button.dataset.report11Format === this.format.value;
       button.classList.toggle("active", active);
