@@ -1,5 +1,7 @@
 # SPT-WBS — full UI visual baseline reconfirmation before any further UAT or integration
 
+> **SUPERSEDING CURRENT VISUAL PRECEDENCE — Product Owner, 2026-11-13:** [DEC-UI-2026-11-13](32_DES012_SOLE_CROSS_VIEW_UI_BASELINE_OWNER_DIRECTIVE_2026_11_13.md) makes the **exact DES-012 Review08 HTML the SOLE approved UI baseline for Schedule, Meeting Review, Task Detail AND REPORTS**. Earlier Report 1.1 Review02 prototype is **historical**, not a separate or higher-priority Reports visual authority. Preserve frozen Report 1.1 functional behavior, but derive all current visual decisions from DES-012. If older material below refers to Report02 as prevailing visual design, that statement is superseded. The PR60 partial UI remains noncompliant. No new UAT package or release is authorized by the new baseline decision.
+
 **Date:** 2026-11-13 JST  
 **State:** VISUAL BASELINE REVIEW / IMPLEMENTATION HOLD. **No new design approval or Stage A acceptance is asserted.**  
 **Owner feedback:** The Nov 13 latest-UI UAT candidate again omitted the approved Task Detail integrated dates/progress timeline and the complete Meeting Review page. Owner explicitly directed **review the latest UI visually in image/HTML first**, then integrate only after the full baseline has been confirmed; **no UAT kit now**.
