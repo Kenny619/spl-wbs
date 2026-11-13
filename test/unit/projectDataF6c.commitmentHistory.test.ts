@@ -309,12 +309,11 @@ describe("F6c: conservative Excel-recorded commitment histories (NOT approval au
     expect(projection.workbookState).toBe("incompatible");
     expect(projection.tasks).toEqual([]);
   });
-  
+
   it.each([
     ["LF", "Launch\nScope"],
     ["TAB", "Launch\tScope"],
     ["CR", "Launch\rScope"],
-    ["DEL", "Launch\u007fScope"],
   ])("F6e rejects imported ProjectName with %s control character", async (_code, importedName) => {
     const b = await workbook(await fixture());
     b.getWorksheet("ProjectMeta")!.getCell("B3").value = importedName;
@@ -324,6 +323,20 @@ describe("F6c: conservative Excel-recorded commitment histories (NOT approval au
     expect(projection.workbookState).toBe("incompatible");
     expect(projection.tasks).toEqual([]);
     expect(projection.schemaValidated).toBe(false);
+  });
+
+  it("F6e rejects a decoded DEL in ProjectName without assuming ExcelJS retains it in XML", async () => {
+    const b = await workbook(await fixture());
+    b.getWorksheet("ProjectMeta")!.getCell("B3").value = "Launch\u007fScope";
+    const inspected = inspectProjectData(b);
+    expect(inspected.kind).toBe("incompatible");
+    if (inspected.kind === "incompatible") {
+      expect(inspected.findings.map(f => f.code)).toContain("BAD_PROJECT_NAME");
+    }
+    // The ExcelJS test writer strips DEL from an OOXML round trip. A real raw-XML
+    // test would need its own byte-level fixture; don't call this a raw-ZIP proof.
+    const reloaded = await workbook(new Uint8Array(await b.xlsx.writeBuffer()));
+    expect(String(reloaded.getWorksheet("ProjectMeta")!.getCell("B3").value)).not.toContain("\u007f");
   });
 
   it("F6e preserves valid multiline Watch reason details during imported-name hardening", async () => {
