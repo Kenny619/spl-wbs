@@ -15,7 +15,8 @@ This register keeps the original **61 planned acceptance cases** intact and adds
 
 ## Evidence provenance and frozen boundaries
 
-- Latest isolated [draft PR #58](https://github.com/Kenny619/spl-wbs/pull/58), exact head `26ce2caea188a2108e31143d477fb94cdf6f7789`: [Actions #43386556628](https://github.com/Kenny619/spl-wbs/actions/runs/43386556628) completed SUCCESS, **304/304 unit (39 files), 80/80 Windows Chromium**, both builds and bounded UUID screen PASS; imported ProjectName formula-like prefixes rejected. [PR verification comment](https://github.com/Kenny619/spl-wbs/pull/58#issuecomment-6847070239).
+- **New F7 cross-feature sequential integration evidence:** [draft PR #59](https://github.com/Kenny619/spl-wbs/pull/59) pinned `9089f964f55f4047f05dd2ddff21e9f4a0143cd0`, [push CI #43387994481](https://github.com/Kenny619/spl-wbs/actions/runs/43387994481) **completed SUCCESS** (**305/305 Ubuntu unit, 40 files; 80/80 hosted Windows Chromium; both builds/UUID gate**). One disposable source XLSX was verified across **five separate** guarded Saves: initialize ProjectName+blackout, add manual Watch, edit PlannedEnd, reject stale Calendar hash then reload/change blackout, resolve Watch; workbook-wide project/task audit separation, custom sheet/fonts, predecessor backup and conservative Watch/commitment states held. [Detailed QA/boundary findings](https://github.com/Kenny619/spl-wbs/pull/59#issuecomment-6847279334). This is **not** atomic mixed-domain `SAVE-01`, a genuine Watch-enabled Meeting Review, physical shared-file lock proof or Product Owner acceptance.
+- Earlier isolated [draft PR #58](https://github.com/Kenny619/spl-wbs/pull/58), exact head `26ce2caea188a2108e31143d477fb94cdf6f7789`: [Actions #43386556628](https://github.com/Kenny619/spl-wbs/actions/runs/43386556628) completed SUCCESS, **304/304 unit (39 files), 80/80 Windows Chromium**, both builds and bounded UUID screen PASS; imported ProjectName formula-like prefixes rejected. [PR verification comment](https://github.com/Kenny619/spl-wbs/pull/58#issuecomment-6847070239).
 - Earlier [F6e draft PR #57](https://github.com/Kenny619/spl-wbs/pull/57), exact `b29d0c5d76dcbc61715722b51f0751fe35fbebf9`: [run #43385565830](https://github.com/Kenny619/spl-wbs/actions/runs/43385565830) **297 unit / 80 browser PASS**, control-character inspector hardening. ExcelJS strips DEL in synthetic serialization; do not claim a raw malicious OOXML import proof.
 - Earlier [F6d draft PR #56](https://github.com/Kenny619/spl-wbs/pull/56), exact `54434e6f7ced6284ca10d0bb11c1de8da998736e`: [run #43381352622](https://github.com/Kenny619/spl-wbs/actions/runs/43381352622) **292 unit / 80 browser PASS**, adversarial audit-pointer/provenance tests.
 - Earlier F1–F6c branch-specific records linked in the evidence-key section below. **Do not substitute a later stacked-head overall green run for distinct physical or scenario-specific test coverage**. Hosted runner CI uses Node 22 in the ordinary workflow; separately verified Node26/npm11 toolchain [draft PR #33](https://github.com/Kenny619/spl-wbs/pull/33) does not establish actual corporate Excel/Edge/OneDrive safety.
@@ -44,12 +45,12 @@ This register keeps the original **61 planned acceptance cases** intact and adds
 
 | Planned ID | Evidence class | Technical pointer | Remaining distinction |
 |---|---|---|---|
-| **CAL-01** | D | F4c, F4d | Synthetic Calendar Save/verified reload and managed schedule impact |
+| **CAL-01** | D | F4c, F4d, F7 | Synthetic Calendar Save/verified reload and managed schedule impact |
 | **CAL-02** | D | F3c, F4c | Disable/change date creates audit and persists in synthetic workbook |
 | **CAL-03** | D | F2, F3b | One active interval enforced in draft reader/writer |
 | **CAL-04** | G | — | Two real Edge profiles and same authoritative corporate workbook require physical test |
 | **CAL-05** | I | F4a/F4b | Project metadata separated from local prefs; reset-versus-XLSX checksum proof incomplete |
-| **CAL-06** | D | F4d | Workbook-committed blackout wired into managed remaining-days calculations |
+| **CAL-06** | D | F4d, F7 | Workbook-committed blackout wired into managed remaining-days calculations |
 | **CAL-07** | I | F4c | Synthetic read-only/blocked permission flows; physical permission behavior untested |
 | **CAL-08** | I | F2, F3b | Date-only validation covered; calendar UI crossing year/leap-day matrix not fully evidenced |
 | **CAL-09** | D | F4d | Deduplicated blackout/weekend/holiday calendar exclusion synthetic checks |
@@ -62,12 +63,12 @@ This register keeps the original **61 planned acceptance cases** intact and adds
 
 | Planned ID | Evidence class | Technical pointer | Remaining distinction |
 |---|---|---|---|
-| **WATCH-01** | D | F5c, F5d | Manual reason Add, guarded Save, Task Detail audited readback |
+| **WATCH-01** | D | F5c, F5d, F7 | Manual reason Add, guarded Save, Task Detail audited readback |
 | **WATCH-02** | G | — | Automatic rule registry and its persistence semantics not approved |
 | **WATCH-03** | D | F5c, F6a | Independent manual reasons and selective Resolve in synthetic workbook |
 | **WATCH-04** | G | — | Green/Clear requires separately approved complete/current automatic checks |
 | **WATCH-05** | I | F5a | Unknown when check completeness unproved; actual stale-rule inputs not implemented |
-| **WATCH-06** | D | F6c | No row = Unconfirmed; recorded date is not implicit approval |
+| **WATCH-06** | D | F6c, F7 | No row = Unconfirmed; recorded date is not implicit approval |
 | **WATCH-07** | G | F6c (read only) | Commitment history reader exists; acceptance authority/action writer not approved |
 | **WATCH-08** | I | F6a, F6c | Task Save/history and conservative commitment read separately tested; integrated actor acceptance not |
 | **WATCH-09** | D | F2, F6b, F6c, F6d | Invalid IDs/tasks, timestamps, forks and audit pointers rejected before write |
@@ -80,9 +81,9 @@ This register keeps the original **61 planned acceptance cases** intact and adds
 
 | Planned ID | Evidence class | Technical pointer | Remaining distinction |
 |---|---|---|---|
-| **SAVE-01** | I | F6a | Task+Watch audit coexistence exercised; full Task+Watch+Calendar single logical Save not covered |
+| **SAVE-01** | I | F6a, F7 (sequential only) | Task+Watch audit coexistence exercised; full Task+Watch+Calendar single logical Save not covered |
 | **SAVE-02** | D | F3c | Project-only first Save creates header-only UpdateHistory without false task event |
-| **SAVE-03** | D | F3c, F6a | Stale source hash detects sequential external change in synthetic file adapter |
+| **SAVE-03** | D | F3c, F6a, F7 | Stale source hash detects sequential external change in synthetic file adapter |
 | **SAVE-04** | G | — | Real Excel-open file lock and corporate Edge permissions cannot be proved in CI |
 | **SAVE-05** | D | F6a | Staged source/serialization failure paths fail closed in simulated directory |
 | **SAVE-06** | D | F6a | Source/backup interruption classification and no-blind-retry policy simulated |
@@ -141,6 +142,8 @@ This register keeps the original **61 planned acceptance cases** intact and adds
 - **F6a:** [EMV_PROJECT_DATA_F6A_TRANSACTION_FAULT_QA.md](./EMV_PROJECT_DATA_F6A_TRANSACTION_FAULT_QA.md)
 - **F6b:** [EMV_PROJECT_DATA_F6B_WATCH_CHRONOLOGY_QA.md](./EMV_PROJECT_DATA_F6B_WATCH_CHRONOLOGY_QA.md)
 - **F6c:** [EMV_PROJECT_DATA_F6C_COMMITMENT_HISTORY_QA.md](./EMV_PROJECT_DATA_F6C_COMMITMENT_HISTORY_QA.md)
+
+**F7 source-level integration gaps (technical review, not an approved contract change):** `src/managed/main.ts` currently blocks project Save while task changes are dirty, and `projectDataCandidate.ts` allows one typed project edit per call; therefore the planned mixed-domain single-logical-Save example remains unsupported. `src/managed/shell.ts` has Schedule/Reports navigation but no genuine reason-backed Meeting Review. `src/managed/report11ProjectName.ts` retains its frozen local preference until a separately approved #7 reconciliation. No test or CI run should be used to present these as implemented.
 
 ## Dependency-aware next gates
 
