@@ -864,7 +864,13 @@ test("DES-012 Stage A live Schedule preserves Gantt actions and scroll-contained
 
 test("DES-012 Gantt has one chart-local control row with real previous/next timeline paging", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await openManaged(page);
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".task-row")).toHaveCount(23);
   const toolbar = page.locator(".managed-schedule-body .chart-top > .toolbar");
   const time = toolbar.locator(".managed-review08-time-controls");
   const tasks = toolbar.locator(".managed-review08-task-controls");
@@ -885,9 +891,12 @@ test("DES-012 Gantt has one chart-local control row with real previous/next time
   await expect.poll(async () => viewport.evaluate(node => node.scrollWidth - node.clientWidth))
     .toBeGreaterThan(100);
   await viewport.evaluate(node => { node.scrollLeft = 0; });
+  await expect(time.getByRole("button", { name: "Previous timeline period" })).toBeDisabled();
+  await expect(time.getByRole("button", { name: "Next timeline period" })).toBeEnabled();
   await time.getByRole("button", { name: "Next timeline period" }).click();
   const next = await viewport.evaluate(node => node.scrollLeft);
   expect(next).toBeGreaterThan(0);
+  await expect(time.getByRole("button", { name: "Previous timeline period" })).toBeEnabled();
   await time.getByRole("button", { name: "Previous timeline period" }).click();
   await expect.poll(async () => viewport.evaluate(node => node.scrollLeft)).toBe(0);
   await testInfo.attach("des012-single-chart-toolbar", {
