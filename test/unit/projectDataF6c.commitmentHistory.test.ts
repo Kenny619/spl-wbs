@@ -309,4 +309,30 @@ describe("F6c: conservative Excel-recorded commitment histories (NOT approval au
     expect(projection.workbookState).toBe("incompatible");
     expect(projection.tasks).toEqual([]);
   });
+  
+  it("F6e fails closed on externally injected ProjectName control characters", async () => {
+    for (const importedName of ["Launch\nScope", "Launch\tScope", "Launch\rScope", "Launch\u007fScope"]) {
+      const b = await workbook(await fixture());
+      b.getWorksheet("ProjectMeta")!.getCell("B3").value = importedName;
+      const data = new Uint8Array(await b.xlsx.writeBuffer());
+      expect(await findings(data)).toContain("BAD_PROJECT_NAME");
+      const projection = await projectCommitmentProjection(data);
+      expect(projection.workbookState).toBe("incompatible");
+      expect(projection.tasks).toEqual([]);
+      expect(projection.schemaValidated).toBe(false);
+    }
+  });
+
+  it("F6e preserves valid multiline Watch reason details during imported-name hardening", async () => {
+    const b = await workbook(await fixture());
+    b.getWorksheet("WatchReasons")!.addRow([
+      IDs.fourth, "1", "Manual", null, "Open", "Dependency watch",
+      "First line\nSecond line", "Risk register", T1, "Unverified actor",
+      null, null, null, null,
+    ]);
+    const inspected = inspectProjectData(b);
+    expect(inspected.kind).toBe("valid");
+    const textCell = b.getWorksheet("WatchReasons")!.getCell("G2").value;
+    expect(textCell).toBe("First line\nSecond line");
+  });
 });
