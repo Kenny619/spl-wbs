@@ -1,5 +1,7 @@
 # SPT-WBS — Delivery baseline and outstanding gates (13 Nov 2026)
 
+> **SUPERSEDING CURRENT VISUAL PRECEDENCE — Product Owner, 2026-11-13:** [DEC-UI-2026-11-13](../design/32_DES012_SOLE_CROSS_VIEW_UI_BASELINE_OWNER_DIRECTIVE_2026_11_13.md) makes the **exact DES-012 Review08 HTML the SOLE approved UI baseline for Schedule, Meeting Review, Task Detail AND REPORTS**. Earlier Report 1.1 Review02 prototype is **historical**, not a separate or higher-priority Reports visual authority. Preserve frozen Report 1.1 functional behavior, but derive all current visual decisions from DES-012. If older material below refers to Report02 as prevailing visual design, that statement is superseded. The PR60 partial UI remains noncompliant. No new UAT package or release is authorized by the new baseline decision.
+
 **Classification:** DMO current-state planning review, **NOT** a new approved schedule, scope freeze, target date, release or merge authority.
 
 > **Product Owner priority override — 2026-11-13:** Close **Stage A** before resuming new Stage B, Stage C, or the separately unassigned Excel-owned Calendar + Under Watch + Meeting Review program. Previously completed F-series QA remains archived and CI evidence valid **only at its pinned head**; do not create more F-series increments as a substitute for Stage A acceptance. This focus changes *execution priority*, not the approved A→B→C→beta roadmap, frozen contracts or full-scope future product obligations.
