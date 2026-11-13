@@ -248,4 +248,65 @@ describe("F6c: conservative Excel-recorded commitment histories (NOT approval au
     expect((await workbook(source)).getWorksheet("CustomerCustom")!.getCell("B1").value)
       .toBe("Customer record");
   });
+
+  // F6d: audit/entity references are not permission or identity verification.
+  it("F6d rejects a commitment audit assigned to a different existing TaskID", async () => {
+    const b = await workbook(await fixture([committed()]));
+    b.getWorksheet("ProjectAudit")!.getCell("F2").value = "2";
+    const data = new Uint8Array(await b.xlsx.writeBuffer());
+    expect(await findings(data)).toContain("AUDIT_TASK_MISMATCH");
+    const projection = await projectCommitmentProjection(data);
+    expect(projection.workbookState).toBe("incompatible");
+    expect(projection.tasks).toEqual([]);
+  });
+
+  it("F6d rejects a commitment audit pointing to a missing commitment ID", async () => {
+    const b = await workbook(await fixture([committed()]));
+    b.getWorksheet("ProjectAudit")!.getCell("E2").value = IDs.fourth;
+    const data = new Uint8Array(await b.xlsx.writeBuffer());
+    expect(await findings(data)).toContain("UNKNOWN_AUDIT_ENTITY");
+    expect((await projectCommitmentProjection(data)).tasks).toEqual([]);
+  });
+
+  it("F6d rejects invented verified actor provenance instead of trusting it", async () => {
+    const b = await workbook(await fixture([committed()]));
+    b.getWorksheet("ProjectAudit")!.getCell("L2").value = "VerifiedSSO";
+    const data = new Uint8Array(await b.xlsx.writeBuffer());
+    expect(await findings(data)).toContain("BAD_PROVENANCE");
+    const projection = await projectCommitmentProjection(data);
+    expect(projection.schemaValidated).toBe(false);
+  });
+
+  it("F6d never upgrades an audit pointer with a non-accept action into authority", async () => {
+    const b = await workbook(await fixture([committed()]));
+    // Update is a syntactically allowed audit action; it is not an acceptance certificate.
+    b.getWorksheet("ProjectAudit")!.getCell("G2").value = "Update";
+    const projection = await projectCommitmentProjection(new Uint8Array(await b.xlsx.writeBuffer()));
+    expect(projection.workbookState).toBe("valid");
+    expect(projection.tasks[0].latestRecorded?.hasRecordedProjectAudit).toBe(true);
+    expect(projection.tasks[0].acceptanceAuthorityVerified).toBe(false);
+    expect(projection.tasks[0].disposition).toBe("Recorded (unverified)");
+  });
+
+  it("F6d treats even a mismatched unverified audit actor as a pointer, not permission", async () => {
+    const b = await workbook(await fixture([committed()]));
+    // ActorLabel is self-asserted; this cannot authenticate AcceptedBy.
+    b.getWorksheet("ProjectAudit")!.getCell("K2").value = "Different self-reported editor";
+    const projection = await projectCommitmentProjection(new Uint8Array(await b.xlsx.writeBuffer()));
+    expect(projection.workbookState).toBe("valid");
+    expect(projection.tasks[0].latestRecorded?.hasRecordedProjectAudit).toBe(true);
+    expect(projection.tasks[0].latestRecorded?.acceptedBy).toBe("Unverified actor");
+    expect(projection.tasks[0].acceptanceAuthorityVerified).toBe(false);
+  });
+
+  it("F6d rejects duplicate WBS TaskID across numeric and text Excel cell types", async () => {
+    const b = await workbook(await fixture([committed()]));
+    b.getWorksheet("ProjectWBS")!.addRow(["1", "Duplicated task", "1.1", "Task",
+      "In Progress", "2026-12-06", "Cannot alias same ID"]);
+    const data = new Uint8Array(await b.xlsx.writeBuffer());
+    expect(await findings(data)).toContain("DUPLICATE_TASK_ID");
+    const projection = await projectCommitmentProjection(data);
+    expect(projection.workbookState).toBe("incompatible");
+    expect(projection.tasks).toEqual([]);
+  });
 });
