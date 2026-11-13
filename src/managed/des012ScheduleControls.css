@@ -1,0 +1,165 @@
+/*
+ * Final DES-012 Review08 Schedule toolbar + Task Detail fixed-header density.
+ * Only Excel Managed UI. Actual v18 zoom, Today, Gantt filtering, Save/History
+ * handlers and workbook bytes are unchanged.
+ *
+ * Review08 uses a single horizontally scrollable chart-local toolbar, not
+ * separate "timeline" and "task" rows. Compact viewports never discard
+ * controls or reduce the accepted usable Gantt height just to fit buttons.
+ */
+body.spt-managed.spt-managed-des012-live
+  .managed-schedule-body .chart-top > .toolbar {
+  display:flex; flex-direction:row; flex-wrap:nowrap;
+  align-items:center; justify-content:flex-start;
+  gap:9px; padding:5px 1px 7px;
+  overflow-x:auto; overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  scrollbar-width:thin; max-width:100%; min-width:0;
+  min-height:45px; white-space:nowrap;
+  scrollbar-color:var(--des12-edge) transparent;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-time-controls,
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-task-controls {
+  display:flex; flex:0 0 auto; align-items:center;
+  flex-wrap:nowrap; gap:6px; min-width:max-content;
+  margin:0; padding:0; white-space:nowrap;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-time-controls {
+  justify-content:flex-start; padding:0 9px 0 0;
+  border:0; border-right:1px solid var(--des12-edge);
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-task-controls {
+  justify-content:flex-start;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-time-controls .zoom-group {
+  display:inline-flex; align-items:center; flex:none;
+  margin:0; padding:2px;
+  border:1px solid var(--des12-edge);
+  border-radius:8px; background:var(--des12-raised);
+  min-height:32px; overflow:hidden;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-time-controls .zoom-choice {
+  min-height:27px; border:0; border-radius:5px;
+  font-size:11px; padding:5px 7px;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-period-nav {
+  display:inline-flex; align-items:center; flex:none; gap:0;
+  padding:2px; min-height:32px;
+  border:1px solid var(--des12-edge);
+  border-radius:8px; background:var(--des12-raised);
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-period-nav .tool {
+  display:inline-flex; justify-content:center; align-items:center;
+  flex:none; min-height:27px; padding:4px 7px;
+  border:0; border-radius:5px;
+  background:transparent; color:var(--des12-ink);
+  font-size:11px; font-weight:750;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-period-nav .managed-review08-period-arrow {
+  min-width:26px; font-size:17px; line-height:1;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-period-nav .tool:hover:not(:disabled) {
+  background:var(--des12-paper); color:var(--des12-blue);
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-period-nav .tool:disabled {
+  opacity:.35; cursor:default;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-time-controls #fitTop {
+  font-size:10px; min-height:32px; padding:5px 8px;
+  border-radius:8px; flex:none;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-task-controls .search {
+  flex:0 0 145px; min-width:120px; width:145px;
+  height:34px; padding:5px 9px;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-task-controls :is(.tool,.toggle) {
+  flex:none; white-space:nowrap; min-height:32px;
+  font-size:11px; padding:5px 8px;
+  border-radius:8px;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-task-controls .toggle {
+  display:inline-flex; align-items:center; gap:5px;
+}
+body.spt-managed.spt-managed-des012-live
+  .managed-review08-task-controls .toggle input {
+  flex:none;
+}
+body.spt-managed.spt-managed-des012-live
+  .chart-top > .toolbar:focus-visible {
+  outline:2px solid var(--des12-blue);
+  outline-offset:1px;
+}
+/* Review08 fixed inspector identity + actions on ONE compact header row
+ * when space permits; at narrow widths retain the full labeled actions below
+ * the title instead of allowing collisions or truncated tap targets. */
+@media(min-width:1191px) {
+  body.spt-managed.spt-managed-des012-live .managed-inspector-head {
+    display:grid; grid-template-columns:minmax(0,1fr) auto auto;
+    grid-template-areas:"identity actions close";
+    align-items:center; gap:5px;
+  }
+  body.spt-managed.spt-managed-des012-live
+    .managed-inspector-head > div:first-child {
+    min-width:0; grid-area:identity;
+  }
+  body.spt-managed.spt-managed-des012-live
+    .managed-inspector-actions {
+    grid-area:actions; flex-wrap:nowrap;
+    align-items:center; justify-content:flex-end;
+    min-width:0; gap:4px;
+  }
+  body.spt-managed.spt-managed-des012-live
+    .managed-inspector-actions button {
+    min-height:28px; padding:5px 7px;
+    font-size:10.5px;
+  }
+  body.spt-managed.spt-managed-des012-live
+    .managed-inspector-head #close {
+    grid-area:close; align-self:center;
+  }
+}
+@media(max-width:1190px) {
+  body.spt-managed.spt-managed-des012-live .managed-inspector-head {
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"identity close" "actions actions";
+    gap:5px;
+  }
+  body.spt-managed.spt-managed-des012-live
+    .managed-inspector-actions {
+    display:flex; flex-wrap:wrap; justify-content:flex-start;
+    grid-area:actions; align-items:center;
+  }
+  body.spt-managed.spt-managed-des012-live
+    .managed-review08-task-controls .search {
+    width:130px; flex-basis:130px;
+  }
+}
+/* Never wrap the toolbar at compact widths: internal horizontal scrolling
+ * preserves the existing 860px Gantt content height and all control actions. */
+@media(max-width:880px) {
+  body.spt-managed.spt-managed-des012-live
+    .managed-schedule-body .chart-top > .toolbar {
+    display:flex; flex-direction:row; flex-wrap:nowrap;
+    align-items:center; min-height:41px; gap:7px;
+    padding:3px 0 5px; overflow-x:auto; overflow-y:hidden;
+  }
+  body.spt-managed.spt-managed-des012-live
+    .managed-review08-time-controls {
+    padding:0 7px 0 0; border-right:1px solid var(--des12-edge);
+  }
+}
