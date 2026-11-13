@@ -2,6 +2,7 @@ import type { ManagedReports } from "./reportsUi";
 import type { ImportController } from "../data/importController";
 import type { ManagedSettings } from "./settingsUi";
 import { syncManagedReview08FilterIndicators, syncManagedReview08FinishFilter } from "./review08ScheduleFilterIndicators";
+import { mountManagedReview08TimelineNavigation } from "./review08TimelineNavigation";
 
 /**
  * Stage A DES-012 Schedule/Task Detail presentation adapter around the already-mounted
@@ -198,6 +199,10 @@ export function mountManagedShell(
     taskControls.setAttribute("aria-label", "Gantt filtering and display");
     while (chartToolbar.firstChild) taskControls.append(chartToolbar.firstChild);
     chartToolbar.append(timelineControls, taskControls);
+    mountManagedReview08TimelineNavigation(doc, controller, timelineControls);
+    chartToolbar.setAttribute("role", "group");
+    chartToolbar.setAttribute("aria-label", "Gantt chart controls; scroll horizontally for additional options");
+    chartToolbar.tabIndex = 0;
   }
 
   // Preserve the original task-selection and editor nodes and all their handlers.
