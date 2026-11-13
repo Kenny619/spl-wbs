@@ -13,21 +13,17 @@ Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address
 
 The page title is the file name without `.xlsx`.
 
-## Latest UI design review — UAT paused
+## Current approved UI baseline — DES-012 Review 08
 
-**The Product Owner has put application UAT and further UI integration on hold until the complete latest approved visual baseline is reconfirmed.**
+**[Open the single approved interactive UI baseline (Schedule, Meeting Review, Task Detail and Reports)](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/design/concepts/DES-012-consolidated-review08-task-detail.html)**
 
-**[Open the approved interactive Schedule + Meeting Review + Task Detail HTML — DES-012 Review 08](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/design/concepts/DES-012-consolidated-review08-task-detail.html)**
+**Product Owner visual decision — November 13, 2026:** This exact **DES-012 Review08** design is the **sole controlling UI reference across ALL pages, including Reports**. [Approved cross-view baseline / precedence record](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/docs/design/32_DES012_SOLE_CROSS_VIEW_UI_BASELINE_OWNER_DIRECTIVE_2026_11_13.md). The earlier Report 1.1 Review02 prototype is historical design evidence **only** and must not be substituted for or layered over the DES-012 Reporting page.
 
-**[Open the separately approved Report 1.1 Review 02 HTML](https://github.com/Kenny619/spl-wbs/blob/docs/report-1-1-po-approved-direction/docs/prototypes/SPT-WBS_Report_1.1_Interactive_Prototype_Review02.html)**
+**Review:** On your corporate PC, open the GitHub HTML link, choose **Download raw**, then open the standalone HTML in Edge. No workbook is required. Navigate all three pages. **Task Detail** must show fixed task identity, Owner/Priority, approved **Option A Start-to-Finish timeline** with Days Remaining and progress only when recorded (check WBS 3.2 missing-progress example), relationships and Updates. **Meeting Review** must have its full page and the same Task Detail. **Reports** must follow the Report Studio and document layout *inside this exact HTML*. Fictional demo interactions are not proof of Excel-backed persistence or risk status.
 
-To review on a corporate PC, select **Download raw** from the GitHub HTML page, then open the saved file locally in Edge. These are **standalone fictional interactive visual prototypes**; no Excel workbook, project folder, or UAT ZIP is needed.
+**Implementation status:** The previously promoted Stage A app UAT ZIP was withdrawn because the PR #60 functional UI lacked the approved Option A timeline and Meeting Review. Green automated tests cover only that partial implementation, not full DES-012 visual parity. **No active app UAT ZIP is offered.** First prepare a complete DES-012-to-real-code/visual-test mapping, respecting frozen Report1.1 functionality and separate Watch-backed Meeting/Calendar implementation gates. Only a fully visually reconciled candidate should be repackaged for UAT; no product merge or release is authorized.
 
-**What must be visible:** All **three pages** (Schedule / Meeting Review / Reports), and the same Task Detail across Schedule/Meeting Review with the owner-approved **Option A integrated Start → Finish rail** (Days Remaining above; recorded Progress fill only if present), fixed task identity header, Owner/Priority, real relationship navigation, Updates, and in-place demo edit. WBS **3.2** demonstrates missing recorded progress without a fake 0% fill. The **Report 1.1 Review02** reference remains the authority for the full reporting layout. Shared workbook-backed Watch/Calendar and final Meeting Review business rules have separate specification gates.
-
-**[Complete approved UI baseline and PR #60 gap matrix](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/docs/design/31_DES012_FULL_UI_RECONFIRMATION_AND_PR60_GAP_2026_11_13.md)** · [Comment on visual confirmation in Issue #25](https://github.com/Kenny619/spl-wbs/issues/25).
-
-**Withdrawn UAT promotion:** The previously linked Stage A ZIP from CI #43400644793 and draft PR #60 **omitted the integrated timeline and entire Meeting Review page**. Its scoped automated CI results remain valid for their tests, but the package is **not suitable for approval of the latest UI** and has been removed from this README's current-download section. There is **no current app UAT download** until the visual baseline and implementation sequence are confirmed. No main application code, beta/release, or production workbook is changed by this documentation correction.
+**[Complete current UI parity and source gap matrix](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/docs/design/31_DES012_FULL_UI_RECONFIRMATION_AND_PR60_GAP_2026_11_13.md)** · [Visual design discussion and owner feedback — Issue #25](https://github.com/Kenny619/spl-wbs/issues/25)
 
 ## Excel setup
 
