@@ -464,3 +464,62 @@ body.spt-managed.spt-managed-des012-live .grid-header .managed-filtered-column-m
   letter-spacing:0;
   pointer-events:none;
 }
+
+/* Review08: actual Gantt period navigation; original Today/zoom/Fit actions
+ * stay mounted with their own original listeners and state. */
+body.spt-managed.spt-managed-des012-live .managed-review08-time-controls .managed-period-button {
+  display:inline-flex; align-items:center; justify-content:center;
+  flex:none; width:28px; min-width:28px; height:32px; min-height:32px;
+  padding:0; font-size:19px; line-height:1; font-weight:700;
+  border:1px solid var(--des12-edge); border-radius:7px;
+  background:var(--des12-paper); color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-time-controls
+  .managed-period-button:disabled {
+  cursor:not-allowed; opacity:.37;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-time-controls
+  .managed-period-button:focus-visible {
+  outline:2px solid var(--des12-blue); outline-offset:2px;
+}
+/* Approved Review08 single Gantt control line on full desktop. Prevent
+ * clipping: when the actual live toolbar is wider, horizontal scrolling keeps
+ * EVERY control operable without wrapping or shrinking the Gantt body. */
+@media (min-width:1200px) {
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .toolbar {
+    flex-direction:row; flex-wrap:nowrap; gap:9px;
+    min-width:0; overflow-x:auto; overflow-y:hidden;
+    scrollbar-width:thin; padding-bottom:4px;
+    overscroll-behavior-inline:contain;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-review08-time-controls,
+  body.spt-managed.spt-managed-des012-live .managed-review08-task-controls {
+    flex:0 0 auto; flex-wrap:nowrap; gap:6px; padding:0;
+    border:0; white-space:nowrap;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-review08-task-controls .search {
+    width:144px; min-width:144px;
+  }
+}
+/* Reviewed desktop Task Detail: real task identity + Edit/History on the SAME
+ * header row. On compact viewports revert to two rows instead of truncating
+ * the task title or creating inaccessible action buttons. */
+@media (min-width:1280px) {
+  body.spt-managed.spt-managed-des012-live .managed-inspector-head {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto auto;
+    grid-template-areas:"identity actions close";
+    align-items:start; column-gap:7px; row-gap:0;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-actions {
+    grid-area:actions; display:flex; flex-direction:column;
+    align-items:stretch; gap:4px; margin-top:0;
+    white-space:nowrap;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-actions button {
+    min-height:24px; font-size:10px; padding:4px 6px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-head .panel-title {
+    font-size:14px;
+  }
+}
