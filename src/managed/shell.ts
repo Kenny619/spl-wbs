@@ -211,12 +211,32 @@ export function mountManagedShell(
       });
       return button;
     };
-    timelineControls.append(makePeriod(-1));
+    const previousPeriod = makePeriod(-1);
+    timelineControls.append(previousPeriod);
     for (const selector of ["#today"]) {
       const node = chartToolbar.querySelector<HTMLElement>(selector);
       if (node) timelineControls.append(node);
     }
-    timelineControls.append(makePeriod(1));
+    const nextPeriod = makePeriod(1);
+    timelineControls.append(nextPeriod);
+    const syncPeriodAvailability = () => {
+      if (!timeViewport) {
+        previousPeriod.disabled = true;
+        nextPeriod.disabled = true;
+        return;
+      }
+      const max = Math.max(0, timeViewport.scrollWidth - timeViewport.clientWidth);
+      previousPeriod.disabled = timeViewport.scrollLeft <= 1;
+      nextPeriod.disabled = timeViewport.scrollLeft >= max - 1;
+      if (max <= 1) {
+        previousPeriod.disabled = true;
+        nextPeriod.disabled = true;
+      }
+    };
+    timeViewport?.addEventListener("scroll", syncPeriodAvailability);
+    doc.defaultView?.addEventListener("resize", syncPeriodAvailability);
+    controller.subscribe(syncPeriodAvailability);
+    syncPeriodAvailability();
     const fitNode = chartToolbar.querySelector<HTMLElement>("#fitTop");
     if (fitNode) timelineControls.append(fitNode);
     const taskControls = doc.createElement("div");
