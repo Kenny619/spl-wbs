@@ -1,5 +1,7 @@
 # DES-012 / Consolidated Design Review 08 — Product Owner Visual Approval
 
+> **SUPERSEDING CURRENT VISUAL PRECEDENCE — Product Owner, 2026-11-13:** [DEC-UI-2026-11-13](32_DES012_SOLE_CROSS_VIEW_UI_BASELINE_OWNER_DIRECTIVE_2026_11_13.md) makes the **exact DES-012 Review08 HTML the SOLE approved UI baseline for Schedule, Meeting Review, Task Detail AND REPORTS**. Earlier Report 1.1 Review02 prototype is **historical**, not a separate or higher-priority Reports visual authority. Preserve frozen Report 1.1 functional behavior, but derive all current visual decisions from DES-012. If older material below refers to Report02 as prevailing visual design, that statement is superseded. The PR60 partial UI remains noncompliant. No new UAT package or release is authorized by the new baseline decision.
+
 **Decision ID:** DEC-DES-012-OWNER-APPROVAL  
 **Date:** 2026-11-11 JST  
 **Authority:** Product Owner (Kenny619), [Issue #25 owner comment #6784148471](https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6784148471)  
