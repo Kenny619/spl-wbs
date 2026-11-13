@@ -7,6 +7,8 @@ export type ViewState = {
   owners: string[];
   types: string[];
   workstreams: string[];
+  /** Managed-only exact calendar-date multi-filter; absent in read-only v18. */
+  finishes?: string[];
   hideInactive: boolean;
   columns: string[];
   zoom: Zoom;
