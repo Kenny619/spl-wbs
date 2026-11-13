@@ -1,7 +1,7 @@
 # Stage A — latest approved UI and functional Excel UAT reconciliation
 
 **Date:** 2026-11-13 JST  
-**Status (updated 2026-11-13):** Revised functional Stage A UAT candidate **READY FOR OWNER UAT** after scoped exact-code CI PASS; **actual owner latest-UI/Outlook/physical-file UAT NOT YET ACCEPTED**. Original older DES-010 ZIP was invalid for current UI; this document retains its root-cause record. Not a new design choice, release, beta change or merge authority.  
+**Status (superseding owner direction, 2026-11-13 20:02 JST):** **CURRENT APPLICATION UAT PROMOTION WITHDRAWN / UI INTEGRATION ON HOLD**. The previously promoted candidate was functionally incomplete against the already-owner-approved DES012 Review08 visual design: missing its Option A integrated dates/progress rail and entire Meeting Review page. 162/162 unit + 68/68 browser PASS was scoped and did not test the missing features. Owner directs **review standalone approved HTML first**, then **integrate only after full baseline confirmation**, and **create NO new UAT package now**. This status supersedes earlier candidate readiness text below. Not a new design approval, release, beta change or merge authority.  
 **Source:** Product Owner: “UAT package opened the excel with read-only, but the UI seems to be the old version. Is this intentional? I'd prefer to conduct UAT in the latest UI.”
 
 ## Verified root cause and correction
@@ -13,6 +13,8 @@ The actual **ZIP contents were inspected**: it contains `managed.html`, Report11
 The UAT read-only import is separate: `Project → Open XLSX read-only` supports a compatible .xlsx selection when folder access is blocked. It intentionally has **no Save/Save As/backup/history-write capability**. Read-only mode is not the reason Schedule UI looks older; it is an import permission fallback, **not** an alternate newer/older interface switch. If Owner uses read-only fallback, data/report/appearance tests may proceed, but all write/backup/recovery tests are BLOCKED.
 
 **Disposition:** Owner did not accept the older UI. Do **not** count the previous Report11 package as current/latest integrated Stage A UI acceptance. Prior automated Report11 CI stays valid for its own source SHA and scoped functions.
+
+> **Historical record only / REVOKED AS CURRENT UAT:** The following section documents an incomplete CI-green candidate created earlier on November 13. It is **not** an eligible current latest-UI UAT package. GitHub READMEs no longer promote its ZIP. Follow the [approved visual baseline and true gap matrix](../design/31_DES012_FULL_UI_RECONFIRMATION_AND_PR60_GAP_2026_11_13.md) instead.
 
 ## Verified replacement functional candidate — November 13, 2026
 
