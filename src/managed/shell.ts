@@ -1,7 +1,7 @@
 import type { ManagedReports } from "./reportsUi";
 import type { ImportController } from "../data/importController";
 import type { ManagedSettings } from "./settingsUi";
-import { syncManagedReview08FilterIndicators } from "./review08ScheduleFilterIndicators";
+import { syncManagedReview08FilterIndicators, syncManagedReview08FinishFilter } from "./review08ScheduleFilterIndicators";
 
 /**
  * Stage A DES-012 Schedule/Task Detail presentation adapter around the already-mounted
@@ -163,8 +163,13 @@ export function mountManagedShell(
   syncScope();
   // v18 paints grid headers + value-based filters before this managed shell
   // subscriber. Apply DES012 filtered-COLUMN semantics only to this app.
-  const syncColumnIndicators = () =>
-    syncManagedReview08FilterIndicators(doc, controller.getState().view);
+  const syncColumnIndicators = () => {
+    const state = controller.getState();
+    syncManagedReview08FinishFilter(doc, state.tasks ?? [], state.view,
+      () => controller.getState().view,
+      (patch) => controller.patchView(patch));
+    syncManagedReview08FilterIndicators(doc, state.view);
+  };
   controller.subscribe(syncColumnIndicators);
   syncColumnIndicators();
 

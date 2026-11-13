@@ -313,6 +313,7 @@ function bindChrome(
         if (!input.checked && column.id === "owner") patch.owners = [];
         if (!input.checked && column.id === "type") patch.types = [];
         if (!input.checked && column.id === "workstream") patch.workstreams = [];
+      if (!input.checked && column.id === "finish") patch.finishes = [];
         controller.patchView(patch);
       });
       label.append(input, doc.createTextNode(column.title + (column.fixed ? " · always shown" : "")));
@@ -453,7 +454,7 @@ function bindChrome(
 
 function visibleRows(tasks: readonly Task[], view: ViewState) {
   const filtering = Boolean(
-    view.search.trim() || view.statuses.length || view.owners.length || view.types.length || view.workstreams.length || view.hideInactive,
+    view.search.trim() || view.statuses.length || view.owners.length || view.types.length || view.workstreams.length || (view.finishes?.length ?? 0) || view.hideInactive,
   );
   return flattenVisible(tasks, filtering ? new Set(tasks.map((task) => task.id)) : new Set(view.expandedIds), {
     search: view.search,
@@ -461,12 +462,14 @@ function visibleRows(tasks: readonly Task[], view: ViewState) {
     owners: view.owners,
     types: view.types,
     workstreams: view.workstreams,
+    finishes: view.finishes,
     hideInactive: view.hideInactive,
     columns: {
       status: view.columns.includes("status"),
       owner: view.columns.includes("owner"),
       type: view.columns.includes("type"),
       workstream: view.columns.includes("workstream"),
+      finish: view.columns.includes("finish"),
     },
   });
 }
@@ -516,7 +519,7 @@ function provenanceText(state: SessionState): string {
 function clearFilters(controller: ImportController, doc: Document): void {
   const hide = doc.getElementById("hideInactive");
   if (hide instanceof HTMLInputElement) hide.checked = false;
-  controller.patchView({ statuses: [], owners: [], types: [], workstreams: [], hideInactive: false });
+  controller.patchView({ statuses: [], owners: [], types: [], workstreams: [], finishes: [], hideInactive: false });
 }
 
 function syncColumnChecks(doc: Document, columns: readonly string[]): void {

@@ -1041,6 +1041,46 @@ test("DES-010 Project menu dismisses on outside, Escape and action while retaini
 });
 
 
+test("DES-012 Finish-date multi-select filters real XLSX rows and preserves parent WBS context", async ({ page }) => {
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_DES010_Synthetic_UAT.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(packagedUatBase64, "base64"),
+  });
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await page.locator("#filterToggle").click();
+  const group = page.locator("#managedFinishFilterGroup");
+  await expect(group).toBeVisible();
+  await expect(group.getByLabel("Finish date Nov 12, 2026")).toBeVisible();
+  await group.locator('input[value="2026-11-12"]').check();
+  await expect(page.locator("#filterCount")).toHaveText("1");
+  await expect(page.locator("#managedFinishSelection")).toHaveText("(1)");
+  await expect(page.locator("#gridHeader [data-filtered-column='finish'] .managed-filtered-column-mark")).toHaveText("▼");
+  await expect(page.locator(".task-row").filter({ hasText: "Prototype schedule workspace" })).toBeVisible();
+  await expect(page.locator(".task-row").filter({ hasText: "Experience Design" }).first()).toBeVisible();
+  await expect(page.locator(".task-row").filter({ hasText: "Implement controlled Save workflow" })).toHaveCount(0);
+  // A second date belongs to the same column and must not increase the
+  // badge from 1 to 2; this is real multi-select, not a mock-only affordance.
+  await group.locator('input[value="2026-11-18"]').check();
+  await expect(page.locator("#filterCount")).toHaveText("1");
+  await expect(page.locator("#managedFinishSelection")).toHaveText("(2)");
+  await expect(page.locator(".task-row").filter({ hasText: "Implement controlled Save workflow" })).toBeVisible();
+  await page.locator("#filterDone").click();
+
+  // Hiding Finish removes the actual restriction and its heading indicator.
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.locator('#columnOptions input[data-column="finish"]').uncheck();
+  await expect(page.locator("#filterCount")).toBeHidden();
+  await expect(page.locator("#gridHeader [data-filtered-column='finish']")).toHaveCount(0);
+  await settings.getByRole("button", { name: "Close" }).click();
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await page.locator("#filterToggle").click();
+  await expect(group).toBeHidden();
+  await page.locator("#filterDone").click();
+});
+
 test("DES-012 Gantt filter badge counts filtered columns, not checked values, and marks each filtered heading", async ({ page }) => {
   await page.goto(fileUrl);
   await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
@@ -1087,7 +1127,13 @@ test("DES-012 column markers follow real visible-column preferences; hide inacti
     mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     buffer: Buffer.from(packagedUatBase64, "base64"),
   });
+  // setInputFiles returns after dispatch, not when the async XLSX import has
+  // committed. Without this real readiness gate, a later import publication
+  // resets the new session's ViewState and makes Hide inactive appear lost.
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
   await page.locator("#hideInactive").check();
+  await expect(page.locator("#hideInactive")).toBeChecked();
   await expect(page.locator("#filterCount")).toBeHidden();
   await expect(page.locator("#clearFilters")).toBeVisible();
   await page.locator("#filterToggle").click();
