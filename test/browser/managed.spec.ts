@@ -978,7 +978,8 @@ test("DES-012 desktop Task Detail aligns real Edit and History beside selected-t
   expect(await header.evaluate(node => getComputedStyle(node).gridTemplateAreas)).toContain("actions actions");
   await expect(actions.getByRole("button", { name: "Edit task" })).toBeVisible();
   await expect(actions.getByRole("button", { name: "Task history" })).toBeVisible();
-  expect(await page.locator(".chart-top > .toolbar").evaluate(node => getComputedStyle(node).flexDirection)).toBe("column");
+  // Review08 keeps one horizontally scrollable Gantt control row at 860px too.
+  expect(await page.locator(".chart-top > .toolbar").evaluate(node => getComputedStyle(node).flexDirection)).toBe("row");
 });
 
 test("DES-012 Option A uses recorded progress but does not fabricate 0% for an absent value", async ({ page }) => {
