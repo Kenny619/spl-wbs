@@ -961,6 +961,7 @@ test("DES-012 desktop Task Detail aligns real Edit and History beside selected-t
   const header = page.locator(".managed-inspector-head");
   const title = header.locator(".panel-title");
   const actions = header.locator(".managed-inspector-actions");
+  expect(await page.evaluate(() => matchMedia("(min-width:1280px)").matches)).toBe(true);
   expect(await actions.evaluate(node => getComputedStyle(node).flexDirection)).toBe("row");
   await expect(title).toHaveText("Synthetic milestone");
   await expect(actions.getByRole("button", { name: "Edit task" })).toBeEnabled();
