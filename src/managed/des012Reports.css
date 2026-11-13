@@ -1,0 +1,248 @@
+/*
+ * DES-012 Consolidated Review08 — the SOLE current Report Studio visual baseline.
+ * Exact design: design/concepts/DES-012-consolidated-review08-task-detail.html
+ * Scoped to live Excel-managed report shell; the frozen Report11 business
+ * renderer, ChangeHistory semantics, Outlook HTML and v18 reader are untouched.
+ * This file intentionally overrides historical Review02 presentation CSS.
+ */
+body.spt-managed.spt-managed-des012-live .managed-reports.report11-des012[open] {
+  margin:13px 22px 18px; padding:0; min-height:0;
+  overflow:hidden; background:transparent; border:0; box-shadow:none;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-layout {
+  display:grid; grid-template-columns:302px minmax(0,1fr);
+  gap:13px; min-height:0; height:100%;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 :is(.report11-builder,.report11-workspace) {
+  min-width:0; min-height:0; border-radius:12px;
+  border:1px solid var(--des12-edge); background:var(--des12-paper);
+  box-shadow:var(--des12-shadow);
+  color:var(--des12-ink); overflow:hidden;
+}
+/* Review08 left report builder: plain heading, three full-width perspectives,
+ * a single separator, then project/period/task settings and Generate. */
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-builder {
+  display:flex; flex-direction:column;
+  padding:19px 16px; overflow-y:auto; overscroll-behavior:contain;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-builder-intro {
+  padding:0; margin:0 0 20px; border:0; flex:none;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .managed-reports-head {
+  margin:0 0 5px;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .managed-reports-head h2 {
+  font-size:19px; line-height:1.35; color:var(--des12-ink);
+  margin:0; font-weight:800; letter-spacing:-.3px;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-intro-copy {
+  color:var(--des12-sub); font-size:11px;
+  line-height:1.45; margin:6px 0 0;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-builder-section {
+  padding:0; border:0; flex:none;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-modes {
+  display:flex; flex-direction:column; margin:0; gap:9px;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-mode-card {
+  appearance:none; display:flex; width:100%; align-items:flex-start;
+  gap:9px; margin:0; padding:14px;
+  border-radius:10px; border:1px solid var(--des12-edge);
+  background:var(--des12-paper); color:var(--des12-ink);
+  text-align:left; min-width:0;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-mode-card:hover {
+  background:var(--des12-raised); border-color:var(--des12-blue);
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-mode-card.active {
+  border-color:#85bfdf; background:#e6f3fa;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"]
+  .report11-des012 .report11-mode-card.active {
+  border-color:#547d99; background:#203c51;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-mode-icon {
+  display:inline; flex:none; width:auto; height:auto; min-width:15px;
+  padding:0; background:transparent; border:0; border-radius:0;
+  color:var(--des12-ink); font-size:14px; line-height:1.35;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"]
+  .report11-des012 .report11-mode-icon {
+  background:transparent; color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-mode-wording strong {
+  display:block; color:var(--des12-ink); font-weight:800;
+  font-size:12px; line-height:1.4;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-mode-wording small {
+  display:block; color:var(--des12-sub); margin-top:5px;
+  font-size:11px; font-weight:400; line-height:1.45;
+}
+/* Native selector remains available to programmatic compatibility/assistive
+ * consumers; the visible buttons provide the actual keyboard UI. */
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-native-mode,
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-native-format {
+  position:absolute; width:1px; height:1px; padding:0;
+  overflow:hidden; clip-path:inset(50%); white-space:nowrap;
+  border:0; margin:-1px;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-settings-section {
+  border-top:1px solid var(--des12-edge);
+  padding-top:15px; margin-top:15px;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .managed-reports-controls {
+  margin:0; display:flex; flex-direction:column; gap:10px;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .managed-report-field {
+  display:flex; flex-direction:column; gap:5px; margin:0;
+  color:var(--des12-sub); font-size:11px; font-weight:700;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .managed-report-field :is(select,input) {
+  width:100%; border:1px solid var(--des12-edge);
+  background:var(--des12-paper); color:var(--des12-ink);
+  font-size:11px; line-height:1.3; border-radius:7px; padding:9px;
+  min-width:0; min-height:35px;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .managed-reports-period {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px; margin:0;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-period-heading {
+  grid-column:1/-1; color:var(--des12-sub);
+  font-size:11px; font-weight:750; margin:0 0 1px;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-generate-area {
+  padding:0; margin:13px 0 0;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-generate {
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  margin:0; width:100%; min-height:38px;
+  border-radius:8px; font-size:11px; font-weight:800;
+  background:#207eaf; color:#fff; border:1px solid #207eaf;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-generate:hover {
+  background:#166890;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-button-icon {
+  font-size:15px; line-height:1;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-evidence-note {
+  border:0; background:transparent; color:var(--des12-sub);
+  font-size:10px; line-height:1.55; margin:12px 0 0; padding:0;
+}
+/* Review08 right: permanent document-preview identity and a single row of
+ * genuine HTML / text / clipboard / download actions. */
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-workspace {
+  display:flex; flex-direction:column;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-panel-head {
+  flex:none; display:flex; align-items:center; justify-content:space-between;
+  gap:9px; flex-wrap:wrap; padding:13px 18px;
+  border-bottom:1px solid var(--des12-edge);
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-heading {
+  min-width:0; flex:0 1 auto;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-heading h2 {
+  font-size:18px; font-weight:800; line-height:1.3; margin:0;
+  color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-heading p {
+  margin:4px 0 0; font-size:10px; line-height:1.4;
+  text-transform:uppercase; letter-spacing:.06em;
+  color:var(--des12-sub);
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-toolbar {
+  margin-left:auto; display:flex; align-items:center; gap:5px; flex-wrap:wrap;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-format-choices {
+  border:0; background:transparent; border-radius:0; padding:0;
+  gap:5px; display:flex; align-items:center;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-format-choice,
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-toolbar > .managed-action {
+  font-size:11px; font-weight:700; line-height:1.3; min-height:31px;
+  padding:7px 10px; color:var(--des12-ink);
+  background:var(--des12-paper); border:1px solid var(--des12-edge);
+  border-radius:7px;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-format-choice.active {
+  background:#dcedf9; color:#176a97; border-color:#92beda;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"]
+  .report11-des012 .report11-format-choice.active {
+  background:#284b64; color:#c7e9fc; border-color:#547d99;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-preview-top {
+  display:none; /* Review08 has only one compact document-stage heading. */
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-paper-stage {
+  flex:1; min-height:0; overflow:auto; overscroll-behavior:contain;
+  padding:26px; background:#e9eff3;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"]
+  .report11-des012 .report11-paper-stage {
+  background:#10202d;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-paper-viewport {
+  max-width:880px; width:100%; margin:0 auto; min-height:640px;
+  border-radius:0; background:#fff; color:#273d4f;
+  border:1px solid #dce4ec; box-shadow:0 8px 32px #30465b19;
+  overflow:hidden;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-paper-viewport
+  .managed-report-html-preview {
+  display:block; border:0!important; width:100%;
+  min-height:820px; background:#fff;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 .report11-bottom {
+  padding:7px 18px; border-top:1px solid var(--des12-edge);
+  color:var(--des12-sub); font-size:10px; flex:none;
+}
+body.spt-managed.spt-managed-des012-live .report11-des012 button:focus-visible,
+body.spt-managed.spt-managed-des012-live .report11-des012 :is(input,select,textarea):focus-visible {
+  outline:2px solid var(--des12-blue); outline-offset:2px;
+}
+@media(max-width:1020px) {
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-layout {
+    grid-template-columns:260px minmax(0,1fr);
+  }
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-paper-stage {
+    padding:14px;
+  }
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-panel-head {
+    padding:11px 13px;
+  }
+}
+@media(max-width:730px) {
+  body.spt-managed.spt-managed-des012-live .managed-reports.report11-des012[open] {
+    overflow-y:auto; min-height:680px; margin:9px 12px 14px;
+  }
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-layout {
+    display:grid; grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto minmax(550px,1fr);
+    height:auto; min-height:0;
+  }
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-builder {
+    overflow:visible; padding:12px; max-height:none;
+  }
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-modes {
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px;
+  }
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-mode-card {
+    padding:9px 7px; min-width:0; min-height:86px;
+  }
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-mode-icon {
+    display:none;
+  }
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-mode-wording small {
+    font-size:10px;
+  }
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-workspace {
+    min-height:560px;
+  }
+  body.spt-managed.spt-managed-des012-live .report11-des012 .report11-paper-stage {
+    padding:10px;
+  }
+}
