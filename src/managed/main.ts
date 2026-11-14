@@ -59,6 +59,9 @@ export class ManagedEditor {
   private sourceName: string | null = null;
   private loadedHash: string | null = null;
   private loadedBytes: Uint8Array | null = null;
+  // Verified report input for file-picker previews: separate from all writable
+  // workbook state and never used as an argument to Save or Save As.
+  private readonlyReportSource: Readonly<{ fileName: string; workbook: Uint8Array }> | null = null;
   private canWrite = false;
   private recoveryHold = false;
   private inspectionName: string | null = null;
@@ -186,6 +189,7 @@ export class ManagedEditor {
         this.sourceName = null;
         this.loadedHash = null;
         this.loadedBytes = null;
+        this.readonlyReportSource = null;
         this.inspectionName = null;
         this.recoveryHold = false;
         this.names = [];
@@ -211,9 +215,9 @@ export class ManagedEditor {
       () => this.guard(() => { void this.showHistory(); }),
     );
     this.reports = new ManagedReports(doc, () => ({
-      fileName: this.sourceName,
+      fileName: this.readonlyReportSource?.fileName ?? this.sourceName,
       tasks: this.busy ? null : this.controller.getState().tasks,
-      workbook: this.loadedBytes,
+      workbook: this.readonlyReportSource?.workbook ?? this.loadedBytes,
       timeZone: this.settings.getTimeZone(),
       hasUnsavedDraft: this.isDirty(),
     }));
@@ -274,9 +278,14 @@ export class ManagedEditor {
     // Preserve a previously verified editable source on failed import. The
     // preview never exposes writable handles even if the workbook passes preflight.
     this.busy = true;
+    // On a failed replacement, never report stale data from an earlier preview.
+    this.readonlyReportSource = null;
     this.message = "Importing " + file.name + " in read-only preview…";
     this.render();
     try {
+      // File is an immutable browser snapshot, not a writable handle. The same
+      // File is passed to the import controller and read for report generation.
+      const bytes = new Uint8Array(await file.arrayBuffer());
       await this.controller.chooseFile(file);
       const loaded = this.controller.getState();
       if (!loaded.tasks || loaded.fileName !== file.name || loaded.loadError) {
@@ -288,6 +297,7 @@ export class ManagedEditor {
       this.sourceName = null;
       this.loadedHash = null;
       this.loadedBytes = null;
+      this.readonlyReportSource = { fileName: file.name, workbook: bytes };
       this.inspectionName = null;
       this.names = [];
       this.canWrite = false;
@@ -382,6 +392,7 @@ export class ManagedEditor {
       this.inspectionName = name;
       this.loadedHash = hash;
       this.loadedBytes = bytes;
+      this.readonlyReportSource = null;
       this.canWrite = eligible;
       this.recoveryHold = false;
       this.clearDraft();
@@ -559,6 +570,7 @@ export class ManagedEditor {
       this.recoveryHold = false;
       this.loadedHash = saved.destinationHash;
       this.loadedBytes = verified;
+      this.readonlyReportSource = null;
       const targetNames = new Set<string>([name]);
       try {
         for await (const [foundName, handle] of (directory as DirectoryWithEntries).entries()) {
