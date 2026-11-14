@@ -1042,8 +1042,13 @@ test("UAT-02: managed dark theme has restrained day markers, semantic statuses a
     buffer: Buffer.from(packagedUatBase64, "base64"),
   });
   await expect(page.locator(".task-row")).toHaveCount(23);
+  // Loading task rows precedes the asynchronous ProjectData/Watch projection.
+  // Wait for the *completed* read-only import banner before opening Settings:
+  // its final render must not replace a drawer mid-interaction.
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const settings = page.getByRole("dialog", { name: "Settings" });
+  await expect(settings).toBeVisible();
   await settings.getByRole("radio", { name: "Dark" }).check();
   await settings.getByRole("button", { name: "Close" }).click();
   await page.locator(".zoom-choice").filter({ hasText: "Day" }).click();
