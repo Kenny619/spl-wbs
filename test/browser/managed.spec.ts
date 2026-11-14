@@ -1325,6 +1325,86 @@ test("Owner UAT: native Edge AbortError reports diagnostic and safe read-only XL
   expect(messages).toEqual([]);
 });
 
+test("Issue #69: corporate Edge folder denial allows real read-only Report11 Generate in all modes", async ({ page }, testInfo) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true,
+      value: async () => { throw new DOMException("Folder access denied by browser policy", "AbortError"); },
+    });
+  });
+  await page.goto(fileUrl);
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Choose project folder" }).click();
+  await expect(page.locator(".managed-banner")).toContainText("AbortError");
+
+  const name = "SPT-WBS_Report11_Synthetic_UAT.xlsx";
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name,
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: await readFile(path.resolve("dist-managed", name)),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await page.locator(".task-row").first().click();
+  await expect(page.getByRole("button", { name: "Edit task" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Save to workbook" })).toHaveCount(0);
+
+  await page.locator(".managed-main-nav [data-managed-view='reports']").click();
+  const reports = page.getByRole("dialog", { name: "Output Reports" });
+  await expect(reports).toBeVisible();
+  await expect(reports.locator(".report11-mode-card.active")).toContainText("Latest Status");
+  await reports.getByLabel("Report format").selectOption("text");
+  const preview = reports.getByRole("textbox", { name: "Report preview" });
+  await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(reports.getByText(/Enter a Project name before generating/)).toBeVisible();
+  await expect(preview).toBeEmpty();
+
+  await reports.getByLabel("Project name").fill("Fictional Enterprise Program");
+  await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(preview).toHaveValue(/LATEST STATUS/);
+  await expect(preview).toHaveValue(/Fictional Enterprise Program/);
+  await expect(preview).toHaveValue(/DAYS TO GO-LIVE:/);
+  await expect(reports.getByText(/Generated status snapshot from committed data/)).toBeVisible();
+
+  await reports.getByLabel("Report mode").selectOption("progress");
+  await reports.getByLabel("Report start date").fill("2026-11-09");
+  await reports.getByLabel("Report end date").fill("2026-11-10");
+  await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(preview).toHaveValue(/PROGRESS/);
+
+  await reports.getByLabel("Report mode").selectOption("audit");
+  await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(preview).toHaveValue(/Detailed Change Audit/);
+  await expect(preview).toHaveValue(/Save events: 3/);
+  await expect(preview).toHaveValue(/Field changes: 5/);
+  await reports.getByLabel("Report format").selectOption("html");
+  const html = await reports.locator("iframe[title='Formatted report preview']").getAttribute("srcdoc");
+  expect(html).toContain("Fictional Enterprise Program");
+  await testInfo.attach("issue69-readonly-report", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  expect(errors).toEqual([]);
+});
+
+test("Issue #69: invalid read-only import gives visible Generate error instead of a blank silent result", async ({ page }) => {
+  await page.goto(fileUrl);
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "not-a-workbook.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from("not valid XLSX bytes"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only workbook preview failed");
+  await page.locator(".managed-main-nav [data-managed-view='reports']").click();
+  const reports = page.getByRole("dialog", { name: "Output Reports" });
+  await reports.getByLabel("Project name").fill("Should not generate");
+  await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(reports.getByText("Choose and load a workbook before generating a report.")).toBeVisible();
+  await expect(reports.getByRole("textbox", { name: "Report preview" })).toBeEmpty();
+  await expect(reports.getByRole("button", { name: "Copy for Outlook" })).toBeDisabled();
+});
+
 test("Owner UAT: non-XLSX read-only fallback retains previous state without a write", async ({ page }) => {
   await page.goto(fileUrl);
   await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
