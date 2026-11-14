@@ -1354,6 +1354,8 @@ test("Issue #69: corporate Edge folder denial allows real read-only Report11 Gen
   await page.locator(".managed-main-nav [data-managed-view='reports']").click();
   const reports = page.getByRole("dialog", { name: "Output Reports" });
   await expect(reports).toBeVisible();
+  // Read-only has no folder write capability but must still permit report generation.
+  await expect(reports.getByText(/Reports are read-only. Generating, copying and downloading never modifies Excel/)).toBeVisible();
   await expect(reports.locator(".report11-mode-card.active")).toContainText("Latest Status");
   await reports.getByLabel("Report format").selectOption("text");
   const preview = reports.getByRole("textbox", { name: "Report preview" });
