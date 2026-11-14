@@ -1,3 +1,5 @@
+> **Decision completed November 14, 2026.** This is the archived **pre-approval review package**. The Product Owner [approved the bounded recommended field/audit freeze](https://github.com/Kenny619/spl-wbs/issues/3#issuecomment-6871527705). For controlling requirements use [EMV-PROJECT-DATA-0.1.2 FROZEN](EMV_PROJECT_DATA_0_1_2_FROZEN.md) and its [machine JSON](EMV_PROJECT_DATA_0_1_2_FROZEN.json). The historical proposal language below describes what was *pending as of November 13*, not the current disposition. Remaining business, actor authority, live sync, Report11 amendment, implementation and release gates are still open.
+
 # Project-data detailed contract — consolidated freeze review (13 Nov 2026)
 
 **Purpose:** Group the remaining **genuine Product Owner policy choices** before promoting the stacked F1–F5 draft implementations. **This document is a review proposal, NOT an approved/frozen new contract, PR merge authorization, real corporate-file migration or UI acceptance.**
