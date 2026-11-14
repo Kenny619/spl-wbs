@@ -1495,3 +1495,22 @@ test("Owner UAT kit: packaged 23-task XLSX imports, allows direct Save and write
   expect(book.getWorksheet("UpdateHistory")).toBeTruthy();
   expect(messages).toEqual([]);
 });
+
+test("DES-012 Watch evidence stays Unknown for legacy XLSX in writable and read-only modes", async ({ page }) => {
+  await openManaged(page);
+  const evidence = page.locator("#detailContent .managed-watch-evidence");
+  await expect(evidence).toContainText("Workbook Watch: Unknown");
+  await expect(evidence).toContainText("no Green or clearance inferred");
+  await expect(page.getByRole("button", { name: "Edit task" })).toBeEnabled();
+
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "legacy-watch-preview.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(base64, "base64"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  await page.locator(".task-row").first().click();
+  await expect(evidence).toContainText("Workbook Watch: Unknown");
+  await expect(evidence).toContainText("no Green or clearance inferred");
+  await expect(page.getByRole("button", { name: "Edit task" })).toBeDisabled();
+});
