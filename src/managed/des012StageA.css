@@ -286,10 +286,12 @@ body.spt-managed.spt-managed-des012-live .managed-inspector-head .panel-title {
 body.spt-managed.spt-managed-des012-live .managed-inspector-head #close {
   grid-area:close;
 }
-body.spt-managed.spt-managed-des012-live .managed-inspector-actions {
-  grid-area:actions; display:flex; gap:5px; flex-wrap:nowrap;
-  justify-content:flex-start; min-width:0; max-width:100%;
-  overflow-x:auto; overflow-y:hidden; scrollbar-width:thin;
+/* More specific than the earlier .managed-inspector-head > div column layout. */
+body.spt-managed.spt-managed-des012-live .managed-inspector-head > .managed-inspector-actions {
+  grid-area:actions; display:flex; flex-direction:row; align-items:center;
+  gap:5px; flex-wrap:nowrap; justify-content:flex-start;
+  min-width:0; max-width:100%; overflow-x:auto; overflow-y:hidden;
+  scrollbar-width:thin;
 }
 body.spt-managed.spt-managed-des012-live .managed-inspector-actions button {
   padding:5px 8px; min-height:27px; font-size:11px;
