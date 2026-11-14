@@ -17,7 +17,7 @@ test("non-draft main PR always full",()=>{
 test("draft main PR may target a known Gantt subset",()=>{
   const p=classifyCI(["src/ui/timeline.ts","src/ui/grid.ts"],
     {eventName:"pull_request",baseBranch:"main",isDraft:true});
-  assert.equal(p.tier,"targeted");assert.equal(p.browserScope,"gantt,baseline");
+  assert.equal(p.tier,"targeted");assert.equal(p.browserScope,"gantt,baseline,managed");
 });
 test("managed display edits select real managed suite",()=>{
   assert.equal(classifyCI(["src/managed/meetingReview.css"],push()).browserScope,"managed");
