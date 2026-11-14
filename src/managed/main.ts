@@ -17,6 +17,7 @@ import { todayInTimeZone } from "../calendar/dateOnly";
 import { MANAGED_APP_VERSION as APP_VERSION } from "./version";
 import { openManagedRecovery } from "./recoveryUi";
 import type { EditableField, EditValue } from "./workbookCandidate";
+import { projectWatchProjection, toManagedWatchView, type ManagedWatchView } from "./watchProjection";
 
 type DirectoryWithEntries = FileSystemDirectoryHandle & {
   entries(): AsyncIterable<[string, FileSystemHandle]>;
@@ -62,6 +63,7 @@ export class ManagedEditor {
   // Verified report input for file-picker previews: separate from all writable
   // workbook state and never used as an argument to Save or Save As.
   private readonlyReportSource: Readonly<{ fileName: string; workbook: Uint8Array }> | null = null;
+  private watchView: ManagedWatchView | null = null;
   private canWrite = false;
   private recoveryHold = false;
   private inspectionName: string | null = null;
@@ -190,6 +192,7 @@ export class ManagedEditor {
         this.loadedHash = null;
         this.loadedBytes = null;
         this.readonlyReportSource = null;
+        this.watchView = null;
         this.inspectionName = null;
         this.recoveryHold = false;
         this.names = [];
@@ -280,6 +283,7 @@ export class ManagedEditor {
     this.busy = true;
     // On a failed replacement, never report stale data from an earlier preview.
     this.readonlyReportSource = null;
+    this.watchView = null;
     this.message = "Importing " + file.name + " in read-only preview…";
     this.render();
     try {
@@ -298,6 +302,7 @@ export class ManagedEditor {
       this.loadedHash = null;
       this.loadedBytes = null;
       this.readonlyReportSource = { fileName: file.name, workbook: bytes };
+      this.watchView = await this.readWatchSnapshot(bytes);
       this.inspectionName = null;
       this.names = [];
       this.canWrite = false;
@@ -393,6 +398,7 @@ export class ManagedEditor {
       this.loadedHash = hash;
       this.loadedBytes = bytes;
       this.readonlyReportSource = null;
+      this.watchView = await this.readWatchSnapshot(bytes);
       this.canWrite = eligible;
       this.recoveryHold = false;
       this.clearDraft();
@@ -458,6 +464,7 @@ export class ManagedEditor {
       }
       this.loadedHash = result.sourceHash;
       this.loadedBytes = verified;
+      this.watchView = await this.readWatchSnapshot(verified);
       this.clearDraft();
       this.controller.patchView({ ...view, selectedId: taskId });
       this.message = "Verified Save: task and UpdateHistory persisted; predecessor backup retained.";
@@ -571,6 +578,7 @@ export class ManagedEditor {
       this.loadedHash = saved.destinationHash;
       this.loadedBytes = verified;
       this.readonlyReportSource = null;
+      this.watchView = await this.readWatchSnapshot(verified);
       const targetNames = new Set<string>([name]);
       try {
         for await (const [foundName, handle] of (directory as DirectoryWithEntries).entries()) {
@@ -593,6 +601,11 @@ export class ManagedEditor {
       this.busy = false;
       this.render();
     }
+  }
+
+  private async readWatchSnapshot(bytes: Uint8Array): Promise<ManagedWatchView> {
+    try { return toManagedWatchView(await projectWatchProjection(bytes)); }
+    catch { return { kind: "unavailable", workbookState: "incompatible", findings: [] }; }
   }
 
   private render(): void {
@@ -674,6 +687,25 @@ export class ManagedEditor {
           input?.focus();
         }),
       });
+      // Factual workbook evidence only: TaskStatus, Report11 and Save remain unchanged.
+      const evidence = element(this.doc, "section", "managed-watch-evidence");
+      evidence.setAttribute("aria-label", "Workbook Under Watch evidence");
+      evidence.dataset.watchTaskId = task.id;
+      const row = this.watchView?.kind === "ready"
+        ? this.watchView.rows.find((item) => item.taskId === task.id) : undefined;
+      evidence.append(element(this.doc, "strong", "", "Workbook Watch: " + (row?.watchLabel ?? "Unknown")));
+      const explanation = row?.watchLabel === "Under Watch"
+        ? row.openReasonCount + " recorded open reason(s); authorship and automatic rules are unverified."
+        : this.watchView?.kind === "ready"
+          ? "No recorded open reason; automatic checks and commitment clearance remain unverified."
+          : "Watch evidence unavailable from this workbook; no Green or clearance inferred.";
+      evidence.append(element(this.doc, "p", "", explanation));
+      if (row?.openReasonTitles.length) {
+        const list = element(this.doc, "ul");
+        for (const title of row.openReasonTitles) list.append(element(this.doc, "li", "", title));
+        evidence.append(list);
+      }
+      details.append(evidence);
     }
 
     // Original real editor and task History callbacks remain wired; move only
