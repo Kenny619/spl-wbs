@@ -16,10 +16,10 @@ function browserFor(file) {
   if(matched)return [matched[1]];
   if(file.startsWith("src/managed/"))return ["managed"];
   if(/^src\/ui\/(?:grid|timeline|scale|filters|detail|updates|calendarUi|mount|styles)\./.test(file))
-    return ["gantt","baseline"];
-  if(file.startsWith("src/model/"))return ["gantt","baseline"];
-  if(file.startsWith("src/calendar/"))return ["gantt","harness"];
-  if(file.startsWith("src/app/"))return ["gantt","harness","baseline"];
+    return ["gantt","baseline","managed"];
+  if(file.startsWith("src/model/"))return ["gantt","baseline","managed"];
+  if(file.startsWith("src/calendar/"))return ["gantt","harness","managed"];
+  if(file.startsWith("src/app/"))return ["full"];
   if(file.startsWith("src/")||file.startsWith("test/browser/")||file.startsWith("test/"))
     return ["full"];
   if(/^(?:index\.html|vite|vitest|playwright|tsconfig|package)/.test(file))

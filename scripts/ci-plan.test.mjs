@@ -27,6 +27,14 @@ test("save, import, CI, specification and unknown changes fail closed",()=>{
     ".github/workflows/ci.yml","docs/specifications/EMV.md","src/unmapped/new.ts","scripts/new-build-generator.mjs"];
   for(const path of paths)assert.equal(classifyCI([path],push()).browserScope,"full",path);
 });
+test("shared UI calendar model and boot changes keep managed browser safety coverage",()=>{
+  for(const file of ["src/ui/updates.ts","src/ui/grid.ts","src/model/gantt.ts","src/calendar/workdays.ts"]){
+    const p=classifyCI([file],push());
+    assert.equal(p.browser,true,file);
+    assert.ok(p.browserScope.split(",").includes("managed"),file);
+  }
+  assert.equal(classifyCI(["src/app/bootstrap.ts"],push()).browserScope,"full");
+});
 test("unit-only feature change runs Linux but no Windows",()=>{
   const p=classifyCI(["test/unit/calendar.test.ts"],push());
   assert.equal(p.fast,true);assert.equal(p.browser,false);
