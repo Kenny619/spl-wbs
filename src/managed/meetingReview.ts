@@ -1,4 +1,6 @@
 import type { ImportController } from "../data/importController";
+import type { Task } from "../data/types";
+import { todayInTimeZone } from "../calendar/dateOnly";
 import type { WatchProjection } from "./watchProjection";
 import type { ManagedReports } from "./reportsUi";
 
@@ -13,7 +15,7 @@ export function mountMeetingReview(doc: Document, controller: ImportController,
   };
   const host = make("section", undefined, "managed-meeting");
   host.setAttribute("aria-label", "Meeting agenda");
-  host.append(make("h2", "Meeting agenda"), make("p", "Exceptions first, grouped by workstream · recorded workbook Watch"));
+  host.append(make("h2", "Meeting agenda"), make("p", "Exceptions first, grouped by workstream · recorded Watch and status/date exceptions"));
   const summary = make("p"); host.append(summary);
   const tools = make("div", undefined, "managed-meeting-tools");
   const search = make("input"); search.type = "search";
@@ -66,9 +68,23 @@ export function mountMeetingReview(doc: Document, controller: ImportController,
     const available = watch?.workbookState === "valid" && watch.schemaValidated;
     const openIds = new Set(available ? watch.tasks.filter(t => t.openReasons.length).map(t => t.taskId) : []);
     const count = available ? watch.tasks.reduce((n,t) => n + t.openReasons.length, 0) : 0;
-    summary.textContent = available ? openIds.size + " Under Watch · " + count + " recorded Open reasons · " +
-      (tasks.length - openIds.size) + " Unknown · authorship and automatic checks unverified"
-      : "Unknown / unverified: workbook Watch evidence unavailable. No clearance inferred.";
+    const today = todayInTimeZone(new Date());
+    // Read-only agenda exceptions must not create a recorded Manual Watch
+    // reason or infer automatic Green/Clear status. Reuse the Summary metric
+    // convention: only leaf tasks/milestones, with Completed/Cancelled not overdue.
+    const attentionLabels = (task: Task): string[] => {
+      if (task.taskType === "Summary") return [];
+      const labels: string[] = [];
+      if (task.status === "At Risk" || task.status === "Blocked") labels.push(task.status);
+      if (task.plannedEnd && task.plannedEnd < today &&
+          task.status !== "Completed" && task.status !== "Cancelled") labels.push("Overdue");
+      return labels;
+    };
+    const attentionIds = new Set(tasks.filter(t => attentionLabels(t).length).map(t => t.id));
+    summary.textContent = (available
+      ? openIds.size + " Under Watch · " + count + " recorded Open reasons · "
+      : "Watch evidence Unknown · ") +
+      attentionIds.size + " status/date exceptions · no automatic Green or clearance inferred";
     const value = (task: typeof tasks[number], key: string) => key === "finish" ? task.plannedEnd ?? "Unscheduled"
       : key === "status" ? task.status : key === "owner" ? task.owner || "Unassigned" : task.workstream || "Unassigned";
     for (const [key, select] of choices) {
@@ -81,7 +97,7 @@ export function mountMeetingReview(doc: Document, controller: ImportController,
     scope.classList.toggle("active", exceptions); all.classList.toggle("active", !exceptions);
     scope.setAttribute("aria-pressed", String(exceptions)); all.setAttribute("aria-pressed", String(!exceptions));
     const query = search.value.trim().toLocaleLowerCase();
-    const rows = tasks.filter(t => (!exceptions || openIds.has(t.id)) &&
+    const rows = tasks.filter(t => (!exceptions || openIds.has(t.id) || attentionIds.has(t.id)) &&
       (!query || [t.taskName,t.id,t.owner,t.workstream,t.status].join(" ").toLocaleLowerCase().includes(query)) &&
       [...choices].every(([key, select]) => !select.selectedOptions.length || Array.from(select.selectedOptions).some(o => o.value === value(t,key))))
       .sort((a,b) => value(a,"workstream").localeCompare(value(b,"workstream")));
@@ -97,10 +113,12 @@ export function mountMeetingReview(doc: Document, controller: ImportController,
       const facts = available ? watch.tasks.find(t => t.taskId === task.id) : null;
       row.append(make("strong",task.taskName + " · WBS " + task.wbsCode), make("span",value(task,"owner")),
         make("span",value(task,"finish")), make("span",task.status),
-        make("span",(openIds.has(task.id) ? "Under Watch" : "Unknown") + " · " + (facts?.openReasons.length ?? 0) + " Open / " + (facts?.resolvedReasons.length ?? 0) + " Resolved"));
+        make("span",[(openIds.has(task.id) ? "Under Watch" : "Unknown") + " · " +
+          (facts?.openReasons.length ?? 0) + " Open / " + (facts?.resolvedReasons.length ?? 0) + " Resolved",
+          ...attentionLabels(task)].join(" · ")));
       row.addEventListener("click", () => controller.patchView({ selectedId: task.id })); list.append(row);
     }
-    if (!rows.length) list.append(make("p", available ? "No tasks match these filters. Unknown is not Green or Clear." : "No verified Watch agenda. Choose All workstreams to inspect current tasks with Unknown evidence."));
+    if (!rows.length) list.append(make("p", "No tasks match these filters. Recorded Watch evidence remains distinct from status/date exceptions; Unknown is not Green or Clear."));
   }
   return refresh;
 }

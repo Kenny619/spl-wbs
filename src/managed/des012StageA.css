@@ -272,8 +272,8 @@ body.spt-managed.spt-managed-des012-live .managed-inspector-scroll
  * Fixed task identity/actions, compact Owner/Priority and integrated Option A rail.
  */
 body.spt-managed.spt-managed-des012-live .managed-inspector-head {
-  display:grid; grid-template-columns:minmax(0,1fr) auto;
-  grid-template-areas:"identity close" "actions actions";
+  display:grid; grid-template-columns:minmax(0,1fr);
+  grid-template-areas:"identity" "actions";
   align-items:start; gap:8px;
 }
 body.spt-managed.spt-managed-des012-live .managed-inspector-head > div:first-child {

@@ -92,20 +92,30 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
   await expect(page.locator(".source-record")).toBeHidden();
 }
 
-test("managed v18 detail editor protects unsaved changes on task-panel close", async ({ page }) => {
+test("personal UAT: Escape exits task editing but retains selection and unsaved guard", async ({ page }) => {
   await openManaged(page);
+  const selected = await page.locator("#panel .managed-inspector-head .panel-title").textContent();
+  await expect(page.locator("#close")).toHaveCount(0);
   await page.getByRole("button", { name: "Edit task" }).click();
   await page.getByLabel("Task title").fill("Unsaved title");
   await expect(page.getByText("Unsaved changes", { exact: true })).toBeVisible();
 
-  await page.locator("#close").click();
-  await expect(page.getByRole("dialog", { name: "Unsaved changes" })).toBeVisible();
-  await page.getByRole("button", { name: "Cancel" }).click();
-  await expect(page.locator("#panel")).toHaveClass(/open/);
+  await page.keyboard.press("Escape");
+  const guard = page.getByRole("dialog", { name: "Unsaved changes" });
+  await expect(guard).toBeVisible();
+  await guard.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByLabel("Task title")).toHaveValue("Unsaved title");
 
-  await page.locator("#close").click();
-  await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Discard" }).click();
+  await page.keyboard.press("Escape");
+  await guard.getByRole("button", { name: "Discard" }).click();
+  await expect(page.locator("#panel")).toHaveClass(/open/);
+  await expect(page.locator("#panel .managed-inspector-head .panel-title")).toHaveText(selected ?? "");
+  await expect(page.getByLabel("Task title")).toHaveCount(0);
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.keyboard.press("Escape"); // clean editor exits directly, without clearing task
+  await expect(page.locator("#panel")).toHaveClass(/open/);
+  await expect(page.getByLabel("Task title")).toHaveCount(0);
+  await page.keyboard.press("Escape"); // outside editing, existing Schedule escape closes panel
   await expect(page.locator("#panel")).not.toHaveClass(/open/);
 });
 
@@ -206,7 +216,7 @@ test("Change History is read-only, grouped and filtered, with task entry and saf
   page.on("dialog", async (dialog) => { await dialog.accept(); });
   await openManaged(page);
   // Global toolbar is behind the task-detail overlay; close details first.
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("dialog", { name: "Settings" })
@@ -243,7 +253,7 @@ test("Change History is read-only, grouped and filtered, with task entry and saf
 
 test("Settings relocates existing v18 columns, persists timezone and dark theme locally", async ({ page }) => {
   await openManaged(page);
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   await expect(page.locator("#columnToggle")).toBeHidden();
   await expect(page.locator("#calendarSettings")).toBeVisible();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
@@ -277,7 +287,7 @@ test("Settings relocates existing v18 columns, persists timezone and dark theme 
 test("Settings System appearance follows device and Reset requires confirmation; workbook remains unchanged", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await openManaged(page);
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   const original = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
@@ -321,7 +331,7 @@ test("Change History uses the Settings timezone without mutating saved UTC audit
   await page.getByLabel("Task title").fill("Committed with timezone");
   await page.getByRole("button", { name: "Save to workbook" }).click();
   await expect(page.getByText(/Verified Save: task and UpdateHistory persisted/)).toBeVisible();
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const settings = page.getByRole("dialog", { name: "Settings" });
   await settings.getByLabel("Display timezone").selectOption("Asia/Tokyo");
@@ -389,7 +399,7 @@ test("Report 1.1 Detailed Audit preserves history, timezone and workbook bytes",
   const beforeReport = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const settings = page.getByRole("dialog", { name: "Settings" });
   await settings.getByLabel("Display timezone").selectOption("Asia/Tokyo");
@@ -430,7 +440,7 @@ test("Report 1.1 denied clipboard shows accurate failure and retains the snapsho
     });
   });
   await openManaged(page);
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Output Reports" }).click();
   const report = page.getByRole("dialog", { name: "Output Reports" });
   await report.getByLabel("Project name").fill("Synthetic Program");
@@ -468,7 +478,7 @@ test("Report 1.1 HTML preview and Outlook dual MIME copy keep an immutable snaps
     });
   });
   await openManaged(page);
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Output Reports" }).click();
   const report = page.getByRole("dialog", { name: "Output Reports" });
   await expect(report.getByLabel("Report task limit")).toHaveValue("all");
@@ -644,7 +654,7 @@ test("Stage A inspector shows READY state without modifying any workbook bytes",
   const source = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Inspect Save State" }).click();
   const dialog = page.getByRole("dialog", { name: "Inspect Save State" });
@@ -673,9 +683,10 @@ test("Stage A orphan recovery file blocks direct Save and inspector preserves al
   await expect(page.getByRole("button", { name: "Save to workbook" })).toBeDisabled();
   await expect(page.getByLabel("Task title")).toHaveValue("Do not overwrite");
 
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   await page.getByRole("dialog", { name: "Unsaved changes" })
     .getByRole("button", { name: "Discard" }).click();
+  await page.keyboard.press("Escape"); // return to Schedule after the editor exits
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Inspect Save State" }).click();
   const dialog = page.getByRole("dialog", { name: "Inspect Save State" });
@@ -787,7 +798,7 @@ test("Save As other folder denied leaves original project and unsaved draft inta
 
 test("Failed workbook selection keeps previous verified source, editable state and fingerprint", async ({ page }) => {
   await openManaged(page);
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   await page.evaluate(() => {
     const files = (window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> }).__managedFixtureFiles;
     files.set("unreadable.xlsx", new TextEncoder().encode("corrupt ZIP bytes"));
@@ -807,7 +818,7 @@ test("Failed workbook selection keeps previous verified source, editable state a
 
 test("Failed new-folder import does not half-switch active directory or lose last-good edits", async ({ page }) => {
   await openManaged(page);
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   await page.evaluate(() => {
     const invalidDir = {
       kind: "directory", name: "unreadable-folder",
@@ -875,8 +886,9 @@ test("DES-012 Stage A live Schedule preserves Gantt actions and scroll-contained
   await testInfo.attach("des012-stage-a-live-schedule", {
     body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
   });
-  await page.locator("#close").click();
+  await page.keyboard.press("Escape");
   await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Discard" }).click();
+  await page.keyboard.press("Escape"); // selected task is retained until explicit exit
   await expect(inspector.locator(".managed-empty-detail")).toBeVisible();
 });
 
@@ -1321,7 +1333,7 @@ for (const width of [1440, 1024, 860]) {
     expect(gantt).not.toBeNull();
     expect(gantt!.height).toBeGreaterThan(260);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
-    await page.locator("#close").click();
+    await page.keyboard.press("Escape");
     const empty = page.locator(".managed-empty-detail");
     await expect(empty).toBeVisible();
     await expect(inspector).not.toHaveAttribute("aria-hidden", "true");
@@ -1862,4 +1874,47 @@ test("owner UAT E2/E14/E16: exact shipped 23-task five-sheet read-only workbook 
     await reports.getByLabel("Report format").selectOption("text");
   }
   expect(errors).toEqual([]);
+});
+
+test("owner UAT: saving a task does not open a redundant browser confirmation", async ({ page }) => {
+  const confirmations: string[] = [];
+  page.on("dialog", dialog => {
+    if (dialog.type() === "confirm") confirmations.push(dialog.message());
+    void dialog.dismiss();
+  });
+  await openManaged(page);
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Saved without redundant confirmation");
+  await page.getByRole("button", { name: "Save to workbook" }).click();
+  await expect(page.locator(".managed-banner")).toContainText("Verified Save: task and UpdateHistory persisted");
+  expect(confirmations).toEqual([]);
+});
+
+test("owner UAT: Meeting Exceptions combines recorded Watch, At Risk, Blocked and overdue without new Watch facts", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-15T00:00:00.000Z"));
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.load(await projectDataWorkbook("Open"));
+  const sheet = book.getWorksheet("ProjectWBS")!;
+  const headers = sheet.getRow(1).values as string[];
+  const statusCol = headers.indexOf("TaskStatus");
+  const finishCol = headers.indexOf("PlannedEnd");
+  const idCol = headers.indexOf("ID");
+  if (statusCol < 1 || finishCol < 1 || idCol < 1) throw Error("Unexpected synthetic workbook columns");
+  const rows = sheet.getRows(2, sheet.rowCount - 1)!;
+  const target = rows.filter(row => String(row.getCell(idCol).value) !== "501").slice(0,3);
+  if (target.length !== 3) throw Error("Need three non-Watch synthetic tasks");
+  target[0].getCell(statusCol).value = "At Risk";
+  target[1].getCell(statusCol).value = "Blocked";
+  target[2].getCell(statusCol).value = "In Progress";
+  target[2].getCell(finishCol).value = "2026-11-01";
+  await openManaged(page, Buffer.from(await book.xlsx.writeBuffer()).toString("base64"));
+  await page.getByRole("button", { name: "Meeting Review", exact: true }).click();
+  const agenda = page.getByRole("region", { name: "Meeting agenda", exact: true });
+  await expect(agenda.locator('.managed-meeting-task[data-task-id="501"]')).toContainText("Under Watch");
+  for (const row of target) {
+    const id = String(row.getCell(idCol).value);
+    await expect(agenda.locator('.managed-meeting-task[data-task-id="' + id + '"]')).toBeVisible();
+  }
+  await expect(agenda).toContainText("status/date exceptions");
+  await expect(agenda).toContainText("no automatic Green or clearance inferred");
 });

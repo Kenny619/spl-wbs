@@ -104,6 +104,9 @@ export class ManagedEditor {
       rerender: () => this.render(),
     });
     doc.body.classList.add("spt-managed");
+    // The Schedule inspector is persistent in DES-012; close via Escape, not a
+    // redundant top-right button. Keep the read-only baseline untouched.
+    doc.getElementById("close")?.remove();
     const topbar = doc.querySelector(".topbar");
     const actions = doc.querySelector(".top-actions");
     if (!topbar || !actions) throw new Error("Approved v18 layout is missing required UI regions.");
@@ -116,10 +119,24 @@ export class ManagedEditor {
     this.dialog.setAttribute("aria-label", "Unsaved changes");
     doc.body.append(this.dialog);
     doc.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && this.dialog.open) {
+      if (event.key !== "Escape") return;
+      if (this.dialog.open) {
         event.preventDefault();
         event.stopImmediatePropagation();
         this.resolvePending(false);
+        return;
+      }
+      // Escape exits task editing without closing or unselecting Task Detail.
+      // The ordinary unsaved-change guard still requires Save/Discard/Cancel
+      // before leaving a dirty editor. Other open dialogs own their Escape.
+      if (this.editing && !doc.querySelector("dialog[open]")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        this.guard(() => {
+          this.editing = false;
+          if (this.initial) this.draft = { ...this.initial };
+          this.render();
+        });
       }
     }, { capture: true });
 
@@ -533,9 +550,6 @@ export class ManagedEditor {
         !this.sourceName || !this.loadedHash || this.editing || this.isTaskDirty()) {
       return { kind: "blocked", message: "A verified writable workbook with no task draft is required." };
     }
-    if (!window.confirm("Save recorded project evidence to this disposable workbook and retain a verified predecessor backup?")) {
-      return { kind: "blocked", message: "Save cancelled; draft retained." };
-    }
     this.busy = true;
     this.render();
     try {
@@ -582,9 +596,6 @@ export class ManagedEditor {
       this.render();
       return true;
     }
-    if (!window.confirm("Development preview: this replaces the selected workbook. Use a disposable copy only. Continue?")) {
-      return false;
-    }
     const taskId = this.selectedId;
     this.busy = true;
     this.message = "Saving and verifying local XLSX and backup…";
@@ -603,7 +614,7 @@ export class ManagedEditor {
       const file = await (await this.directory.getFileHandle(this.sourceName)).getFile();
       const verified = new Uint8Array(await file.arrayBuffer());
       if (await sha256(verified) !== result.sourceHash) {
-        throw new Error("Source changed after Save confirmation; do not retry without inspection.");
+        throw new Error("Source changed after Save verification; do not retry without inspection.");
       }
       await this.controller.chooseFile(file);
       const reloaded = this.controller.getState();
@@ -688,11 +699,6 @@ export class ManagedEditor {
       this.render();
       return false;
     }
-    if (!window.confirm(
-      "Save As creates a new workbook from the version last loaded in this app plus your pending edits. " +
-      "It does NOT merge changes made in Excel or elsewhere. The original remains untouched. Destination folder: " + directory.name + ". Continue?"
-    )) return false;
-
     const sourceName = this.sourceName;
     const snapshot = this.loadedBytes;
     const previousHash = this.loadedHash;
