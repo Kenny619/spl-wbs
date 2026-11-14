@@ -463,5 +463,10 @@
     "means_committed_empty_blackout": false,
     "partial_or_malformed_extension": "REJECT_WRITE_AND_MARK_COUNT_UNKNOWN_WHEN_DATA_DEPENDENT",
     "approval_state": "TECHNICAL_COMPATIBILITY_REVIEW_NOT_FROZEN"
-  }
+  },
+  "historical_only": true,
+  "superseded_by": "docs/specifications/EMV_PROJECT_DATA_0_1_2_FROZEN.json",
+  "superseded_on": "2026-11-14",
+  "superseding_owner_approval": "https://github.com/Kenny619/spl-wbs/issues/3#issuecomment-6871527705",
+  "current_schema_authority": "FROZEN_0.1.2_SEPARATE_VERSIONED_CONTRACT"
 }
