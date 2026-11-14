@@ -8,6 +8,8 @@
 .managed-meeting-task span:last-child{grid-column:1/-1;font-size:11px}.managed-meeting-task.selected{background:#eaf5fc}
 body.spt-managed-meeting-open .managed-schedule-body>.chart-card{display:none!important}
 body.spt-managed-meeting-open .managed-meeting{display:block}
-body.spt-managed.spt-managed-meeting-open .managed-schedule-body{grid-template-columns:minmax(330px,.95fr) minmax(400px,1.25fr)}
+body.spt-managed.spt-managed-des012-live.spt-managed-meeting-open .managed-schedule-body{grid-template-columns:minmax(330px,.95fr) minmax(400px,1.25fr)}
 body.spt-managed-meeting-open .managed-schedule-summary{display:none!important}
-@media(max-width:860px){body.spt-managed.spt-managed-meeting-open .managed-schedule-body{grid-template-columns:1fr}.managed-meeting-task{grid-template-columns:minmax(120px,1fr) 80px 80px 80px;overflow:auto}}
+@media(max-width:860px){body.spt-managed.spt-managed-des012-live.spt-managed-meeting-open .managed-schedule-body{grid-template-columns:1fr}.managed-meeting-task{grid-template-columns:minmax(120px,1fr) 80px 80px 80px;overflow:auto}}
+
+.managed-meeting-columns{display:grid;grid-template-columns:minmax(140px,1fr) 100px 85px 85px;gap:8px;padding:9px 14px;background:var(--des12-raised);color:var(--des12-sub);font-size:10px;font-weight:750;border-bottom:1px solid var(--des12-edge)}

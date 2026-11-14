@@ -79,7 +79,9 @@ export function mountMeetingReview(doc: Document, controller: ImportController,
       (!query || [t.taskName,t.id,t.owner,t.workstream,t.status].join(" ").toLocaleLowerCase().includes(query)) &&
       [...choices].every(([key, select]) => !select.selectedOptions.length || Array.from(select.selectedOptions).some(o => o.value === value(t,key))))
       .sort((a,b) => value(a,"workstream").localeCompare(value(b,"workstream")));
-    list.replaceChildren();
+    const columns = make("div", undefined, "managed-meeting-columns");
+    columns.append(...["TASK", "OWNER", "FINISH", "STATUS"].map(label => make("span", label)));
+    list.replaceChildren(columns);
     let group = "";
     for (const task of rows) {
       const ws = value(task,"workstream");
