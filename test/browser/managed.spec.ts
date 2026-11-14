@@ -1403,7 +1403,10 @@ test("Issue #69: invalid read-only import gives visible Generate error instead o
   await reports.getByLabel("Project name").fill("Should not generate");
   await reports.getByRole("button", { name: "Generate / Refresh" }).click();
   await expect(reports.getByText("Choose and load a workbook before generating a report.")).toBeVisible();
-  await expect(reports.getByRole("textbox", { name: "Report preview" })).toBeEmpty();
+  // The HTML format is active by default, so the plain-text textarea is
+  // intentionally hidden from the accessibility tree. Inspect its value
+  // directly without changing the selected preview format.
+  await expect(reports.locator('textarea[aria-label="Report preview"]')).toHaveValue("");
   await expect(reports.getByRole("button", { name: "Copy for Outlook" })).toBeDisabled();
 });
 
