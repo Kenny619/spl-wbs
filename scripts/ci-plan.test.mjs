@@ -24,7 +24,7 @@ test("managed display edits select real managed suite",()=>{
 });
 test("save, import, CI, specification and unknown changes fail closed",()=>{
   const paths=["src/managed/directSave.ts","src/data/excelReader.ts",
-    ".github/workflows/ci.yml","docs/specifications/EMV.md","src/unmapped/new.ts"];
+    ".github/workflows/ci.yml","docs/specifications/EMV.md","src/unmapped/new.ts","scripts/new-build-generator.mjs"];
   for(const path of paths)assert.equal(classifyCI([path],push()).browserScope,"full",path);
 });
 test("unit-only feature change runs Linux but no Windows",()=>{

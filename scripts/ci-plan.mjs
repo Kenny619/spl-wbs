@@ -7,7 +7,7 @@ import {execFileSync} from "node:child_process";
 import {resolve} from "node:path";
 import {pathToFileURL} from "node:url";
 
-const critical=/^(?:\.github\/|scripts\/(?:ci-|run-browser-tier|package-|check|security)|docs\/specifications\/|docs\/prototypes\/|design\/concepts\/|src\/data\/|src\/main\.ts$|src\/config\/|src\/managed\/(?:directSave|preflight|projectData|workbookCandidate|save|history)|test\/fixtures\/|test\/browser\/release\.spec\.ts)/;
+const critical=/^(?:\.github\/|scripts\/|docs\/verification\/|docs\/specifications\/|docs\/prototypes\/|design\/concepts\/|src\/data\/|src\/main\.ts$|src\/config\/|src\/managed\/(?:directSave|preflight|projectData|workbookCandidate|save|history)|test\/fixtures\/|test\/browser\/release\.spec\.ts)/;
 const regularDocs=/^(?:README\.md|CHANGELOG\.md|LICENSE(?:\.md)?|docs\/|design\/|.*\.(?:png|jpe?g|gif|webp|svg|md)$)/i;
 
 function browserFor(file) {

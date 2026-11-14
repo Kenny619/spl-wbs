@@ -52,7 +52,7 @@ jobs:
   build-unit:
     name: Build + unit tests
     needs: plan
-    if: ${{ needs.plan.outputs.fast == 'true' }}
+    if: ${{ !cancelled() && (needs.plan.result != 'success' || needs.plan.outputs.fast == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -83,7 +83,7 @@ jobs:
   browser:
     name: Browser regression (Windows Chromium)
     needs: plan
-    if: ${{ needs.plan.outputs.browser == 'true' }}
+    if: ${{ !cancelled() && (needs.plan.result != 'success' || needs.plan.outputs.browser == 'true') }}
     runs-on: windows-latest
     timeout-minutes: 25
     env:

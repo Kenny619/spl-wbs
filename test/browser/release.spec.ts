@@ -113,9 +113,10 @@ test("renders 2000 synthetic rows", async ({ page }) => {
   test.setTimeout(90_000);
   const elapsed = await timeOpen(page, rows2000, "2000");
   expect(elapsed).toBeLessThan(20_000);
-  const last = page.locator(".task-row").last();
-  await last.scrollIntoViewIfNeeded();
-  await expect(last).toContainText("Synthetic 2000");
+  // Async React-free rendering may replace the row DOM during a scroll event.
+  // This stress test asserts all 2000 rows and the final row's identity; avoid
+  // an unrelated scrollIntoViewIfNeeded racing the import's final redraw.
+  await expect(page.locator(".task-row").last()).toContainText("Synthetic 2000");
   console.log(`2000 rows rendered in ${elapsed}ms`);
 });
 
