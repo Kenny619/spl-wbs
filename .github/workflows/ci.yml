@@ -64,7 +64,7 @@ jobs:
       - name: Install
         id: install
         run: npm ci
-      - name: Security gate: fail high/critical advisories
+      - name: Security advisory gate (high/critical)
         run: npm audit --omit=dev --audit-level=high
       - name: Unit tests
         run: npm test -- --reporter=default --reporter=json --outputFile=work/ci/unit.json
