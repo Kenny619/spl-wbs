@@ -153,3 +153,47 @@ export async function projectWatchProjection(source: Uint8Array | ArrayBuffer): 
     schemaValidated: true,
   };
 }
+
+/**
+ * Conservative, read-only adapter for the managed Schedule / Task Detail UI.
+ * All task IDs come from the validated workbook. An absent, legacy, malformed,
+ * or future-schema source MUST NOT silently become a Green/Clear state.
+ *
+ * This adapter is intentionally pure: no local persistence, workbook mutation,
+ * automatic policy inference, or author/commitment authentication.
+ */
+export type ManagedWatchRow = {
+  taskId: string;
+  watchLabel: WatchDisposition;
+  openReasonCount: number;
+  openReasonTitles: string[];
+  recordedAuditCount: number;
+  automaticChecksVerified: false;
+  commitmentVerified: false;
+};
+export type ManagedWatchView =
+  | { kind: "ready"; projectName: string; rows: ManagedWatchRow[] }
+  | { kind: "unavailable"; workbookState: Exclude<WatchProjection["workbookState"], "valid">; findings: ProjectFinding[] };
+
+export function toManagedWatchView(projection: WatchProjection): ManagedWatchView {
+  if (projection.workbookState !== "valid" || !projection.schemaValidated || projection.projectName === null) {
+    return {
+      kind: "unavailable",
+      workbookState: projection.workbookState === "valid" ? "incompatible" : projection.workbookState,
+      findings: projection.findings,
+    };
+  }
+  return {
+    kind: "ready",
+    projectName: projection.projectName,
+    rows: projection.tasks.map(task => ({
+      taskId: task.taskId,
+      watchLabel: task.openReasons.length > 0 ? "Under Watch" : "Unknown",
+      openReasonCount: task.openReasons.length,
+      openReasonTitles: task.openReasons.map(reason => reason.title),
+      recordedAuditCount: task.openReasons.filter(reason => reason.hasRecordedProjectAudit).length,
+      automaticChecksVerified: false,
+      commitmentVerified: false,
+    })),
+  };
+}
