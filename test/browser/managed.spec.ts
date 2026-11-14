@@ -906,6 +906,7 @@ test("DES-012 relationships use workbook Task IDs with guarded drill-down and Ba
     mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     buffer: Buffer.from(packagedUatBase64, "base64"),
   });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
   await expect(page.locator(".task-row")).toHaveCount(23);
   await page.locator(".task-row").filter({ hasText: "Prototype schedule workspace" }).click();
   await expect(page.locator(".dt-relation-group")).toHaveCount(3);
@@ -1616,4 +1617,54 @@ test("five-sheet XLSX Calendar discards drafts, saves inclusive blackout and agr
   calendar = await openCalendar();
   await expect(calendar.getByLabel("Project blackout end")).toHaveValue("2026-11-17");
   await calendar.getByRole("button", { name: "Discard and close" }).click();
+});
+
+test("five-sheet XLSX same-source Watch drives Meeting Review, Task Detail and factual Reports in read-only mode", async ({ page }, testInfo) => {
+  await openManaged(page, (await projectDataWorkbook("Open")).toString("base64"));
+  const before = await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([n,b]: any) => [n, Array.from(b)]));
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "shared-meeting-report.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: await projectDataWorkbook("Open"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  await page.getByRole("button", { name: "Meeting Review", exact: true }).click();
+  const agenda = page.getByRole("region", { name: "Meeting agenda", exact: true });
+  await expect(agenda).toBeVisible();
+  await expect(agenda).toContainText("1 Under Watch · 1 recorded Open reasons");
+  const row = agenda.locator('.managed-meeting-task[data-task-id="501"]');
+  await expect(row).toContainText("In Progress");
+  await expect(row).toContainText("Under Watch · 1 Open / 0 Resolved");
+  await row.click();
+  await expect(page.locator(".managed-watch-evidence")).toContainText("Supplier <img");
+  await expect(page.getByRole("button", { name: "Edit task", exact: true })).toBeDisabled();
+  await page.getByLabel("Search meeting tasks").fill("no-match");
+  await expect(agenda.locator(".managed-meeting-task")).toHaveCount(0);
+  await page.getByLabel("Search meeting tasks").fill("");
+  await expect(agenda.locator(".managed-meeting-task")).toHaveCount(1);
+  await agenda.locator("summary").click();
+  await agenda.getByLabel("Meeting owner filter").selectOption(["Owner A"]);
+  await expect(agenda.locator(".managed-meeting-task")).toHaveCount(1);
+  await testInfo.attach("meeting-recorded-watch-1440", { body: await page.screenshot(), contentType: "image/png" });
+  await page.getByRole("button", { name: "Reports", exact: true }).click();
+  const reports = page.getByRole("dialog", { name: "Output Reports" });
+  await reports.getByLabel("Project name").fill("Local report title");
+  await reports.getByLabel("Report format").selectOption("text");
+  for (const mode of ["status", "progress"] as const) {
+    await reports.getByLabel("Report mode").selectOption(mode);
+    if (mode === "progress") {
+      await reports.getByLabel("Report start date").fill("2026-11-01");
+      await reports.getByLabel("Report end date").fill("2026-11-14");
+    }
+    await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+    await expect(reports.getByRole("textbox", { name: "Report preview" })).toHaveValue(/Project: Local report title/);
+    await expect(reports.getByRole("textbox", { name: "Report preview" })).toHaveValue(/Under Watch · 1 Open \/ 0 Resolved/);
+    await reports.getByLabel("Report format").selectOption("html");
+    const html = await reports.locator("iframe").getAttribute("srcdoc");
+    expect(html).toContain("Supplier &lt;img");
+    expect(html).not.toContain("<img src=x");
+    await reports.getByLabel("Report format").selectOption("text");
+  }
+  await page.getByRole("button", { name: "Schedule", exact: true }).click();
+  await expect(agenda).not.toBeVisible();
+  expect(await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([n,b]: any) => [n, Array.from(b)]))).toEqual(before);
 });

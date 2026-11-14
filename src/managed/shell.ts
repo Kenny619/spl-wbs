@@ -331,8 +331,9 @@ export function mountManagedShell(
   // Reports owns its visibility and keeps its actual committed-workbook engine.
   const syncNav = () => {
     const inReports = doc.body.classList.contains("spt-managed-report-open");
-    schedule.classList.toggle("active", !inReports);
-    if (inReports) schedule.removeAttribute("aria-current");
+    const inMeeting = doc.body.classList.contains("spt-managed-meeting-open");
+    schedule.classList.toggle("active", !inReports && !inMeeting);
+    if (inReports || inMeeting) schedule.removeAttribute("aria-current");
     else schedule.setAttribute("aria-current", "page");
     reportsLaunch.classList.toggle("active", inReports);
   };

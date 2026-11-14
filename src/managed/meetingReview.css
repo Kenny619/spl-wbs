@@ -1,0 +1,13 @@
+/* Review08 agenda proportions and four-column task facts; shared live inspector. */
+.managed-meeting{display:none;min-width:0;overflow:auto;background:var(--des12-paper);color:var(--des12-ink);border:1px solid var(--des12-edge);border-radius:12px}
+.managed-meeting>h2,.managed-meeting>p{padding:11px 16px;margin:0;border-bottom:1px solid var(--des12-edge)}
+.managed-meeting-tools{display:flex;gap:7px;align-items:center;padding:12px 15px;border-bottom:1px solid var(--des12-edge);flex-wrap:wrap}
+.managed-meeting-tools input{min-width:120px;flex:1}.managed-meeting-tools details label{display:block;padding:5px}.managed-meeting-tools select{display:block;max-width:240px}
+.managed-meeting-group{background:var(--des12-raised);padding:9px 14px;margin:0}
+.managed-meeting-task{display:grid;width:100%;grid-template-columns:minmax(140px,1fr) 100px 85px 85px;gap:8px;text-align:left;padding:12px 14px;background:var(--des12-paper);color:inherit;border:0;border-bottom:1px solid var(--des12-edge);border-radius:0}
+.managed-meeting-task span:last-child{grid-column:1/-1;font-size:11px}.managed-meeting-task.selected{background:#eaf5fc}
+body.spt-managed-meeting-open .managed-schedule-body>.chart-card{display:none!important}
+body.spt-managed-meeting-open .managed-meeting{display:block}
+body.spt-managed.spt-managed-meeting-open .managed-schedule-body{grid-template-columns:minmax(330px,.95fr) minmax(400px,1.25fr)}
+body.spt-managed-meeting-open .managed-schedule-summary{display:none!important}
+@media(max-width:860px){body.spt-managed.spt-managed-meeting-open .managed-schedule-body{grid-template-columns:1fr}.managed-meeting-task{grid-template-columns:minmax(120px,1fr) 80px 80px 80px;overflow:auto}}

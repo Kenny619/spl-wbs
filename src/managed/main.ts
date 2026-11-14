@@ -1,3 +1,5 @@
+import "./meetingReview.css";
+import { mountMeetingReview } from "./meetingReview";
 import "./managed.css";
 import "./review02.css";
 import "./des012StageA.css";
@@ -91,6 +93,7 @@ export class ManagedEditor {
   private readonly dialog: HTMLDialogElement;
   private readonly settings: ManagedSettings;
   private readonly reports: ManagedReports;
+  private refreshMeeting: (() => void) | null = null;
 
   constructor(private readonly doc: Document, private readonly controller: ImportController) {
     this.watchPanel = new ManagedWatchPanel(doc, {
@@ -246,6 +249,7 @@ export class ManagedEditor {
       hasUnsavedDraft: this.isDirty(),
     }));
     mountManagedShell(doc, controller, this.reports, this.settings, (action) => this.guard(action));
+    this.refreshMeeting = mountMeetingReview(doc, controller, this.reports, () => this.watchProjection, action => this.guard(action));
     controller.subscribe(() => this.render());
     doc.defaultView?.addEventListener("beforeunload", (event) => {
       if (!this.isDirty()) return;
@@ -527,6 +531,8 @@ export class ManagedEditor {
       this.loadedBytes = bytes;
       this.loadedHash = result.sourceHash;
       this.watchView = await this.readWatchSnapshot(bytes);
+      // Verified commit completes the Watch draft before restoring internal selection.
+      this.watchPanel.cancel();
       this.controller.patchView(view);
       this.message = "Verified Save: project evidence and ProjectAudit persisted; predecessor backup retained.";
       return { kind: "saved", message: this.message };
@@ -733,6 +739,7 @@ export class ManagedEditor {
   }
 
   private render(): void {
+    this.refreshMeeting?.();
     this.banner.replaceChildren();
     const intro = element(this.doc, "span");
     intro.append(element(this.doc, "strong", "", "EXCEL MANAGED · DEVELOPMENT PREVIEW"));

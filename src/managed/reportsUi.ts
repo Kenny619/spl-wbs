@@ -1,3 +1,4 @@
+import { projectWatchProjection } from "./watchProjection";
 import { addCalendarDays, todayInTimeZone } from "../calendar/dateOnly";
 import { bundledHolidayCalendar, type HolidayCalendar } from "../calendar/jpHolidays";
 import type { Task } from "../data/types";
@@ -410,6 +411,7 @@ export class ManagedReports {
           await readManagedHistoryWithPresence(source.workbook) : null;
         const snapshot = buildReport11Snapshot({
           mode: mode === "status" ? "status" : "progress",
+          watchProjection: await projectWatchProjection(source.workbook),
           projectName, tasks: source.tasks, history: history?.events ?? null,
           historyAvailable: history?.present ?? false,
           timeZone, generatedAt, calendar: source.holidayCalendar ?? bundledHolidayCalendar(),

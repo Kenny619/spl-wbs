@@ -1,3 +1,5 @@
+import { reportWatchEvidence, type ReportWatchEvidence } from "./report11Watch";
+import type { WatchProjection } from "./watchProjection";
 import { todayInTimeZone } from "../calendar/dateOnly";
 import type { HolidayCalendar } from "../calendar/jpHolidays";
 import type { Task } from "../data/types";
@@ -32,6 +34,7 @@ export type Report11ChangeRow = Readonly<{
 }>;
 export type Report11Snapshot = Readonly<{
   mode: Exclude<Report11Mode, "audit">;
+  manualWatch?: ReportWatchEvidence;
   projectName: string;
   timeZone: string;
   generatedAt: string;
@@ -54,6 +57,7 @@ export type Report11Snapshot = Readonly<{
 
 export type Report11Input = Readonly<{
   mode: "status" | "progress";
+  watchProjection?: WatchProjection | null;
   projectName: string;
   tasks: readonly Task[];
   history: readonly HistoryEvent[] | null;
@@ -149,6 +153,7 @@ export function buildReport11Snapshot(input: Report11Input): Report11Snapshot {
   if (input.mode === "progress") orderedEvents(input);
 
   return Object.freeze({
+    manualWatch: reportWatchEvidence(input.tasks, input.watchProjection),
     mode: input.mode, projectName: name, timeZone: input.timeZone,
     generatedAt: input.generatedAt.toISOString(), today,
     period: input.mode === "progress" ?
