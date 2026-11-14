@@ -425,6 +425,7 @@ test("Report 1.1 denied clipboard shows accurate failure and retains the snapsho
   await report.getByLabel("Report format").selectOption("text");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const preview = report.getByRole("textbox", { name: "Report preview" });
+  await expect(preview).toHaveValue(/LATEST STATUS/);
   const original = await preview.inputValue();
   await report.getByRole("button", { name: "Copy Report" }).click();
   await expect(report.getByText(/Copy failed: Denied/)).toBeVisible();
@@ -465,6 +466,7 @@ test("Report 1.1 HTML preview and Outlook dual MIME copy keep an immutable snaps
   await report.getByLabel("Report format").selectOption("html");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const iframe = report.locator("iframe[title='Formatted report preview']");
+  await expect(iframe).toHaveAttribute("srcdoc", /Project Orion &amp; Launch/);
   const srcdoc = await iframe.getAttribute("srcdoc");
   expect(srcdoc).toContain("Project Orion &amp; Launch");
   expect(srcdoc).not.toContain("Workbook:");
@@ -537,6 +539,7 @@ test("DES-012 Reports visual parity: one baseline across Schedule, Report Studio
   await reports.getByLabel("Project name").fill("Design Parity Program");
   await reports.getByLabel("Report mode").selectOption("status");
   await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(reports.locator('iframe[title="Formatted report preview"]')).toHaveAttribute("srcdoc", /report-paper/);
   const srcdoc = await reports.locator('iframe[title="Formatted report preview"]').getAttribute("srcdoc");
   expect(srcdoc).toContain('class="report-paper"');
   expect(srcdoc).toContain('class="metric go-live"');
@@ -612,6 +615,7 @@ test("DES-012 Reports compact layout stays functional at 1024 and 720 without lo
   await generate.scrollIntoViewIfNeeded();
   await expect(generate).toBeVisible();
   await generate.click();
+  await expect(reports.locator('iframe[title="Formatted report preview"]')).toHaveAttribute("srcdoc", /Responsive Reporting Program/);
   const html = await reports.locator('iframe[title="Formatted report preview"]').getAttribute("srcdoc");
   expect(html).toContain("Responsive Reporting Program");
   await reports.locator("[data-report11-format='text']").click();
@@ -1614,6 +1618,7 @@ test("five-sheet XLSX Calendar discards drafts, saves inclusive blackout and agr
   await calendar.getByRole("button", { name: "Save project blackout", exact: true }).click();
   await expect(calendar).not.toBeVisible();
   await expect(page.locator(".dt-remaining")).toContainText("3 days remaining");
+  await expect(page.locator(".blackout-overlay")).toHaveCount(4);
   await expect(page.locator('.bar[data-task-id="501"]')).toHaveAttribute("title", /Workbook Days Remaining: \+3 days/);
   calendar = await openCalendar();
   await expect(calendar.getByLabel("Project blackout end")).toHaveValue("2026-11-17");

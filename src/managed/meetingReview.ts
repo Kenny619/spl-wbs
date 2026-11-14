@@ -44,12 +44,11 @@ export function mountMeetingReview(doc: Document, controller: ImportController,
   };
   button.addEventListener("click", () => guard(() => navigate(true)));
   doc.querySelector('[data-managed-view="schedule"]')?.addEventListener("click", event => {
-    event.preventDefault(); event.stopImmediatePropagation(); guard(() => navigate(false));
+    event.preventDefault(); event.stopImmediatePropagation(); navigate(false);
   }, true);
   doc.querySelector('[data-managed-view="reports"]')?.addEventListener("click", event => {
-    event.preventDefault(); event.stopImmediatePropagation(); guard(() => {
-      doc.body.classList.remove("spt-managed-meeting-open"); button.classList.remove("active"); button.removeAttribute("aria-current"); reports.open();
-    });
+    event.preventDefault(); event.stopImmediatePropagation();
+    doc.body.classList.remove("spt-managed-meeting-open"); button.classList.remove("active"); button.removeAttribute("aria-current"); reports.open();
   }, true);
   scope.addEventListener("click", () => { exceptions = true; refresh(); });
   all.addEventListener("click", () => { exceptions = false; refresh(); });

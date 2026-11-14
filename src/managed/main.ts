@@ -188,6 +188,10 @@ export class ManagedEditor {
     calendarButton.type = "button";
     calendarButton.addEventListener("click", () => this.guard(() => this.openProjectCalendar()));
     actions.prepend(calendarButton);
+    doc.getElementById("calendarSettings")?.addEventListener("click", event => {
+      event.preventDefault(); event.stopImmediatePropagation();
+      this.guard(() => this.openProjectCalendar());
+    }, true);
     this.fileSelect.addEventListener("change", () => {
       const next = this.fileSelect.value;
       this.fileSelect.value = this.sourceName ?? "";
@@ -533,7 +537,8 @@ export class ManagedEditor {
       this.watchView = await this.readWatchSnapshot(bytes);
       // Verified commit completes the Watch draft before restoring internal selection.
       this.watchPanel.cancel();
-      this.controller.patchView(view);
+      this.controller.patchView({ ...view, managedBlackout: this.projectContext?.kind === "valid"
+        ? this.projectContext.blackout : { enabled: false, start: "", end: "" } });
       this.message = "Verified Save: project evidence and ProjectAudit persisted; predecessor backup retained.";
       return { kind: "saved", message: this.message };
     } catch (error) {
@@ -732,6 +737,8 @@ export class ManagedEditor {
     this.projectContext = null;
     try {
       this.projectContext = await readProjectContext(bytes);
+      this.controller.patchView({ managedBlackout: this.projectContext.kind === "valid"
+        ? this.projectContext.blackout : { enabled: false, start: "", end: "" } });
       this.watchProjection = await projectWatchProjection(bytes);
       return toManagedWatchView(this.watchProjection);
     }
@@ -759,6 +766,8 @@ export class ManagedEditor {
     if (this.sourceName && this.names.includes(this.sourceName)) this.fileSelect.value = this.sourceName;
 
     const state = this.controller.getState();
+    const hint = this.doc.querySelector<HTMLElement>(".calendar-hint");
+    if (hint) hint.textContent = "Shared workbook Calendar · inclusive blackout · remaining days exclude weekends, Japanese holidays and blackout once";
     const meta = this.doc.getElementById("rangeMeta");
     if (meta && state.tasks) meta.textContent = "Planned project schedule · Excel Managed preview";
     if (this.projectContext?.kind === "valid") {
