@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
-import { projectWatchProjection } from "../../src/managed/watchProjection";
+import { projectWatchProjection, toManagedWatchView } from "../../src/managed/watchProjection";
 
 const ID = {
   project: "bd95a399-257e-4b42-ac0e-fb6ee984c1aa",
@@ -216,5 +216,39 @@ describe("F5a: conservative read-only Watch projection from Excel source-of-trut
     expect(a).toEqual(b);
     expect(source).toEqual(copy);
     expect(a.tasks[0].openReasons).toHaveLength(1);
+  });
+});
+
+describe("DES-012 managed Watch view adapter (read-only)", () => {
+  it("exposes recorded open reasons, never infers Green, and preserves the workbook bytes", async () => {
+    const bytes = await make({ reasons: [{ id: ID.manual }], auditReasonIds: [ID.manual] });
+    const original = Uint8Array.from(bytes);
+    const view = toManagedWatchView(await projectWatchProjection(bytes));
+    expect(view.kind).toBe("ready");
+    if (view.kind !== "ready") throw new Error("Expected valid workbook");
+    expect(view.rows.find(x => x.taskId === "1")).toMatchObject({
+      watchLabel: "Under Watch", openReasonCount: 1, recordedAuditCount: 1,
+      automaticChecksVerified: false, commitmentVerified: false,
+    });
+    expect(view.rows.find(x => x.taskId === "2")).toMatchObject({
+      watchLabel: "Unknown", openReasonCount: 0,
+      automaticChecksVerified: false, commitmentVerified: false,
+    });
+    expect(bytes).toEqual(original);
+  });
+
+  it("fails closed for a legacy workbook rather than inventing a clear status", async () => {
+    const view = toManagedWatchView(await projectWatchProjection(await make({ extension: false })));
+    expect(view).toMatchObject({ kind: "unavailable", workbookState: "legacy" });
+    expect("rows" in view).toBe(false);
+  });
+
+  it("fails closed for a structurally invalid extension", async () => {
+    const bytes = await mutate(await make(), b => {
+      b.getWorksheet("WatchReasons")!.getRow(1).getCell(1).value = "WrongIdentifier";
+    });
+    const view = toManagedWatchView(await projectWatchProjection(bytes));
+    expect(view.kind).toBe("unavailable");
+    expect("rows" in view).toBe(false);
   });
 });
