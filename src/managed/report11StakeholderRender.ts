@@ -1,3 +1,4 @@
+import { reportWatchText, reportWatchHtml } from "./report11Watch";
 import { escapeReportHtml } from "./report11AuditRender";
 import type { Report11ChangeRow, Report11Snapshot, Report11TaskRow } from "./report11Snapshot";
 
@@ -77,6 +78,7 @@ export function renderReport11Text(s: Report11Snapshot): string {
       ["Holiday coverage incomplete; no exact upcoming horizon can be calculated."]),
     ...(s.omittedCommitments ? ["… " + s.omittedCommitments + " additional commitment tasks omitted by Top 10 selection."] : []));
   lines.push("", "Current task conditions are not historical period-change evidence. Days exclude weekends and Japanese holidays.");
+  lines.push("", reportWatchText(s.manualWatch));
   return lines.join("\n");
 }
 
@@ -217,6 +219,7 @@ export function renderReport11Html(s: Report11Snapshot): string {
       'Progress and schedule changes below are evidenced by saved history; they are not inferred from current task dates.' :
       'Healthy in-progress task listings are intentionally omitted.') +
     '</p></div>' +
+    reportWatchHtml(s.manualWatch) +
     section("Risks and Blockers", taskRows(s.risks) + omitted(s.omittedRisks), s.totalRedRisks + s.totalAmberRisks) +
     (s.mode === "progress" ?
       section("Recorded Progress and Accomplishments", historyRows(s.recordedProgress, missing), s.recordedProgress.length) +

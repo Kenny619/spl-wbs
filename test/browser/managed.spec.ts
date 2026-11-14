@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import ExcelJS from "exceljs";
+import { projectDataWorkbook } from "../fixtures/projectDataWorkbook";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
@@ -8,6 +9,7 @@ import { spawn } from "node:child_process";
 let fileUrl = "";
 let base64 = "";
 let packagedUatBase64 = "";
+let fullOptionAUatBase64 = "";
 
 test.beforeAll(async () => {
   const book = new ExcelJS.Workbook();
@@ -28,9 +30,21 @@ test.beforeAll(async () => {
   packagedUatBase64 = (await readFile(path.resolve(
     "dist-managed/SPT-WBS_DES010_Synthetic_UAT.xlsx",
   ))).toString("base64");
+  // Generate the exact composite fictional workbook shipped in the owner UAT ZIP.
+  // Previous browser tests used only DES010/Report11 or one-task fixtures.
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn("node", ["scripts/package-option-a-integrated-candidate.mjs"],
+      { stdio: "inherit" });
+    child.on("error", reject);
+    child.on("close", (code) => code === 0 ? resolve()
+      : reject(new Error("Option A candidate fixture generation failed: " + code)));
+  });
+  fullOptionAUatBase64 = (await readFile(path.resolve(
+    "work/option-a-candidate/SPT-WBS_OptionA_Fictional_23_Task_Project.xlsx",
+  ))).toString("base64");
 }, { timeout: 120000 });
 
-async function openManaged(page: import("@playwright/test").Page) {
+async function openManaged(page: import("@playwright/test").Page, encoded = base64) {
   await page.addInitScript(({ encoded }) => {
     const decoded = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
     const files = new Map<string, Uint8Array>([["synthetic-demo.xlsx", decoded]]);
@@ -65,12 +79,12 @@ async function openManaged(page: import("@playwright/test").Page) {
     Object.defineProperty(window, "showDirectoryPicker", {
       configurable: true, value: async () => dir,
     });
-  }, { encoded: base64 });
+  }, { encoded });
   await page.goto(fileUrl);
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
-  await expect(page.locator("#title")).toHaveText("synthetic-demo");
+  await expect(page.locator("#title")).toHaveText(encoded === base64 ? "synthetic-demo" : "Synthetic shared project");
   await expect(page.locator(".task-row")).toHaveCount(1);
   await page.locator(".task-row").first().click();
   await expect(page.locator("#panel")).toHaveClass(/open/);
@@ -424,6 +438,7 @@ test("Report 1.1 denied clipboard shows accurate failure and retains the snapsho
   await report.getByLabel("Report format").selectOption("text");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const preview = report.getByRole("textbox", { name: "Report preview" });
+  await expect(preview).toHaveValue(/LATEST STATUS/);
   const original = await preview.inputValue();
   await report.getByRole("button", { name: "Copy Report" }).click();
   await expect(report.getByText(/Copy failed: Denied/)).toBeVisible();
@@ -464,6 +479,7 @@ test("Report 1.1 HTML preview and Outlook dual MIME copy keep an immutable snaps
   await report.getByLabel("Report format").selectOption("html");
   await report.getByRole("button", { name: "Generate / Refresh" }).click();
   const iframe = report.locator("iframe[title='Formatted report preview']");
+  await expect(iframe).toHaveAttribute("srcdoc", /Project Orion &amp; Launch/);
   const srcdoc = await iframe.getAttribute("srcdoc");
   expect(srcdoc).toContain("Project Orion &amp; Launch");
   expect(srcdoc).not.toContain("Workbook:");
@@ -536,6 +552,7 @@ test("DES-012 Reports visual parity: one baseline across Schedule, Report Studio
   await reports.getByLabel("Project name").fill("Design Parity Program");
   await reports.getByLabel("Report mode").selectOption("status");
   await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(reports.locator('iframe[title="Formatted report preview"]')).toHaveAttribute("srcdoc", /report-paper/);
   const srcdoc = await reports.locator('iframe[title="Formatted report preview"]').getAttribute("srcdoc");
   expect(srcdoc).toContain('class="report-paper"');
   expect(srcdoc).toContain('class="metric go-live"');
@@ -611,6 +628,7 @@ test("DES-012 Reports compact layout stays functional at 1024 and 720 without lo
   await generate.scrollIntoViewIfNeeded();
   await expect(generate).toBeVisible();
   await generate.click();
+  await expect(reports.locator('iframe[title="Formatted report preview"]')).toHaveAttribute("srcdoc", /Responsive Reporting Program/);
   const html = await reports.locator('iframe[title="Formatted report preview"]').getAttribute("srcdoc");
   expect(html).toContain("Responsive Reporting Program");
   await reports.locator("[data-report11-format='text']").click();
@@ -905,6 +923,7 @@ test("DES-012 relationships use workbook Task IDs with guarded drill-down and Ba
     mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     buffer: Buffer.from(packagedUatBase64, "base64"),
   });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
   await expect(page.locator(".task-row")).toHaveCount(23);
   await page.locator(".task-row").filter({ hasText: "Prototype schedule workspace" }).click();
   await expect(page.locator(".dt-relation-group")).toHaveCount(3);
@@ -1042,10 +1061,35 @@ test("UAT-02: managed dark theme has restrained day markers, semantic statuses a
     buffer: Buffer.from(packagedUatBase64, "base64"),
   });
   await expect(page.locator(".task-row")).toHaveCount(23);
+  // Loading task rows precedes the asynchronous ProjectData/Watch projection.
+  // Wait for the *completed* read-only import banner before opening Settings:
+  // its final render must not replace a drawer mid-interaction.
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const settings = page.getByRole("dialog", { name: "Settings" });
+  await expect(settings).toBeVisible();
   await settings.getByRole("radio", { name: "Dark" }).check();
   await settings.getByRole("button", { name: "Close" }).click();
+  // Read-only import is expected on corporate Edge: the warning must remain legible
+  // in dark mode. Assert computed contrast instead of a brittle literal CSS color.
+  const readOnlyBannerContrast = await page.locator(".managed-banner .managed-alert").evaluate(node => {
+    const channels = (value: string): number[] => {
+      const rgb = value.match(/\d+(?:\.\d+)?/g)?.slice(0, 3).map(Number);
+      if (!rgb || rgb.length !== 3) throw new Error("Expected opaque RGB color");
+      return rgb;
+    };
+    const luminance = (rgb: number[]): number => {
+      const light = rgb.map(v => {
+        const normalized = v / 255;
+        return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * light[0] + 0.7152 * light[1] + 0.0722 * light[2];
+    };
+    const foreground = luminance(channels(getComputedStyle(node).color));
+    const background = luminance(channels(getComputedStyle(node.parentElement!).backgroundColor));
+    return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+  });
+  expect(readOnlyBannerContrast).toBeGreaterThanOrEqual(4.5);
   await page.locator(".zoom-choice").filter({ hasText: "Day" }).click();
   await page.locator(".task-row").filter({ hasText: "Requirements sign-off" }).click();
   await expect(page.locator(".dt-remaining")).toBeVisible();
@@ -1494,4 +1538,328 @@ test("Owner UAT kit: packaged 23-task XLSX imports, allows direct Save and write
   expect(book.getWorksheet("ProjectWBS")?.getCell("B2").value).toBe("UAT kit verified synthetic update");
   expect(book.getWorksheet("UpdateHistory")).toBeTruthy();
   expect(messages).toEqual([]);
+});
+
+test("DES-012 Watch evidence stays Unknown for legacy XLSX in writable and read-only modes", async ({ page }) => {
+  await openManaged(page);
+  const evidence = page.locator("#detailContent .managed-watch-evidence");
+  await expect(evidence).toContainText("Workbook Watch: Unknown");
+  await expect(evidence).toContainText("no Green or clearance inferred");
+  await expect(page.getByRole("button", { name: "Edit task" })).toBeEnabled();
+
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "legacy-watch-preview.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(base64, "base64"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  await page.locator(".task-row").first().click();
+  await expect(evidence).toContainText("Workbook Watch: Unknown");
+  await expect(evidence).toContainText("no Green or clearance inferred");
+  await expect(page.getByRole("button", { name: "Edit task" })).toBeDisabled();
+});
+
+for (const state of ["Open", "Resolved", "malformed"] as const) {
+  test(`five-sheet XLSX ${state}: actual read-only import renders conservative Watch without writes`, async ({ page }) => {
+    await openManaged(page);
+    const before = await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([n,b]: any) => [n, Array.from(b)]));
+    await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+      name: "five-sheet.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      buffer: await projectDataWorkbook(state),
+    });
+    await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+    await page.locator(".task-row").first().click();
+    const evidence = page.locator(".managed-watch-evidence");
+    await expect(evidence).toContainText("Workbook Watch: " + (state === "Open" ? "Under Watch" : "Unknown"));
+    if (state === "Open") {
+      await expect(evidence).toContainText("Supplier <img src=x onerror=alert(1)>");
+      await expect(evidence.locator("img")).toHaveCount(0);
+      await expect(evidence).toContainText("1 recorded open reason");
+    }
+    if (state === "malformed") await expect(evidence).toContainText("unavailable");
+    await expect(page.getByRole("button", { name: "Edit task" })).toBeDisabled();
+    expect(await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([n,b]: any) => [n, Array.from(b)]))).toEqual(before);
+  });
+}
+
+test("five-sheet XLSX Manual Watch Add/Resolve survives guarded Save and reopen with audit and predecessor backup", async ({ page }) => {
+  page.on("dialog", dialog => dialog.accept());
+  const original = await projectDataWorkbook("Resolved");
+  await openManaged(page, original.toString("base64"));
+  const watch = page.getByRole("region", { name: "Recorded Under Watch reasons" });
+  await page.getByRole("button", { name: "Add manual reason", exact: true }).click();
+  await page.getByLabel("Watch reason title").fill("New supplier dependency");
+  await page.getByLabel("Watch reason details").fill("Synthetic manual record");
+  await page.getByRole("button", { name: "Save manual reason", exact: true }).click();
+  await expect(watch).toContainText("Under Watch · 1 open");
+  const source = async () => page.evaluate(() => Array.from((window as any).__managedFixtureFiles.get("synthetic-demo.xlsx") as Uint8Array));
+  const addedBytes = await source();
+  const added = new ExcelJS.Workbook();
+  await added.xlsx.load(Buffer.from(addedBytes));
+  expect(added.getWorksheet("WatchReasons")!.getRow(3).getCell(2).value).toBe("501");
+  const reasonId = added.getWorksheet("WatchReasons")!.getCell("A3").value;
+  expect(added.getWorksheet("ProjectAudit")!.rowCount).toBeGreaterThan(2);
+  expect(added.getWorksheet("ProjectWBS")!.getCell("F2").value).toBe("In Progress");
+  const backup = await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.get("synthetic-demo.backup.xlsx") as Uint8Array));
+  expect(Buffer.from(backup)).toEqual(original);
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Reload workbook", exact: true }).click();
+  await expect(page.locator(".managed-banner")).toContainText("Workbook ready. Select a task.");
+  await page.locator(".task-row").first().click();
+  await expect(watch).toContainText("New supplier dependency");
+  await page.getByRole("button", { name: "Resolve this reason", exact: true }).click();
+  await page.getByLabel("Watch resolution note").fill("Mitigation recorded");
+  await page.getByRole("button", { name: "Confirm reason resolution", exact: true }).click();
+  await expect(watch).toContainText("No recorded open reasons");
+  const resolved = new ExcelJS.Workbook();
+  await resolved.xlsx.load(Buffer.from(await source()));
+  expect(resolved.getWorksheet("WatchReasons")!.getCell("A3").value).toBe(reasonId);
+  expect(resolved.getWorksheet("WatchReasons")!.getCell("E3").value).toBe("Resolved");
+  expect(resolved.getWorksheet("WatchReasons")!.getCell("N3").value).toBe("Mitigation recorded");
+  expect(resolved.getWorksheet("ProjectAudit")!.rowCount).toBeGreaterThan(added.getWorksheet("ProjectAudit")!.rowCount);
+  expect(Buffer.from(await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.get("synthetic-demo.backup.xlsx") as Uint8Array)))).toEqual(Buffer.from(addedBytes));
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "reopened.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(await source()),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  await page.locator(".task-row").first().click();
+  await expect(watch).toContainText("No recorded open reasons");
+  await expect(page.getByRole("button", { name: "Add manual reason", exact: true })).toBeDisabled();
+  await watch.locator("summary").click();
+  await expect(watch).toContainText("Mitigation recorded");
+});
+
+test("five-sheet XLSX Calendar discards drafts, saves inclusive blackout and agrees with Task Detail and Schedule", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-14T00:00:00.000Z"));
+  page.on("dialog", dialog => dialog.accept());
+  await openManaged(page, (await projectDataWorkbook("Resolved")).toString("base64"));
+  const openCalendar = async () => {
+    await page.locator(".managed-project-menu summary").click();
+    await page.getByRole("button", { name: "Project Calendar", exact: true }).click();
+    return page.getByRole("dialog", { name: "Project Calendar", exact: true });
+  };
+  let calendar = await openCalendar();
+  await calendar.getByLabel("Shared Project name").fill("Discard this name");
+  await calendar.getByRole("button", { name: "Discard and close" }).click();
+  calendar = await openCalendar();
+  await expect(calendar.getByLabel("Shared Project name")).toHaveValue("Synthetic shared project");
+  await calendar.getByLabel("Enable project blackout").check();
+  await calendar.getByLabel("Project blackout start").fill("2026-11-14");
+  await calendar.getByLabel("Project blackout end").fill("2026-11-17");
+  await calendar.getByLabel("Project blackout label").fill("Synthetic blackout including weekend");
+  await calendar.getByRole("button", { name: "Save project blackout", exact: true }).click();
+  await expect(calendar).not.toBeVisible();
+  await expect(page.locator(".dt-remaining")).toContainText("3 days remaining");
+  await expect(page.locator(".blackout-overlay")).toHaveCount(4);
+  await expect(page.locator('.bar[data-task-id="501"]')).toHaveAttribute("title", /Workbook Days Remaining: \+3 days/);
+  calendar = await openCalendar();
+  await expect(calendar.getByLabel("Project blackout end")).toHaveValue("2026-11-17");
+  await calendar.getByRole("button", { name: "Discard and close" }).click();
+});
+
+test("five-sheet XLSX same-source Watch drives Meeting Review, Task Detail and factual Reports in read-only mode", async ({ page }, testInfo) => {
+  await openManaged(page, (await projectDataWorkbook("Open")).toString("base64"));
+  const before = await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([n,b]: any) => [n, Array.from(b)]));
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "shared-meeting-report.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: await projectDataWorkbook("Open"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  await page.getByRole("button", { name: "Meeting Review", exact: true }).click();
+  const agenda = page.getByRole("region", { name: "Meeting agenda", exact: true });
+  await expect(agenda).toBeVisible();
+  await expect(agenda).toContainText("1 Under Watch · 1 recorded Open reasons");
+  const row = agenda.locator('.managed-meeting-task[data-task-id="501"]');
+  await expect(row).toContainText("In Progress");
+  await expect(row).toContainText("Under Watch · 1 Open / 0 Resolved");
+  await row.click();
+  await expect(page.locator(".managed-watch-evidence")).toContainText("Supplier <img");
+  await expect(page.getByRole("button", { name: "Edit task", exact: true })).toBeDisabled();
+  await page.getByLabel("Search meeting tasks").fill("no-match");
+  await expect(agenda.locator(".managed-meeting-task")).toHaveCount(0);
+  await page.getByLabel("Search meeting tasks").fill("");
+  await expect(agenda.locator(".managed-meeting-task")).toHaveCount(1);
+  await agenda.locator("summary").click();
+  await agenda.getByLabel("Meeting owner filter").selectOption(["Owner A"]);
+  await expect(agenda.locator(".managed-meeting-task")).toHaveCount(1);
+  await testInfo.attach("meeting-recorded-watch-1440", { body: await page.screenshot(), contentType: "image/png" });
+  await page.locator('.managed-main-nav [data-managed-view="reports"]').click();
+  const reports = page.getByRole("dialog", { name: "Output Reports" });
+  await reports.getByLabel("Project name").fill("Local report title");
+  await reports.getByLabel("Report format").selectOption("text");
+  for (const mode of ["status", "progress"] as const) {
+    await reports.getByLabel("Report mode").selectOption(mode);
+    if (mode === "progress") {
+      await reports.getByLabel("Report start date").fill("2026-11-01");
+      await reports.getByLabel("Report end date").fill("2026-11-14");
+    }
+    await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+    await expect(reports.getByRole("textbox", { name: "Report preview" })).toHaveValue(/Project: Local report title/);
+    await expect(reports.getByRole("textbox", { name: "Report preview" })).toHaveValue(/Under Watch · 1 Open \/ 0 Resolved/);
+    await reports.getByLabel("Report format").selectOption("html");
+    const html = await reports.locator("iframe").getAttribute("srcdoc");
+    expect(html).toContain("Supplier &lt;img");
+    expect(html).not.toContain("<img src=x");
+    await reports.getByLabel("Report format").selectOption("text");
+  }
+  await page.getByRole("button", { name: "Schedule", exact: true }).click();
+  await expect(agenda).not.toBeVisible();
+  expect(await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([n,b]: any) => [n, Array.from(b)]))).toEqual(before);
+});
+
+
+test("Meeting Review to Reports honors the shared unsaved Watch draft guard", async ({ page }) => {
+  await openManaged(page, (await projectDataWorkbook("Open")).toString("base64"));
+  await page.getByRole("button", { name: "Meeting Review", exact: true }).click();
+  const agenda = page.getByRole("region", { name: "Meeting agenda", exact: true });
+  await expect(agenda).toBeVisible();
+  await agenda.locator('.managed-meeting-task[data-task-id="501"]').click();
+  await page.getByRole("button", { name: "Add manual reason" }).click();
+  await page.getByLabel("Watch reason title").fill("Uncommitted reason");
+  await page.locator('.managed-main-nav [data-managed-view="reports"]').click();
+  const guard = page.getByRole("dialog", { name: "Unsaved changes" });
+  await expect(guard).toBeVisible();
+  await expect(agenda).toBeVisible();
+  await guard.getByRole("button", { name: "Cancel" }).click();
+  await expect(agenda).toBeVisible();
+  await expect(page.getByLabel("Watch reason title")).toHaveValue("Uncommitted reason");
+  await page.locator('.managed-main-nav [data-managed-view="reports"]').click();
+  await guard.getByRole("button", { name: "Discard" }).click();
+  await expect(agenda).not.toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Output Reports" })).toBeVisible();
+});
+
+for (const sourceMode of ["writable", "readonly"] as const) {
+  test(`failed preview replacement preserves coherent ${sourceMode} Watch and Calendar source state`, async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-11-14T00:00:00.000Z"));
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await projectDataWorkbook("Open"));
+    book.getWorksheet("ProjectCalendar")!.addRow([
+      "bd95a399-257e-4b42-ac0e-fb6ee984c1a1", true, "2026-11-14", "2026-11-17",
+      "Synthetic shared blackout", "2026-11-12T02:00:00.000Z",
+    ]);
+    const bytes = Buffer.from(await book.xlsx.writeBuffer());
+    await openManaged(page, bytes.toString("base64"));
+    if (sourceMode === "readonly") {
+      await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+        name: "verified-readonly.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer: bytes,
+      });
+      await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+      await page.locator(".task-row").first().click();
+    }
+    await expect(page.locator(".managed-watch-evidence")).toContainText("Under Watch");
+    await expect(page.locator(".blackout-overlay")).toHaveCount(4);
+    const before = await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([name, value]: any) => [name, Array.from(value)]));
+    await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+      name: "failed-replacement.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer: Buffer.from("invalid XLSX"),
+    });
+    await expect(page.locator(".managed-banner")).toContainText("Read-only workbook preview failed");
+    await page.locator(".task-row").first().click();
+    if (sourceMode === "writable") {
+      await expect(page.locator("#title")).toHaveText("Synthetic shared project");
+      await expect(page.locator(".managed-watch-evidence")).toContainText("Workbook Watch: Under Watch");
+      await expect(page.locator(".dt-remaining")).toContainText("3 days remaining");
+      await expect(page.locator(".blackout-overlay")).toHaveCount(4);
+      await expect(page.getByRole("button", { name: "Edit task", exact: true })).toBeEnabled();
+    } else {
+      await expect(page.locator(".managed-watch-evidence")).toContainText("Workbook Watch: Unknown");
+      await expect(page.locator(".blackout-overlay")).toHaveCount(0);
+      await expect(page.locator(".dt-remaining")).toHaveText("Project Calendar unavailable");
+      await expect(page.getByRole("button", { name: "Edit task", exact: true })).toBeDisabled();
+    }
+    expect(await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([name, value]: any) => [name, Array.from(value)]))).toEqual(before);
+  });
+}
+
+
+test("owner UAT E3: Task Detail Edit and Task history stay in one action row", async ({ page }) => {
+  await openManaged(page);
+  const actions = page.locator(".managed-inspector-actions");
+  const edit = actions.getByRole("button", { name: "Edit task", exact: true });
+  const history = actions.getByRole("button", { name: "Task history", exact: true });
+  await expect(edit).toBeVisible();
+  await expect(history).toBeVisible();
+  const editBox = await edit.boundingBox();
+  const historyBox = await history.boundingBox();
+  expect(editBox).not.toBeNull();
+  expect(historyBox).not.toBeNull();
+  expect(Math.abs(editBox!.y - historyBox!.y)).toBeLessThanOrEqual(2);
+  expect(historyBox!.x).toBeGreaterThan(editBox!.x);
+  await expect(actions).toHaveCSS("flex-wrap", "nowrap");
+});
+
+test("owner UAT E17: selected Meeting Review exception has legible dark surface", async ({ page }) => {
+  await openManaged(page, (await projectDataWorkbook("Open")).toString("base64"));
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("radio", { name: "Dark" }).check();
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Meeting Review", exact: true }).click();
+  const selected = page.locator('.managed-meeting-task[data-task-id="501"]');
+  await selected.click();
+  await expect(selected).toHaveClass(/selected/);
+  await expect(selected).toHaveCSS("background-color", "rgb(48, 68, 103)");
+  await expect(selected).toHaveCSS("color", "rgb(228, 237, 249)");
+  await expect(selected).toContainText("Under Watch");
+});
+
+test("owner UAT E2/E14/E16: exact shipped 23-task five-sheet read-only workbook generates all Reports", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true, value: async () => {
+        throw new DOMException("The user aborted a request.", "AbortError");
+      },
+    });
+  });
+  await page.goto(fileUrl);
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Choose project folder" }).click();
+  await expect(page.locator(".managed-banner")).toContainText("AbortError");
+  await expect(page.locator(".managed-banner")).toContainText("Retry Project");
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_OptionA_Fictional_23_Task_Project.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(fullOptionAUatBase64, "base64"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded", { timeout: 20000 });
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await expect(page.locator("#title")).toHaveText("Fictional Enterprise Delivery Program");
+  await page.locator(".task-row").first().click();
+  await expect(page.getByRole("button", { name: "Edit task", exact: true })).toBeDisabled();
+  await page.locator('.managed-main-nav [data-managed-view="reports"]').click();
+  const reports = page.getByRole("dialog", { name: "Output Reports" });
+  await expect(reports).toBeVisible();
+  await reports.getByLabel("Report format").selectOption("text");
+  const name = reports.getByLabel("Project name");
+  await expect(name).toHaveValue("");
+  await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(name).toHaveAttribute("aria-invalid", "true");
+  await expect(reports.locator(".managed-report-status")).toContainText("Enter a Project name before generating");
+  await name.fill("Synthetic Owner UAT Report");
+  await expect(name).not.toHaveAttribute("aria-invalid", "true");
+  for (const mode of ["status", "progress", "audit"] as const) {
+    await reports.getByLabel("Report mode").selectOption(mode);
+    if (mode !== "status") {
+      await reports.getByLabel("Report start date").fill("2026-11-09");
+      await reports.getByLabel("Report end date").fill("2026-11-14");
+    }
+    await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+    await expect(reports.locator(".managed-report-status")).toContainText("Generated " + mode + " snapshot");
+    const preview = reports.getByRole("textbox", { name: "Report preview" });
+    await expect(preview).toHaveValue(/Synthetic Owner UAT Report/);
+    if (mode !== "audit") {
+      await expect(preview).toHaveValue(/Under Watch · 1 Open \/ 0 Resolved/);
+      await expect(preview).toHaveValue(/Unknown · 0 Open \/ 1 Resolved/);
+    } else {
+      await expect(preview).toHaveValue(/Detailed Change Audit/);
+    }
+    await reports.getByLabel("Report format").selectOption("html");
+    const html = await reports.locator("iframe[title='Formatted report preview']").getAttribute("srcdoc");
+    expect(html).toContain("Synthetic Owner UAT Report");
+    await reports.getByLabel("Report format").selectOption("text");
+  }
+  expect(errors).toEqual([]);
 });

@@ -50,7 +50,8 @@ export function mountGantt(doc: Document, controller: ImportController): void {
   const paint = () => {
     const state = controller.getState();
     const tasks = state.tasks ?? [];
-    paintChrome(doc, state, tasks, blackout);
+    const displayedBlackout = state.view.managedBlackout ?? blackout;
+    paintChrome(doc, state, tasks, displayedBlackout);
     const rows = visibleRows(tasks, state.view);
     const parents = new Set(tasks.map((task) => task.parentId).filter((id): id is string => Boolean(id)));
     const expanded = new Set(state.view.expandedIds);
@@ -91,7 +92,7 @@ export function mountGantt(doc: Document, controller: ImportController): void {
       showDependencies: state.view.showDependencies,
       selectedId: state.view.selectedId,
       today: todayInTimeZone(new Date()),
-      blackout,
+      blackout: displayedBlackout,
       calendar,
       onOpen: (id) => controller.patchView({ selectedId: id }),
     });

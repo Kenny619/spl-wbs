@@ -1,3 +1,4 @@
+import { projectWatchProjection } from "./watchProjection";
 import { addCalendarDays, todayInTimeZone } from "../calendar/dateOnly";
 import { bundledHolidayCalendar, type HolidayCalendar } from "../calendar/jpHolidays";
 import type { Task } from "../data/types";
@@ -104,8 +105,10 @@ export class ManagedReports {
     this.project = make("input");
     this.project.type = "text";
     this.project.maxLength = 180;
-    this.project.placeholder = "Enter project name";
+    this.project.placeholder = "Required: local report name";
     this.project.setAttribute("aria-label", "Project name");
+    this.project.setAttribute("aria-required", "true");
+    this.project.addEventListener("input", () => this.project.removeAttribute("aria-invalid"));
     controls.append(field("Project name", this.project));
 
     this.from = make("input");
@@ -376,10 +379,12 @@ export class ManagedReports {
     }
     const projectName = this.project.value.trim();
     if (!projectName) {
-      this.status.textContent = "Enter a Project name before generating; workbook filename is not a report name.";
+      this.project.setAttribute("aria-invalid", "true");
+      this.status.textContent = "Enter a Project name before generating. This required local report title is separate from the workbook's shared Project name.";
       this.project.focus();
       return;
     }
+    this.project.removeAttribute("aria-invalid");
     this.busy = true;
     this.status.textContent = "Generating from the last verified workbook…";
     try {
@@ -410,6 +415,7 @@ export class ManagedReports {
           await readManagedHistoryWithPresence(source.workbook) : null;
         const snapshot = buildReport11Snapshot({
           mode: mode === "status" ? "status" : "progress",
+          watchProjection: await projectWatchProjection(source.workbook),
           projectName, tasks: source.tasks, history: history?.events ?? null,
           historyAvailable: history?.present ?? false,
           timeZone, generatedAt, calendar: source.holidayCalendar ?? bundledHolidayCalendar(),
