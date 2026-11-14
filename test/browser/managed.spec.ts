@@ -1061,7 +1061,7 @@ test("UAT-02: managed dark theme has restrained day markers, semantic statuses a
   // in dark mode. Assert computed contrast instead of a brittle literal CSS color.
   const readOnlyBannerContrast = await page.locator(".managed-banner .managed-alert").evaluate(node => {
     const channels = (value: string): number[] => {
-      const rgb = value.match(/\\d+(?:\\.\\d+)?/g)?.slice(0, 3).map(Number);
+      const rgb = value.match(/\d+(?:\.\d+)?/g)?.slice(0, 3).map(Number);
       if (!rgb || rgb.length !== 3) throw new Error("Expected opaque RGB color");
       return rgb;
     };
