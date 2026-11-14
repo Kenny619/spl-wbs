@@ -42,10 +42,10 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run build:managed
       - name: Prepare bounded Reports-only functional review kit
-        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.ref == 'refs/heads/feature/reports-only-review-package-20261114' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && (github.ref == 'refs/heads/feature/reports-only-review-package-20261114' || github.head_ref == 'feature/reports-only-review-package-20261114') }}
         run: node scripts/package-reports-only-review.mjs
       - name: Reports-only functional review kit
-        if: ${{ !cancelled() && github.ref == 'refs/heads/feature/reports-only-review-package-20261114' }}
+        if: ${{ !cancelled() && (github.ref == 'refs/heads/feature/reports-only-review-package-20261114' || github.head_ref == 'feature/reports-only-review-package-20261114') }}
         uses: actions/upload-artifact@v4
         with:
           name: reports-only-des012-functional-review
