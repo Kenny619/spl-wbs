@@ -1567,6 +1567,7 @@ test("five-sheet XLSX Manual Watch Add/Resolve survives guarded Save and reopen 
   expect(Buffer.from(backup)).toEqual(original);
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Reload workbook", exact: true }).click();
+  await expect(page.locator(".managed-banner")).toContainText("Workbook ready. Select a task.");
   await page.locator(".task-row").first().click();
   await expect(watch).toContainText("New supplier dependency");
   await page.getByRole("button", { name: "Resolve this reason", exact: true }).click();
