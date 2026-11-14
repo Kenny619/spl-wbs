@@ -1,3 +1,5 @@
+> **Historical proposal — superseded as schema authority on 2026-11-14.** The Product Owner has [explicitly frozen the bounded five-sheet field/audit structure](https://github.com/Kenny619/spl-wbs/issues/3#issuecomment-6871527705) as **[EMV-PROJECT-DATA-0.1.2 FROZEN](EMV_PROJECT_DATA_0_1_2_FROZEN.md)** with a [machine-readable frozen contract](EMV_PROJECT_DATA_0_1_2_FROZEN.json). The text below intentionally preserves the *earlier draft status* as historical evidence, **not** as the current contract. Automatic risk rules/Green, acceptance authority, Report 1.1 name-source amendment, provider locking, merge/deployment and UAT remain unapproved.
+
 # EMV-PROJECT-DATA-0.1.2 — Workbook extension with owner-approved scope and draft detailed contract
 
 **Status:** **VERSION 0.1.2 · SCH-01/CAL-02/SEQ-01 OWNER-APPROVED IN PRINCIPLE · FIELD-LEVEL CONTRACT NOT YET FROZEN · NO PRODUCTION IMPLEMENTATION AUTHORIZATION**  
