@@ -1,3 +1,13 @@
+> **Change-control status updated 2026-11-14:** An independently versioned [frozen v0.1.2 human contract](EMV_PROJECT_DATA_0_1_2_FROZEN.md) and [frozen machine contract](EMV_PROJECT_DATA_0_1_2_FROZEN.json) now supersede the *field/audit schema* proposal below. All earlier entries remain historical; do not reinterpret their then-current “NOT FROZEN” labels as today's status. The bounded Product Owner approval is [Issue #3](https://github.com/Kenny619/spl-wbs/issues/3#issuecomment-6871527705).
+
+## 2026-11-14 — Product Owner bounded field/audit contract freeze, version 0.1.2 (FROZEN)
+
+**Decision:** Owner approved exactly the consolidated v0.1.2 five-sheet headers, required/optional typed fields and cross-reference/chronology integrity model. `ProjectMeta` retains required safe `ProjectName` and fixed schema literal `0.1.2`; Calendar has ≤1 inclusive enabled blackout and excludes each nonworking date once. F6b Watch reviewed/resolved UTC ≥ opened UTC (equality allowed), F6c one-root/no-fork/forward-time commitment chains and a distinct append-only `ProjectAudit` are included. `ActorProvenance=UnverifiedLocal` is permitted only as a historical user-supplied label, not proof of identity or business authority.
+
+**Protected boundaries:** Original `ProjectWBS` / task-only `UpdateHistory` remain frozen under EMV-WB-1.0; legacy/no extension is viewable with explicit Unknown/not-configured state, whereas partial/future extensions fail closed for managed writes. Automatic Watch thresholds/Green, commitment acceptance authorization, Report11 project-name-source change, provider locking/live sync, implementation authorization, production migration, merge, deployment and owner UAT acceptance **remain open/unapproved**. No new code/CI success inferred by this documentation decision.
+
+**Artifacts:** [Frozen human contract](EMV_PROJECT_DATA_0_1_2_FROZEN.md) · [frozen machine contract](EMV_PROJECT_DATA_0_1_2_FROZEN.json) · [proposed 61-case acceptance plan now scoped to frozen schema](../verification/EMV_PROJECT_DATA_0_1_ACCEPTANCE_PLAN.md) · [owner approval](https://github.com/Kenny619/spl-wbs/issues/3#issuecomment-6871527705). Frozen metadata/addenda are separately versioned; historical draft files retained for audit.
+
 # EMV shared-project workbook extension — proposal changelog
 
 **Change-control state:** PROPOSED versions only; **no frozen schema or implementation authorization**.  
