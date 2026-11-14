@@ -3,21 +3,56 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   push:
     branches:
       - main
       - "feature/**"
+  workflow_dispatch:
+    inputs:
+      full_regression:
+        description: Force full regression for owner UAT or release
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  plan:
+    name: CI scope and tier selection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      fast: ${{ steps.scope.outputs.fast }}
+      browser: ${{ steps.scope.outputs.browser }}
+      browser_scope: ${{ steps.scope.outputs.browser_scope }}
+      packaging: ${{ steps.scope.outputs.packaging }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify CI tier policy
+        run: node --test scripts/ci-plan.test.mjs
+      - name: Select CI scope from changed paths
+        id: scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci-plan.mjs
+
   build-unit:
     name: Build + unit tests
+    needs: plan
+    if: ${{ needs.plan.outputs.fast == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -29,24 +64,30 @@ jobs:
       - name: Install
         id: install
         run: npm ci
+      - name: Security gate: fail high/critical advisories
+        run: npm audit --omit=dev --audit-level=high
       - name: Unit tests
         run: npm test -- --reporter=default --reporter=json --outputFile=work/ci/unit.json
       - name: Production build
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run build
-      - name: Unit diagnostics
-        if: always()
+      - name: Unit diagnostics on failure
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: unit-diagnostics
           path: work/ci/
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 3
 
   browser:
     name: Browser regression (Windows Chromium)
+    needs: plan
+    if: ${{ needs.plan.outputs.browser == 'true' }}
     runs-on: windows-latest
     timeout-minutes: 25
+    env:
+      CI_BROWSER_SCOPE: ${{ needs.plan.outputs.browser_scope }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -58,25 +99,25 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install chromium
-      - name: Browser tests
-        run: npm run test:e2e -- --reporter=list,html
-      - name: Review product build
+      - name: Full or component-targeted browser tests
+        run: node scripts/run-browser-tier.mjs
+      - name: Review product build (full gates only)
         id: reviewbuild
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        if: ${{ needs.plan.outputs.packaging == 'true' && !cancelled() && steps.install.outcome == 'success' }}
         run: npm run build
-      - name: Prepare implementation validation package
-        if: ${{ !cancelled() && steps.reviewbuild.outcome == 'success' }}
+      - name: Prepare implementation validation package (full gates only)
+        if: ${{ needs.plan.outputs.packaging == 'true' && !cancelled() && steps.reviewbuild.outcome == 'success' }}
         run: node scripts/package-baseline-review.mjs
-      - name: Implementation validation package
-        if: always()
+      - name: Implementation validation package (full gates only)
+        if: ${{ needs.plan.outputs.packaging == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: v18-implementation-validation-package
           path: work/v18-review/
           if-no-files-found: ignore
-          retention-days: 14
-      - name: Browser diagnostics
-        if: always()
+          retention-days: 7
+      - name: Browser diagnostics (failure or full gate)
+        if: ${{ failure() || needs.plan.outputs.packaging == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: windows-browser-diagnostics
