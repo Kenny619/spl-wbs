@@ -6,7 +6,7 @@ import { boot } from "../main";
 import type { ImportController } from "../data/importController";
 import { KNOWN_STATUSES, TASK_TYPES, type Task } from "../data/types";
 import { collectTaskChanges, hasTaskChanges, initialTaskDraft, type TaskDraft } from "./draft";
-import { captureManagedSourceHash, inspectManagedSave, saveManagedAsCopy, saveManagedDirect, sha256 } from "./directSave";
+import { captureManagedSourceHash, inspectManagedSave, saveManagedAsCopy, saveManagedDirect, saveManagedProjectDirect, sha256 } from "./directSave";
 import { preflightManagedWorkbook } from "./preflight";
 import { openManagedHistory } from "./historyUi";
 import { ManagedSettings } from "./settingsUi";
@@ -17,7 +17,12 @@ import { todayInTimeZone } from "../calendar/dateOnly";
 import { MANAGED_APP_VERSION as APP_VERSION } from "./version";
 import { openManagedRecovery } from "./recoveryUi";
 import type { EditableField, EditValue } from "./workbookCandidate";
-import { projectWatchProjection, toManagedWatchView, type ManagedWatchView } from "./watchProjection";
+import { ManagedWatchPanel, type WatchSaveOutcome } from "./watchUi";
+import { readProjectContext, remainingProjectDays, type ProjectContext } from "./projectContext";
+import { bundledHolidayCalendar } from "../calendar/jpHolidays";
+import { compactRemaining } from "../calendar/workdays";
+import type { ProjectEdit } from "./projectDataCandidate";
+import { projectWatchProjection, toManagedWatchView, type ManagedWatchView, type WatchProjection } from "./watchProjection";
 
 type DirectoryWithEntries = FileSystemDirectoryHandle & {
   entries(): AsyncIterable<[string, FileSystemHandle]>;
@@ -64,6 +69,9 @@ export class ManagedEditor {
   // workbook state and never used as an argument to Save or Save As.
   private readonlyReportSource: Readonly<{ fileName: string; workbook: Uint8Array }> | null = null;
   private watchView: ManagedWatchView | null = null;
+  private watchProjection: WatchProjection | null = null;
+  private projectContext: ProjectContext | null = null;
+  private readonly watchPanel: ManagedWatchPanel;
   private canWrite = false;
   private recoveryHold = false;
   private inspectionName: string | null = null;
@@ -85,6 +93,13 @@ export class ManagedEditor {
   private readonly reports: ManagedReports;
 
   constructor(private readonly doc: Document, private readonly controller: ImportController) {
+    this.watchPanel = new ManagedWatchPanel(doc, {
+      getProjection: () => this.watchProjection,
+      canEdit: () => this.canWrite && !this.recoveryHold && !this.editing && !this.isTaskDirty(),
+      isBusy: () => this.busy,
+      onSave: edit => this.saveProjectEdit(edit),
+      rerender: () => this.render(),
+    });
     doc.body.classList.add("spt-managed");
     const topbar = doc.querySelector(".topbar");
     const actions = doc.querySelector(".top-actions");
@@ -166,6 +181,10 @@ export class ManagedEditor {
       });
     });
     actions.prepend(inspectButton);
+    const calendarButton = element(doc, "button", "managed-action", "Project Calendar");
+    calendarButton.type = "button";
+    calendarButton.addEventListener("click", () => this.guard(() => this.openProjectCalendar()));
+    actions.prepend(calendarButton);
     this.fileSelect.addEventListener("change", () => {
       const next = this.fileSelect.value;
       this.fileSelect.value = this.sourceName ?? "";
@@ -193,6 +212,8 @@ export class ManagedEditor {
         this.loadedBytes = null;
         this.readonlyReportSource = null;
         this.watchView = null;
+        this.watchProjection = null;
+        this.projectContext = null;
         this.inspectionName = null;
         this.recoveryHold = false;
         this.names = [];
@@ -234,10 +255,12 @@ export class ManagedEditor {
     this.render();
   }
 
-  private isDirty(): boolean {
+  private isTaskDirty(): boolean {
     return this.initial !== null && this.draft !== null && hasTaskChanges(this.initial, this.draft);
   }
+  private isDirty(): boolean { return this.isTaskDirty() || this.watchPanel.hasDraft(); }
   private clearDraft(): void {
+    this.watchPanel.cancel();
     this.selectedId = null;
     this.initial = null;
     this.draft = null;
@@ -260,7 +283,7 @@ export class ManagedEditor {
       button.addEventListener("click", callback);
       buttons.append(button);
     };
-    choice("Save", () => {
+    if (!this.watchPanel.hasDraft()) choice("Save", () => {
       void this.save().then((saved) => { if (saved) this.resolvePending(true); });
     }, true);
     choice("Discard", () => { this.clearDraft(); this.resolvePending(true); });
@@ -284,6 +307,8 @@ export class ManagedEditor {
     // On a failed replacement, never report stale data from an earlier preview.
     this.readonlyReportSource = null;
     this.watchView = null;
+        this.watchProjection = null;
+        this.projectContext = null;
     this.message = "Importing " + file.name + " in read-only preview…";
     this.render();
     try {
@@ -417,6 +442,99 @@ export class ManagedEditor {
       this.message = "Managed workbook unavailable: " + errorMessage(error) +
         (this.sourceName ? ". Previous verified workbook remains active." :
           ". Choose a different workbook in this folder.");
+    } finally {
+      this.busy = false;
+      this.render();
+    }
+  }
+
+  private openProjectCalendar(): void {
+    const context = this.projectContext;
+    const dialog = element(this.doc, "dialog", "managed-dialog");
+    dialog.setAttribute("aria-label", "Project Calendar");
+    dialog.append(element(this.doc, "h3", "", "Project Calendar"));
+    const note = element(this.doc, "p", "", context?.kind === "valid"
+      ? "Shared workbook settings. Days Remaining excludes weekends, Japanese holidays and this inclusive blackout once. Personal display preferences remain local."
+      : "Shared Calendar unavailable: load a valid five-sheet workbook. No calendar is inferred.");
+    dialog.append(note);
+    const input = (label: string, value: string, type = "text") => {
+      const wrap = element(this.doc, "label");
+      wrap.append(element(this.doc, "span", "", label));
+      const field = element(this.doc, "input");
+      field.type = type; field.value = value; field.setAttribute("aria-label", label);
+      wrap.append(field); dialog.append(wrap); return field;
+    };
+    const writable = context?.kind === "valid" && this.canWrite && !this.recoveryHold && !this.busy;
+    if (context?.kind === "valid") {
+      const name = input("Shared Project name", context.projectName);
+      const enabled = input("Enable project blackout", "", "checkbox");
+      enabled.checked = context.blackout.enabled;
+      const start = input("Project blackout start", context.blackout.start, "date");
+      const end = input("Project blackout end", context.blackout.end, "date");
+      const label = input("Project blackout label", context.blackoutLabel);
+      for (const field of [name, enabled, start, end, label]) field.disabled = !writable;
+      const save = (text: string, edit: () => ProjectEdit | null) => {
+        const button = element(this.doc, "button", "managed-action", text);
+        button.type = "button"; button.disabled = !writable;
+        button.addEventListener("click", async () => {
+          const change = edit();
+          if (!change) { note.textContent = "No change to save."; return; }
+          for (const node of Array.from(dialog.querySelectorAll<HTMLButtonElement>("button"))) node.disabled = true;
+          const result = await this.saveProjectEdit(change);
+          note.textContent = result.message;
+          if (result.kind !== "blocked") dialog.close();
+          else for (const node of Array.from(dialog.querySelectorAll<HTMLButtonElement>("button"))) node.disabled = node === button && this.recoveryHold;
+        });
+        dialog.append(button);
+      };
+      save("Save shared Project name", () => ({ kind: "rename", projectName: name.value }));
+      save("Save project blackout", () => enabled.checked
+        ? { kind: "set-blackout", blackout: { blackoutId: context.blackoutId ?? crypto.randomUUID(),
+            startDate: start.value, endDate: end.value, label: label.value } }
+        : context.blackoutId ? { kind: "disable-blackout", blackoutId: context.blackoutId } : null);
+    }
+    const close = element(this.doc, "button", "managed-action", "Discard and close");
+    close.type = "button"; close.addEventListener("click", () => dialog.close());
+    dialog.append(close);
+    dialog.addEventListener("close", () => dialog.remove());
+    this.doc.body.append(dialog); dialog.showModal();
+  }
+
+  private async saveProjectEdit(edit: ProjectEdit): Promise<WatchSaveOutcome> {
+    if (this.busy || this.recoveryHold || !this.canWrite || !this.directory ||
+        !this.sourceName || !this.loadedHash || this.editing || this.isTaskDirty()) {
+      return { kind: "blocked", message: "A verified writable workbook with no task draft is required." };
+    }
+    if (!window.confirm("Save recorded project evidence to this disposable workbook and retain a verified predecessor backup?")) {
+      return { kind: "blocked", message: "Save cancelled; draft retained." };
+    }
+    this.busy = true;
+    this.render();
+    try {
+      const result = await saveManagedProjectDirect({
+        directory: this.directory, sourceName: this.sourceName, loadedHash: this.loadedHash,
+        edit, changeSetId: crypto.randomUUID(), timestampUTC: new Date().toISOString(),
+        actorLabel: "Unverified local editor", appVersion: APP_VERSION,
+      });
+      if (result.kind === "noop") return { kind: "noop", message: "No changes; no workbook write." };
+      const file = await (await this.directory.getFileHandle(this.sourceName)).getFile();
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (await sha256(bytes) !== result.sourceHash) throw new Error("Source changed after verified Save; reload required.");
+      const view = this.controller.getState().view;
+      await this.controller.chooseFile(file);
+      const state = this.controller.getState();
+      if (!state.tasks || state.loadError) throw new Error("Saved workbook could not be imported; inspect before retrying.");
+      this.loadedBytes = bytes;
+      this.loadedHash = result.sourceHash;
+      this.watchView = await this.readWatchSnapshot(bytes);
+      this.controller.patchView(view);
+      this.message = "Verified Save: project evidence and ProjectAudit persisted; predecessor backup retained.";
+      return { kind: "saved", message: this.message };
+    } catch (error) {
+      // Block retries after any uncertain result, including post-write import failure.
+      this.recoveryHold = true;
+      this.message = "Project Save NOT verified: " + errorMessage(error) + ". Draft retained; inspect and reload before retrying.";
+      return { kind: "blocked", message: this.message };
     } finally {
       this.busy = false;
       this.render();
@@ -604,7 +722,13 @@ export class ManagedEditor {
   }
 
   private async readWatchSnapshot(bytes: Uint8Array): Promise<ManagedWatchView> {
-    try { return toManagedWatchView(await projectWatchProjection(bytes)); }
+    this.watchProjection = null;
+    this.projectContext = null;
+    try {
+      this.projectContext = await readProjectContext(bytes);
+      this.watchProjection = await projectWatchProjection(bytes);
+      return toManagedWatchView(this.watchProjection);
+    }
     catch { return { kind: "unavailable", workbookState: "incompatible", findings: [] }; }
   }
 
@@ -630,6 +754,21 @@ export class ManagedEditor {
     const state = this.controller.getState();
     const meta = this.doc.getElementById("rangeMeta");
     if (meta && state.tasks) meta.textContent = "Planned project schedule · Excel Managed preview";
+    if (this.projectContext?.kind === "valid") {
+      const title = this.doc.getElementById("title");
+      if (title) title.textContent = this.projectContext.projectName;
+      this.doc.title = this.projectContext.projectName + " — SPT-WBS";
+    }
+    for (const bar of Array.from(this.doc.querySelectorAll<HTMLElement>(".bar[data-task-id]"))) {
+      const row = state.tasks?.find(t => t.id === bar.dataset.taskId);
+      if (!row || !this.projectContext) continue;
+      const value = compactRemaining(remainingProjectDays(row.plannedEnd,
+        todayInTimeZone(new Date(), this.settings.getTimeZone()), row.status,
+        bundledHolidayCalendar(), this.projectContext));
+      bar.title = bar.title.split(" | Workbook Days Remaining:")[0] +
+        " | Workbook Days Remaining: " + (value ?? "Not active");
+      bar.setAttribute("aria-label", bar.title);
+    }
     const task = state.tasks?.find((t) => t.id === state.view.selectedId) ?? null;
     const inspector = this.doc.getElementById("panel");
     const details = this.doc.getElementById("detailContent");
@@ -668,6 +807,7 @@ export class ManagedEditor {
     details.style.display = this.editing ? "none" : "";
     if (!this.editing) {
       renderManagedReview08TaskDetail(details, task, state.tasks ?? [], {
+        projectContext: this.projectContext,
         today: todayInTimeZone(new Date(), this.settings.getTimeZone()),
         canEdit: this.canWrite && !this.busy && !this.recoveryHold,
         canBack: this.detailReturn.length > 0,
@@ -705,7 +845,7 @@ export class ManagedEditor {
         for (const title of row.openReasonTitles) list.append(element(this.doc, "li", "", title));
         evidence.append(list);
       }
-      details.append(evidence);
+      details.append(evidence, this.watchPanel.render(task.id));
     }
 
     // Original real editor and task History callbacks remain wired; move only
@@ -714,7 +854,7 @@ export class ManagedEditor {
     if (!headActions) throw Error("Review08 fixed header actions are missing.");
     const edit = element(this.doc, "button", "managed-action primary", "Edit task");
     edit.type = "button";
-    edit.disabled = this.editing || !this.canWrite || this.busy || this.recoveryHold;
+    edit.disabled = this.watchPanel.hasDraft() || this.editing || !this.canWrite || this.busy || this.recoveryHold;
     edit.addEventListener("click", () => {
       this.editing = true;
       this.render();

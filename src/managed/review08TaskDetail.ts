@@ -1,3 +1,4 @@
+import { remainingProjectDays, type ProjectContext } from "./projectContext";
 import type { Task } from "../data/types";
 import { bundledHolidayCalendar } from "../calendar/jpHolidays";
 import { remainingWorkdays, type RemainingWork } from "../calendar/workdays";
@@ -12,6 +13,7 @@ import { renderUpdatesSection } from "../ui/updates";
  */
 export type Review08DetailActions = {
   today: string;
+  projectContext?: ProjectContext | null;
   canEdit: boolean;
   canBack: boolean;
   onRelated: (taskId: string) => void;
@@ -40,7 +42,7 @@ function remainingLabel(result: RemainingWork, status: Task["status"]): string {
   }
 }
 
-function timeline(doc: Document, task: Task, today: string): HTMLElement {
+function timeline(doc: Document, task: Task, today: string, context?: ProjectContext | null): HTMLElement {
   const container = make(doc, "div", "dt-rail-card");
   const start = task.plannedStart, end = task.plannedEnd;
   if (!start || !end) {
@@ -48,7 +50,8 @@ function timeline(doc: Document, task: Task, today: string): HTMLElement {
     container.setAttribute("data-schedule", "missing");
     return container;
   }
-  const result = remainingWorkdays(end, today, task.status, bundledHolidayCalendar());
+  const result = context ? remainingProjectDays(end, today, task.status, bundledHolidayCalendar(), context)
+    : remainingWorkdays(end, today, task.status, bundledHolidayCalendar());
   const remaining = make(doc, "div", "dt-remaining", remainingLabel(result, task.status));
   if (result.kind === "overdue") remaining.classList.add("overdue");
   container.append(remaining);
@@ -136,7 +139,7 @@ export function renderManagedReview08TaskDetail(
   root.append(facts);
 
   const timelineSection = make(doc, "section", "detail-section");
-  timelineSection.append(make(doc, "h3", "", "Timeline"), timeline(doc, task, actions.today));
+  timelineSection.append(make(doc, "h3", "", "Timeline"), timeline(doc, task, actions.today, actions.projectContext));
   root.append(timelineSection);
 
   const info = make(doc, "section", "detail-section");

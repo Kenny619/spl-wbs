@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import ExcelJS from "exceljs";
+import { projectDataWorkbook } from "../fixtures/projectDataWorkbook";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
@@ -30,7 +31,7 @@ test.beforeAll(async () => {
   ))).toString("base64");
 }, { timeout: 120000 });
 
-async function openManaged(page: import("@playwright/test").Page) {
+async function openManaged(page: import("@playwright/test").Page, encoded = base64) {
   await page.addInitScript(({ encoded }) => {
     const decoded = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
     const files = new Map<string, Uint8Array>([["synthetic-demo.xlsx", decoded]]);
@@ -65,12 +66,12 @@ async function openManaged(page: import("@playwright/test").Page) {
     Object.defineProperty(window, "showDirectoryPicker", {
       configurable: true, value: async () => dir,
     });
-  }, { encoded: base64 });
+  }, { encoded });
   await page.goto(fileUrl);
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
-  await expect(page.locator("#title")).toHaveText("synthetic-demo");
+  await expect(page.locator("#title")).toHaveText(encoded === base64 ? "synthetic-demo" : "Synthetic shared project");
   await expect(page.locator(".task-row")).toHaveCount(1);
   await page.locator(".task-row").first().click();
   await expect(page.locator("#panel")).toHaveClass(/open/);
@@ -1518,4 +1519,101 @@ test("DES-012 Watch evidence stays Unknown for legacy XLSX in writable and read-
   await expect(evidence).toContainText("Workbook Watch: Unknown");
   await expect(evidence).toContainText("no Green or clearance inferred");
   await expect(page.getByRole("button", { name: "Edit task" })).toBeDisabled();
+});
+
+for (const state of ["Open", "Resolved", "malformed"] as const) {
+  test(`five-sheet XLSX ${state}: actual read-only import renders conservative Watch without writes`, async ({ page }) => {
+    await openManaged(page);
+    const before = await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([n,b]: any) => [n, Array.from(b)]));
+    await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+      name: "five-sheet.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      buffer: await projectDataWorkbook(state),
+    });
+    await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+    await page.locator(".task-row").first().click();
+    const evidence = page.locator(".managed-watch-evidence");
+    await expect(evidence).toContainText("Workbook Watch: " + (state === "Open" ? "Under Watch" : "Unknown"));
+    if (state === "Open") {
+      await expect(evidence).toContainText("Supplier <img src=x onerror=alert(1)>");
+      await expect(evidence.locator("img")).toHaveCount(0);
+      await expect(evidence).toContainText("1 recorded open reason");
+    }
+    if (state === "malformed") await expect(evidence).toContainText("unavailable");
+    await expect(page.getByRole("button", { name: "Edit task" })).toBeDisabled();
+    expect(await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([n,b]: any) => [n, Array.from(b)]))).toEqual(before);
+  });
+}
+
+test("five-sheet XLSX Manual Watch Add/Resolve survives guarded Save and reopen with audit and predecessor backup", async ({ page }) => {
+  page.on("dialog", dialog => dialog.accept());
+  const original = await projectDataWorkbook("Resolved");
+  await openManaged(page, original.toString("base64"));
+  const watch = page.getByRole("region", { name: "Recorded Under Watch reasons" });
+  await page.getByRole("button", { name: "Add manual reason", exact: true }).click();
+  await page.getByLabel("Watch reason title").fill("New supplier dependency");
+  await page.getByLabel("Watch reason details").fill("Synthetic manual record");
+  await page.getByRole("button", { name: "Save manual reason", exact: true }).click();
+  await expect(watch).toContainText("Under Watch · 1 open");
+  const source = async () => page.evaluate(() => Array.from((window as any).__managedFixtureFiles.get("synthetic-demo.xlsx") as Uint8Array));
+  const addedBytes = await source();
+  const added = new ExcelJS.Workbook();
+  await added.xlsx.load(Buffer.from(addedBytes));
+  expect(added.getWorksheet("WatchReasons")!.getRow(3).getCell(2).value).toBe("501");
+  const reasonId = added.getWorksheet("WatchReasons")!.getCell("A3").value;
+  expect(added.getWorksheet("ProjectAudit")!.rowCount).toBeGreaterThan(2);
+  expect(added.getWorksheet("ProjectWBS")!.getCell("F2").value).toBe("In Progress");
+  const backup = await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.get("synthetic-demo.backup.xlsx") as Uint8Array));
+  expect(Buffer.from(backup)).toEqual(original);
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Reload workbook", exact: true }).click();
+  await page.locator(".task-row").first().click();
+  await expect(watch).toContainText("New supplier dependency");
+  await page.getByRole("button", { name: "Resolve this reason", exact: true }).click();
+  await page.getByLabel("Watch resolution note").fill("Mitigation recorded");
+  await page.getByRole("button", { name: "Confirm reason resolution", exact: true }).click();
+  await expect(watch).toContainText("No recorded open reasons");
+  const resolved = new ExcelJS.Workbook();
+  await resolved.xlsx.load(Buffer.from(await source()));
+  expect(resolved.getWorksheet("WatchReasons")!.getCell("A3").value).toBe(reasonId);
+  expect(resolved.getWorksheet("WatchReasons")!.getCell("E3").value).toBe("Resolved");
+  expect(resolved.getWorksheet("WatchReasons")!.getCell("N3").value).toBe("Mitigation recorded");
+  expect(resolved.getWorksheet("ProjectAudit")!.rowCount).toBeGreaterThan(added.getWorksheet("ProjectAudit")!.rowCount);
+  expect(Buffer.from(await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.get("synthetic-demo.backup.xlsx") as Uint8Array)))).toEqual(Buffer.from(addedBytes));
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "reopened.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(await source()),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  await page.locator(".task-row").first().click();
+  await expect(watch).toContainText("No recorded open reasons");
+  await expect(page.getByRole("button", { name: "Add manual reason", exact: true })).toBeDisabled();
+  await watch.locator("summary").click();
+  await expect(watch).toContainText("Mitigation recorded");
+});
+
+test("five-sheet XLSX Calendar discards drafts, saves inclusive blackout and agrees with Task Detail and Schedule", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-14T00:00:00.000Z"));
+  page.on("dialog", dialog => dialog.accept());
+  await openManaged(page, (await projectDataWorkbook("Resolved")).toString("base64"));
+  const openCalendar = async () => {
+    await page.locator(".managed-project-menu summary").click();
+    await page.getByRole("button", { name: "Project Calendar", exact: true }).click();
+    return page.getByRole("dialog", { name: "Project Calendar", exact: true });
+  };
+  let calendar = await openCalendar();
+  await calendar.getByLabel("Shared Project name").fill("Discard this name");
+  await calendar.getByRole("button", { name: "Discard and close" }).click();
+  calendar = await openCalendar();
+  await expect(calendar.getByLabel("Shared Project name")).toHaveValue("Synthetic shared project");
+  await calendar.getByLabel("Enable project blackout").check();
+  await calendar.getByLabel("Project blackout start").fill("2026-11-14");
+  await calendar.getByLabel("Project blackout end").fill("2026-11-17");
+  await calendar.getByLabel("Project blackout label").fill("Synthetic blackout including weekend");
+  await calendar.getByRole("button", { name: "Save project blackout", exact: true }).click();
+  await expect(calendar).not.toBeVisible();
+  await expect(page.locator(".dt-remaining")).toContainText("3 days remaining");
+  await expect(page.locator('.bar[data-task-id="501"]')).toHaveAttribute("title", /Workbook Days Remaining: \+3 days/);
+  calendar = await openCalendar();
+  await expect(calendar.getByLabel("Project blackout end")).toHaveValue("2026-11-17");
+  await calendar.getByRole("button", { name: "Discard and close" }).click();
 });
