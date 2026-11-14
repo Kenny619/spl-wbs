@@ -1645,7 +1645,7 @@ test("five-sheet XLSX same-source Watch drives Meeting Review, Task Detail and f
   await agenda.getByLabel("Meeting owner filter").selectOption(["Owner A"]);
   await expect(agenda.locator(".managed-meeting-task")).toHaveCount(1);
   await testInfo.attach("meeting-recorded-watch-1440", { body: await page.screenshot(), contentType: "image/png" });
-  await page.getByRole("button", { name: "Reports", exact: true }).click();
+  await page.locator('.managed-main-nav [data-managed-view="reports"]').click();
   const reports = page.getByRole("dialog", { name: "Output Reports" });
   await reports.getByLabel("Project name").fill("Local report title");
   await reports.getByLabel("Report format").selectOption("text");
