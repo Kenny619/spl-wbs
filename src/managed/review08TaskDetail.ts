@@ -52,7 +52,10 @@ function timeline(doc: Document, task: Task, today: string, context?: ProjectCon
   }
   const result = context ? remainingProjectDays(end, today, task.status, bundledHolidayCalendar(), context)
     : remainingWorkdays(end, today, task.status, bundledHolidayCalendar());
-  const remaining = make(doc, "div", "dt-remaining", remainingLabel(result, task.status));
+  const unavailable = result.kind === "unknown" && context &&
+    (context.kind === "incompatible" || context.kind === "unsupported_future");
+  const remaining = make(doc, "div", "dt-remaining", unavailable
+    ? "Project Calendar unavailable" : remainingLabel(result, task.status));
   if (result.kind === "overdue") remaining.classList.add("overdue");
   container.append(remaining);
 

@@ -1696,3 +1696,45 @@ test("Meeting Review to Reports honors the shared unsaved Watch draft guard", as
   await expect(agenda).not.toBeVisible();
   await expect(page.getByRole("dialog", { name: "Output Reports" })).toBeVisible();
 });
+
+for (const sourceMode of ["writable", "readonly"] as const) {
+  test(`failed preview replacement preserves coherent ${sourceMode} Watch and Calendar source state`, async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-11-14T00:00:00.000Z"));
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await projectDataWorkbook("Open"));
+    book.getWorksheet("ProjectCalendar")!.addRow([
+      "bd95a399-257e-4b42-ac0e-fb6ee984c1a1", true, "2026-11-14", "2026-11-17",
+      "Synthetic shared blackout", "2026-11-12T02:00:00.000Z",
+    ]);
+    const bytes = Buffer.from(await book.xlsx.writeBuffer());
+    await openManaged(page, bytes.toString("base64"));
+    if (sourceMode === "readonly") {
+      await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+        name: "verified-readonly.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer: bytes,
+      });
+      await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+      await page.locator(".task-row").first().click();
+    }
+    await expect(page.locator(".managed-watch-evidence")).toContainText("Under Watch");
+    await expect(page.locator(".blackout-overlay")).toHaveCount(4);
+    const before = await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([name, value]: any) => [name, Array.from(value)]));
+    await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+      name: "failed-replacement.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer: Buffer.from("invalid XLSX"),
+    });
+    await expect(page.locator(".managed-banner")).toContainText("Read-only workbook preview failed");
+    await page.locator(".task-row").first().click();
+    if (sourceMode === "writable") {
+      await expect(page.locator("#title")).toHaveText("Synthetic shared project");
+      await expect(page.locator(".managed-watch-evidence")).toContainText("Workbook Watch: Under Watch");
+      await expect(page.locator(".dt-remaining")).toContainText("3 days remaining");
+      await expect(page.locator(".blackout-overlay")).toHaveCount(4);
+      await expect(page.getByRole("button", { name: "Edit task", exact: true })).toBeEnabled();
+    } else {
+      await expect(page.locator(".managed-watch-evidence")).toContainText("Workbook Watch: Unknown");
+      await expect(page.locator(".blackout-overlay")).toHaveCount(0);
+      await expect(page.locator(".dt-remaining")).toHaveText("Project Calendar unavailable");
+      await expect(page.getByRole("button", { name: "Edit task", exact: true })).toBeDisabled();
+    }
+    expect(await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([name, value]: any) => [name, Array.from(value)]))).toEqual(before);
+  });
+}

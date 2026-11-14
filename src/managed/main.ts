@@ -311,12 +311,16 @@ export class ManagedEditor {
     if (this.busy || this.isDirty()) return;
     // Preserve a previously verified editable source on failed import. The
     // preview never exposes writable handles even if the workbook passes preflight.
+    const retainedSource = this.directory && this.sourceName && this.loadedHash && this.loadedBytes
+      ? { watchView: this.watchView, watchProjection: this.watchProjection, projectContext: this.projectContext }
+      : null;
     this.busy = true;
     // On a failed replacement, never report stale data from an earlier preview.
     this.readonlyReportSource = null;
     this.watchView = null;
-        this.watchProjection = null;
-        this.projectContext = null;
+    this.watchProjection = null;
+    this.projectContext = null;
+    this.controller.patchView({ managedBlackout: { enabled: false, start: "", end: "" } });
     this.message = "Importing " + file.name + " in read-only preview…";
     this.render();
     try {
@@ -344,8 +348,22 @@ export class ManagedEditor {
       this.message = "Read-only preview loaded: " + file.name +
         ". Folder write access remains unavailable; Save, Save As and History write verification are disabled.";
     } catch (error) {
+      // A failed replacement must not detach displayed facts from the still-active
+      // verified directory source. Failed read-only previews remain unavailable
+      // for reporting and must not leave an old shared blackout or exact count.
+      if (retainedSource) {
+        this.watchView = retainedSource.watchView;
+        this.watchProjection = retainedSource.watchProjection;
+        this.projectContext = retainedSource.projectContext;
+      } else {
+        this.projectContext = { kind: "incompatible", projectName: null, blackout: null,
+          projectCalendarConfigured: false, findings: [] };
+      }
+      this.controller.patchView({ managedBlackout: this.projectContext?.kind === "valid"
+        ? this.projectContext.blackout : { enabled: false, start: "", end: "" } });
       this.message = "Read-only workbook preview failed: " + errorMessage(error) +
-        ". No workbook files were changed.";
+        ". No workbook files were changed." +
+        (retainedSource ? " Previous verified workbook remains active." : "");
     } finally {
       this.busy = false;
       this.render();
