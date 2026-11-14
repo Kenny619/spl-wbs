@@ -27,7 +27,7 @@ concurrency:
 jobs:
   plan:
     name: CI scope and tier selection
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     outputs:
       fast: ${{ steps.scope.outputs.fast }}
