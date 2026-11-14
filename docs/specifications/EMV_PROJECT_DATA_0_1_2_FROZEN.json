@@ -1,0 +1,494 @@
+{
+  "spec_id": "EMV-PROJECT-DATA-0.1.2",
+  "version": "0.1.2",
+  "status": "OWNER_FROZEN_BOUNDED_FIELD_AUDIT_CONTRACT",
+  "prepared_date": "2026-11-14",
+  "approval_status": "PRODUCT_OWNER_APPROVED_FIELD_AND_AUDIT_STRUCTURE_ONLY_NO_IMPLEMENTATION_AUTHORIZATION",
+  "owner_clarification": "docs/design/28_EXCEL_PROJECT_DATA_AND_LOCAL_PREFERENCES_OWNER_CLARIFICATION.md",
+  "human_contract": "docs/specifications/EMV_PROJECT_DATA_0_1_2_FROZEN.md",
+  "source_visual_git_blob": "de6ebaa63aa035ba741b4435cf1cdb9d1166d958",
+  "storage": {
+    "authoritative": "single_committed_xlsx_workbook_version",
+    "unchanged_sheets": [
+      "ProjectWBS",
+      "UpdateHistory"
+    ],
+    "workbook_scoped": [
+      "wbs_entities",
+      "task_updates",
+      "task_change_history",
+      "under_watch_reasons",
+      "accepted_commitments",
+      "blackout_intervals",
+      "project_event_audit"
+    ],
+    "browser_local": [
+      "appearance",
+      "columns",
+      "filters",
+      "gantt_zoom_layout",
+      "pgcm_display_preference",
+      "display_timezone",
+      "recent_workbooks",
+      "file_permissions"
+    ],
+    "real_time_sync": false,
+    "multi_writer_supported": false,
+    "caution": "Opening an identical committed version yields the same project data; a loaded browser is not automatically current when another editor saves."
+  },
+  "invariants": [
+    "all_extension_sheets_present_or_all_absent_for_legacy_mode",
+    "legacy_workbook_import_does_not_auto_migrate",
+    "first_successful_explicit_project_save_creates_all_extension_sheets_together",
+    "first_non_noop_save_creates_empty_updatehistory_if_absent_per_frozen_contract",
+    "immutable_project_audit_and_accepted_commitment_history",
+    "existing_task_updatehistory_not_repurposed_for_project_settings",
+    "transaction_uses_one_changesetid_and_timestamp_across_all_affected_audits",
+    "preflight_before_candidate_and_on_serialized_candidate",
+    "reopen_verify_source_and_backup_before_saying_saved",
+    "fail_closed_for_unsupported_excel_features_and_incompatible_extension_metadata",
+    "read_current_source_hash_and_conflict_check_immediately_before_write",
+    "source_hash_is_not_a_distributed_lock_or_realtime_sync",
+    "missing_watch_metadata_means_unknown_not_green",
+    "personal_reset_never_modifies_workbook_project_data",
+    "read_only_sharepoint_variant_is_not_modified",
+    "remaining_days_excludes_weekends_japanese_holidays_and_committed_enabled_project_blackout_once_per_date",
+    "remaining_days_window_is_after_today_through_finish_inclusive_with_existing_inactive_and_unknown_rules",
+    "shared_app_and_calendar_titles_use_committed_ProjectMeta_ProjectName_except_frozen_Report11_generated_name_source",
+    "document_title_reads_ProjectMeta_ProjectName_using_safe_dom_text",
+    "legacy_missing_ProjectName_has_unconfigured_state_not_filename_derived",
+    "Report_1_1_local_project_name_conflict_requires_separate_frozen_report_contract_reconciliation"
+  ],
+  "open_decisions": [
+    "WATCH-RULES-01",
+    "COMMITMENT-AUTHORITY-01",
+    "ACTOR-AUTHENTICATION-01",
+    "SYNC-01",
+    "NAME-REPORT-01",
+    "MEETING-REVIEW-DETAIL-01"
+  ],
+  "limitations": {
+    "automatic_watch_rules": "NOT_SPECIFIED",
+    "severity_mapping": "NOT_SPECIFIED",
+    "authenticated_actor_identity": "NOT_AVAILABLE_IN_CURRENT_STANDALONE_APP",
+    "commitment_acceptance_authority": "NOT_SPECIFIED",
+    "simultaneous_distributed_excel_edits": "NOT_GUARANTEED",
+    "project_calendar_impact_on_remaining_workdays": "REQUIRED_OWNER_DECISION_EXCLUDE_COMMITTED_ENABLED_BLACKOUT",
+    "supported_external_file_sync_provider": "NOT_VERIFIED",
+    "project_name_report_1_1_interaction": "REQUIRES_SEPARATE_CHANGE_CONTROL_WITH_FROZEN_REPORT_1_1_LOCAL_PROJECT_NAME_SOURCE"
+  },
+  "owner_feedback": {
+    "issue": "https://github.com/Kenny619/spl-wbs/issues/25#issuecomment-6812583483",
+    "project_name": "Required shared ProjectMeta.ProjectName in Excel; display in global UI, Calendar, HTML browser title",
+    "blackout": "Included in remaining working-days calculation with weekend/Japanese holiday overlap excluded once"
+  },
+  "display_contract": {
+    "project_name_source": "ProjectMeta.ProjectName",
+    "project_name_presence": "required_once_extension_created",
+    "legacy_without_extension": "Project name not configured; workbook filename shown separately as source identifier",
+    "global_ui": "Global application and navigation/Reports-view headers use committed shared ProjectName; frozen Report11 generated output remains controlled by separate #7 contract",
+    "calendar": "Use same authoritative shared name in Calendar section/title/context",
+    "html_document_title": "${ProjectName} — SPT-WBS",
+    "safe_rendering": "textContent/document.title; never innerHTML",
+    "personal_prefs_not_authoritative": true
+  },
+  "remaining_workdays_contract": {
+    "start_exclusive": "today",
+    "finish_inclusive": "planned_finish",
+    "count_date_when": "not_weekend_and_not_japanese_holiday_and_not_enabled_committed_blackout",
+    "deduplication": "one_excluded_date_at_most_once_even_if_multiple_nonworking_reasons",
+    "on_missing_necessary_coverage": "unknown_not_fabricated_numeric_count",
+    "inactive_status": "existing_inactive_behavior",
+    "unsaved_draft": "not_committed; optional_explicitly_labeled_preview",
+    "multiple_active_blackouts": "not_in_initial_approved_scope"
+  },
+  "owner_approval_reference": "docs/design/29_2026-11-12_PROJECT_DATA_SCOPE_DISPOSITION.md",
+  "approved_decisions": {
+    "SCH-01": {
+      "status": "OWNER_FROZEN_FIELD_AND_AUDIT_SCHEMA",
+      "sheets": [
+        "ProjectMeta",
+        "ProjectCalendar",
+        "WatchReasons",
+        "ProjectCommitments",
+        "ProjectAudit"
+      ],
+      "keep_existing": [
+        "ProjectWBS",
+        "UpdateHistory"
+      ],
+      "fields_still_draft": false
+    },
+    "CAL-02": {
+      "status": "OWNER_APPROVED",
+      "max_simultaneously_enabled_blackout_intervals": 1,
+      "interval_boundaries": "inclusive",
+      "future_multiple_active_intervals": "separately_versioned_feature"
+    },
+    "SEQ-01": {
+      "status": "OWNER_APPROVED_DEPENDENCY",
+      "bundle": [
+        "Excel_backed_ProjectCalendar",
+        "blackout_aware_Days_Remaining",
+        "Excel_backed_Under_Watch",
+        "Watch_enabled_Meeting_Review"
+      ],
+      "stage_date": "NOT_APPROVED",
+      "changes_beta_after_stage_C": false
+    }
+  },
+  "implementation_authorized": false,
+  "freeze_date": "2026-11-14",
+  "approval_reference": "https://github.com/Kenny619/spl-wbs/issues/3#issuecomment-6871527705",
+  "source_proposed_git_blob": "a51d97a727d5773508bc2e58bea917dc633e09bd",
+  "source_proposed_path": "docs/specifications/EMV_PROJECT_DATA_0_1_PROPOSED.json",
+  "frozen_scope": "exact_five_sheet_headers_typed_fields_referential_and_chronology_checks_and_safe_write_invariants",
+  "unapproved_boundaries": [
+    "automatic_risk_thresholds_and_rule_registry",
+    "Green_Clear_check_completeness_and_autoclear",
+    "commitment_acceptance_authority_and_authenticated_actor_identity",
+    "Report11_generated_project_name_source_amendment",
+    "provider_concurrency_and_live_sync_claims",
+    "production_migration_implementation_merge_release_and_owner_UAT_acceptance",
+    "full_Meeting_Review_behavior_and_stage_or_beta_scheduling",
+    "unspecified_per_field_audit_old_new_serialization_changes"
+  ],
+  "merge_authorized": false,
+  "release_authorized": false,
+  "production_migration_authorized": false,
+  "owner_uat_accepted": false,
+  "worksheets": [
+    {
+      "name": "ProjectMeta",
+      "kind": "key_value",
+      "headers": [
+        "Key",
+        "Value"
+      ],
+      "required_keys": {
+        "ProjectID": "uuid",
+        "ProjectName": "required_nonblank_plain_text_unicode_max_180",
+        "ProjectDataSchemaVersion": "exact_literal_0.1.2"
+      },
+      "extra_compatible_keys": "preserve",
+      "rows": [],
+      "constraints": [
+        "unique_required_keys",
+        "preserve_extra_compatible_keys",
+        "ProjectName_shared_and_not_derived_from_filename_or_local_preference",
+        "safe_plain_text_not_formula",
+        "ProjectName_change_requires_verified_project_Save",
+        "displayed_in_global_ui_calendar_and_document_title",
+        "legacy_missing_name_indicated_not_configured"
+      ]
+    },
+    {
+      "name": "ProjectCalendar",
+      "kind": "current_rows",
+      "key": "BlackoutID",
+      "headers": [
+        {
+          "name": "BlackoutID",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "Enabled",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "name": "StartDate",
+          "type": "date_only_iso",
+          "required": true
+        },
+        {
+          "name": "EndDate",
+          "type": "date_only_iso",
+          "required": true
+        },
+        {
+          "name": "Label",
+          "type": "plain_text",
+          "required": false
+        },
+        {
+          "name": "ModifiedUTC",
+          "type": "utc_iso_millis",
+          "required": true
+        }
+      ],
+      "constraints": [
+        "unique_blackout_id",
+        "enabled_requires_valid_inclusive_dates",
+        "initial_ui_zero_or_one_enabled_interval",
+        "disabled_records_preserved",
+        "calendar_saved_only_after_explicit_confirmed_workbook_write",
+        "enabled_blackout_excluded_from_remaining_workday_count_once_per_date",
+        "never_count_blackout_twice_if_weekend_or_holiday"
+      ]
+    },
+    {
+      "name": "WatchReasons",
+      "kind": "current_rows",
+      "key": "ReasonID",
+      "headers": [
+        {
+          "name": "ReasonID",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "TaskID",
+          "type": "existing_projectwbs_id",
+          "required": true
+        },
+        {
+          "name": "Origin",
+          "type": "enum_Manual_Automatic",
+          "required": true
+        },
+        {
+          "name": "RuleCode",
+          "type": "approved_rule_code",
+          "required": false
+        },
+        {
+          "name": "State",
+          "type": "enum_Open_Resolved",
+          "required": true
+        },
+        {
+          "name": "Title",
+          "type": "nonblank_plain_text",
+          "required": true
+        },
+        {
+          "name": "Details",
+          "type": "plain_text",
+          "required": false
+        },
+        {
+          "name": "EvidenceRef",
+          "type": "plain_text",
+          "required": false
+        },
+        {
+          "name": "OpenedUTC",
+          "type": "utc_iso_millis",
+          "required": true
+        },
+        {
+          "name": "OpenedBy",
+          "type": "actor_label",
+          "required": true
+        },
+        {
+          "name": "LastReviewedUTC",
+          "type": "utc_iso_millis",
+          "required": false
+        },
+        {
+          "name": "ResolvedUTC",
+          "type": "utc_iso_millis",
+          "required": false
+        },
+        {
+          "name": "ResolvedBy",
+          "type": "actor_label",
+          "required": false
+        },
+        {
+          "name": "ResolutionNote",
+          "type": "plain_text",
+          "required": false
+        }
+      ],
+      "constraints": [
+        "unique_reason_id",
+        "one_reason_per_episode",
+        "taskid_must_exist_or_preserve_orphan_as_diagnostic",
+        "automatic_origin_requires_approved_rulecode",
+        "manual_origin_has_blank_rulecode",
+        "open_has_blank_resolution",
+        "resolved_requires_resolvedutc_and_actor_label",
+        "reviewedutc_and_resolvedutc_must_not_precede_openedutc_for_existing_and_new_rows_equal_allowed",
+        "separate_manual_and_automatic_reasons",
+        "no_mark_green_when_evidence_unknown",
+        "actor_label_is_not_authentication"
+      ]
+    },
+    {
+      "name": "ProjectCommitments",
+      "kind": "append_only",
+      "key": "CommitmentID",
+      "headers": [
+        {
+          "name": "CommitmentID",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "TaskID",
+          "type": "existing_projectwbs_id",
+          "required": true
+        },
+        {
+          "name": "AcceptedFinishDate",
+          "type": "date_only_iso",
+          "required": true
+        },
+        {
+          "name": "AcceptedUTC",
+          "type": "utc_iso_millis",
+          "required": true
+        },
+        {
+          "name": "AcceptedBy",
+          "type": "actor_label",
+          "required": true
+        },
+        {
+          "name": "PreviousCommitmentID",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "name": "Rationale",
+          "type": "plain_text",
+          "required": false
+        },
+        {
+          "name": "EvidenceRef",
+          "type": "plain_text",
+          "required": false
+        }
+      ],
+      "constraints": [
+        "unique_commitment_id",
+        "append_only",
+        "tasklink_stable",
+        "previous_commitment_same_task_or_blank",
+        "one_initial_root_commitment_per_task",
+        "every_predecessor_has_at_most_one_successor",
+        "revision_acceptedutc_strictly_after_predecessor_acceptedutc",
+        "latest_recorded_is_not_verified_acceptance_authority",
+        "no_cycle",
+        "date_edit_does_not_accept_commitment",
+        "no_row_means_commitment_unconfirmed"
+      ]
+    },
+    {
+      "name": "ProjectAudit",
+      "kind": "append_only",
+      "key": "EventID",
+      "headers": [
+        {
+          "name": "EventID",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "ChangeSetID",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "TimestampUTC",
+          "type": "utc_iso_millis",
+          "required": true
+        },
+        {
+          "name": "EntityType",
+          "type": "enum_ProjectMeta_Blackout_WatchReason_Commitment",
+          "required": true
+        },
+        {
+          "name": "EntityID",
+          "type": "entity_key",
+          "required": true
+        },
+        {
+          "name": "TaskID",
+          "type": "existing_projectwbs_id",
+          "required": false
+        },
+        {
+          "name": "Action",
+          "type": "approved_action",
+          "required": true
+        },
+        {
+          "name": "Field",
+          "type": "changed_field",
+          "required": true
+        },
+        {
+          "name": "OldValue",
+          "type": "canonical_field_text",
+          "required": false
+        },
+        {
+          "name": "NewValue",
+          "type": "canonical_field_text",
+          "required": false
+        },
+        {
+          "name": "ActorLabel",
+          "type": "actor_label",
+          "required": true
+        },
+        {
+          "name": "ActorProvenance",
+          "type": "enum_UnverifiedLocal_only_until_separately_approved",
+          "required": true
+        },
+        {
+          "name": "Source",
+          "type": "source_literal_Web_UI",
+          "required": true
+        },
+        {
+          "name": "AppVersion",
+          "type": "nonblank_text",
+          "required": true
+        }
+      ],
+      "constraints": [
+        "append_only",
+        "one_row_per_changed_field",
+        "same_changesetid_implies_same_timestamp",
+        "canonical_old_new_value_validation_required_before_implementation_no_new_normalization_authorized",
+        "no_fake_taskid_for_project_events",
+        "no_op_creates_no_event",
+        "failed_save_creates_no_confirmed_event",
+        "preserve_custom_columns"
+      ]
+    }
+  ],
+  "legacy_calendar_compatibility": {
+    "state_when_missing_all_extension_sheets": "NOT_CONFIGURED",
+    "display_label": "Project blackout not configured",
+    "remaining_days_when_legacy": "preserve_existing_supported_weekend_and_japan_holiday_count_with_explicit_unconfigured_blackout_fallback",
+    "means_committed_empty_blackout": false,
+    "partial_or_malformed_extension": "REJECT_WRITE_AND_MARK_COUNT_UNKNOWN_WHEN_DATA_DEPENDENT",
+    "approval_state": "OWNER_FROZEN_LEGACY_COMPATIBILITY"
+  },
+  "remaining_implementation_and_acceptance_gates": [
+    "actor identity provenance/authorization",
+    "safe file write and external-edit concurrency limitations",
+    "automatic Watch checks, thresholds, and clearance completeness",
+    "Report 1.1 ProjectName contract transition",
+    "Watch-enabled Meeting Review content refinement",
+    "phase alignment without silently changing Stage A-C beta gate",
+    "LEGACY-CAL-01 distinction between absent extension and invalid or partial calendar source"
+  ],
+  "limits_of_freeze": {
+    "task_only_history_unchanged": "EMV-WB-1.0",
+    "no_implicit_Watch_Green": true,
+    "no_auto_accepted_commitments": true,
+    "unverified_actor_label_is_not_identity_or_role_authority": true,
+    "existing_report11_name_source_unchanged": true,
+    "no_additive_extension_sheet_creation_on_read_only_open": true
+  }
+}
