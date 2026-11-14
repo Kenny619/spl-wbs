@@ -772,7 +772,8 @@ export class ManagedEditor {
       const value = compactRemaining(remainingProjectDays(row.plannedEnd,
         todayInTimeZone(new Date(), this.settings.getTimeZone()), row.status,
         bundledHolidayCalendar(), this.projectContext));
-      bar.title = bar.title.split(" | Workbook Days Remaining:")[0] +
+      bar.title = bar.title.split(" | Workbook Days Remaining:")[0]
+        .replace(/ \| (?:\+\d+ days|0 day|Overdue|No finish date|Holiday coverage incomplete)$/, "") +
         " | Workbook Days Remaining: " + (value ?? "Not active");
       bar.setAttribute("aria-label", bar.title);
     }
