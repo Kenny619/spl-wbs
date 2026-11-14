@@ -1057,6 +1057,26 @@ test("UAT-02: managed dark theme has restrained day markers, semantic statuses a
   await expect(settings).toBeVisible();
   await settings.getByRole("radio", { name: "Dark" }).check();
   await settings.getByRole("button", { name: "Close" }).click();
+  // Read-only import is expected on corporate Edge: the warning must remain legible
+  // in dark mode. Assert computed contrast instead of a brittle literal CSS color.
+  const readOnlyBannerContrast = await page.locator(".managed-banner .managed-alert").evaluate(node => {
+    const channels = (value: string): number[] => {
+      const rgb = value.match(/\\d+(?:\\.\\d+)?/g)?.slice(0, 3).map(Number);
+      if (!rgb || rgb.length !== 3) throw new Error("Expected opaque RGB color");
+      return rgb;
+    };
+    const luminance = (rgb: number[]): number => {
+      const light = rgb.map(v => {
+        const normalized = v / 255;
+        return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * light[0] + 0.7152 * light[1] + 0.0722 * light[2];
+    };
+    const foreground = luminance(channels(getComputedStyle(node).color));
+    const background = luminance(channels(getComputedStyle(node.parentElement!).backgroundColor));
+    return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+  });
+  expect(readOnlyBannerContrast).toBeGreaterThanOrEqual(4.5);
   await page.locator(".zoom-choice").filter({ hasText: "Day" }).click();
   await page.locator(".task-row").filter({ hasText: "Requirements sign-off" }).click();
   await expect(page.locator(".dt-remaining")).toBeVisible();

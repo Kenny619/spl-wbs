@@ -155,6 +155,10 @@ body.spt-managed[data-managed-theme="dark"] .btn-primary { background:#426bc1; c
 body.spt-managed[data-managed-theme="dark"] .managed-banner {
   background:#203c59; color:#e4edf9; border-color:#4a7194;
 }
+/* Restricted/read-only state is important status text, not low-contrast dark red. */
+body.spt-managed[data-managed-theme="dark"] .managed-banner .managed-alert {
+  color:#ffd6ad;
+}
 body.spt-managed[data-managed-theme="dark"] .managed-history-values,
 body.spt-managed[data-managed-theme="dark"] .managed-history-row,
 body.spt-managed[data-managed-theme="dark"] .filter-option,
