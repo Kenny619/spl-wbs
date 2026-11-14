@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPT-WBS Corporate Edge File Access Smoke</title>
+<style>body{font:15px/1.5 "Segoe UI",Arial,sans-serif;max-width:900px;margin:26px auto;padding:0 18px;color:#223548;background:#f5f7fb}main{background:#fff;border:1px solid #dde4ee;border-radius:12px;padding:26px}h1{font-size:24px;margin:0 0 6px}h2{font-size:17px;margin:24px 0 6px}p{margin:5px 0 12px}.muted{color:#576a7d}.warning{border-left:4px solid #a85c25;padding:12px;background:#fff7ed}button{font:inherit;padding:9px 13px;margin:5px 5px 5px 0;background:#fff;color:#16456c;border:1px solid #b6cce0;border-radius:7px;cursor:pointer}button:disabled{opacity:.45}button.primary{background:#086cab;color:#fff}#log{font:12px/1.6 Consolas,monospace;background:#13283b;color:#e0effe;padding:14px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:340px;overflow:auto}code{background:#edf1f6;padding:2px 4px}</style>
+</head><body><main><h1>SPT-WBS · Corporate Edge file-access smoke</h1>
+<p class="muted">Issue #11 / #69 · offline standalone file:// diagnostic · no libraries, logins or network calls</p>
+<p class="warning"><b>Safety:</b> Create a NEW empty disposable folder named <code>SPT-WBS-EDGE-SMOKE</code>. Select only that folder. This diagnostic creates/re-writes files prefixed <code>SPT_WBS_EDGE_SMOKE_</code> and their sibling backups. Never select a project or corporate workbook folder.</p>
+<h2>1. Browser capabilities and folder permission</h2>
+<button id="check" class="primary">Check capabilities</button>
+<button id="pick">Choose EMPTY disposable folder</button>
+<p id="folder">No folder selected</p>
+<h2>2. Synthetic Excel workbook</h2>
+<button id="write" disabled>Write XLSX and verify exact bytes</button>
+<button id="backup" disabled>Create sibling backup and verify</button>
+<p class="muted">Generates a tiny, valid fictional .xlsx locally. Tests browser file access, not the complete app's Save logic.</p>
+<h2>3. Excel-open lock experiment (optional)</h2>
+<p>Open the created scratch XLSX in Excel and leave it open, then click:</p>
+<button id="lock" disabled>Attempt rewriting while Excel open</button>
+<p class="muted">A successful rewrite is NOT proof of safe Excel locking or multi-user concurrency.</p>
+<h2>4. Export results</h2>
+<button id="copy">Copy results</button>
+<button id="save">Download results .txt</button>
+<p>Post results to <a href="https://github.com/Kenny619/spl-wbs/issues/11">SPT-WBS Issue #11</a>. Remove any corporate/private paths before sharing.</p>
+<h2>Log</h2><pre id="log"></pre>
+</main><script>
+"use strict";
+const $=id=>document.getElementById(id);
+let folder=null,handle=null,fileName="",bytes=null;
+const logs=[];
+function log(t){logs.push(new Date().toISOString()+" | "+t);$("log").textContent=logs.join("\n")}
+function err(n,e){log("FAIL "+n+": "+(e.name||"Error")+" — "+(e.message||String(e)))}
+function report(){return "SPT-WBS Edge smoke\nOrigin: "+location.protocol+"\nBrowser: "+navigator.userAgent+"\nNo filesystem path included\n\n"+logs.join("\n")}
+function u16(d,o,n){d.setUint16(o,n,true)}function u32(d,o,n){d.setUint32(o,n>>>0,true)}
+function crc(bytes){let v=0xffffffff;for(const c of bytes){v^=c;for(let i=0;i<8;i++)v=(v>>>1)^((v&1)?0xedb88320:0)}return (v^0xffffffff)>>>0}
+function workbook(){
+const a='<?xml version="1.0" encoding="UTF-8"?>',c='http://schemas.openxmlformats.org/';
+const parts=[
+["[Content_Types].xml",a+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'],
+["_rels/.rels",a+'<Relationships xmlns="'+c+'package/2006/relationships"><Relationship Id="rId1" Type="'+c+'officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+["xl/workbook.xml",a+'<workbook xmlns="'+c+'spreadsheetml/2006/main" xmlns:r="'+c+'officeDocument/2006/relationships"><sheets><sheet name="Synthetic" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+["xl/_rels/workbook.xml.rels",a+'<Relationships xmlns="'+c+'package/2006/relationships"><Relationship Id="rId1" Type="'+c+'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'],
+["xl/worksheets/sheet1.xml",a+'<worksheet xmlns="'+c+'spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>SPT WBS Edge Smoke</t></is></c></row><row r="2"><c r="A2" t="inlineStr"><is><t>Fictional disposable test</t></is></c></row></sheetData></worksheet>']
+];
+const te=new TextEncoder(), locals=[],central=[];let offset=0;
+for(const [name,xml] of parts){const n=te.encode(name),b=te.encode(xml),checksum=crc(b),head=new Uint8Array(30+n.length),d=new DataView(head.buffer);
+u32(d,0,0x04034b50);u16(d,4,20);u16(d,6,0);u16(d,8,0);u32(d,14,checksum);u32(d,18,b.length);u32(d,22,b.length);u16(d,26,n.length);head.set(n,30);locals.push(head,b);
+const ch=new Uint8Array(46+n.length),cd=new DataView(ch.buffer);
+u32(cd,0,0x02014b50);u16(cd,4,20);u16(cd,6,20);u32(cd,16,checksum);u32(cd,20,b.length);u32(cd,24,b.length);u16(cd,28,n.length);u32(cd,42,offset);ch.set(n,46);central.push(ch);offset+=head.length+b.length}
+const centerOffset=offset;for(const q of central)offset+=q.length;
+const end=new Uint8Array(22),ed=new DataView(end.buffer);u32(ed,0,0x06054b50);u16(ed,8,parts.length);u16(ed,10,parts.length);u32(ed,12,offset-centerOffset);u32(ed,16,centerOffset);
+const all=[...locals,...central,end],out=new Uint8Array(offset+end.length);let pos=0;for(const q of all){out.set(q,pos);pos+=q.length}return out}
+function equal(a,b){return a.length===b.length&&a.every((v,i)=>v===b[i])}
+async function put(h,b){const w=await h.createWritable();try{await w.write(b);await w.close()}catch(e){try{await w.abort()}catch{}throw e}}
+async function verify(h,b){return equal(new Uint8Array(await (await h.getFile()).arrayBuffer()),b)}
+$("check").onclick=()=>{log("Protocol: "+location.protocol);log("Secure context: "+isSecureContext);log("showDirectoryPicker: "+typeof showDirectoryPicker);log("FileSystemDirectoryHandle: "+typeof FileSystemDirectoryHandle);bytes=workbook();log("Synthetic XLSX size "+bytes.length+" bytes (5 Office XML ZIP entries)")};
+$("pick").onclick=async()=>{try{if(typeof showDirectoryPicker!=="function"){log("BLOCKED: File System Access folder picker unavailable");return}folder=await showDirectoryPicker({mode:"readwrite"});$("folder").textContent="Selected: "+folder.name;log("Folder selected; permission: "+(await folder.queryPermission?.({mode:"readwrite"})||"not reported"));$("write").disabled=false}catch(e){err("folder picker",e)}};
+$("write").onclick=async()=>{if(!folder)return;try{bytes=workbook();fileName="SPT_WBS_EDGE_SMOKE_"+Date.now()+".xlsx";handle=await folder.getFileHandle(fileName,{create:true});await put(handle,bytes);const ok=await verify(handle,bytes);log((ok?"PASS":"FAIL")+" exact-byte write/readback ("+bytes.length+" bytes)");$("backup").disabled=!ok;$("lock").disabled=!ok;log("Scratch workbook filename: "+fileName)}catch(e){err("write/readback",e)}};
+$("backup").onclick=async()=>{try{const h=await folder.getFileHandle(fileName+".backup.xlsx",{create:true});await put(h,bytes);log((await verify(h,bytes)?"PASS":"FAIL")+" sibling backup write/readback")}catch(e){err("sibling backup",e)}};
+$("lock").onclick=async()=>{if(!handle)return;try{await put(handle,bytes);log((await verify(handle,bytes)?"OBSERVED SUCCESS":"OBSERVED MISMATCH")+" rewriting Excel-open scratch workbook (not a concurrency guarantee)")}catch(e){err("Excel-open write",e)}};
+$("copy").onclick=async()=>{try{await navigator.clipboard.writeText(report());log("PASS copied result report")}catch(e){err("clipboard",e);prompt("Copy manually:",report())}};
+$("save").onclick=()=>{const b=new Blob([report()],{type:"text/plain"}),url=URL.createObjectURL(b),a=document.createElement("a");a.href=url;a.download="SPT_WBS_EDGE_SMOKE_RESULTS.txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+log("Ready. Start with Check capabilities.");
+</script></body></html>
