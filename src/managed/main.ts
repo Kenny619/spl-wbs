@@ -383,8 +383,10 @@ export class ManagedEditor {
       const name = error instanceof Error ? error.name : "UnknownError";
       const detail = errorMessage(error);
       this.message = "Edge folder picker did not grant a folder (" + name + ": " + detail +
-        "). This can be cancellation, permission denial or browser policy. " +
-        "Try Project → Open XLSX read-only to inspect the workbook without writing. " +
+        "). Folder selection may have been cancelled, not confirmed, or restricted by policy. " +
+        "Retry Project → Choose project folder: explicitly select the NEW disposable test folder " +
+        "containing only the synthetic XLSX and confirm the folder selection. " +
+        "If it still fails, use Project → Open XLSX read-only and report this exact error. " +
         "No workbook was changed.";
       this.render();
       return;

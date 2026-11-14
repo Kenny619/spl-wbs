@@ -6,6 +6,8 @@
 .managed-meeting-group{background:var(--des12-raised);padding:9px 14px;margin:0}
 .managed-meeting-task{display:grid;width:100%;grid-template-columns:minmax(140px,1fr) 100px 85px 85px;gap:8px;text-align:left;padding:12px 14px;background:var(--des12-paper);color:inherit;border:0;border-bottom:1px solid var(--des12-edge);border-radius:0}
 .managed-meeting-task span:last-child{grid-column:1/-1;font-size:11px}.managed-meeting-task.selected{background:#eaf5fc}
+/* Preserve the selected row in dark mode; never render the pale-blue light selection. */
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"] .managed-meeting-task.selected{background:#304467;color:var(--des12-ink);box-shadow:inset 3px 0 var(--des12-blue)}
 body.spt-managed-meeting-open .managed-schedule-body>.chart-card{display:none!important}
 body.spt-managed-meeting-open .managed-meeting{display:block}
 body.spt-managed.spt-managed-des012-live.spt-managed-meeting-open .managed-schedule-body{grid-template-columns:minmax(330px,.95fr) minmax(400px,1.25fr)}

@@ -9,6 +9,7 @@ import { spawn } from "node:child_process";
 let fileUrl = "";
 let base64 = "";
 let packagedUatBase64 = "";
+let fullOptionAUatBase64 = "";
 
 test.beforeAll(async () => {
   const book = new ExcelJS.Workbook();
@@ -28,6 +29,18 @@ test.beforeAll(async () => {
   // one-task workbook used by other managed tests.
   packagedUatBase64 = (await readFile(path.resolve(
     "dist-managed/SPT-WBS_DES010_Synthetic_UAT.xlsx",
+  ))).toString("base64");
+  // Generate the exact composite fictional workbook shipped in the owner UAT ZIP.
+  // Previous browser tests used only DES010/Report11 or one-task fixtures.
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn("node", ["scripts/package-option-a-integrated-candidate.mjs"],
+      { stdio: "inherit" });
+    child.on("error", reject);
+    child.on("close", (code) => code === 0 ? resolve()
+      : reject(new Error("Option A candidate fixture generation failed: " + code)));
+  });
+  fullOptionAUatBase64 = (await readFile(path.resolve(
+    "work/option-a-candidate/SPT-WBS_OptionA_Fictional_23_Task_Project.xlsx",
   ))).toString("base64");
 }, { timeout: 120000 });
 
@@ -1758,3 +1771,95 @@ for (const sourceMode of ["writable", "readonly"] as const) {
     expect(await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([name, value]: any) => [name, Array.from(value)]))).toEqual(before);
   });
 }
+
+
+test("owner UAT E3: Task Detail Edit and Task history stay in one action row", async ({ page }) => {
+  await openManaged(page);
+  const actions = page.locator(".managed-inspector-actions");
+  const edit = actions.getByRole("button", { name: "Edit task", exact: true });
+  const history = actions.getByRole("button", { name: "Task history", exact: true });
+  await expect(edit).toBeVisible();
+  await expect(history).toBeVisible();
+  const editBox = await edit.boundingBox();
+  const historyBox = await history.boundingBox();
+  expect(editBox).not.toBeNull();
+  expect(historyBox).not.toBeNull();
+  expect(Math.abs(editBox!.y - historyBox!.y)).toBeLessThanOrEqual(2);
+  expect(historyBox!.x).toBeGreaterThan(editBox!.x);
+  await expect(actions).toHaveCSS("flex-wrap", "nowrap");
+});
+
+test("owner UAT E17: selected Meeting Review exception has legible dark surface", async ({ page }) => {
+  await openManaged(page, (await projectDataWorkbook("Open")).toString("base64"));
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("radio", { name: "Dark" }).check();
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Meeting Review", exact: true }).click();
+  const selected = page.locator('.managed-meeting-task[data-task-id="501"]');
+  await selected.click();
+  await expect(selected).toHaveClass(/selected/);
+  await expect(selected).toHaveCSS("background-color", "rgb(48, 68, 103)");
+  await expect(selected).toHaveCSS("color", "rgb(228, 237, 249)");
+  await expect(selected).toContainText("Under Watch");
+});
+
+test("owner UAT E2/E14/E16: exact shipped 23-task five-sheet read-only workbook generates all Reports", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true, value: async () => {
+        throw new DOMException("The user aborted a request.", "AbortError");
+      },
+    });
+  });
+  await page.goto(fileUrl);
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Choose project folder" }).click();
+  await expect(page.locator(".managed-banner")).toContainText("AbortError");
+  await expect(page.locator(".managed-banner")).toContainText("Retry Project");
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "SPT-WBS_OptionA_Fictional_23_Task_Project.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(fullOptionAUatBase64, "base64"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded", { timeout: 20000 });
+  await expect(page.locator(".task-row")).toHaveCount(23);
+  await expect(page.locator("#title")).toHaveText("Fictional Enterprise Delivery Program");
+  await page.locator(".task-row").first().click();
+  await expect(page.getByRole("button", { name: "Edit task", exact: true })).toBeDisabled();
+  await page.locator('.managed-main-nav [data-managed-view="reports"]').click();
+  const reports = page.getByRole("dialog", { name: "Output Reports" });
+  await expect(reports).toBeVisible();
+  await reports.getByLabel("Report format").selectOption("text");
+  const name = reports.getByLabel("Project name");
+  await expect(name).toHaveValue("");
+  await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+  await expect(name).toHaveAttribute("aria-invalid", "true");
+  await expect(reports.locator(".managed-report-status")).toContainText("Enter a Project name before generating");
+  await name.fill("Synthetic Owner UAT Report");
+  await expect(name).not.toHaveAttribute("aria-invalid", "true");
+  for (const mode of ["status", "progress", "audit"] as const) {
+    await reports.getByLabel("Report mode").selectOption(mode);
+    if (mode !== "status") {
+      await reports.getByLabel("Report start date").fill("2026-11-09");
+      await reports.getByLabel("Report end date").fill("2026-11-14");
+    }
+    await reports.getByRole("button", { name: "Generate / Refresh" }).click();
+    await expect(reports.locator(".managed-report-status")).toContainText("Generated " + mode + " snapshot");
+    const preview = reports.getByRole("textbox", { name: "Report preview" });
+    await expect(preview).toHaveValue(/Synthetic Owner UAT Report/);
+    if (mode !== "audit") {
+      await expect(preview).toHaveValue(/Under Watch · 1 Open \/ 0 Resolved/);
+      await expect(preview).toHaveValue(/Unknown · 0 Open \/ 1 Resolved/);
+    } else {
+      await expect(preview).toHaveValue(/Detailed Change Audit/);
+    }
+    await reports.getByLabel("Report format").selectOption("html");
+    const html = await reports.locator("iframe[title='Formatted report preview']").getAttribute("srcdoc");
+    expect(html).toContain("Synthetic Owner UAT Report");
+    await reports.getByLabel("Report format").selectOption("text");
+  }
+  expect(errors).toEqual([]);
+});
