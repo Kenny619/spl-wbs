@@ -41,14 +41,14 @@ jobs:
       - name: Managed variant development build
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run build:managed
-      - name: Package integrated Option A INTERNAL QA candidate
+      - name: Package Option A controlled owner UAT kit
         if: ${{ success() }}
         run: node scripts/package-option-a-integrated-candidate.mjs
-      - name: Internal integration candidate artifact (NOT owner UAT ready)
+      - name: Controlled comprehensive Option A owner UAT artifact (NOT accepted/released)
         if: ${{ success() }}
         uses: actions/upload-artifact@v4
         with:
-          name: option-a-integrated-candidate-${{ github.sha }}
+          name: SPT-WBS-OptionA-Comprehensive-UAT-${{ github.sha }}
           path: work/option-a-candidate/
           if-no-files-found: error
           retention-days: 14

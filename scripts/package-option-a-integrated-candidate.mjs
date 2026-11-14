@@ -1,6 +1,6 @@
 /**
  * Internal SHA-pinned Option A INTEGRATION CANDIDATE artifact.
- * This is NOT a UAT-ready declaration or release.
+ * A controlled synthetic-only owner UAT download is NOT acceptance, merge or release.
  * Run only after "npm run build:managed". Never read corporate workbooks.
  */
 import ExcelJS from "exceljs";
@@ -112,9 +112,9 @@ const html=join(sourceDir,"managed.html");
 if((await stat(html)).size<100000) throw new Error("Missing/incomplete integrated managed.html");
 await copyFile(html,join(destination,"managed.html"));
 const readme=[
-"# SPT-WBS Option A integrated candidate — INTERNAL QA ONLY",
+"# SPT-WBS Option A — CONTROLLED CORPORATE EDGE UAT",
 "",
-"**Do NOT interpret this package as Product Owner UAT-ready, accepted, merged or released.**",
+"**READY FOR OWNER PHYSICAL UAT on a NEW EMPTY DISPOSABLE folder only. NOT accepted, merged or released.**",
 "PR #72. Source commit: "+(process.env.GITHUB_SHA ?? "LOCAL_UNPINNED"),
 "CI run: "+(process.env.GITHUB_RUN_ID ?? "LOCAL_UNPINNED"),
 "Generated at (UTC): "+new Date().toISOString(),
@@ -129,14 +129,16 @@ const readme=[
 "",
 "Open managed.html from extracted files in Edge using file://.",
 "Copy ONLY the fictional .xlsx into a NEW EMPTY DISPOSABLE folder.",
-"Never load actual project workbooks for this candidate.",
+"Never load actual corporate or shared project workbooks for this UAT.",
 "Do not send Outlook test messages.",
 "No automatic Green, authenticated actor or commitment approval is asserted.",
 "Excel-open writing was observed to succeed in a separate corporate browser smoke test;",
 "that is NOT a safe lock guarantee. Always use a fresh disposable workbook.",
 "",
-"This candidate artifact is an engineering QA package; the README download link",
-"will be promoted only after independent QA and all agreed readiness gates.",
+"Bounded independent technical QA: https://github.com/Kenny619/spl-wbs/issues/14#issuecomment-6877259925",
+"Two moderate inherited ExcelJS/uuid advisories remain open for release review;",
+"they are NOT waived by successful automated tests. Confirm limitations in the checklist.",
+"Post UAT PASS/FAIL/BLOCKED evidence to GitHub Issue #11; do not reuse this workbook after an uncertain Save.",
 "",
 ].join("\n");
 const checklist=[
@@ -172,7 +174,7 @@ const checklist=[
 ].join("\n")+"\n";
 await writeFile(join(destination,"START_HERE.md"),readme+"\n");
 await writeFile(join(destination,"UAT_CHECKLIST.md"),checklist);
-const manifest={candidate:true,approvedUAT:false,repo:"Kenny619/spl-wbs",pr:72,
+const manifest={controlledUAT:true,ownerUatReady:true,ownerAccepted:false,mergeAuthorized:false,securityWaiver:false,repo:"Kenny619/spl-wbs",pr:72,
   sourceCommit:process.env.GITHUB_SHA??null,ciRun:process.env.GITHUB_RUN_ID??null,
   contract:"EMV-PROJECT-DATA-0.1.2",taskCount:23,watch:{open:1,resolved:1},calendar:{activeBlackouts:1},
   generatedUTC:new Date().toISOString()};
@@ -181,4 +183,4 @@ const files=["managed.html",workbookName,"START_HERE.md","UAT_CHECKLIST.md","PRO
 const sums=[];
 for (const name of files) sums.push(sha256(await readFile(join(destination,name)))+"  "+name);
 await writeFile(join(destination,"SHA256SUMS.txt"),sums.join("\n")+"\n");
-console.log("Prepared internal QA candidate at "+destination+" from "+(process.env.GITHUB_SHA??"local")+" with "+files.length+" verified payloads");
+console.log("Prepared controlled owner UAT kit at "+destination+" from "+(process.env.GITHUB_SHA??"local")+" with "+files.length+" verified payloads");
