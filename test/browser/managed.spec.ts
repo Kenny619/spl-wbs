@@ -1674,3 +1674,25 @@ test("five-sheet XLSX same-source Watch drives Meeting Review, Task Detail and f
   await expect(agenda).not.toBeVisible();
   expect(await page.evaluate(() => Array.from((window as any).__managedFixtureFiles.entries()).map(([n,b]: any) => [n, Array.from(b)]))).toEqual(before);
 });
+
+
+test("Meeting Review to Reports honors the shared unsaved Watch draft guard", async ({ page }) => {
+  await openManaged(page, (await projectDataWorkbook("Open")).toString("base64"));
+  await page.getByRole("button", { name: "Meeting Review", exact: true }).click();
+  const agenda = page.getByRole("region", { name: "Meeting agenda", exact: true });
+  await expect(agenda).toBeVisible();
+  await agenda.locator('.managed-meeting-task[data-task-id="501"]').click();
+  await page.getByRole("button", { name: "Add manual reason" }).click();
+  await page.getByLabel("Watch reason title").fill("Uncommitted reason");
+  await page.locator('.managed-main-nav [data-managed-view="reports"]').click();
+  const guard = page.getByRole("dialog", { name: "Unsaved changes" });
+  await expect(guard).toBeVisible();
+  await expect(agenda).toBeVisible();
+  await guard.getByRole("button", { name: "Cancel" }).click();
+  await expect(agenda).toBeVisible();
+  await expect(page.getByLabel("Watch reason title")).toHaveValue("Uncommitted reason");
+  await page.locator('.managed-main-nav [data-managed-view="reports"]').click();
+  await guard.getByRole("button", { name: "Discard" }).click();
+  await expect(agenda).not.toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Output Reports" })).toBeVisible();
+});

@@ -48,7 +48,14 @@ export function mountMeetingReview(doc: Document, controller: ImportController,
   }, true);
   doc.querySelector('[data-managed-view="reports"]')?.addEventListener("click", event => {
     event.preventDefault(); event.stopImmediatePropagation();
-    doc.body.classList.remove("spt-managed-meeting-open"); button.classList.remove("active"); button.removeAttribute("aria-current"); reports.open();
+    // Meeting Review shares the task/Watch editor. A pending Watch reason must
+    // not be silently abandoned when navigating to Reports.
+    guard(() => {
+      doc.body.classList.remove("spt-managed-meeting-open");
+      button.classList.remove("active");
+      button.removeAttribute("aria-current");
+      reports.open();
+    });
   }, true);
   scope.addEventListener("click", () => { exceptions = true; refresh(); });
   all.addEventListener("click", () => { exceptions = false; refresh(); });
