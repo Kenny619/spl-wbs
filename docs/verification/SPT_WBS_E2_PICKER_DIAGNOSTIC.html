@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPT-WBS E2 Folder Picker Differential Test</title>
+<style>body{font:15px/1.5 "Segoe UI",Arial,sans-serif;max-width:900px;margin:24px auto;padding:0 18px;color:#20334a;background:#f5f7fb}main{background:white;border:1px solid #dde6ef;border-radius:12px;padding:24px}h1{font-size:23px}h2{font-size:17px}button{font:inherit;padding:10px 13px;margin:4px 6px 5px 0;background:#fff;color:#13577c;border:1px solid #aac1d0;border-radius:8px;cursor:pointer}button:disabled{opacity:.45}.primary{background:#0167b1;color:#fff}.warning{border-left:4px solid #aa6718;background:#fff8ea;padding:10px}pre{font:12px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#14263b;color:#eff8ff;padding:14px;max-height:400px;overflow:auto}details{padding:12px;border:1px solid #c3d2e0;border-radius:8px;margin-top:12px}p.small{font-size:13px;color:#52667a}</style>
+</head>
+<body><main>
+<h1>SPT-WBS · E2 folder-picker differential diagnosis</h1>
+<p>Corporate Edge / Windows · standalone local HTML · no services, uploads, dependencies or workbook modification</p>
+<p class="warning"><b>Use the same NEW disposable folder for all picker tests.</b> It should contain only the fictional SPT-WBS test XLSX. This page never writes or changes any file. Do not choose an actual corporate/project workbook directory. An <code>AbortError</code> is ambiguous by itself: cancellation, dismissed system dialog or a policy rejection can surface similarly.</p>
+<h2>1. Direct native directory picker</h2>
+<button id="check" class="primary">Check browser environment</button>
+<button id="rw">A · Choose folder (readwrite)</button>
+<button id="read">B · Choose folder (read only)</button>
+<button id="grant" disabled>C · Request readwrite on B handle</button>
+<p class="small">A matches SPT-WBS’s existing API call. B uses read access only. C requests write permission on a handle successfully selected by B; it does not modify any file.</p>
+<h2>2. Same picker inside Project menu</h2>
+<details id="project"><summary><b>Project</b> — click to open menu</summary>
+<button id="nested">D · Choose folder from Project menu</button>
+</details>
+<p class="small">D reproduces the app's Project-menu click context and calls the identical readwrite API. Close the system folder window each time before running another variant.</p>
+<h2>3. Results</h2>
+<button id="copy">Copy result report</button>
+<button id="download">Download result report .txt</button>
+<pre id="log"></pre>
+<p>Post results to <a href="https://github.com/Kenny619/spl-wbs/issues/11">SPT-WBS Issue #11</a>. Do not include any actual private filesystem paths or sensitivity labels.</p>
+</main><script>
+"use strict";
+const get=id=>document.getElementById(id);
+const events=[];let readHandle=null;
+function stamp(message){events.push(new Date().toISOString()+" | "+message);get("log").textContent=events.join("\n")}
+function sanitize(text){return String(text??"").slice(0,600).replace(/[A-Z]:\\[^\s]*/gi,"[redacted-path]")}
+function activation(){return navigator.userActivation ? "active="+navigator.userActivation.isActive+",hasBeenActive="+navigator.userActivation.hasBeenActive : "unreported"}
+function detail(e){return (e?.name||"Error")+": "+sanitize(e?.message||e)}
+async function test(label,mode,storeRead=false){
+const picker=window.showDirectoryPicker;
+stamp(label+" CLICK "+activation()+"; mode="+mode+"; API="+typeof picker);
+if(typeof picker!=="function"){stamp(label+" UNAVAILABLE: showDirectoryPicker not supported");return}
+const start=performance.now();
+try{
+  // IMPORTANT: invoke picker synchronously before any await.
+  const handle=await picker.call(window,{mode});
+  const state=typeof handle.queryPermission==="function" ? await handle.queryPermission({mode:"readwrite"}) : "not exposed";
+  stamp(label+" SUCCESS selected directory handle; readwrite permission="+state+"; elapsed="+Math.round(performance.now()-start)+"ms");
+  if(storeRead){readHandle=handle;get("grant").disabled=typeof handle.requestPermission!=="function"}
+}catch(e){stamp(label+" FAILED "+detail(e)+"; elapsed="+Math.round(performance.now()-start)+"ms")}
+}
+get("check").onclick=()=>stamp("ENV origin="+location.protocol+",secure="+isSecureContext+",picker="+typeof window.showDirectoryPicker+",agent="+navigator.userAgent);
+get("rw").onclick=()=>{void test("A direct readwrite","readwrite")};
+get("read").onclick=()=>{readHandle=null;get("grant").disabled=true;void test("B direct read","read",true)};
+get("nested").onclick=()=>{void test("D nested Project-menu readwrite","readwrite")};
+get("grant").onclick=async()=>{
+ const handle=readHandle;
+ if(!handle){stamp("C no read handle; run B first");return}
+ stamp("C requestPermission CLICK "+activation());
+ try{const state=await handle.requestPermission({mode:"readwrite"});stamp("C requestPermission RESULT "+state+" (no file touched)")}
+ catch(e){stamp("C requestPermission FAILED "+detail(e))}
+};
+function report(){return "SPT-WBS E2 picker differential · no private paths\n"+events.join("\n")+"\n"}
+get("copy").onclick=async()=>{try{await navigator.clipboard.writeText(report());stamp("Result copied")}catch(e){stamp("Clipboard blocked "+detail(e));window.prompt("Copy manually",report())}};
+get("download").onclick=()=>{const blob=new Blob([report()],{type:"text/plain"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download="SPT_WBS_E2_PICKER_RESULTS.txt";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+stamp("Ready. Run Check → A → B → optional C → D. Do not choose real project folders.");
+</script></body></html>
