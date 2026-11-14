@@ -1895,26 +1895,27 @@ test("owner UAT: Meeting Exceptions combines recorded Watch, At Risk, Blocked an
   const book = new ExcelJS.Workbook();
   await book.xlsx.load(await projectDataWorkbook("Open"));
   const sheet = book.getWorksheet("ProjectWBS")!;
-  const headers = sheet.getRow(1).values as string[];
-  const statusCol = headers.indexOf("TaskStatus");
-  const finishCol = headers.indexOf("PlannedEnd");
-  const idCol = headers.indexOf("ID");
-  if (statusCol < 1 || finishCol < 1 || idCol < 1) throw Error("Unexpected synthetic workbook columns");
-  const rows = sheet.getRows(2, sheet.rowCount - 1)!;
-  const target = rows.filter(row => String(row.getCell(idCol).value) !== "501").slice(0,3);
-  if (target.length !== 3) throw Error("Need three non-Watch synthetic tasks");
-  target[0].getCell(statusCol).value = "At Risk";
-  target[1].getCell(statusCol).value = "Blocked";
-  target[2].getCell(statusCol).value = "In Progress";
-  target[2].getCell(finishCol).value = "2026-11-01";
+  // The original Watch fixture intentionally contains only task 501.
+  // Extend it with three fictional status/date exceptions; these rows do NOT
+  // create WatchReasons and must never be presented as recorded Under Watch.
+  sheet.addRow([502, "Status at risk", "1.3", "Task", 25, "At Risk", "Owner B", "",
+    "2026-11-01", "2026-12-01"]);
+  sheet.addRow([503, "Status blocked", "1.4", "Task", 25, "Blocked", "Owner C", "",
+    "2026-11-01", "2026-12-01"]);
+  sheet.addRow([504, "Overdue active task", "1.5", "Task", 25, "In Progress", "Owner D", "",
+    "2026-10-01", "2026-11-01"]);
   await openManaged(page, Buffer.from(await book.xlsx.writeBuffer()).toString("base64"));
   await page.getByRole("button", { name: "Meeting Review", exact: true }).click();
   const agenda = page.getByRole("region", { name: "Meeting agenda", exact: true });
   await expect(agenda.locator('.managed-meeting-task[data-task-id="501"]')).toContainText("Under Watch");
-  for (const row of target) {
-    const id = String(row.getCell(idCol).value);
-    await expect(agenda.locator('.managed-meeting-task[data-task-id="' + id + '"]')).toBeVisible();
+  for (const id of ["502","503","504"]) {
+    const row = agenda.locator('.managed-meeting-task[data-task-id="' + id + '"]');
+    await expect(row).toBeVisible();
+    await expect(row).toContainText("Unknown · 0 Open / 0 Resolved");
   }
+  await expect(agenda.locator('.managed-meeting-task[data-task-id="502"]')).toContainText("At Risk");
+  await expect(agenda.locator('.managed-meeting-task[data-task-id="503"]')).toContainText("Blocked");
+  await expect(agenda.locator('.managed-meeting-task[data-task-id="504"]')).toContainText("Overdue");
   await expect(agenda).toContainText("status/date exceptions");
   await expect(agenda).toContainText("no automatic Green or clearance inferred");
 });
