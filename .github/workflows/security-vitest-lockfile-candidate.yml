@@ -1,0 +1,82 @@
+name: Security lockfile candidate verification
+
+on:
+  push:
+    branches: [feature/security-vitest-lockfile-candidate]
+  pull_request:
+    branches: [feature/excel-managed-v1]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-lockfile-verification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-verification:
+    name: Clean install, unit/build and audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify approved versions in candidate lockfile
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          const ver = (name) => lock.packages['node_modules/'+name]?.version;
+          if (p.devDependencies.vitest !== '4.1.12' || ver('vitest') !== '4.1.12' ||
+              ver('vite') !== '6.4.5' || ver('exceljs') !== '4.4.0' ||
+              ver('uuid') !== '8.3.2' || ver('tinypool')) {
+            throw Error('Dependency candidate differs from evaluated constraints');
+          }
+          console.log(JSON.stringify({vitest:ver('vitest'),vite:ver('vite'),
+            exceljs:ver('exceljs'),uuid:ver('uuid'),tinypool:ver('tinypool')??'absent'}));
+          NODE
+      - name: Clean reproducible install — no legacy overrides
+        run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Read-only production build
+        run: npm run build
+      - name: Managed production build
+        run: npm run build:managed
+      - name: Collect audit without applying automatic fixes
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p work/security-candidate
+          npm ls vitest vite tinypool --all > work/security-candidate/dependency-tree.txt 2>&1 || true
+          npm audit --json > work/security-candidate/audit-full.json || true
+          npm audit --omit=dev --json > work/security-candidate/audit-production.json || true
+      - name: Candidate audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-lockfile-audit
+          path: work/security-candidate/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  windows-regression:
+    name: Windows Chromium regression on clean lockfile
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Clean reproducible install
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install chromium
+      - name: Browser tests
+        run: npm run test:e2e -- --reporter=list

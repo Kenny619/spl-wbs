@@ -1,0 +1,469 @@
+/*
+ * DES-012 Review08: live Schedule + Task Detail integration (Stage A).
+ * Preserves the existing v18 Gantt DOM/control listeners and Report11 Review02.
+ * Meeting Review / workbook-owned Watch remain a separate approved delivery track.
+ * Applied only to the Excel-managed build; no changes to read-only v18.
+ */
+body.spt-managed.spt-managed-des012-live {
+  --des12-bg:#f3f6f9;
+  --des12-ink:#1c3044;
+  --des12-sub:#64788b;
+  --des12-edge:#e2e9f0;
+  --des12-raised:#f8fafc;
+  --des12-paper:#fff;
+  --des12-blue:#1475a7;
+  --des12-shadow:0 5px 20px #223b5210;
+  background:var(--des12-bg);
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"] {
+  --des12-bg:#121b2a;
+  --des12-ink:#e4edf9;
+  --des12-sub:#aabbd0;
+  --des12-edge:#34465e;
+  --des12-raised:#233249;
+  --des12-paper:#1c293b;
+  --des12-blue:#86bff0;
+  --des12-shadow:0 5px 20px #020a1952;
+}
+body.spt-managed.spt-managed-des012-live .topbar {
+  min-height:64px; padding:10px 22px; gap:13px;
+  border-bottom:1px solid var(--des12-edge);
+  background:var(--des12-paper);
+}
+body.spt-managed.spt-managed-des012-live .managed-brand {
+  width:38px; height:38px; border:1px solid #b8dceb;
+  border-radius:10px; background:#e8f4fa;
+}
+body.spt-managed.spt-managed-des012-live .managed-brand img {
+  width:32px; height:32px; object-fit:contain;
+}
+body.spt-managed.spt-managed-des012-live .managed-project-heading #title {
+  color:var(--des12-ink); font-size:18px; font-weight:800;
+  letter-spacing:-.5px;
+}
+body.spt-managed.spt-managed-des012-live .managed-main-nav {
+  display:flex; gap:3px; align-items:center;
+  padding:5px; border-radius:10px; background:#edf2f6;
+}
+body.spt-managed.spt-managed-des012-live .managed-main-nav .managed-action {
+  min-width:100px; padding:9px 14px;
+  border:0; border-radius:7px; color:#536e83;
+  background:transparent; font-weight:750;
+}
+body.spt-managed.spt-managed-des012-live .managed-main-nav .managed-action.active {
+  background:#fff; border:0; color:#1d5c80;
+  box-shadow:0 2px 7px #12314f17;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"] .managed-main-nav {
+  background:#24374d;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"] .managed-main-nav .managed-action {
+  color:#b5c9df;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"] .managed-main-nav .managed-action.active {
+  color:#e8f1fb; background:#385575; box-shadow:0 2px 8px #050c1977;
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body {
+  grid-template-columns:minmax(0,1.72fr) minmax(310px,.78fr);
+  gap:13px; padding:13px 22px 20px;
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-card,
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .detail-panel {
+  border-radius:12px; background:var(--des12-paper);
+  border:1px solid var(--des12-edge); box-shadow:var(--des12-shadow);
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top {
+  display:grid; grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:"heading scope" "controls controls";
+  gap:9px 12px; padding:14px 17px;
+  align-items:center; min-height:60px;
+  border-bottom:1px solid var(--des12-edge);
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > div:first-child {
+  grid-area:heading; min-width:0;
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-title {
+  color:var(--des12-ink); font-size:15px;
+  font-weight:800; letter-spacing:-.2px;
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-meta {
+  color:var(--des12-sub); font-size:11px;
+  overflow:hidden; text-overflow:ellipsis;
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .managed-gantt-scope {
+  grid-area:scope; margin:0; width:max-content; justify-content:flex-end;
+  border-radius:8px; padding:3px; gap:2px; max-width:100%;
+}
+body.spt-managed.spt-managed-des012-live .managed-gantt-scope-note {
+  display:none; /* redundant onscreen; explicit rule remains in button title */
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .toolbar {
+  grid-area:controls; display:flex; gap:7px; align-items:center;
+  flex-wrap:wrap; justify-content:flex-start; min-width:0;
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top :is(.tool,.zoom-group,.search) {
+  border-radius:8px; min-height:33px;
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top .search {
+  min-width:148px; width:clamp(148px,19vw,225px);
+  background:var(--des12-paper);
+  border:1px solid var(--des12-edge);
+  color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top .toolbar .tool {
+  background:var(--des12-paper); border-color:var(--des12-edge);
+  color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top .zoom-group {
+  border-color:var(--des12-edge); overflow:hidden;
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .gantt {
+  --grid:clamp(280px,52%,500px);
+}
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .detail-panel {
+  position:relative; inset:auto; display:flex; flex-direction:column;
+  overflow:hidden; padding:0; min-height:0; max-height:100%; height:100%;
+  transform:none!important;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-head {
+  display:flex; flex:none; min-height:69px; padding:12px 17px;
+  align-items:center; justify-content:space-between; gap:10px;
+  background:var(--des12-paper); border-bottom:1px solid var(--des12-edge);
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-head > div {
+  display:flex; flex-direction:column; min-width:0;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-kicker {
+  color:var(--des12-sub); font-size:9px; font-weight:800;
+  letter-spacing:.1em;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-head strong {
+  color:var(--des12-ink); font-size:15px; line-height:1.45;
+  letter-spacing:-.2px;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-trail {
+  max-width:100%; font-size:11px; color:var(--des12-sub);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-head #close {
+  float:none; flex:none; border:1px solid var(--des12-edge);
+  border-radius:7px; background:var(--des12-raised);
+  color:var(--des12-sub); width:30px; height:30px;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll {
+  flex:1; min-height:0; padding:15px 17px 22px;
+  overflow:auto; overscroll-behavior:contain;
+  background:var(--des12-paper);
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .panel-kicker {
+  margin:0 0 5px; color:var(--des12-sub);
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .panel-title {
+  margin:3px 0 10px; color:var(--des12-ink);
+  font-size:19px; font-weight:800; letter-spacing:-.4px;
+  overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .detail-grid {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px 14px; margin:15px 0;
+  padding:13px; border-radius:8px;
+  border:1px solid var(--des12-edge);
+  background:var(--des12-raised);
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .field label {
+  color:var(--des12-sub); font-size:10px;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .field strong {
+  font-size:12px; font-weight:700; color:var(--des12-ink);
+  overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .section-label {
+  color:var(--des12-ink); font-weight:800;
+  font-size:12px; margin-top:17px;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .desc {
+  color:var(--des12-sub); line-height:1.65;
+  overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .managed-editor {
+  margin-top:18px; padding:14px 0 8px;
+  border-top:1px solid var(--des12-edge);
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .managed-fields {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .managed-empty-detail {
+  margin:10px 0; color:var(--des12-sub); line-height:1.6;
+}
+@media(max-width:1190px) {
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body {
+    grid-template-columns:minmax(0,1.5fr) minmax(280px,.9fr);
+    padding:10px 14px 12px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-scroll .managed-fields {
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:880px) {
+  body.spt-managed.spt-managed-des012-live .topbar {padding:10px 12px;}
+  body.spt-managed.spt-managed-des012-live .managed-main-nav .managed-action {min-width:93px;}
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body {
+    grid-template-columns:minmax(0,1fr) minmax(245px,42%);
+  }
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top {
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"heading scope" "controls controls";
+    padding:8px 10px; gap:5px 8px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .managed-gantt-scope {
+    justify-content:flex-end;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-review08-time-controls {
+    padding-bottom:4px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-review08-task-controls {
+    gap:5px;
+  }
+}
+@media(max-width:640px) {
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top {
+    grid-template-columns:1fr;
+    grid-template-areas:"heading" "scope" "controls";
+  }
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .managed-gantt-scope {
+    justify-content:flex-start;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body {
+    display:flex; flex-direction:column;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-card {
+    flex:none; height:490px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-schedule-body .detail-panel {
+    min-height:280px; max-height:440px; height:auto;
+  }
+}
+/* The source template still renders zoom/navigation alongside task filtering.
+ * Live nodes are reparented into balanced lines by mountManagedShell, not copied. */
+body.spt-managed.spt-managed-des012-live .managed-schedule-body .chart-top > .toolbar {
+  display:flex; flex-direction:column; align-items:stretch;
+  gap:8px; justify-content:flex-start;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-time-controls,
+body.spt-managed.spt-managed-des012-live .managed-review08-task-controls {
+  display:flex; flex-wrap:wrap; align-items:center; gap:7px;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-time-controls {
+  justify-content:flex-start; padding-bottom:6px;
+  border-bottom:1px solid var(--des12-edge);
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-task-controls {
+  justify-content:flex-start;
+}
+body.spt-managed.spt-managed-des012-live .managed-review08-task-controls .search {
+  width:clamp(140px,15vw,190px);
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll
+  .section-label:has(+ .source-record) {
+  display:none; /* Read-only SharePoint link is intentionally suppressed in managed mode. */
+}
+
+/* DES-012 approved Task Detail — real Excel data, never the static design demo.
+ * Fixed task identity/actions, compact Owner/Priority and integrated Option A rail.
+ */
+body.spt-managed.spt-managed-des012-live .managed-inspector-head {
+  display:grid; grid-template-columns:minmax(0,1fr);
+  grid-template-areas:"identity" "actions";
+  align-items:start; gap:8px;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-head > div:first-child {
+  grid-area:identity;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-head .panel-title {
+  font-size:15px; line-height:1.3; color:var(--des12-ink);
+  letter-spacing:-.2px; overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-head #close {
+  grid-area:close;
+}
+/* More specific than the earlier .managed-inspector-head > div column layout. */
+body.spt-managed.spt-managed-des012-live .managed-inspector-head > .managed-inspector-actions {
+  grid-area:actions; display:flex; flex-direction:row; align-items:center;
+  gap:5px; flex-wrap:nowrap; justify-content:flex-start;
+  min-width:0; max-width:100%; overflow-x:auto; overflow-y:hidden;
+  scrollbar-width:thin;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-actions button {
+  padding:5px 8px; min-height:27px; font-size:11px;
+  white-space:nowrap; flex:0 0 auto;
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-status {
+  align-self:flex-start; width:max-content; margin-top:5px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root {
+  display:flex; flex-direction:column; gap:0;
+  min-width:0; color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .managed-inspector-scroll
+  .detail-facts.detail-grid {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px; margin:0; padding:0 0 15px;
+  background:transparent; border:0;
+}
+body.spt-managed.spt-managed-des012-live .detail-fact label {
+  display:block; color:var(--des12-sub);
+  font-size:10px; font-weight:700; margin-bottom:4px;
+}
+body.spt-managed.spt-managed-des012-live .detail-fact strong {
+  display:block; font-size:13px; overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .detail-section {
+  border-top:1px solid var(--des12-edge);
+  padding:14px 0; min-width:0;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .detail-section h3 {
+  font-size:12px; font-weight:800; margin:0 0 10px;
+  color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-rail-card {
+  padding:12px 13px; border:1px solid var(--des12-edge);
+  border-radius:9px; background:var(--des12-raised); min-height:103px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-remaining {
+  font-size:13px; font-weight:750; text-align:center;
+  min-height:21px; line-height:1.5; color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-remaining.overdue {
+  color:#b94d57;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"]
+  .task-detail-root .dt-remaining.overdue {color:#f69ca4;}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-dateedges {
+  display:flex; justify-content:space-between; align-items:flex-end;
+  gap:12px; margin:10px 0 7px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-dateedges > div:last-child {
+  text-align:right;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-dateedges span {
+  display:block; font-size:10px; font-weight:700; color:var(--des12-sub);
+  margin-bottom:3px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-dateedges strong {
+  font-size:12px; color:var(--des12-ink);
+  overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-rail {
+  height:12px; width:100%; margin:7px 0 4px;
+  overflow:hidden; border-radius:99px; position:relative;
+  background:#d2e0e9;
+}
+body.spt-managed.spt-managed-des012-live[data-managed-theme="dark"]
+  .task-detail-root .dt-rail {background:#3b506b;}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-rail-fill {
+  height:100%; position:absolute; left:0; top:0;
+  background:var(--des12-blue); border-radius:99px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-progressline {
+  min-height:18px; display:flex; justify-content:space-between;
+  gap:10px; color:var(--des12-blue);
+  font-weight:750; font-size:11px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-progressline.is-absent {
+  visibility:hidden; /* reserve rail geometry without implying 0% */
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-empty {
+  color:var(--des12-sub); text-align:center; padding:23px 8px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-milestone {
+  min-height:46px; display:flex; align-items:center;
+  justify-content:center; gap:11px; font-weight:800;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-diamond {
+  display:inline-block; width:13px; height:13px;
+  transform:rotate(45deg); border:2px solid var(--des12-blue);
+  background:var(--des12-paper);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .detail-keyval {
+  display:flex; justify-content:space-between; gap:10px;
+  padding:6px 0; color:var(--des12-sub);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .detail-keyval strong {
+  color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .fieldlabel {
+  color:var(--des12-sub); font-size:10px; font-weight:700;
+  margin:8px 0 5px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .detail-description {
+  white-space:pre-wrap; line-height:1.65; overflow-wrap:anywhere;
+  color:var(--des12-ink);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .relation-caption {
+  font-weight:750; font-size:10px; color:var(--des12-sub);
+  margin:12px 0 5px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .relation-empty {
+  color:var(--des12-sub); font-size:11px; margin:2px 0 8px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-related-task {
+  width:100%; display:flex; flex-direction:column;
+  align-items:flex-start; gap:3px; text-align:left;
+  border:1px solid var(--des12-edge); background:var(--des12-paper);
+  border-radius:8px; padding:9px; margin-bottom:5px;
+  font-size:11px; overflow-wrap:anywhere;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-related-task:hover,
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-related-task:focus-visible {
+  border-color:var(--des12-blue); background:var(--des12-raised);
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .dt-related-task span {
+  color:var(--des12-sub); font-size:10px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .updates-heading {
+  display:flex; justify-content:space-between; gap:10px;
+  align-items:center;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .updates-heading button {
+  padding:5px 9px; font-size:11px; min-height:27px;
+}
+body.spt-managed.spt-managed-des012-live .task-detail-root .updates-section {
+  margin-top:7px;
+}
+@media (max-width:880px) {
+  body.spt-managed.spt-managed-des012-live .managed-inspector-head {
+    padding:8px 10px; gap:5px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-actions button {
+    font-size:10px; padding:4px 6px;
+  }
+  body.spt-managed.spt-managed-des012-live .managed-inspector-scroll {
+    padding:10px 12px 15px;
+  }
+  body.spt-managed.spt-managed-des012-live .task-detail-root .dt-dateedges strong {
+    font-size:11px;
+  }
+}
+
+/* Review08 filter state: ▼ identifies filtered columns, never individual
+ * selected values. Only the Excel-managed header receives these indicators. */
+body.spt-managed.spt-managed-des012-live .grid-header > span.managed-filtered-column {
+  position:relative;
+  color:var(--des12-blue);
+  padding-right:17px;
+}
+body.spt-managed.spt-managed-des012-live .grid-header .managed-filtered-column-mark {
+  position:absolute;
+  right:3px;
+  bottom:9px;
+  width:10px;
+  padding:0;
+  margin:0;
+  font-size:9px;
+  font-weight:900;
+  line-height:1;
+  color:var(--des12-blue);
+  text-transform:none;
+  letter-spacing:0;
+  pointer-events:none;
+}
