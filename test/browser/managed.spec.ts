@@ -44,7 +44,7 @@ test.beforeAll(async () => {
   ))).toString("base64");
 }, { timeout: 120000 });
 
-async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1) {
+async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1, expectedTitle?: string) {
   await page.addInitScript(({ encoded }) => {
     const decoded = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
     const files = new Map<string, Uint8Array>([["synthetic-demo.xlsx", decoded]]);
@@ -88,7 +88,7 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
-  await expect(page.locator("#title")).toHaveText(encoded === base64 ? "synthetic-demo" : "Synthetic shared project");
+  await expect(page.locator("#title")).toHaveText(expectedTitle ?? (encoded === base64 ? "synthetic-demo" : "Synthetic shared project"));
   await expect(page.locator(".task-row")).toHaveCount(expectedRows);
   await page.locator(".task-row").first().click();
   await expect(page.locator("#panel")).toHaveClass(/open/);
@@ -118,6 +118,47 @@ test("Stage B attention summary filters actual WBS rows and restores the previou
   await blocked.click();
   await page.getByRole("button", { name: "Filter WBS to At Risk tasks" }).click();
   await expect(risk).toHaveAttribute("aria-pressed", "true");
+});
+
+test("Stage B attention shortcuts navigate positive synthetic matches and respect unsaved Cancel", async ({ page }) => {
+  // Build an isolated workbook rather than relying on a zero-match default fixture.
+  const book = new ExcelJS.Workbook();
+  const sheet = book.addWorksheet("ProjectWBS");
+  sheet.addRow(["ID", "Title", "WBSCode", "TaskType", "Progress", "TaskStatus",
+    "AssignedTo", "Updates", "PlannedStart", "PlannedEnd"]);
+  sheet.addRow([601, "Blocked synthetic task", "1.1", "Task", 10, "Blocked",
+    "Owner A", "Blocked evidence", "2026-11-02", "2026-11-06"]);
+  sheet.addRow([602, "At Risk synthetic task", "1.2", "Task", 20, "At Risk",
+    "Owner B", "Risk evidence", "2026-11-02", "2026-11-06"]);
+  sheet.addRow([603, "Normal synthetic task", "1.3", "Task", 30, "In Progress",
+    "Owner C", "Normal evidence", "2026-11-02", "2026-11-06"]);
+  const encoded = Buffer.from(await book.xlsx.writeBuffer()).toString("base64");
+  await openManaged(page, encoded, 3, "synthetic-demo");
+  await page.keyboard.press("Escape");
+  const blocked = page.getByRole("button", { name: "Filter WBS to Blocked tasks" });
+  const risk = page.getByRole("button", { name: "Filter WBS to At Risk tasks" });
+  await expect(blocked.locator("strong")).toHaveText("1");
+  await expect(risk.locator("strong")).toHaveText("1");
+  await blocked.click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(page.locator(".task-row").first()).toContainText("Blocked synthetic task");
+  await risk.click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(page.locator(".task-row").first()).toContainText("At Risk synthetic task");
+  await risk.click();
+  await expect(page.locator(".task-row")).toHaveCount(3);
+
+  // An unsaved editor must not lose its draft or change the active filter on Cancel.
+  await page.locator(".task-row").first().click();
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Keep this unsaved title");
+  await blocked.click();
+  const guard = page.getByRole("dialog", { name: "Unsaved changes" });
+  await expect(guard).toBeVisible();
+  await guard.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByLabel("Task title")).toHaveValue("Keep this unsaved title");
+  await expect(blocked).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".task-row")).toHaveCount(3);
 });
 
 test("Stage A Recent Projects shows verified workbook and respects unsaved Cancel before reopening",async({page})=>{
