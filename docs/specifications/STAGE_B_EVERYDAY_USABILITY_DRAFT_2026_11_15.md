@@ -1,6 +1,6 @@
 # SPT-WBS Stage B (v1.1) — Everyday Usability: proposed functional & UX contract
 
-**State:** DRAFT for Product Owner review — NOT frozen, NOT implementation/release authorization  
+**State:** APPROVED Stage B design direction and bounded implementation approach by Product Owner (2026-11-15 JST); feature acceptance remains pending, no release authorization  
 **Started:** 2026-11-15 JST after Stage A owner acceptance  
 **Parent:** [Product roadmap #1](https://github.com/Kenny619/spl-wbs/issues/1) · [Top-area #17](https://github.com/Kenny619/spl-wbs/issues/17) · [PGCM #16](https://github.com/Kenny619/spl-wbs/issues/16) · [Local preferences #21](https://github.com/Kenny619/spl-wbs/issues/21)  
 **Sole cross-view visual authority:** [DES-012 consolidated Review08](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/design/concepts/DES-012-consolidated-review08-task-detail.html)
@@ -24,8 +24,8 @@ Make the WBS faster to understand and operate in daily meetings: see what needs 
 - **B-06:** Light/Dark/System, 860px laptop layout, DES-012 cross-page hierarchy, read-only viewer, existing reports, Watch, Calendar, histories, Save/backup/recovery and five recent projects preserve established contracts. Run bounded regression plus full pinned integrated gate only before owner UAT/merge; do not repeat Stage A physical acceptance.
 - **B-07:** Owner reviews only meaningful visual/interaction deviations and verifies targeted B-01–B-05 on a fictional Edge UAT package before Stage B acceptance. No corporate/shared workbook testing.
 
-## Clarifications for owner design review (not blockers to drafting)
-1. For top-card treatment, prefer **one compact attention summary + quieter metrics** rather than four equally prominent blocks (proposed default).
+## Owner-approved default design directions (2026-11-15 JST)
+1. For top-card treatment, prefer **one compact attention summary + quieter metrics** rather than four equally prominent blocks (owner-approved default).
 2. For attention action, prefer **filter the existing WBS and open Task Detail**, not a duplicate task list (proposed default).
 3. For notices, prefer **compact persistent urgent strip with expandable notice inbox**, preserving non-dismissible Save errors (proposed default).
 4. For PGCM highlight, preserve the current active visual default on first rollout to avoid a surprise behavior change (proposed default).
@@ -35,10 +35,10 @@ Make the WBS faster to understand and operate in daily meetings: see what needs 
 - No automatic edits, no remote workbook upload, no third-party/shared-workbook multiwriter assurance and no change to append-only UpdateHistory or guarded Save.
 - Corporate Edge `file://` folder-picker failure, later non-PM read-only / PM Node localhost distributions and moderate ExcelJS/UUID advisories remain OPEN/DEFERRED and NOT waived.
 - No Stage C task/project authoring, Stage D multi-blackout UX, Stage E drag/drop dependencies, beta, corporate release or deployment.
-- This document proposes a review contract; feature coding/merges require an explicit owner-approved Stage B contract and normal QA gates.
+- Product Owner approved the proposed approach on 2026-11-15. Bounded draft-branch implementation and targeted QA may proceed autonomously; merging to protected main, beta, release, deployment and material behavior/scope changes require their applicable gates.
 
 ## Delivery gates
-1. DMO and UI/Product review the draft with #17/#16/#21 and DES-012; consolidate only genuine owner choices.
-2. Product Owner freezes a versioned Stage B contract and authorizes bounded implementation.
+1. DMO and UI/Product reconcile #17/#16/#21 and DES-012; four default directions approved by owner, with consequential ambiguities escalated only when necessary.
+2. Owner approved the Stage B approach and bounded draft-branch implementation on 2026-11-15; this is not final feature acceptance or merge authorization.
 3. Small implementation PR(s), local tests first, targeted QA; minimal Actions consumption under tiered CI policy.
 4. One integrated pinned CI/Edge fictional kit; focused owner acceptance; DMO updates [executive project status](../PROJECT_STATUS.md) after material transitions.
