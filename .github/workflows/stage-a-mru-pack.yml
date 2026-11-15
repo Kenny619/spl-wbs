@@ -1,0 +1,63 @@
+name: Stage A MRU acceptance package (one time)
+
+on:
+  push:
+    branches:
+      - uat/mru-pack-only-20261115
+    paths:
+      - .github/workflows/stage-a-mru-pack.yml
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Create verified fictional MRU UAT ZIP
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Verify source is identical to accepted main, except one packaging workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "8b4cb6b9239ebaf7fd8f3df6cf35df3dc5e91001"
+          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/stage-a-mru-pack.yml"
+          echo "MRU app source matches accepted main 8b4cb6b9239ebaf7fd8f3df6cf35df3dc5e91001 exactly"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build merged managed single-file app and verified fictional workbook
+        run: |
+          npm run build:managed
+          node scripts/package-option-a-integrated-candidate.mjs
+      - name: Verify payload provenance and integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work/option-a-candidate
+          sha256sum --check SHA256SUMS.txt
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("PROVENANCE.json").read_text())
+          assert d["sourceCommit"] == "${GITHUB_SHA}", d
+          assert d["pr"] == 78 and d["taskCount"] == 23
+          assert d["ownerAccepted"] is False and d["securityWaiver"] is False
+          content=Path("UAT_CHECKLIST.md").read_text()
+          assert "MRU-1" in content and "MRU-5" in content and "| E1 |" not in content
+          assert Path("managed.html").stat().st_size > 100000
+          print("Provenance, fictional workbook and SHA256 manifest verified")
+          PY
+      - name: Upload private SHA-pinned fictional acceptance bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: SPT-WBS-StageA-MRU-Acceptance-8b4cb6b9239e
+          path: work/option-a-candidate/
+          if-no-files-found: error
+          retention-days: 14
