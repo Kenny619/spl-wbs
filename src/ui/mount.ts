@@ -94,6 +94,7 @@ export function mountGantt(doc: Document, controller: ImportController): void {
       today: todayInTimeZone(new Date()),
       blackout: displayedBlackout,
       calendar,
+      showPgcmHighlight: doc.body.dataset.sptVariant !== "managed" || doc.body.dataset.managedPgcmHighlight !== "off",
       onOpen: (id) => controller.patchView({ selectedId: id }),
     });
     const panel = doc.getElementById("panel") as HTMLElement;
