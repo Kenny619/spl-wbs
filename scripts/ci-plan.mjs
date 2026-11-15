@@ -2,13 +2,40 @@
  * Independent CI impact planner. Uncertain impact MUST run full regression.
  * Protected main / ready-to-merge PR checks keep their existing job names.
  */
-import {readFileSync,appendFileSync} from "node:fs";
+import {readFileSync,appendFileSync,existsSync} from "node:fs";
 import {execFileSync} from "node:child_process";
 import {resolve} from "node:path";
 import {pathToFileURL} from "node:url";
 
 const critical=/^(?:\.github\/|scripts\/|docs\/verification\/|docs\/specifications\/|docs\/prototypes\/|design\/concepts\/|src\/data\/|src\/main\.ts$|src\/config\/|src\/managed\/(?:directSave|preflight|projectData|workbookCandidate|save|history|recoveryUi|watchUi|watchProjection|draft)|test\/fixtures\/|test\/browser\/release\.spec\.ts)/;
 const regularDocs=/^(?:README\.md|CHANGELOG\.md|LICENSE(?:\.md)?|docs\/|design\/|.*\.(?:png|jpe?g|gif|webp|svg|md)$)/i;
+
+// Standalone design previews are not production Vite inputs. Scripts and
+// other executable files in these directories remain full-regression changes.
+const previewStatic=/^(?:docs\/prototypes\/|design\/concepts\/).+\.(?:html?|md|css|svg|png|jpe?g|gif|webp)$/i;
+const previewHTML=/^(?:docs\/prototypes\/|design\/concepts\/).+\.html?$/i;
+export const DUPLICATE_PR_BASES=new Set([
+  "main",
+  "feature/excel-managed-des010-ui",
+  "feature/des010-uat-edge-picker-fallback",
+  "feature/des010-uat02-visual-fixes",
+]);
+export function validPreviewHTML(contents){
+  return /^\s*<!doctype\s+html\s*>/i.test(contents)&&
+    /<html(?:\s|>)/i.test(contents)&&/<\/html\s*>/i.test(contents);
+}
+function checkPreviewDocuments(files){
+  for(const file of files){
+    if(!previewHTML.test(file)||!existsSync(file))continue;
+    if(!validPreviewHTML(readFileSync(file,"utf8")))
+      throw Error("Standalone preview HTML is malformed: "+file);
+  }
+}
+export function equivalentTriggeredPR(prs,sha,branch,repo){
+  return Array.isArray(prs)&&prs.some(pr=>pr.state==="open"&&
+    DUPLICATE_PR_BASES.has(pr.base?.ref)&&pr.head?.sha===sha&&
+    pr.head?.ref===branch&&pr.head?.repo?.full_name===repo);
+}
 
 function browserFor(file) {
   if(file.startsWith("test/unit/")||file.startsWith("test/verification/"))return [];
@@ -28,13 +55,14 @@ function browserFor(file) {
 }
 export function classifyCI(files,ctx={}){
   const paths=[...new Set(files.map(f=>f.replaceAll("\\","/")))];
-  const docsOnly=paths.length>0&&paths.every(f=>regularDocs.test(f)&&!critical.test(f));
+  const docsOnly=paths.length>0&&paths.every(f=>(regularDocs.test(f)&&!critical.test(f))||previewStatic.test(f));
   if(ctx.duplicate&&!ctx.forceFull&&ctx.eventName==="push"&&ctx.branch!=="main")
     return {tier:"duplicate-pr",fast:false,browser:false,browserScope:"none",packaging:false};
   const protectedMain=ctx.eventName==="push"&&ctx.branch==="main";
   const readyPR=ctx.eventName==="pull_request"&&ctx.baseBranch==="main"&&!ctx.isDraft;
   const dispatch=ctx.eventName==="workflow_dispatch"&&ctx.fullRegression!==false;
-  const forced=ctx.forceFull||paths.length===0||paths.includes("UNKNOWN_DIFF")||paths.some(f=>critical.test(f));
+  const forced=ctx.forceFull||paths.length===0||paths.includes("UNKNOWN_DIFF")||
+    paths.some(f=>critical.test(f)&&!previewStatic.test(f));
   const full=Boolean(protectedMain||readyPR||dispatch||forced);
   const scopes=[...new Set(paths.flatMap(browserFor))];
   const browserScope=full||scopes.includes("full")?"full":
@@ -60,7 +88,7 @@ function changedFiles(event,name){
     return ["UNKNOWN_DIFF"];
   }
 }
-async function duplicatePR(sha,token){
+async function duplicatePR(sha,branch,token){
   if(!sha||!token||!process.env.GITHUB_REPOSITORY)return false;
   try{
     const url="https://api.github.com/repos/"+process.env.GITHUB_REPOSITORY+"/commits/"+sha+"/pulls?per_page=100";
@@ -69,8 +97,7 @@ async function duplicatePR(sha,token){
       "X-GitHub-Api-Version":"2022-11-28"},signal:AbortSignal.timeout(10000)});
     if(!res.ok)throw Error("GitHub returned "+res.status);
     const prs=await res.json();
-    return Array.isArray(prs)&&prs.some(pr=>pr.state==="open"&&
-      pr.base?.ref==="main"&&pr.head?.sha===sha);
+    return equivalentTriggeredPR(prs,sha,branch,process.env.GITHUB_REPOSITORY);
   }catch(e){
     console.warn("Duplicate PR not proven; run checks conservatively",e.message);
     return false;
@@ -80,9 +107,10 @@ async function main(){
   const eventName=process.env.GITHUB_EVENT_NAME||"workflow_dispatch";
   const event=JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH,"utf8"));
   const files=changedFiles(event,eventName);
+  checkPreviewDocuments(files);
   const branch=process.env.GITHUB_REF_NAME;
   const duplicate=eventName==="push"&&branch?.startsWith("feature/")&&
-    await duplicatePR(process.env.GITHUB_SHA,process.env.GH_TOKEN);
+    await duplicatePR(process.env.GITHUB_SHA,branch,process.env.GH_TOKEN);
   const ctx={eventName,branch,baseBranch:event.pull_request?.base?.ref,
     isDraft:Boolean(event.pull_request?.draft),
     fullRegression:event.inputs?.full_regression!=="false",
