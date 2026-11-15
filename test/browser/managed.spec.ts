@@ -50,6 +50,9 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
     const files = new Map<string, Uint8Array>([["synthetic-demo.xlsx", decoded]]);
     const dir = {
       kind: "directory", name: "disposable-fixture",
+      async requestPermission() { return "granted" as PermissionState; },
+      async queryPermission() { return "granted" as PermissionState; },
+      async isSameEntry(other: FileSystemHandle) { return other === dir; },
       async getFileHandle(name: string, opts?: { create?: boolean }) {
         if (!files.has(name)) {
           if (!opts?.create) throw new DOMException("not found", "NotFoundError");
@@ -76,6 +79,7 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
       async removeEntry(name: string) { files.delete(name); },
     };
     Object.defineProperty(window, "__managedFixtureFiles", { configurable: true, value: files });
+    Object.defineProperty(window, "__managedFixtureDirectory", { configurable: true, value: dir });
     Object.defineProperty(window, "showDirectoryPicker", {
       configurable: true, value: async () => dir,
     });
@@ -91,6 +95,43 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
   await expect(page.getByRole("button", { name: "Edit task" })).toBeEnabled();
   await expect(page.locator(".source-record")).toBeHidden();
 }
+
+test("Stage A Recent Projects shows verified workbook and respects unsaved Cancel before reopening",async({page})=>{
+  await openManaged(page);
+  const menu=page.locator(".managed-project-menu");
+  await menu.locator("summary").click();
+  const recent=menu.getByRole("button",{name:/Open recent project synthetic-demo\.xlsx/});
+  await expect(recent).toBeVisible();
+  await menu.locator("summary").click();
+  await page.getByRole("button",{name:"Edit task"}).click();
+  await page.getByLabel("Task title").fill("Unsaved recent project edit");
+  await menu.locator("summary").click();
+  await recent.click();
+  const guard=page.getByRole("dialog",{name:"Unsaved changes"});
+  await expect(guard).toBeVisible();
+  await guard.getByRole("button",{name:"Cancel"}).click();
+  await expect(page.getByLabel("Task title")).toHaveValue("Unsaved recent project edit");
+  await menu.locator("summary").click();
+  await recent.click();
+  await guard.getByRole("button",{name:"Discard"}).click();
+  await expect(page.locator("#title")).toHaveText("synthetic-demo");
+  await expect(page.locator(".task-row")).toHaveCount(1);
+});
+test("Stage A Recent Projects denied folder permission retains active workbook and gives picker fallback",async({page})=>{
+  await openManaged(page);
+  const menu=page.locator(".managed-project-menu");
+  await menu.locator("summary").click();
+  const recent=menu.getByRole("button",{name:/Open recent project synthetic-demo\.xlsx/});
+  await expect(recent).toBeVisible();
+  await page.evaluate(()=>{
+    const dir=(window as unknown as {__managedFixtureDirectory:{requestPermission:()=>Promise<string>}}).__managedFixtureDirectory;
+    dir.requestPermission=async()=>"denied";
+  });
+  await recent.click();
+  await expect(page.getByText(/Recent project cannot be reopened: Folder permission denied/)).toBeVisible();
+  await expect(page.locator("#title")).toHaveText("synthetic-demo");
+  await expect(page.locator(".task-row")).toHaveCount(1);
+});
 
 test("personal UAT: Escape exits task editing but retains selection and unsaved guard", async ({ page }) => {
   await openManaged(page);
