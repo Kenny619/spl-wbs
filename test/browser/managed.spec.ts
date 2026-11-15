@@ -44,7 +44,7 @@ test.beforeAll(async () => {
   ))).toString("base64");
 }, { timeout: 120000 });
 
-async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1) {
+async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1, expectedTitle?: string) {
   await page.addInitScript(({ encoded }) => {
     const decoded = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
     const files = new Map<string, Uint8Array>([["synthetic-demo.xlsx", decoded]]);
@@ -88,7 +88,7 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
-  await expect(page.locator("#title")).toHaveText(encoded === base64 ? "synthetic-demo" : "Synthetic shared project");
+  await expect(page.locator("#title")).toHaveText(expectedTitle ?? (encoded === base64 ? "synthetic-demo" : "Synthetic shared project"));
   await expect(page.locator(".task-row")).toHaveCount(expectedRows);
   await page.locator(".task-row").first().click();
   await expect(page.locator("#panel")).toHaveClass(/open/);
@@ -323,6 +323,46 @@ test("Settings relocates existing v18 columns, persists timezone and dark theme 
   await expect(restored.locator("#columnOptions input[data-column='owner']")).not.toBeChecked();
   await expect(restored.locator("#columnOptions input[data-column='workstream']")).toBeChecked();
   await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "dark");
+});
+
+test("Stage B PGCM toggle changes actual timeline markers and restores them without workbook writes", async ({ page }) => {
+  // Freeze the browser clock so the synthetic schedule always includes future PGCM meetings.
+  await page.clock.setFixedTime(new Date("2026-11-16T00:00:00Z"));
+  const book = new ExcelJS.Workbook();
+  const sheet = book.addWorksheet("ProjectWBS");
+  sheet.addRow(["ID", "Title", "WBSCode", "TaskType", "Progress", "TaskStatus",
+    "AssignedTo", "Updates", "PlannedStart", "PlannedEnd"]);
+  sheet.addRow([701, "Future PGCM visibility fixture", "1.1", "Task", 20, "In Progress",
+    "Synthetic owner", "Display-only fixture", "2026-11-16", "2026-12-31"]);
+  const encoded = Buffer.from(await book.xlsx.writeBuffer()).toString("base64");
+  await openManaged(page, encoded, 1, "synthetic-demo");
+  await page.keyboard.press("Escape");
+  const markers = page.locator(".pgcm-marker, .pgcm-day-column, .pgcm-tag, .pgcm-week-tag");
+  await expect.poll(() => markers.count()).toBeGreaterThan(0);
+  const initialCount = await markers.count();
+  const original = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  const toggle = settings.getByRole("checkbox", { name: "Highlight PGCM dates" });
+  await toggle.uncheck();
+  await expect(markers).toHaveCount(0);
+  await toggle.check();
+  await expect(markers).toHaveCount(initialCount);
+  await toggle.uncheck();
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.reload();
+  await expect(markers).toHaveCount(0);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  page.once("dialog", dialog => void dialog.accept());
+  await settings.getByRole("button", { name: "Reset to defaults" }).click();
+  await expect(toggle).toBeChecked();
+  await expect(markers).toHaveCount(initialCount);
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(original);
 });
 
 test("Stage B PGCM highlight stays in local Settings and never writes Excel", async ({ page }) => {
