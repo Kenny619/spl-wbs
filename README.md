@@ -2,6 +2,8 @@
 
 # Gantt Viewer
 
+**[Project Status & Roadmap — executive summary](docs/PROJECT_STATUS.md)** · Stage A accepted · Stage B next. View phases, milestones, business deliverables, upcoming decisions and release risks in one place.
+
 Read-only schedule viewer for one project. Open a SharePoint List `.xlsx` export and review the WBS, dates, progress, and calendar in the browser. The viewer never writes back to the workbook or to SharePoint.
 
 Open `dist/index.html` in Chrome or Edge. It also works from a `file://` address. Choose **Choose workbook**, or drop an `.xlsx` file onto the page.
