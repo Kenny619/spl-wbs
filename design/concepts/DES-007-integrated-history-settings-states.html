@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPT-WBS • Holistic UI exploration DES-007</title>
+<style>
+:root{--bg:#f3f5f8;--paper:#fff;--line:#e3e8ef;--ink:#1b2b40;--muted:#647489;--accent:#146b9b;--accentbg:#e7f3fa;--dark:#122b45;--green:#287f5d;--amber:#aa6b18;--red:#ad4751;--softamber:#fff6e9;--softred:#fff0f1;--softgreen:#ebf7f2;--radius:11px;font:14px/1.38 "Segoe UI",Arial,sans-serif;color:var(--ink)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg)}button,input,textarea,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #7eb7db;outline-offset:2px}
+button:disabled{cursor:default;opacity:.5}.tiny{font-size:11px;color:var(--muted)}.small{font-size:12px}.muted{color:var(--muted)}.bold{font-weight:650}.mono{font-variant-numeric:tabular-nums}.nowrap{white-space:nowrap}.ellipsis{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.kicker{font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);font-weight:700}.pill{font-size:11px;line-height:1.2;padding:4px 8px;border-radius:99px;background:#edf1f5;color:#53657b;display:inline-flex;align-items:center;gap:4px}.pill.warn{background:var(--softamber);color:#8e5a18}.pill.risk{background:var(--softred);color:#a33e49}.pill.ok{background:var(--softgreen);color:#206e50}.pill.blue{background:var(--accentbg);color:var(--accent)}
+.top{height:66px;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 22px;gap:20px;justify-content:space-between}.brand{display:flex;align-items:center;gap:11px;min-width:215px}.mark{width:32px;height:32px;border:1px solid #b3d0e0;border-radius:8px;display:grid;place-items:center;font-weight:800;color:#176b91;background:#eaf5fb}.brandtitle{font-size:15px;font-weight:760;letter-spacing:-.025em}.brandmeta{font-size:11px;color:var(--muted)}.concept-controls{display:flex;align-items:center;gap:6px;background:#eef2f6;padding:5px;border-radius:10px}.concept-controls button,.phase-controls button{border:0;background:transparent;color:#52657a;border-radius:7px;padding:9px 12px;font-size:12px;font-weight:650}.concept-controls button.active,.phase-controls button.active{background:white;color:var(--dark);box-shadow:0 1px 4px #1a385a20}.topright{font-size:12px;color:var(--muted);text-align:right;min-width:210px}.topright b{display:block;color:var(--ink);font-size:12px}.canvas{padding:16px 22px 24px;max-width:1900px;margin:0 auto}.context{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:14px}.context h1{font-size:22px;letter-spacing:-.045em;margin:1px 0 3px;font-weight:730}.context p{color:var(--muted);font-size:12px;margin:0}.phase-controls{display:flex;background:#e9edf2;border-radius:9px;padding:4px;gap:3px}.phase-controls button{font-size:12px;padding:8px 14px}.phase-controls .active{color:var(--accent)}.main{min-height:560px;display:grid;gap:13px}.a-layout{grid-template-columns:minmax(0,1.66fr) minmax(315px,.94fr)}.b-layout{grid-template-columns:278px minmax(0,1fr)}.panel{min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 2px 9px #28425d06;overflow:hidden}.panelhead{display:flex;align-items:center;justify-content:space-between;padding:14px 17px;border-bottom:1px solid var(--line);min-height:57px;gap:8px}.panelhead h2{font-size:14px;margin:0;letter-spacing:-.02em}.panelbody{padding:15px 17px}.panel-actions{display:flex;gap:6px;align-items:center}.ghost{border:1px solid var(--line);background:#fff;color:#3b566f;padding:7px 10px;border-radius:7px;font-size:12px;font-weight:650}.ghost:hover{background:#f6f9fb}.solid{border:0;background:var(--accent);color:white;padding:9px 13px;border-radius:7px;font-weight:660;font-size:12px}.solid:hover{background:#0d577f}.sectionlabel{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#8492a3;font-weight:730;margin:16px 0 9px}.sectionlabel:first-child{margin-top:0}.note{font-size:12px;color:#596c80;line-height:1.55}.rowflex{display:flex;justify-content:space-between;align-items:center;gap:8px}.tasklist{max-height:570px;overflow:auto}.taskrow{width:100%;text-align:left;display:flex;align-items:center;gap:9px;background:transparent;border:0;border-bottom:1px solid #eef1f5;padding:10px 14px;min-height:52px;color:var(--ink)}.taskrow:hover{background:#f5f9fc}.taskrow.selected{background:#eaf5fc;box-shadow:inset 3px 0 #1681b8}.taskrow .num{font-size:11px;color:#8c9aae;width:28px;flex-shrink:0}.taskrow .tasklabel{font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.taskrow .rowmeta{font-size:11px;color:var(--muted);margin-top:2px}.taskrow .riskdot{height:8px;width:8px;border-radius:50%;background:#d99b44;flex-shrink:0}.taskrow .riskdot.red{background:#ba6069}.taskrow .riskdot.ok{background:#72b49d}.workhead{display:flex;justify-content:space-between;align-items:center;background:#f7f9fc;font-size:11px;font-weight:750;color:#4b6078;padding:9px 14px;border-bottom:1px solid var(--line)}.badgecount{background:white;border:1px solid #e1e8ef;border-radius:99px;padding:1px 7px;font-size:10px;color:#76889a}.schedule{overflow:auto;max-height:590px}.schedule-head,.schedule-row{display:grid;grid-template-columns:minmax(210px,1.7fr) minmax(68px,.5fr) minmax(66px,.53fr) minmax(245px,1.55fr);min-width:660px;align-items:center}.schedule-head{background:#f9fafc;min-height:34px;font-size:10px;color:#7b8c9e;text-transform:uppercase;font-weight:700;letter-spacing:.05em;border-bottom:1px solid var(--line)}.schedule-head>div{padding:0 9px}.schedule-row{min-height:51px;border-bottom:1px solid #edf0f4;background:white;cursor:pointer}.schedule-row:hover{background:#f8fbfd}.schedule-row.selected{background:#eaf6fb;box-shadow:inset 3px 0 #1681b8}.schedule-row>div{padding:7px 9px;min-width:0}.schedule-row .titlecell{display:flex;gap:7px;align-items:center;padding-left:15px}.rowtitle{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rowdetail{font-size:10px;color:var(--muted);white-space:nowrap}.groupbar{padding:9px 12px;background:#eef3f9;border-bottom:1px solid #dbe4ee;font-size:11px;letter-spacing:.01em;font-weight:750;color:#456480}.timeline-head{display:flex;justify-content:space-between;position:relative;border-left:1px solid var(--line);padding:0!important}.timeline-head span{flex:1;text-align:center;border-left:1px solid #ecf0f3;padding-top:10px}.timeline{position:relative;height:28px;border-left:1px solid var(--line);background:repeating-linear-gradient(90deg,transparent 0,transparent calc(25% - 1px),#eaf0f4 calc(25% - 1px),#eaf0f4 25%);padding:0!important;margin-right:8px}.bar{position:absolute;top:9px;height:11px;border-radius:4px;background:#6a9cbf}.bar.risk{background:#d7a36f}.bar.red{background:#cc8185}.bar.green{background:#6ea995}.bar .fill{height:100%;background:#1e739d;border-radius:4px 0 0 4px}.bar.milestone{width:13px!important;height:13px;transform:rotate(45deg);border-radius:2px;top:8px}.separator{height:1px;background:var(--line);margin:15px 0}.inspector-title{font-size:21px;letter-spacing:-.04em;font-weight:740;margin:5px 0 8px;line-height:1.2}.inspector-meta{color:var(--muted);font-size:11px}.riskbox{border:1px solid #edcfb4;background:#fffaf3;border-radius:8px;padding:11px 12px;margin:12px 0}.riskbox strong{font-size:12px}.riskitem{display:flex;gap:8px;font-size:12px;margin-top:7px;color:#785b3d}.fieldgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:flex;flex-direction:column;gap:5px;min-width:0}.field label{font-size:11px;color:#718198;font-weight:650}.field input,.field select,.composer textarea{border:1px solid #dce4ec;background:#fff;border-radius:7px;color:#263950;padding:8px 9px;width:100%;min-width:0;font-size:12px}.field input,.field select{height:36px}.composer textarea{min-height:80px;resize:vertical}.history{border-left:2px solid #d7e5ee;padding-left:11px;margin:10px 0;color:#45576b;font-size:12px}.history .tiny{margin-top:4px}.savebar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:11px 15px;border-top:1px solid var(--line);background:#f9fbfc}.inlinewarning{background:#fff7e9;color:#866023;border:1px solid #f2ddbb;border-radius:7px;padding:9px 10px;margin:8px 0;font-size:11px}.step{font-size:11px;color:#8c9db0;font-weight:750;letter-spacing:.08em;text-transform:uppercase}.focus-title{font-size:29px;letter-spacing:-.05em;font-weight:740;line-height:1.12;margin:8px 0 11px}.focusfacts{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.focusfact{background:#f4f7fa;border-radius:8px;padding:11px}.focusfact label{display:block;color:#75869b;font-size:10px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}.focusfact b{font-size:13px;font-weight:720}.focus-timeline{height:82px;background:linear-gradient(90deg,#f1f6f9 50%,#ebf2f7 50%);border-radius:9px;position:relative;padding:12px;margin:16px 0}.weeks{display:flex;justify-content:space-between;font-size:10px;color:#7590a7}.focus-track{position:absolute;left:10%;width:75%;top:48px;height:12px;background:#c5dbe9;border-radius:4px}.focus-progress{height:100%;width:55%;border-radius:4px;background:#367da7}.focus-milestone{position:absolute;top:44px;right:15%;width:19px;height:19px;transform:rotate(45deg);background:#cb9255;border:3px solid #fff}.review-sidebar{padding:15px 12px}.review-sidebar .taskrow{padding:10px 9px;border-radius:8px;border-bottom:none}.sidephase{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-between;font-size:12px}.sidephase.active{border-color:#9ac6de;background:#eff8fd}.big-update{background:#f7f9fb;border:1px solid #e7edf1;border-radius:8px;padding:12px;font-size:13px;margin-top:12px;line-height:1.55}.blankstate{padding:50px 30px;text-align:center;color:var(--muted);font-size:13px}
+.lead-wrap{max-width:1380px;margin:0 auto;background:white;border:1px solid #e5eaf0;border-radius:12px;overflow:hidden;box-shadow:0 12px 50px #152c4112}.lead-head{padding:27px 35px 22px;background:#123451;color:white;display:flex;justify-content:space-between;align-items:end;gap:20px}.lead-head .kicker{color:#a9cee1}.lead-head h2{font-size:27px;margin:4px 0 4px;letter-spacing:-.04em}.lead-head p{font-size:13px;color:#c8dae7;margin:0}.lead-main{padding:23px 31px 28px;display:grid;gap:19px;grid-template-columns:1.2fr .9fr}.lead-metrics{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{background:#f4f8fb;padding:16px 19px;border:1px solid #e9eff3;border-radius:9px}.metric b{font-size:28px;letter-spacing:-.035em;display:block;margin-top:7px}.lead-section{border:1px solid var(--line);border-radius:9px;padding:19px;min-width:0}.lead-section h3{font-size:17px;margin:0 0 14px}.milestone-row{display:flex;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}.milestone-row:last-child{border:0}.datechip{width:58px;flex-shrink:0;background:#ebf3f8;color:#315f80;text-align:center;padding:9px 4px;border-radius:7px;font-size:13px;font-weight:750}.lead-risk{padding:12px;border-radius:8px;border:1px solid #ecd8cf;margin-bottom:10px;background:#fffbf9}.lead-risk:last-child{margin:0}.lead-risk strong{font-size:14px}.lead-risk p{font-size:12px;color:#6d7380;margin:5px 0}.lead-foot{font-size:12px;color:#73849b;padding:0 31px 18px}.comparison{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:13px}.compbox{border:1px solid var(--line);border-radius:9px;background:#fff;padding:13px;font-size:12px}.compbox b{font-size:13px}.compbox p{color:var(--muted);margin:6px 0 0;line-height:1.5}.tooltiptext{font-size:10px;color:#7f91a5}.hide{display:none!important}
+@media(max-width:1150px){.topright{display:none}.a-layout{grid-template-columns:minmax(0,1.4fr) minmax(300px,.85fr)}.b-layout{grid-template-columns:235px minmax(0,1fr)}.schedule-head,.schedule-row{grid-template-columns:minmax(185px,1.5fr) 75px 65px minmax(190px,1.2fr)}.canvas{padding:12px}}
+@media(max-width:760px){.top{height:auto;flex-wrap:wrap;padding:12px}.concept-controls{width:100%;justify-content:center;flex-wrap:wrap}.context{display:block}.context h1{font-size:19px}.phase-controls{margin-top:10px;max-width:100%;overflow:auto}.main,.a-layout,.b-layout{grid-template-columns:1fr}.b-editor{grid-column:auto}.lead-main{grid-template-columns:1fr;padding:16px}.lead-head{padding:22px 18px}.lead-head h2{font-size:21px}.lead-metrics{grid-template-columns:repeat(3,1fr)}.lead-foot{padding:0 18px 15px}.metric{padding:12px}.metric b{font-size:22px}.schedule{max-height:360px}.comparison{grid-template-columns:1fr}.focusfacts{grid-template-columns:repeat(2,1fr)}}
+
+/* DES-007: consolidated meeting focus and report-linked presentation */
+.deadline-hero{display:flex;align-items:center;justify-content:space-between;gap:22px;background:#f1f7fb;border:1px solid #dbe8f1;border-radius:10px;padding:19px 22px;margin:16px 0 6px}
+.deadline-hero strong{display:block;font-size:27px;letter-spacing:-.035em;line-height:1.2;margin-top:4px}
+.deadline-count{text-align:right;border-left:1px solid #d1e3ee;padding-left:22px}
+.deadline-count strong{font-size:35px;color:#176589}.deadline-count span{font-size:11px;color:#506f86;display:block;max-width:120px}
+.calendar-caption{font-size:11px;color:#74879a;line-height:1.5;margin:7px 0 14px}
+.b-layout .panelbody{max-width:1050px}.b-layout .focusfacts{grid-template-columns:repeat(4,minmax(0,1fr))}
+.b-layout .focusfact b{font-size:16px;overflow-wrap:anywhere}.b-layout .focus-title{font-size:27px}
+.b-layout .panel .savebar{margin-top:16px;padding:12px 0;border:0;background:none}
+.reportbar{display:flex;gap:13px;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
+.reportbar strong{font-size:14px}.report-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.report-actions .choiceactive{background:#e1f1fa;border-color:#9bbfd7;color:#175f89}
+.preview-shell{padding:25px 30px}.preview-shell h3{margin:0 0 12px;font-size:16px}
+.preview-shell pre{font:13px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f9fc;border:1px solid #e1e7ef;border-radius:10px;padding:18px;max-height:590px;overflow:auto}
+@media(max-width:1100px){.reportbar{display:block}.report-actions{justify-content:flex-start;margin-top:10px}.b-layout .focusfacts{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.deadline-hero{padding:12px}.deadline-hero strong{font-size:20px}.deadline-count{padding-left:12px}.deadline-count strong{font-size:28px}.report-actions button{font-size:11px}}
+
+/* DES-007: task-list-first weekly review, compact detail, filter toolbar */
+.b-layout{grid-template-columns:minmax(570px,1.44fr) minmax(370px,.92fr);align-items:start;gap:13px}
+.meeting-list .panelhead{padding:12px 15px;min-height:53px}
+.meeting-list .panelhead h2{font-size:15px}
+.filter-zone{padding:12px 14px 11px;background:#fafbfd;border-bottom:1px solid var(--line)}
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.filter-pill{border:1px solid #d7e0e9;background:white;color:#36516b;border-radius:7px;font-size:12px;font-weight:650;padding:7px 9px}
+.filter-pill.active{background:#e5f4fd;border-color:#92c8e6;color:#075c87}
+.filter-selects{display:grid;grid-template-columns:1fr 1fr minmax(128px,.9fr);gap:9px;align-items:end}
+.filter-selects label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#677c92;font-weight:650;min-width:0}
+.filter-selects select,.filter-selects input{height:34px;padding:6px 8px;background:white;border:1px solid #dae3eb;border-radius:7px;min-width:0;width:100%;font-size:12px;color:#314a62}
+.filter-caption{font-size:10px;color:#8392a2;margin-top:7px}
+.meeting-columns,.meeting-item{display:grid;grid-template-columns:minmax(170px,2.15fr) minmax(75px,.84fr) 80px 66px 95px;gap:9px;align-items:center}
+.meeting-columns{background:#f2f5f9;color:#718296;font-size:10px;font-weight:750;letter-spacing:.025em;padding:9px 14px;border-bottom:1px solid var(--line)}
+.meeting-data{max-height:65vh;min-height:190px;overflow:auto}
+.meeting-item{width:100%;text-align:left;border:0;border-bottom:1px solid #e9eef2;background:white;padding:10px 14px;min-height:55px;color:#24374c;cursor:pointer}
+.meeting-item:hover{background:#f6fafe}.meeting-item.selected{background:#e5f4fb;box-shadow:inset 3px 0 #1880b0}
+.meeting-item .entrytitle{font-size:12px;font-weight:690;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meeting-item .entrymeta{font-size:11px;color:#738498;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meeting-item .cell{font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meeting-item .cell:last-child{font-weight:690;color:#276486;white-space:normal}
+.meeting-group{font-size:11px;font-weight:760;padding:9px 14px;color:#42617a;background:#edf3f8;border-bottom:1px solid #dce7ef}
+.zero-match{padding:32px 18px;color:#687d90;font-size:13px;text-align:center}
+.detail-compact .panelhead{padding:11px 15px;min-height:54px}
+.detail-compact .panelbody{padding:14px 15px 17px}
+.detail-compact .focus-title{font-size:19px;line-height:1.22;margin:5px 0 12px}
+.detail-facts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.detail-fact{border:1px solid #e6ecf2;border-radius:7px;padding:9px 10px;min-width:0}
+.detail-fact .key{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#75869b;font-weight:700;margin-bottom:3px}
+.detail-fact .val{font-size:14px;font-weight:680;overflow-wrap:anywhere}
+.detail-fact.due{background:#eef7fb;border-color:#d9eaf3}
+.detail-fact.due .val{font-size:19px;color:#1c6689}
+.detail-sub{font-size:10px;color:#778a9b;margin:8px 0 5px}
+.detail-compact .sectionlabel{margin:13px 0 7px;font-size:10px}
+.detail-compact .riskbox{margin:7px 0;padding:9px 10px}
+.detail-compact .big-update{margin:7px 0;padding:10px 11px;font-size:12px}
+.dependencies{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dep-group{background:#f7f9fb;border:1px solid #e7eef3;border-radius:8px;padding:9px;min-width:0}
+.dep-group .depheader{font-size:11px;font-weight:710;color:#536c80;margin-bottom:6px}
+.dep-link{display:block;width:100%;background:#fff;border:1px solid #dce7f0;border-radius:6px;text-align:left;padding:8px;margin:5px 0;color:#176c94;font-size:11px;line-height:1.4;cursor:pointer}
+.dep-link:hover{border-color:#99c6df;background:#eaf7fd}
+.dep-link span{display:block;color:#7b8c99;font-size:10px;margin-top:3px}
+.dep-empty{font-size:11px;color:#8794a3}
+.calendar-legend{font-size:11px;color:#526b80;border:1px solid #dfe7f0;background:#f6f9fc;border-radius:8px;padding:10px 12px;margin:10px 0 2px}
+.compact-editor .fieldgrid{gap:8px}
+.compact-editor .field input,.compact-editor .field select{height:34px}
+.detail-compact .savebar{margin-top:10px;padding:10px 0 0;border:0;background:transparent}
+.report-period{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.report-period label{font-size:10px;color:#5f7285;display:flex;flex-direction:column;gap:3px}
+.report-period input{height:33px;border:1px solid #dbe4ea;border-radius:7px;padding:6px;font-size:12px;color:#304b62;background:white}
+.report-tags{font-size:11px;color:#6b7f90;margin-top:6px}
+.report-proposed{background:#f0f8fc;border:1px solid #cce2f0;border-radius:8px;padding:10px 12px;font-size:11px;color:#426780;margin:12px 0}
+.update-summary{grid-template-columns:repeat(4,minmax(0,1fr))}.storyrow{padding:10px 0;border-bottom:1px solid #edf0f4}
+.storyrow:last-child{border-bottom:0}
+.storyrow strong{font-size:13px}
+.storyrow p{font-size:11px;margin:4px 0;color:#687a8c}
+.storyrow .tiny{font-size:10px}
+.storysection{margin:14px 0 17px}
+.storysection h3{margin:0 0 8px;font-size:16px}
+@media(max-width:1200px){.b-layout{grid-template-columns:minmax(470px,1.32fr) minmax(330px,1fr)}.meeting-columns,.meeting-item{grid-template-columns:minmax(145px,2fr) 70px 65px 59px 72px;gap:5px}.meeting-columns,.meeting-item{padding-left:10px;padding-right:10px}}
+@media(max-width:970px){.update-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.b-layout{grid-template-columns:1fr}.meeting-data{max-height:420px}.filter-selects{grid-template-columns:1fr 1fr 140px}.detail-compact .focus-title{font-size:20px}}
+@media(max-width:600px){.meeting-columns,.meeting-item{grid-template-columns:minmax(150px,2fr) 72px 62px 71px}.meeting-columns>*:nth-child(2),.meeting-item>*:nth-child(2){display:none}.filter-selects{grid-template-columns:1fr 1fr}.filter-selects label:last-child{grid-column:1/-1}.dependencies{grid-template-columns:1fr}.reportbar{overflow:auto}}
+
+/* DES-007: one compact header, a scrollable task list, anchored detail */
+.top{height:60px;min-height:60px;padding:0 16px;gap:13px;flex-wrap:nowrap}
+.brand{min-width:178px;gap:8px}.brandmeta{font-size:10px}.brandtitle{font-size:13px}
+.project-head{display:flex;flex-direction:column;gap:1px;min-width:170px;max-width:235px;flex:1;line-height:1.2}
+.project-head strong{font-size:14px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.project-head span{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .concept-controls{flex-shrink:0}.top .concept-controls button{padding:8px 10px}
+.top .phase-controls{flex-shrink:0}.top .phase-controls button{padding:7px 9px}
+.topright{min-width:120px;font-size:10px}.topright b{font-size:10px}
+body.view-meeting{height:100dvh;overflow:hidden}
+body.view-meeting .canvas{height:calc(100dvh - 60px);max-width:none;display:flex;flex-direction:column;overflow:hidden;padding:12px 16px 14px}
+body.view-meeting #app{flex:1;min-height:0;overflow:hidden}
+body.view-meeting #app>.b-layout{height:100%;min-height:0;align-items:stretch}
+body.view-meeting .meeting-list{display:flex;flex-direction:column;min-height:0;max-height:100%;overflow:hidden}
+body.view-meeting .meeting-data{flex:1;min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+body.view-meeting .detail-compact{min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.detail-identity{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+.detail-id{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border:1px solid #dbe6ee;border-radius:6px;background:#f4f8fa;font-size:11px;color:#345875}
+.detail-id b{font-weight:750;color:#224b6a}
+.detail-compact .panelhead{padding:10px 14px}
+.detail-compact .panelbody{padding:11px 14px 15px}
+.detail-compact .focus-title{margin:2px 0 11px}
+.meeting-list .panelhead{min-height:48px}
+.meeting-data:focus-visible{outline:3px solid #6bb1d6;outline-offset:-3px}
+@media(max-width:1260px){
+.topright{display:none}.top{gap:9px}.brand{min-width:160px}.project-head{max-width:220px;min-width:140px}
+}
+@media(max-width:970px){
+body.view-meeting{height:auto;overflow:auto}
+body.view-meeting .canvas{height:auto;display:block;overflow:visible}
+body.view-meeting #app{overflow:visible}
+body.view-meeting #app>.b-layout{height:auto;align-items:start}
+body.view-meeting .meeting-list{max-height:none}
+body.view-meeting .meeting-data{max-height:420px;flex:none}
+body.view-meeting .detail-compact{max-height:none;overflow:visible}
+.top{height:auto;min-height:60px;flex-wrap:wrap;padding:10px 12px}
+.project-head{min-width:150px;max-width:none}
+}
+
+
+/* DES-007: identical full-height workspaces with scrolling limited to panels.
+   The header grid reserves positions for every navigation/control slot. */
+.top{display:grid;grid-template-columns:178px minmax(145px,1fr) max-content 182px 118px;column-gap:10px;align-items:center;justify-content:initial;height:60px;min-height:60px;padding:0 16px}
+.top .brand{min-width:0}
+.top .project-head{min-width:0;max-width:none}
+.top .concept-controls{justify-self:start;white-space:nowrap}
+.top #phases{justify-self:stretch;width:182px}
+.top #phases.hide{display:flex!important;visibility:hidden;pointer-events:none}
+.top .topright{display:block;min-width:0;width:118px;text-align:right}
+body.view-workspace{height:100dvh;overflow:hidden}
+body.view-workspace .canvas{height:calc(100dvh - 60px);max-width:none;display:flex;flex-direction:column;overflow:hidden;padding:12px 16px 14px}
+body.view-workspace #app{flex:1;min-height:0;overflow:hidden}
+body.view-workspace #app>.main{height:100%;min-height:0;align-items:stretch}
+body.view-workspace #app>.main>.panel{height:100%;max-height:100%;min-height:0}
+body.view-workspace .a-layout>.panel:first-child{display:flex;flex-direction:column;overflow:hidden}
+body.view-workspace .a-layout .schedule{flex:1;min-height:0;max-height:none;overflow-y:auto;overflow-x:auto;overscroll-behavior:contain}
+body.view-workspace .a-layout .schedule-head{position:sticky;top:0;z-index:2}
+body.view-workspace .detail-compact{height:100%;min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+body.view-workspace .meeting-list{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body.view-workspace .meeting-list .meeting-data{flex:1;min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+body.view-workspace .report-workspace{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body.view-workspace .report-workspace .reportbar{flex:none}
+body.view-workspace .report-workspace .report-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;border-radius:12px}
+body.view-workspace .report-scroll .lead-wrap{margin:0 auto}
+#scheduleTableScroll:focus-visible,#reportContentScroll:focus-visible{outline:3px solid #6bb1d6;outline-offset:-3px}
+@media(max-width:1220px){
+.top{grid-template-columns:166px minmax(135px,1fr) max-content 180px}
+.top .topright{display:none}
+.top #phases{width:180px}
+}
+@media(max-width:970px){
+.top{grid-template-columns:minmax(155px,1fr) minmax(0,1fr);grid-template-areas:"brand project" "nav phases";height:auto;min-height:60px;padding:9px 12px;gap:8px 12px}
+.top .brand{grid-area:brand}
+.top .project-head{grid-area:project}
+.top .concept-controls{grid-area:nav;justify-self:start}
+.top #phases{grid-area:phases;justify-self:end}
+body.view-workspace{height:auto;overflow:auto}
+body.view-workspace .canvas{height:auto;display:block;overflow:visible;padding:12px}
+body.view-workspace #app{overflow:visible}
+body.view-workspace #app>.main{height:auto;align-items:start}
+body.view-workspace #app>.main>.panel{height:auto;max-height:none}
+body.view-workspace .a-layout>.panel:first-child{max-height:490px}
+body.view-workspace .a-layout .schedule{flex:none;max-height:420px;overflow:auto}
+body.view-workspace .detail-compact{height:auto;max-height:none;overflow:visible}
+body.view-workspace .meeting-list{height:auto;max-height:none}
+body.view-workspace .meeting-list .meeting-data{flex:none;max-height:420px;min-height:160px;overflow:auto}
+body.view-workspace .report-workspace{height:auto;overflow:visible}
+body.view-workspace .report-workspace .report-scroll{flex:none;height:auto;overflow:visible}
+}
+@media(max-width:620px){
+.top{grid-template-columns:1fr;grid-template-areas:"brand" "project" "nav" "phases"}
+.top .concept-controls{max-width:100%;overflow-x:auto}
+.top #phases{justify-self:start}
+}
+
+
+/* DES-007: same inspector width in Schedule and Meeting Review.
+   Override older concept-specific grid rules only at desktop split-pane widths. */
+@media(min-width:971px){
+  body.view-workspace #app>.main.a-layout,
+  body.view-workspace #app>.main.b-layout{
+    grid-template-columns:minmax(0,1fr) minmax(365px,39%);
+  }
+}
+
+
+/* DES-007: future read-only History / Settings and draft-navigation state study.
+ * Primary 3-button nav and inspector width remain those of endorsed DES-006. */
+.top .topright{width:118px;position:relative}
+.topright .ghost{width:110px}
+.overlay-shell{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:#182c4073;padding:18px}
+.overlay-shell.hide{display:none}
+.overlay-card{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 65px #183b5c33;width:min(740px,100%);max-height:min(86dvh,730px);display:flex;flex-direction:column;overflow:hidden}
+.overlay-head{padding:16px 19px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid var(--line);flex:none}
+.overlay-head h2{font-size:18px;margin:0}.overlay-scroll{padding:16px 19px;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.overlay-foot{border-top:1px solid var(--line);padding:11px 19px;display:flex;gap:9px;justify-content:flex-end;flex:none}
+.overlay-menu{max-width:440px;place-self:start end;margin:57px 15px 0 0}
+.overlay-menu .overlay-scroll{padding:8px}
+.overlay-menu button{display:block;width:100%;border:0;border-radius:7px;padding:12px;text-align:left;background:transparent;color:var(--ink)}
+.overlay-menu button:hover{background:var(--accentbg)}
+.synthetic-data-banner{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:7px;padding:10px 11px;margin-bottom:13px;background:#f6f8fa}
+.history-save{border:1px solid var(--line);border-radius:9px;padding:13px;margin:10px 0}
+.history-save h3{font-size:13px;margin:0 0 6px}
+.history-field{font-size:12px;padding:7px 0;border-top:1px solid #e7edf2;line-height:1.6}
+.settings-row{display:flex;gap:20px;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:12px 0}
+.settings-row label{font-size:12px;font-weight:700}
+.settings-row select{min-width:215px;height:36px;border:1px solid #d6e2eb;border-radius:7px;padding:7px;font-size:12px}
+.settings-cols{display:flex;gap:14px;flex-wrap:wrap;padding:10px 0}
+.settings-cols label{font-size:12px;color:var(--ink)}
+.history-actions{display:flex;gap:7px;align-items:center}
+.history-actions .ghost{font-size:11px}
+.overlay-card button:focus-visible{outline:3px solid #5aa9d6;outline-offset:2px}
+@media(max-width:760px){.overlay-card{max-height:93dvh}.overlay-menu{margin:90px 10px 0;}.settings-row{display:block}.settings-row select{width:100%;margin-top:8px}}
+
+</style>
+</head>
+<body>
+<header class="top">
+ <div class="brand"><div class="mark">W</div><div><div class="brandtitle">SPT–WBS <span class="pill blue">DES–007</span></div><div class="brandmeta">Design concept · Synthetic data</div></div></div>
+ <div class="project-head"><strong id="mainTitle">Northstar Service Rollout</strong><span id="mainDescription">Meeting task review</span></div>
+ <nav class="concept-controls" aria-label="Choose design concept"><button id="navA" data-view="a">Schedule</button><button id="navB" class="active" data-view="b">Meeting Review</button><button id="navL" data-view="l">Reports · Present</button></nav>
+ <div class="phase-controls" id="phases" aria-label="Schedule stage"><button data-stage="exception" class="active">Exceptions</button><button data-stage="workstream">Workstreams</button></div>
+ <div class="topright"><button type="button" id="moreMenuButton" class="ghost" aria-haspopup="menu" aria-expanded="false" style="width:110px">More ···</button><div class="tiny" style="white-space:nowrap">DES-007 · Demo</div></div>
+</header>
+<main class="canvas">
+ <div id="app" aria-live="polite"></div>
+</main>
+<div id="overlayShell" class="overlay-shell hide" aria-live="polite"></div>
+<script>
+(function(){
+"use strict";
+var project="Northstar Service Rollout",groups=["Platform Readiness","Data Migration","Launch Enablement"];
+var calendar={asOf:"2026-11-09",holidays:{"2026-11-03":"Culture Day","2026-11-23":"Labour Thanksgiving Day"},blackouts:{"2026-11-12":"Environment freeze","2026-11-20":"Deployment blackout"},weekdays:[1,2,3,4,5]};
+var tasks=[
+{id:"P1",group:groups[0],wbs:"1.1",title:"Confirm API vendor access",owner:"M. Sato",status:"Blocked",end:"2026-11-12",pct:40,start:10,len:23,auto:false,manual:true,critical:true,milestone:false,pred:[],update:"Nov 06 · Procurement follow-up sent. Vendor response pending.",risk:"Vendor contract sign-off is outstanding and threatens integration."},
+{id:"P2",group:groups[0],wbs:"1.2",title:"Environment provisioning",owner:"A. Tanaka",status:"At Risk",end:"2026-11-14",pct:72,start:12,len:31,auto:true,manual:false,critical:false,milestone:false,pred:[],update:"Nov 06 · Infrastructure capacity escalated.",risk:"Planned handover differs from the reference commitment; impact pending."},
+{id:"P3",group:groups[0],wbs:"1.3",title:"Security readiness gate",owner:"R. Mori",status:"In Progress",end:"2026-11-18",pct:55,start:30,len:25,auto:false,manual:false,critical:false,milestone:true,pred:["P1","P2"],update:"Nov 04 · Draft sign-off pack shared.",risk:""},
+{id:"P4",group:groups[0],wbs:"1.4",title:"API smoke test checklist",owner:"A. Tanaka",status:"In Progress",end:"2026-11-09",pct:30,start:8,len:10,auto:false,manual:false,critical:false,milestone:false,pred:[],update:"Nov 07 · Checklist prepared for weekly review.",risk:""},
+{id:"D1",group:groups[1],wbs:"2.1",title:"Data reconciliation",owner:"K. Yamada",status:"At Risk",end:"2026-11-17",pct:58,start:25,len:34,auto:true,manual:true,critical:true,milestone:false,pred:[],update:"Nov 06 · Three unmatched account groups under investigation.",risk:"Schedule exposure and unresolved source-system ownership."},
+{id:"D2",group:groups[1],wbs:"2.2",title:"Dry-run migration",owner:"S. Ito",status:"In Progress",end:"2026-11-20",pct:30,start:45,len:33,auto:false,manual:false,critical:false,milestone:false,pred:["D1","P2"],update:"Nov 03 · Preparation checklist reviewed.",risk:""},
+{id:"D3",group:groups[1],wbs:"2.3",title:"Migration acceptance",owner:"K. Yamada",status:"Not Started",end:"2026-11-25",pct:0,start:78,len:11,auto:false,manual:false,critical:false,milestone:true,pred:["D2","P3"],update:"Oct 30 · Draft acceptance criteria circulated.",risk:""},
+{id:"L1",group:groups[2],wbs:"3.1",title:"Support-team training",owner:"N. Fuji",status:"Completed",end:"2026-11-19",pct:100,start:47,len:23,auto:false,manual:false,critical:false,milestone:false,pred:[],update:"Nov 06 · Final training completed and signed off.",risk:""},
+{id:"L2",group:groups[2],wbs:"3.2",title:"Readiness communications",owner:"T. Oda",status:"In Progress",end:"2026-11-23",pct:48,start:53,len:30,auto:false,manual:false,critical:false,milestone:false,pred:[],update:"Nov 07 · Legal cleared communications; Under Watch released.",risk:""},
+{id:"L3",group:groups[2],wbs:"3.3",title:"Go / no-go decision",owner:"",status:"Not Started",end:"2026-11-27",pct:0,start:88,len:10,auto:false,manual:false,critical:false,milestone:true,pred:["D3","L1","L2"],update:"Nov 02 · Leadership meeting placeholder created.",risk:""},
+{id:"L4",group:groups[2],wbs:"3.4",title:"Operational handover",owner:"N. Fuji",status:"Not Started",end:"2026-11-30",pct:0,start:93,len:7,auto:false,manual:false,critical:false,milestone:false,pred:["L3"],update:"Nov 03 · Support queue mapping drafted.",risk:""}
+];
+var events=[
+{date:"2026-11-06",kind:"completed",id:"L1",title:"Support-team training",group:groups[2],owner:"N. Fuji",detail:"Completed; final training signed off.",source:"UpdateHistory status transition (fixture)"},
+{date:"2026-11-04",kind:"added",id:"P4",title:"API smoke test checklist",group:groups[0],owner:"A. Tanaka",detail:"New checklist added ahead of the integration review.",source:"Proposed creation event (not guaranteed by current contract)"},
+{date:"2026-11-05",kind:"riskNew",id:"P1",title:"Confirm API vendor access",group:groups[0],owner:"M. Sato",detail:"Manual stakeholder watch opened: vendor approval unresolved.",source:"Proposed watch event (not in frozen workbook)"},
+{date:"2026-11-06",kind:"riskNew",id:"D1",title:"Data reconciliation",group:groups[1],owner:"K. Yamada",detail:"New schedule and contextual delivery-risk signals.",source:"Proposed watch event (not in frozen workbook)"},
+{date:"2026-11-07",kind:"released",id:"L2",title:"Readiness communications",group:groups[2],owner:"T. Oda",detail:"Legal sign-off received; all known watch reasons cleared.",source:"Proposed watch-release event (not in frozen workbook)"},
+{date:"2026-11-06",kind:"changed",id:"P2",title:"Environment provisioning",group:groups[0],owner:"A. Tanaka",detail:"Planned finish changed Nov 12 → Nov 14; impact still under review.",source:"UpdateHistory date change (fixture)"}
+];
+var state={view:"b",stage:"exception",filter:"exceptions",workstream:"all",owner:"all",selected:"D1",editing:false,demoEntries:[],reportMode:"latest",reportDisplay:"present",reportSnapshots:{latest:null,updates:null},periodStart:"2026-11-03",periodEnd:"2026-11-09",dirty:false,periodTouched:false,listScroll:0,scrollToSelected:false,scheduleScroll:0,reportScroll:0,overlay:null,historyTask:null,pendingNav:null,settings:{timezone:"Asia/Tokyo",appearance:"System",columns:{Owner:true,Status:true,Finish:true}}};
+function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function utc(iso){if(!/^\d{4}-\d{2}-\d{2}$/.test(iso||""))return null;var d=new Date(iso+"T00:00:00Z");return Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==iso?null:d}
+function dayIso(d){return d.toISOString().slice(0,10)}
+function shiftDate(iso,days){var d=utc(iso);return d?dayIso(new Date(d.getTime()+days*86400000)):iso}
+function displayDate(s){var d=utc(s);return d?d.toLocaleDateString("en-US",{month:"short",day:"2-digit",timeZone:"UTC"}):"Unknown"}
+function isWorking(s){var d=utc(s);return !!d&&calendar.weekdays.includes(d.getUTCDay())&&!calendar.holidays[s]&&!calendar.blackouts[s]}
+function workdayCount(from,to){var a=utc(from),b=utc(to);if(!a||!b)return null;if(a.getTime()===b.getTime())return 0;var forward=b>a,low=forward?a:b,high=forward?b:a,n=0;
+for(var ms=low.getTime()+86400000;ms<=high.getTime();ms+=86400000){if(isWorking(dayIso(new Date(ms))))n++}return forward?n:-n}
+function remaining(s){return workdayCount(calendar.asOf,s)}
+function remainingLabel(s){var n=remaining(s);return n===null?"Date unavailable":s===calendar.asOf?"Due today":n<0?Math.abs(n)+" days overdue":n===0?"0 days left":n+" days left"}
+function finishFlag(s){return calendar.holidays[s]?"Holiday finish":calendar.blackouts[s]?"Blackout finish":!isWorking(s)?"Weekend finish":""}
+function current(){return tasks.find(function(t){return t.id===state.selected})||null}
+function related(t,upstream){return upstream?t.pred.map(function(id){return tasks.find(function(x){return x.id===id})}).filter(Boolean):tasks.filter(function(x){return x.pred.includes(t.id)})}
+function riskCount(t){return Number(t.auto)+Number(t.manual)}
+function watched(t){return riskCount(t)>0}
+function flagged(){return tasks.filter(watched)}
+function pill(s,kind){return '<span class="pill '+(kind||"")+'">'+esc(s)+'</span>'}
+function statusPill(t){return pill(t.status,t.status==="Blocked"?"risk":t.status==="At Risk"?"warn":t.status==="Completed"?"ok":"")}
+function filterTasks(){var arr=tasks.filter(function(t){var days=remaining(t.end);if(state.filter==="exceptions"&&!watched(t))return false;if(state.filter==="today"&&t.end!==calendar.asOf)return false;if(state.filter==="due5"&&!(t.end>=calendar.asOf&&days!==null&&days>=0&&days<5))return false;if(state.owner==="__unassigned__"&&!!t.owner)return false;if(state.owner!=="all"&&state.owner!=="__unassigned__"&&t.owner!==state.owner)return false;if(state.workstream!=="all"&&t.group!==state.workstream)return false;return true});
+return arr.sort(function(a,b){if(state.filter==="exceptions"){if(a.critical!==b.critical)return a.critical?-1:1;if(riskCount(a)!==riskCount(b))return riskCount(b)-riskCount(a)}if(state.filter==="all"){var d=groups.indexOf(a.group)-groups.indexOf(b.group);if(d)return d;return a.wbs.localeCompare(b.wbs,undefined,{numeric:true})}return a.end.localeCompare(b.end)||a.wbs.localeCompare(b.wbs,undefined,{numeric:true})})}
+function ensureSelection(){var arr=filterTasks();if(!arr.some(function(t){return t.id===state.selected}))state.selected=arr.length?arr[0].id:null}
+function options(vals,sel){return vals.map(function(v){return '<option value="'+esc(v)+'"'+(v===sel?" selected":"")+'>'+esc(v==="all"?"All":v==="__unassigned__"?"Unassigned":v)+'</option>'}).join("")}
+function listItem(t){var cls=t.id===state.selected?" selected":"";var work=(state.filter==="all")?"":t.group+" · ";
+return '<button type="button" class="meeting-item'+cls+'" data-task="'+esc(t.id)+'" aria-label="Show '+esc(t.title)+' detail">'+
+'<div><div class="entrytitle">'+esc(t.wbs)+' · '+esc(t.title)+'</div><div class="entrymeta">'+esc(work)+(watched(t)?"Under Watch":t.milestone?"Milestone":"Task")+'</div></div>'+
+'<div class="cell">'+esc(t.owner||"Unassigned")+'</div><div class="cell">'+statusPill(t)+'</div><div class="cell">'+esc(displayDate(t.end))+'</div><div class="cell" title="Calendar-aware days; excludes weekends, holidays and project blackout dates">'+esc(remainingLabel(t.end))+'</div></button>'}
+function listMarkup(arr){if(!arr.length)return '<div class="zero-match">No tasks match these filters.<div style="margin-top:10px"><button type="button" class="ghost" id="clearFilters">Clear filters</button></div></div>';
+if(state.filter==="all"){return groups.map(function(g){var subset=arr.filter(function(t){return t.group===g});if(!subset.length)return "";return '<div class="meeting-group">'+esc(g)+'</div>'+subset.map(listItem).join("")}).join("")}
+return arr.map(listItem).join("")}
+function bQueue(){var arr=filterTasks(),owners=Array.from(new Set(tasks.map(function(t){return t.owner}).filter(Boolean))).sort();return '<section class="panel meeting-list"><div class="panelhead"><div><h2>Tasks · Meeting Review</h2><div class="tiny">Filter the same WBS records, not separate lists</div></div>'+pill("Synthetic data","blue")+'</div>'+
+'<div class="filter-zone"><div class="filter-pills" role="group" aria-label="Task list filters">'+
+[["exceptions","Exceptions"],["all","All · Workstreams"],["today","Due today"],["due5","Due in <5 days"]].map(function(v){return '<button type="button" data-filter="'+v[0]+'" class="filter-pill'+(state.filter===v[0]?" active":"")+'" aria-pressed="'+(state.filter===v[0])+'">'+esc(v[1])+'</button>'}).join("")+'</div>'+
+'<div class="filter-selects"><label>Workstream<select id="filterWorkstream">'+options(["all"].concat(groups),state.workstream)+'</select></label>'+
+'<label>Owner<select id="filterOwner">'+options(["all"].concat(owners).concat(["__unassigned__"]),state.owner)+'</select></label>'+
+'<label>Meeting date<input type="date" id="meetingDate" value="'+esc(calendar.asOf)+'"></label></div>'+
+'<div class="filter-caption">“Today” is the selected meeting date. “&lt;5 days” means 0–4 remaining days on the project calendar.</div><details class="calendar-legend"><summary>Working calendar used by filters and countdowns</summary><div>Days always exclude weekends, Japan holidays (Nov 03, Nov 23) and sample project blackout dates (Nov 12, Nov 20). “Days” are working dates on the project calendar, not elapsed calendar days or remaining effort. Sample calendar only; project-owned settings are not yet implemented.</div></details></div>'+
+'<div class="meeting-columns"><div>WBS / task</div><div>Owner</div><div>Status</div><div>Finish</div><div>Days left</div></div>'+
+'<div class="meeting-data" id="meetingListScroll" tabindex="0" aria-label="Scrollable filtered task list">'+listMarkup(arr)+'</div></section>'}
+function linkGroup(t,upstream){var xs=related(t,upstream);return '<div class="dep-group"><div class="depheader">'+(upstream?"Depends on · predecessors":"Dependent tasks · successors")+'</div>'+
+(xs.length?xs.map(function(x){return '<button type="button" class="dep-link" data-link-task="'+esc(x.id)+'" title="Open linked WBS task">'+esc(x.wbs)+' · '+esc(x.title)+'<span>Finish-to-start example · Due '+esc(displayDate(x.end))+'</span></button>'}).join(""):'<span class="dep-empty">No '+(upstream?"predecessors":"successors")+' in this sample</span>')+'</div>'}
+function riskBox(t){if(!watched(t))return '<div class="inlinewarning" style="background:#eff9f4;border-color:#d8ebe1;color:#386d54">No active watch reasons in this static fixture; production health requires current checks.</div>';
+return '<div class="riskbox"><strong>Under Watch · '+riskCount(t)+' reason'+(riskCount(t)===1?"":"s")+'</strong>'+
+(t.auto?'<div class="riskitem">Schedule impact signal (illustrative)</div>':'')+
+(t.manual?'<div class="riskitem">Stakeholder/context flag (manually captured)</div>':'')+
+'<div class="tiny" style="margin-top:6px">'+esc(t.risk)+'</div></div>'}
+function editFields(t){return '<div class="compact-editor"><div class="fieldgrid"><div class="field"><label for="owner">Owner</label><input id="owner" value="'+esc(t.owner)+'"></div><div class="field"><label for="status">Status</label><select id="status">'+["Not Started","In Progress","At Risk","Blocked","Completed","Cancelled"].map(function(s){return '<option'+(s===t.status?" selected":"")+'>'+s+'</option>'}).join("")+'</select></div><div class="field"><label for="finish">Planned finish</label><input id="finish" type="date" value="'+esc(t.end)+'"></div><div class="field"><label for="pct">Recorded progress (%)</label><input id="pct" type="number" min="0" max="100" value="'+esc(t.pct)+'"></div></div>'+
+'<div class="sectionlabel">Append update</div><div class="composer"><label class="kicker" for="updateText">Meeting note (demo)</label><textarea id="updateText" placeholder="Record an update from the discussion…"></textarea></div>'+
+'<div class="savebar"><span class="tiny">Simulation only; no Excel write.</span><div><button type="button" class="ghost" id="cancelEdit">Cancel</button> <button type="button" class="solid" id="demoSave">Simulate save</button></div></div></div>'}
+function compactDetail(){var t=current();if(!t)return '<section class="panel detail-compact"><div class="panelhead"><h2>Task detail</h2></div><div class="zero-match">No selected task. Adjust task filters.</div></section>';
+var editing=state.editing;var fields=editing?editFields(t):'<div class="detail-facts"><div class="detail-fact"><div class="key">Status</div><div class="val">'+esc(t.status)+'</div></div>'+
+'<div class="detail-fact"><div class="key">Owner</div><div class="val">'+esc(t.owner||"Unassigned")+'</div></div>'+
+'<div class="detail-fact due"><div class="key">Planned finish</div><div class="val">'+esc(displayDate(t.end))+'</div></div>'+
+'<div class="detail-fact due"><div class="key" title="Based on project calendar; weekends, holidays and blackout dates excluded">Days left</div><div class="val">'+esc(remainingLabel(t.end))+'</div></div></div>'+
+(finishFlag(t.end)?'<div class="inlinewarning">Finish falls on a nonworking date: '+esc(finishFlag(t.end))+'</div>':'')+
+'<div class="detail-sub">As of '+esc(displayDate(calendar.asOf))+' · excludes weekends, holidays and project blackouts (sample calendar)</div>';
+return '<section class="panel detail-compact"><div class="panelhead"><div><h2>Selected task'+(editing?" · Editing":"")+'</h2></div>'+
+(editing?pill("Draft · demo","blue"):'<div class="history-actions"><button type="button" class="ghost" id="taskHistory">History</button><button type="button" class="solid" id="meetingEdit">Edit task</button></div>')+'</div>'+
+'<div class="panelbody"><div class="detail-identity"><span class="detail-id">Workstream <b>'+esc(t.group)+'</b></span><span class="detail-id">WBS <b>'+esc(t.wbs)+'</b></span></div><div class="focus-title">'+esc(t.title)+'</div>'+fields+
+'<div class="sectionlabel">Task relationships</div><div class="dependencies">'+linkGroup(t,true)+linkGroup(t,false)+'</div>'+
+'<div class="sectionlabel">Risk / watch context</div>'+riskBox(t)+
+'<div class="sectionlabel">Latest update</div><div class="big-update">'+esc(t.update)+'</div>'+
+state.demoEntries.filter(function(e){return e.id===t.id}).map(function(e){return '<div class="big-update">'+esc(e.text)+' '+pill("demo","blue")+'</div>'}).join("")+'</div></section>'}
+function bScreen(){return '<div class="main b-layout">'+bQueue()+compactDetail()+'</div>'}
+function aRow(t){return '<div class="schedule-row'+(t.id===state.selected?" selected":"")+'" data-task="'+esc(t.id)+'" role="button" tabindex="0" aria-label="Inspect '+esc(t.title)+'"><div class="titlecell"><div class="ellipsis"><div class="rowtitle">'+esc(t.wbs)+' · '+esc(t.title)+'</div><div class="rowdetail">'+esc(t.group)+' · '+esc(displayDate(t.end))+'</div></div></div><div class="small ellipsis">'+esc(t.owner||"Unassigned")+'</div><div>'+statusPill(t)+'</div><div class="timeline"><div class="bar '+(t.critical?"red":watched(t)?"risk":"green")+(t.milestone?" milestone":"")+'" style="left:'+t.start+'%;width:'+(t.milestone?13:t.len)+'%" title="Illustrative scheduled time span, not progress"></div></div></div>'}
+function aScreen(){var arr=state.stage==="exception"?flagged():tasks;return '<div class="main a-layout"><section class="panel"><div class="panelhead"><div><h2>WBS / Gantt schedule</h2><div class="tiny">Duration bars are illustrative · no completion fill</div></div></div><div class="schedule" id="scheduleTableScroll" tabindex="0" aria-label="Scrollable WBS schedule"><div class="schedule-head"><div>Task</div><div>Owner</div><div>Status</div><div class="timeline-head"><span>W1</span><span>W2</span><span>W3</span><span>W4</span></div></div>'+
+arr.map(aRow).join("")+'</div></section>'+compactDetail()+'</div>'}
+function eventCategory(k){return {completed:"Completed tasks",added:"Added tasks",riskNew:"New risks identified",released:"Under Watch released",changed:"Other material updates"}[k]||"Other"}
+function eventsForPeriod(){return events.filter(function(e){return e.date>=state.periodStart&&e.date<=state.periodEnd})}
+function statusAttention(t){return t.status==="At Risk"||t.status==="Blocked"||(t.status!=="Completed"&&t.status!=="Cancelled"&&t.end<calendar.asOf)}
+function groupedText(lines,items,format){if(!items.length){lines.push("No qualifying tasks.");return}groups.forEach(function(g){var xs=items.filter(function(t){return t.group===g});if(!xs.length)return;lines.push(g);xs.forEach(function(t){lines.push("- "+format(t))})})}
+function buildReport(mode){var generated="Nov 09 2026 09:00 JST (fixed demo)",data={},lines=[project+" — "+(mode==="latest"?"Latest Status Report":"Weekly Update Report (proposed)"),"Generated: "+generated,"Source: synthetic fixture, not an imported workbook",""];
+if(mode==="latest"){var attention=tasks.filter(statusAttention),mile=tasks.filter(function(t){return t.milestone}),near=tasks.filter(function(t){return !t.milestone&&t.status!=="Completed"&&!statusAttention(t)&&t.end>=calendar.asOf&&remaining(t.end)<=4});
+data={attention:attention.map(function(t){return Object.assign({},t)}),milestones:mile.map(function(t){return Object.assign({},t)}),near:near.map(function(t){return Object.assign({},t)}),counts:{tasks:tasks.length,blocked:tasks.filter(function(t){return t.status==="Blocked"}).length,atRisk:tasks.filter(function(t){return t.status==="At Risk"}).length}};
+lines.push("Executive snapshot","Current tasks: "+tasks.length+" · Blocked: "+data.counts.blocked+" · At Risk: "+data.counts.atRisk,"Overall progress: not calculated by this design simulator","","Needs Attention");
+groupedText(lines,attention,function(t){return t.title+" — "+t.status+" · Owner: "+(t.owner||"Unassigned")+" · Finish: "+displayDate(t.end)});
+lines.push("","Upcoming milestones");
+groupedText(lines,mile,function(t){return t.title+" — "+displayDate(t.end)+" · Owner: "+(t.owner||"Unassigned")});
+lines.push("","Near-term tasks");
+groupedText(lines,near,function(t){return t.title+" · Owner: "+(t.owner||"Unassigned")+" · Finish: "+displayDate(t.end)+" · "+remainingLabel(t.end)});
+lines.push("","Calendar: meeting-date fixture Nov 09; weekends, Japan holidays, sample project blackouts excluded for working-day figures.");
+}else{var list=eventsForPeriod();data={events:list.map(function(e){return Object.assign({},e)}),start:state.periodStart,end:state.periodEnd,summary:{}};
+lines.push("Reporting period: "+state.periodStart+" to "+state.periodEnd+" inclusive","Default: last 7 calendar dates ending on simulated meeting date","","Weekly changes — stakeholder-facing proposal");
+["completed","added","riskNew","released","changed"].forEach(function(kind){var items=list.filter(function(e){return e.kind===kind});data.summary[kind]=items.length;lines.push("",eventCategory(kind));groupedText(lines,items,function(e){return e.title+" · Owner: "+(e.owner||"Unassigned")+" · "+e.detail+" ("+e.date+")"})});
+lines.push("","Proposed lifecycle entries (creation/watch/release) require new reliable source events; they are NOT available from the frozen UpdateHistory alone.");
+}
+return {mode:mode,title:project,generated:generated,data:data,text:lines.join("\n")}}
+function reportItem(t){return '<div class="storyrow"><strong>'+esc(t.title)+'</strong><p>Owner: '+esc(t.owner||"Unassigned")+' · Finish '+esc(displayDate(t.end))+' · '+esc(remainingLabel(t.end))+'</p>'+(t.status?statusPill(t):'')+'</div>'}
+function reportGroup(items,format){if(!items.length)return '<div class="note">No qualifying items.</div>';return groups.map(function(g){var arr=items.filter(function(t){return t.group===g});if(!arr.length)return "";return '<div class="sectionlabel">'+esc(g)+'</div>'+arr.map(format).join("")}).join("")}
+function presentReport(s){if(s.mode==="latest"){var d=s.data;return '<div class="lead-main"><div class="lead-metrics"><div class="metric"><span class="kicker">Tasks · fixture</span><b>'+d.counts.tasks+'</b><span class="small muted">Not summary double-counted</span></div><div class="metric"><span class="kicker">Needs attention</span><b>'+d.attention.length+'</b><span class="small muted">Blocked or At Risk</span></div><div class="metric"><span class="kicker">Upcoming milestones</span><b>'+d.milestones.length+'</b><span class="small muted">Finish dates shown below</span></div></div><section class="lead-section"><h3>Milestones & deadlines</h3>'+reportGroup(d.milestones,reportItem)+'</section><section class="lead-section"><h3>Needs Attention</h3>'+reportGroup(d.attention,reportItem)+'</section></div>'+
+'<div class="lead-main" style="padding-top:0;grid-template-columns:1fr"><section class="lead-section"><h3>Near-term tasks</h3>'+reportGroup(d.near,reportItem)+'</section></div>'}
+return '<div class="lead-main" style="grid-template-columns:1fr"><div class="lead-metrics update-summary">'+["completed","added","riskNew","released"].map(function(k){return '<div class="metric"><span class="kicker">'+esc(eventCategory(k))+'</span><b>'+s.data.summary[k]+'</b><span class="small muted">Synthetic period entries</span></div>'}).join("")+'</div>'+
+'<div class="report-proposed">Proposed enhanced Update Report: added-task and watch lifecycle events require a separately approved data contract. No administrative Save-event counts appear in this stakeholder-facing concept.</div>'+
+["completed","added","riskNew","released","changed"].map(function(k){var entries=s.data.events.filter(function(e){return e.kind===k});return '<section class="lead-section storysection"><h3>'+esc(eventCategory(k))+'</h3>'+reportGroup(entries,function(e){return '<div class="storyrow"><strong>'+esc(e.title)+'</strong><p>Owner: '+esc(e.owner||"Unassigned")+' · '+esc(e.date)+'</p><div class="note">'+esc(e.detail)+'</div></div>'})+'</section>'}).join("")+'</div>'}
+function lScreen(){var snap=state.reportSnapshots[state.reportMode];if(!snap){snap=buildReport(state.reportMode);state.reportSnapshots[state.reportMode]=snap}var preview=state.reportDisplay==="preview";
+return '<div class="report-workspace"><div class="reportbar"><div><strong>Output Reports · '+(state.reportMode==="latest"?"Latest Status":"Update Report")+'</strong><div class="tiny">'+(state.reportMode==="updates"?"Proposed weekly summary extension · current frozen UpdateHistory report remains unchanged":"Latest Status with owner/workstream context")+'</div></div><div class="report-actions">'+
+'<button type="button" class="ghost '+(state.reportMode==="latest"?"choiceactive":"")+'" data-report="latest">Latest Status</button>'+
+'<button type="button" class="ghost '+(state.reportMode==="updates"?"choiceactive":"")+'" data-report="updates">Update Report</button>'+
+'<button type="button" class="ghost '+(preview?"choiceactive":"")+'" data-display="preview">Plain-text preview</button>'+
+'<button type="button" class="ghost '+(!preview?"choiceactive":"")+'" data-display="present">Present</button>'+
+'<button type="button" class="ghost" id="refreshReport">Generate / Refresh demo</button><button type="button" class="ghost" id="copyReport">Copy report text</button></div></div>'+
+(state.reportMode==="updates"?'<div class="reportbar"><div class="report-period"><label>From (inclusive)<input type="date" id="periodStart" value="'+esc(state.periodStart)+'"></label><label>Through (inclusive)<input type="date" id="periodEnd" value="'+esc(state.periodEnd)+'"></label></div><span class="tiny">'+(state.dirty?"Period edited · select Generate / Refresh to update snapshot":"Default: 7 calendar dates including meeting date")+'</span></div>':'')+
+'<div class="report-scroll" id="reportContentScroll" tabindex="0" aria-label="Scrollable report preview"><div class="lead-wrap"><div class="lead-head"><div><div class="kicker">Fixed report snapshot · '+esc(snap.generated)+'</div><h2>'+esc(snap.title)+'</h2><p>'+(state.reportMode==="updates"?"Completed, added, new risk, released watch and significant changes":"Project status, milestones and next deadlines")+'</p></div>'+pill(preview?"Text preview":"Presentation view","blue")+'</div>'+
+(preview?'<div class="preview-shell"><h3>Plain-text preview · Synthetic</h3><pre>'+esc(snap.text)+'</pre></div>':presentReport(snap))+
+'<div class="lead-foot">DES-007 design fixture only. V1 frozen Update Report requires field-level UpdateHistory and Save associations; this enhanced weekly change summary is a future proposal. Presentation and preview use one fixed simulated snapshot.</div></div></div></div>'}
+
+/* DES-007 overlays are design simulators: history data, settings and save actions are not persistent. */
+var historyFixture=[
+{save:"SV-0142",when:"2026-11-06T05:10:00Z",changes:[
+{id:"P2",wbs:"1.2",title:"Environment provisioning",field:"PlannedEnd",old:"2026-11-12",value:"2026-11-14"},
+{id:"D1",wbs:"2.1",title:"Data reconciliation",field:"TaskStatus",old:"In Progress",value:"At Risk"}]},
+{save:"SV-0141",when:"2026-11-05T01:45:00Z",changes:[
+{id:"D1",wbs:"2.1",title:"Data reconciliation",field:"AssignedTo",old:"Unassigned",value:"K. Yamada"}]}
+];
+function formattedTime(utcIso){try{return new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:state.settings.timezone}).format(new Date(utcIso))}catch(e){return utcIso}}
+function openOverlay(kind,taskId){state.overlay=kind;state.historyTask=taskId||null;renderOverlay()}
+function closeOverlay(){state.overlay=null;state.pendingNav=null;renderOverlay()}
+function draftHasChanges(){var t=current();if(!state.editing||!t)return false;var owner=document.getElementById("owner"),finish=document.getElementById("finish"),status=document.getElementById("status"),pct=document.getElementById("pct"),update=document.getElementById("updateText");
+if(!owner||!finish||!status||!pct||!update)return true;
+return owner.value.trim()!==t.owner||finish.value!==t.end||status.value!==t.status||Number(pct.value)!==t.pct||!!update.value.trim()}
+function requestNavigation(action){if(state.editing){if(!draftHasChanges()){state.editing=false;action();return true}state.pendingNav=action;openOverlay("dirty");return false}action();return true}
+function renderOverlay(){
+var el=document.getElementById("overlayShell");if(!el)return;
+if(!state.overlay){el.classList.add("hide");el.innerHTML="";return}
+el.classList.remove("hide");
+var head="",body="",footer="";
+if(state.overlay==="menu"){
+head="Additional workspaces";
+body='<button type="button" id="openGlobalHistory">Change History · read only</button><button type="button" id="openSettings">Settings · preferences</button><div class="synthetic-data-banner">These screens demonstrate navigation only; the workbook and local preferences are not changed.</div>';
+footer='<button type="button" class="ghost" id="closeOverlay">Close</button>';
+}else if(state.overlay==="dirty"){
+head="Unsaved task draft";
+body='<div class="synthetic-data-banner">This task is being edited. The frozen product workflow requires <strong>Save / Discard / Cancel</strong> before leaving when actual changes exist. This design simulator does not write the workbook or create UpdateHistory.</div><p>What would you like to do before navigating?</p>';
+footer='<button class="ghost" type="button" id="dirtyCancel">Cancel · keep editing</button><button class="ghost" type="button" id="dirtyDiscard">Discard draft · continue</button><button class="solid" type="button" id="dirtySave">Simulate Save · continue</button>';
+}else if(state.overlay==="history"){
+head=state.historyTask?"Task Change History":"Global Change History";
+var groups=historyFixture.map(function(save){
+var selected=save.changes.filter(function(x){return !state.historyTask||x.id===state.historyTask});
+if(!selected.length)return "";
+return '<article class="history-save"><h3>Save '+esc(save.save)+' · '+esc(formattedTime(save.when))+'</h3><div class="tiny">Stored UTC unchanged; timezone affects presentation only. Changes in one Save share an audit identifier.</div>'+selected.map(function(change){
+return '<div class="history-field"><b>'+esc(change.wbs)+' · '+esc(change.title)+'</b> · '+esc(change.field)+'<div>'+esc(change.old)+' → '+esc(change.value)+'</div></div>'}).join("")+'</article>'}).filter(Boolean).join("");
+body='<div class="synthetic-data-banner">Synthetic UpdateHistory records; read-only. Demonstrates one Save with changes to multiple workstreams, immutable task title/WBS snapshots, and selected display timezone. Does not read Excel.</div>'+
+(state.historyTask?'<div class="small">Filtered to Task ID '+esc(state.historyTask)+' · <button type="button" class="ghost" id="historyAll">Show all history</button></div>':"")+
+(groups||'<div class="blankstate">No changes recorded for this sample task.</div>');
+footer='<button type="button" class="ghost" id="closeOverlay">Back to selected task</button>';
+}else if(state.overlay==="settings"){
+head="Settings · local preferences";
+body='<div class="synthetic-data-banner">Design mock only. Settings changes persist in this page session, not browser storage or Excel. Planned task dates never shift with timezone.</div>'+
+'<div class="settings-row"><label for="zoneSetting">Display timezone (timestamps only)</label><select id="zoneSetting">'+["Asia/Tokyo","UTC","America/Los_Angeles"].map(function(zone){return '<option'+(zone===state.settings.timezone?" selected":"")+'>'+zone+'</option>'}).join("")+'</select></div>'+
+'<div class="settings-row"><label for="appearanceSetting">Appearance</label><select id="appearanceSetting">'+["System","Light","Dark"].map(function(mode){return '<option'+(mode===state.settings.appearance?" selected":"")+'>'+mode+'</option>'}).join("")+'</select></div>'+
+'<div class="settings-row"><label>Columns (mock preference)</label><div class="settings-cols">'+["Owner","Status","Finish"].map(function(name){return '<label><input type="checkbox" data-col="'+name+'"'+(state.settings.columns[name]?" checked":"")+'> '+name+'</label>'}).join("")+'</div></div>'+
+'<div class="note">History fixture timestamp preview: '+esc(formattedTime("2026-11-06T05:10:00Z"))+'<div>Planned End for task P2 remains 2026-11-14 (date-only).</div></div>';
+footer='<button class="ghost" type="button" id="resetSettings">Reset defaults…</button><button class="solid" type="button" id="closeOverlay">Done</button>';
+}else if(state.overlay==="reset"){
+head="Reset display settings?";
+body='<p>Restore System appearance, detected-default simulation (Asia/Tokyo) timezone, and all default columns in this prototype.</p><div class="synthetic-data-banner">A real app should use the system/browser detected timezone and persist preferences locally. This mock does neither.</div>';
+footer='<button class="ghost" type="button" id="resetCancel">Cancel</button><button class="solid" type="button" id="resetConfirm">Reset demo settings</button>';
+}
+el.innerHTML='<section class="overlay-card '+(state.overlay==="menu"?"overlay-menu":"")+'" role="dialog" aria-modal="true" aria-label="'+esc(head)+'"><div class="overlay-head"><h2>'+esc(head)+'</h2></div><div class="overlay-scroll">'+body+'</div><div class="overlay-foot">'+footer+'</div></section>';
+function bind(id,fn){var c=document.getElementById(id);if(c)c.addEventListener("click",fn)}
+bind("closeOverlay",closeOverlay);
+bind("openGlobalHistory",function(){requestNavigation(function(){openOverlay("history",null)})});
+bind("openSettings",function(){requestNavigation(function(){openOverlay("settings")})});
+bind("historyAll",function(){openOverlay("history",null)});
+bind("dirtyCancel",closeOverlay);
+bind("dirtyDiscard",function(){var next=state.pendingNav;state.overlay=null;state.pendingNav=null;state.editing=false;if(next)next();else render()});
+bind("dirtySave",function(){var next=state.pendingNav;if(demoSave()){state.overlay=null;state.pendingNav=null;if(next)next();else render()}});
+bind("resetSettings",function(){openOverlay("reset")});
+bind("resetCancel",function(){openOverlay("settings")});
+bind("resetConfirm",function(){state.settings={timezone:"Asia/Tokyo",appearance:"System",columns:{Owner:true,Status:true,Finish:true}};openOverlay("settings")});
+var zone=document.getElementById("zoneSetting");if(zone)zone.addEventListener("change",function(){state.settings.timezone=zone.value;renderOverlay()});
+var appearance=document.getElementById("appearanceSetting");if(appearance)appearance.addEventListener("change",function(){state.settings.appearance=appearance.value;renderOverlay()});
+document.querySelectorAll("[data-col]").forEach(function(input){input.addEventListener("change",function(){state.settings.columns[input.dataset.col]=input.checked})});
+}
+
+function render(){
+document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.dataset.view===state.view)});
+document.querySelectorAll("[data-stage]").forEach(function(el){el.classList.toggle("active",el.dataset.stage===state.stage)});
+document.getElementById("phases").classList.toggle("hide",state.view!=="a");
+if(document.body&&document.body.classList){document.body.classList.toggle("view-workspace",true);document.body.classList.toggle("view-meeting",state.view==="b");document.body.classList.toggle("view-schedule",state.view==="a");document.body.classList.toggle("view-reports",state.view==="l");}
+document.getElementById("mainDescription").textContent=state.view==="l"?"Latest Status and proposed weekly Update Report presentation · synthetic data only": "Synthetic meeting: "+displayDate(calendar.asOf)+" · filters use holidays and project blackout calendar";
+document.getElementById("app").innerHTML=state.view==="l"?lScreen():state.view==="a"?aScreen():bScreen();
+var scheduleScroll=document.getElementById("scheduleTableScroll");if(scheduleScroll){scheduleScroll.scrollTop=state.scheduleScroll;scheduleScroll.addEventListener("scroll",function(){state.scheduleScroll=scheduleScroll.scrollTop});}
+var reportScroll=document.getElementById("reportContentScroll");if(reportScroll){reportScroll.scrollTop=state.reportScroll;reportScroll.addEventListener("scroll",function(){state.reportScroll=reportScroll.scrollTop});}
+var scroller=document.getElementById("meetingListScroll");if(scroller){scroller.scrollTop=state.listScroll;scroller.addEventListener("scroll",function(){state.listScroll=scroller.scrollTop});if(state.scrollToSelected&&typeof scroller.querySelector==="function"){var chosen=scroller.querySelector(".meeting-item.selected");if(chosen&&typeof chosen.scrollIntoView==="function")chosen.scrollIntoView({block:"nearest"});state.scrollToSelected=false;}}
+document.querySelectorAll("[data-task]").forEach(function(el){function action(){var taskId=el.dataset.task;requestNavigation(function(){state.selected=taskId;render()})}el.addEventListener("click",action);el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();action()}})});
+document.querySelectorAll("[data-link-task]").forEach(function(el){el.addEventListener("click",function(){var taskId=el.dataset.linkTask;requestNavigation(function(){state.selected=taskId;state.filter="all";state.workstream="all";state.owner="all";state.stage="workstream";state.listScroll=0;state.scrollToSelected=true;render()})})});
+document.querySelectorAll("[data-filter]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.filter=el.dataset.filter;state.listScroll=0;ensureSelection();render()})});
+var fw=document.getElementById("filterWorkstream");if(fw)fw.addEventListener("change",function(){if(!allowNavigate()){render();return}state.workstream=fw.value;state.listScroll=0;ensureSelection();render()});
+var fo=document.getElementById("filterOwner");if(fo)fo.addEventListener("change",function(){if(!allowNavigate()){render();return}state.owner=fo.value;state.listScroll=0;ensureSelection();render()});
+var md=document.getElementById("meetingDate");if(md)md.addEventListener("change",function(){if(!allowNavigate()){render();return}if(!utc(md.value)){alert("Choose a valid meeting date.");render();return}calendar.asOf=md.value;state.listScroll=0;if(!state.periodTouched){state.periodStart=shiftDate(md.value,-6);state.periodEnd=md.value;state.dirty=true}ensureSelection();render()});
+var clear=document.getElementById("clearFilters");if(clear)clear.addEventListener("click",function(){state.filter="all";state.owner="all";state.workstream="all";state.listScroll=0;ensureSelection();render()});
+var edit=document.getElementById("meetingEdit");if(edit)edit.addEventListener("click",function(){state.editing=true;render()});
+var historyButton=document.getElementById("taskHistory");if(historyButton)historyButton.addEventListener("click",function(){openOverlay("history",state.selected)});
+var moreButton=document.getElementById("moreMenuButton");if(moreButton)moreButton.addEventListener("click",function(){openOverlay("menu")});
+var cancel=document.getElementById("cancelEdit");if(cancel)cancel.addEventListener("click",function(){state.editing=false;render()});
+var save=document.getElementById("demoSave");if(save)save.addEventListener("click",demoSave);
+document.querySelectorAll("[data-report]").forEach(function(el){el.addEventListener("click",function(){state.reportMode=el.dataset.report;state.reportScroll=0;render()})});
+document.querySelectorAll("[data-display]").forEach(function(el){el.addEventListener("click",function(){state.reportDisplay=el.dataset.display;state.reportScroll=0;render()})});
+var ps=document.getElementById("periodStart");if(ps)ps.addEventListener("change",function(){state.periodStart=ps.value;state.periodTouched=true;state.dirty=true;render()});
+var pe=document.getElementById("periodEnd");if(pe)pe.addEventListener("change",function(){state.periodEnd=pe.value;state.periodTouched=true;state.dirty=true;render()});
+var ref=document.getElementById("refreshReport");if(ref)ref.addEventListener("click",function(){if(state.reportMode==="updates"&&(!utc(state.periodStart)||!utc(state.periodEnd)||state.periodStart>state.periodEnd)){alert("Please select a valid reporting period.");return}state.reportSnapshots[state.reportMode]=buildReport(state.reportMode);state.dirty=false;state.reportScroll=0;render()});
+var copy=document.getElementById("copyReport");if(copy)copy.addEventListener("click",function(){var snap=state.reportSnapshots[state.reportMode];if(!snap){alert("Generate a report first.");return}if(typeof navigator==="undefined"||!navigator.clipboard||!navigator.clipboard.writeText){alert("Clipboard unavailable here. Copy from plain-text preview manually.");return}navigator.clipboard.writeText(snap.text).then(function(){alert("Copied the exact displayed snapshot text.")},function(){alert("Clipboard copy failed. Use the plain-text preview.")})});
+renderOverlay();
+}
+function allowNavigate(){if(state.editing){if(!draftHasChanges()){state.editing=false;return true}alert("This design mock requires Save/Discard/Cancel for edited drafts. Use primary navigation or task selection to try the three-option flow.");return false}return true}
+function demoSave(){var t=current();if(!t)return false;var owner=document.getElementById("owner").value.trim(),finish=document.getElementById("finish").value,status=document.getElementById("status").value,pct=Number(document.getElementById("pct").value),update=document.getElementById("updateText").value.trim();
+if(!utc(finish)||!Number.isFinite(pct)||pct<0||pct>100){alert("Invalid date/progress in simulated editor.");return false}
+t.owner=owner;t.end=finish;t.status=status;t.pct=pct;if(update)state.demoEntries.push({id:t.id,text:"Demo edit · "+update});state.editing=false;if(!filterTasks().some(function(x){return x.id===t.id})){state.filter="all";state.owner="all";state.workstream="all"}render();return true}
+document.querySelectorAll("[data-view]").forEach(function(el){el.addEventListener("click",function(){var view=el.dataset.view;requestNavigation(function(){state.view=view;if(state.view==="b"){ensureSelection();state.listScroll=0}render()})})});
+document.querySelectorAll("[data-stage]").forEach(function(el){el.addEventListener("click",function(){if(!allowNavigate())return;state.stage=el.dataset.stage;render()})});
+ensureSelection();render();
+})();
+
+</script>
+</body>
+</html>

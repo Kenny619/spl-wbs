@@ -1,0 +1,131 @@
+# SPT-WBS UI Guideline — draft 1.4
+
+**State:** PROPOSED, 2026-11-07. These values are candidate guardrails, not adopted token changes. Approved v18 remains the live development baseline until separately superseded.
+
+## 1. Information architecture
+- Treat **Schedule** (hierarchical grid + synchronized timeline) as the provisional primary workspace. Keep a contextual task inspector/editor, with History, Reports, Settings, project onboarding and management operations reachable as subordinate destinations or tools. Validate against primary personas before freezing.
+- Keep context through filter, edit and detail transitions; never obscure the selected task and its place in the hierarchy without a compelling reason.
+- Cluster commands by user job and frequency: navigation, finding/filtering, scheduling/inspection, editing, and system/project settings. Avoid the all-controls-at-once header pattern.
+- Promote alerts that result in action. “Needs attention” should expose affected tasks with a one-action filter or direct navigation, not merely a static number (Issue #17).
+- **Weekly meeting structure:** prepare and prioritize exceptions *before* the call; discuss across all workstreams at the beginning, then follow workstream-grouped WBS hierarchy for routine progress **including relevant field/data-quality checks inline**. **No separate Integrity view** unless a materially different workflow is evidenced. Present complementary Exception/Workstream navigation paths into the **same underlying tasks**, not separate task repositories. Do not silently equate calculated 'Needs Attention' with curated meeting flags.
+- Discussion/review status is distinct from actual task status. If concepts such as 'discussed this meeting' or saved agenda are proposed, they must not silently write new workbook fields or alter TaskStatus without a separately approved functional contract.
+- **Persistent risk monitoring:** show automatically detected schedule risks and manually flagged contextual risks as independent sources. Under Watch must survive meetings and discussion; it may clear only once all active sources resolve and delivery health is Green (exact health definition pending approval). A task with green-looking dates is not necessarily healthy when a contextual risk remains; the UI must never imply otherwise. See [Risk Watch Model](05_RISK_WATCH_MODEL.md).
+- **Replan and commitment distinction:** routine task Save is not proof that a revised external commitment was accepted. Compare agreed vs planned dates contextually; offer proportional acceptance flows (operator records routine acceptance, material changes need evidence of an authorized stakeholder decision) with no extra modal for ordinary editing. Pending commitment acceptance should remain visible without pretending Save failed. All materiality and evidence rules remain proposed until a separate functional contract is approved.
+- Do not reserve large permanent screen area for low-action-value KPIs. The schedule should have the largest useful working region at common desktop viewports.
+
+## 2. Text, spacing and density — candidate design tokens
+**Review disposition:** the token values below are *sound starting hypotheses*, **not approved numbers**. Do not freeze font sizes, row heights, spacing, density modes or control dimensions until they are assessed together in realistic, holistic interface mocks with editing, reviewing, overlays, dialogs and meaningful sample data. Isolated typography or component samples are insufficient.
+- Use a system-compatible sans serif with tabular numerals for dates, WBS and numeric columns. Proposed working baseline: regular body **14px**, grid **13–14px**, secondary metadata **12–13px** (avoid essential data below 12px). Validate at Windows Edge scaling and 125–200% zoom.
+- Establish a consistent 4px spacing grid with purposeful 8/12/16/24px relationships. Don't use identical spacing blindly where content grouping requires variation.
+- Candidate grid row heights: standard 40–44px, optional compact 34–38px after accessibility testing. Preserve visible hierarchy indentation and line alignment.
+- Candidate interactive targets: prefer at least 32px in high-density desktop controls, 40–44px for primary actions; WCAG 2.2 AA target-size minimum is 24×24 CSS pixels subject to stated exceptions/spacing.
+- Avoid arbitrary fixed-height schedule regions that squander vertical space. Candidate test viewports include constrained laptop (e.g., 1366×768), 1440×900, 1920×1080 and browser zoom; validate actual corporate laptop viewport, scaling and Edge chrome rather than assuming those resolutions.
+- Evaluate **whole-screen readability**: whether hierarchy, column width, dates, task titles, bars, action hierarchy and simultaneous edit states work *together*. Judge layout in situ; type-size adequacy cannot be decided from a table of token values alone.
+
+## 3. Corporate-office viewing contexts — requirements to validate
+**Owner workflow evidence:** weekly status calls begin with pre-flagged, prioritized exceptions across workstreams, then proceed by workstream/WBS to review updates and record integrity. Calls commonly edit existing tasks (append Updates; change dates, status, owner) while progressing entity by entity. Leadership calls mainly present progress, next milestones and flagged risks. Task creation is generally deferred until after the meeting, based on separate notes. See [meeting workflows / viewport study](04_MEETING_WORKFLOWS_AND_VIEWPORTS.md).
+- **Laptop work/edit:** favor space-efficient scanning, persistent WBS/Gantt synchronization, task context, keyboard shortcuts and visible save/conflict feedback. Avoid gratuitous empty space or oversized surfaces that squeeze actual schedule content.
+- **Same-screen discussion:** make a referenced task and the corresponding bar/row easy to follow as attention shifts between participants; controls should not compete with the schedule.
+- **Conference-room monitor:** validate at representative audience viewing distances, including whether dates, task names, milestone labels, alerts and focused items can be read without zooming the whole desktop.
+- **Video-call screen share:** validate at constrained remote-window sizes, common video-call downscaling and compressed imagery. Don't depend on fine hairlines, subtle hue differences, tiny labels, hovering, or precise cursor position to communicate meaning; support an obvious discussion/focus state.
+- **Current concept comparison:** (A) schedule-centered workbench, (B) two-column Meeting Guide (agenda + one selected-task surface, **Edit task** reveals fields inline), and (C) a **Present** reading treatment inside the existing Output Reports concept. Leadership presentation should **not** become another independent report engine. EMV-REPORT-1.0's **plain-text preview/copy** remains frozen; any presentation treatment is a proposed future UI enhancement to be scoped separately. Choose only after holistic mock evaluations. Full-screen mode alone is not evidence of better comprehension.
+- For shared-screen scenarios, evaluate the visibility and control of editing affordances; do not assume the presenter needs to change tasks while the audience watches. Any display adaptation must be reversible, discoverable and must not silently modify workbook content.
+
+### Date and working-day semantics (DES-003 exploration)
+- For meetings and reports, emphasize **planned finish date and working days remaining**; this is calendar time to deadline, **not outstanding effort or task completion**.
+- Reuse one defined project working calendar for countdown, Gantt holidays, blackout dates and schedule-risk signals once its contract is approved. Do not confidently show an unqualified number if calendar/holiday/blackout context is unknown.
+- Use Gantt bars for actual **scheduled span**, not fabricated progress fill. Render progress completion only from an eligible, trustworthy source and label its meaning.
+- The DES-003 date-only sample calendar excludes weekends, **official Japan Nov 03 and Nov 23, 2026 holidays**, and explicitly configured synthetic project blackouts **Nov 12 and Nov 20**; the meeting date defaults to simulated Nov 09. These are demo assumptions, not a complete production calendar engine or an approved project-settings schema. Project blackout persistence is a future Issue #20.
+
+### Meeting and reporting information hierarchy — proposed DES-003 rules
+- Give more horizontal area to an **actionable task list** (task/WBS, workstream, owner, status, finish, working days) while keeping the selected detail compact and edit-in-place.
+- Filters should reflect the operator's immediate question: Exceptions / All workstreams / Due Today / Next <5 working days; intersect with workstream and owner. Preserve true task identity and avoid meaningless count widgets as navigation.
+- Show both **predecessors and dependent successors**, with descriptive clickable links to the corresponding task; distinguish navigation from editing a dependency relationship. Follow stable ID relations, not name matching.
+- For stakeholder reports, prioritize **what changed** and decision-relevant dates. A proposed weekly report may surface completed, added, new risk and cleared watch lifecycle events over a default seven-date period; do not imply those event sources exist under the currently frozen History contract.
+- Latest Status task lists should group by workstream and show owner beside each task; preserve nonredundant Workstream heading format required by Issue #7.
+- Explicitly separate **proposal versus frozen requirement** where stakeholders request changing the approved Output Report contract, especially Save-count removal and lifecycle events absent from current History schema.
+
+### Compact meeting view and calendar-day language — DES-004 design direction
+- Keep a **single desktop top-level header** containing application, project context, current review mode and relevant controls; no separate oversized project-context header row.
+- Preserve a meaningful split between **filterable task list** and **selected details**. On desktop, scrolling through many workstream tasks must **not move the selected detail offscreen**. The outer meeting page remains fixed, task list scrolls independently, and list scroll position survives selection changes. Extremely long detail may scroll internally rather than clip; responsive stacked views may use page scrolling.
+- Avoid nonfunctional concept-comparison cards or redundant tutorial content in the live work area.
+- Make **Workstream name and WBS code** prominently visible inside selected task details in both view/edit states, rather than relying solely on a small panel header or the list.
+- User-facing task and report countdown labels use **“days”** for brevity. The measured quantity is still **working days per project calendar** (excluding weekends/holidays/blackouts), **not elapsed calendar days and not remaining effort**. A visible or discoverable calendar legend and accessible explanation must preserve that meaning, especially across filter labels such as `Due in <5 days`.
+- Treat the 60px top-header size and CSS scroll strategy in DES-004 as **mock hypotheses**, not approved design tokens. Validate real laptop scaling, keyboard/trackpad behavior, long task content, and video-call readability before freezing.
+
+### Uniform full-height workspaces and stable navigation — DES-005
+- Schedule and Meeting Review must use the same available full viewport height beneath the common header; do not shorten selected-detail or list panels when switching modes. Each work area scrolls **within its own panel** when content exceeds the viewport.
+- **Schedule:** the WBS/Gantt grid and selected detail are equal-height regions; the table/timeline scrolls within its container, and selected detail can scroll internally for lengthy updates.
+- **Meeting:** retain the previously approved list/detail proportion. Task-list filters and column headings remain visible; only the task rows scroll. Details remain in place and fill the full available panel height.
+- **Reports:** retain fixed report actions, period and mode controls above a dedicated scrollable report body. The parent page must not scroll on normal desktop widths, so navigation remains visible while reading long reports.
+- **Header navigation:** use a fixed desktop layout track for global view-switching buttons. Reserve a non-shifting area for Schedule-only subnavigation when other views are shown; project/context text changes must not change button positions.
+- **Responsive behavior:** when viewport width or zoom prevents a usable split layout, allow natural page scrolling and predictable header wrapping instead of clipping or trapping controls. The exact grid/viewport values are design hypotheses until browser/owner acceptance.
+- Preserve independent scroll offsets across task selection and sensible reset for filter/mode changes, with keyboard focus and visible scrollbar affordances. See [DES-005 study](10_DES005_UNIFIED_HEIGHT_AND_NAV.md).
+
+### Stable selected-task panel width across working views (DES-006)
+- At a given desktop viewport width, **Schedule and Meeting Review must use the same selected-task inspector column width**, as well as the already consistent panel heights. Switching views should not horizontally move either edge of the selected-task detail panel.
+- A shared two-column CSS track or shared layout token should drive both surfaces; do not maintain divergent per-view percentages or independent hardcoded widths.
+- The current mock's right track is `minmax(365px,39%)` alongside a flexible schedule/list column at >970 CSS px, **proposed only** until actual laptop/zoom rendering is verified. Responsive stacked layouts remain permitted when view width is constrained.
+- Preserve all DES-005 global/report navigation position, internal scrolling, meeting filters, task details and Reports behavior. See [DES-006 rationale](11_DES006_CONSISTENT_DETAIL_WIDTH.md).
+
+### History, Settings and safe draft navigation — proposed D3 integration
+- Keep DES-006's **primary Schedule / Meeting Review / Reports** navigation coordinates fixed. Global Change History and personal Settings can be secondary destinations (for example a reserved fixed-position More menu) only if discoverable, keyboard operable, and compatible with the frozen #5/#6 contracts. Task-specific History should be reachable directly from selected-task details without creating a duplicate top-level History button.
+- Show selected-task historical changes in a **read-only Save-grouped view**, using the immutable task identity/snapshots from UpdateHistory; never reconstruct actual history from task Updates notes, or imply synthetic sample rows are live.
+- Any actual changed draft must be protected on task/view/workbook navigation by **Save / Discard / Cancel**, with Cancel preserving the draft and focus, and failed/uncertain Save never proceeding as successful. **No-op editing must not trigger unnecessary warning**. This requires real data/transaction testing under #3/#4, not only browser-state simulation.
+- Settings must distinguish date-only planned values (no timezone shift) from UTC instants (user-chosen timezone), browser-local display preferences from project-owned calendar settings, and confirmation of Reset. Light/Dark/System and column selection must be fully validated together later, not inferred from design-only controls.
+- [DES-007](13_DES007_HISTORY_SETTINGS_AND_DRAFT_STATES.md) demonstrates secondary navigation and sample state transitions. It is a **proposal**, not an implemented or complete contract-compliant History/Settings/Save flow.
+
+### Settings side drawer, action-level History and reporting period — DES-008
+- Replace generic top-right More with a discoverable **Settings** action in the reserved stable header position. Put **Change History within the Settings navigation**; retain direct task-history access from the selected task.
+- Use a **right slide-out pane** for Settings and both global/task History. The pane has persistent navigation/Close, independent internal scrolling, and expandable section structure. No centered Settings/History overlay. A separate centered *Save/Discard/Cancel* decision is still appropriate for dirty editing when a real navigation would discard work.
+- History is a readable chronological **one-row-per-saved-field-action log** (timestamp, Task/WBS, action and before→after). Preserve shared `ChangeSetID` association even without large Save-level cards. A user may filter tasks and action types without mutating audit source. Historical WBS/title snapshots must remain immutable; current workstream may be shown for orientation only if labelled current.
+- Use the **existing app favicon** rather than a typographic W placeholder. Distinguish product/build package version from the accepted UI visual baseline (repo package currently `0.0.0` placeholder; current approved UI target is `v18`). Production should show independently trustworthy build/release provenance.
+- The proposed default weekly Update Report period is the selected review date and the **same weekday seven calendar days earlier, both dates inclusive (8 dates)**. Respect custom periods and frozen Issue #7 timezone/committed-only/read-only/snapshot semantics; this UI preference does not amend the frozen contract without new Owner change control.
+- DES-008 is a design simulator. Actual drawer animation, keyboard focus, system theme/persistence, history file validation, report correctness and owner visual acceptance require separate evidence. See [DES-008 decision study](14_DES008_SETTINGS_HISTORY_DRAWER_AND_PERIOD.md).
+
+### Lean app identity and single History entry — DES-009
+- Keep the authentic application icon as the **only brand element in the top-left header**. Do not repeat `SPT–WBS v0.0.0` or prototype status text beside it. Retain a clear accessible icon label.
+- Preserve app/build version provenance in **Settings → About this application**, separate from the approved UI visual baseline; do not infer the package placeholder is a release number.
+- Settings should offer **one top-level Change History tab** inside its right-side pane, not a duplicate History section and button inside Preferences. Preserve direct task-specific History navigation to the same read-only log.
+- Adjust the header's brand grid track without changing view-dependent nav positions. Keep fixed header navigation, same inspector widths/heights and panel-only scroll behavior across Schedule, Meeting, Reports.
+- DES-009 is the current **design proposal**; browser screenshots/visual UAT and any production implementation still require separate evidence and authority.
+
+### Local Exceptions / Workstreams navigation — DES-010
+- Place Schedule's **Exceptions | Workstreams** scope switch **inside the Gantt/WBS panel heading**, adjacent to the chart title rather than in the fixed global application header. Keep both scopes contextually close to the schedule rows.
+- Preserve the stable **Schedule / Meeting Review / Reports** primary header control coordinates across all three views. If needed, reserve a blank inert header grid track rather than repurposing the slot in a way that shifts navigation between views.
+- The local control appears only when the Schedule work area is present and must be wired on every dynamic render. Indicate the active scope via visual state and `aria-pressed`. It is not a new task entity, status, filter or saved workbook value.
+- Switching the scope during an actual edited draft must use the same Save/Discard/Cancel decision protection as other task navigation. Keep schedule scroll containment, full-height panels, identical selected-inspector width and right-hand Settings/History drawer from DES-009.
+- On narrow widths, let the panel header wrap its local controls rather than moving them back to the top header. See [DES-010 review record](17_DES010_GANTT_LOCAL_SCOPE.md).
+
+## 4. Typography, color and meaning
+- Text contrast: WCAG 2.2 AA **4.5:1** for normal text, **3:1** for large text; meaningful UI graphic contrast **3:1** where applicable.
+- Keep semantic status treatments separate from workstream identity colors and from calendar overlays. Use readable labels or shapes alongside color.
+- Existing 15-slot workstream palette is the **approved v18 implementation mapping**. Do not change it in ongoing development. Explore improved distinguishability later under explicit new design approval.
+- Define light/dark semantic tokens for surface, ink, border, focus, muted text, positive, warning, critical, selected, disabled, workstream identity and calendar overlays; validate both, not just invert hues.
+- Use restrained shadows, radius and animation to clarify layering/interaction; avoid decoration-only motion. Honor reduced-motion preference.
+
+## 5. Controls and behavior
+- Prefer **icon + text** for novel or consequential commands. Use icon-only for well-understood compact actions only when accessible label, tooltip and discoverability are established.
+- **Switch:** immediate binary state (e.g., show/hide a display layer if it applies instantly). **Checkbox:** selection of multiple values, especially filter lists. **Radio/segmented control:** mutually exclusive modes (e.g., timeline scale). Use labels that state outcome.
+- For WBS relationship editing, show the intended new parent/dependency before save; do not confuse reparenting with finish-to-start links. Drag-only interaction requires a keyboard or non-drag alternative.
+- Define full state coverage: empty, loading, invalid workbook, permission needed, stale source, unsaved draft, saving, success, partial data, conflict, recovery and offline. Each state must say what happened and what the user can do next.
+- Avoid chains of modal dialogs for normal workflows. Keep confirmations for loss, collision or irreversible operations; restore focus after dismissals. Prefer inline reversible feedback for routine changes.
+- Search/filter chips or indicators must make active constraints visible, editable and easy to clear. Preserve task ancestor context.
+
+## 6. Grid and Gantt ergonomics
+- Maintain visual row alignment and synchronized vertical movement between table and timeline; preserve keyboard operation, focus and scroll orientation.
+- Numeric and date columns align consistently. Headers and values avoid truncation of meaning-critical status or date fields; reveal full values by accessible means.
+- Schedule semantics remain distinct: hierarchy indentation/chevrons, predecessor arrows, milestone diamonds, workstream color, progress fill, today, weekends, public holidays, PGCM and blackout.
+- Define layer precedence and a lightweight explanation/legend for overlapping schedule overlays. Hover-only meaning is insufficient.
+- Task edit and history must preserve workbook provenance, change-set relationships and a clear committed-vs-draft distinction.
+
+## 7. Provisional quality gates for the later overhaul
+**Sizing and information budget study (nonbinding):** working review at ~1366×768 with 15–16px primary task type and ~8–12 navigable rows; leadership at ~1280×720 usable canvas with 20–24px featured task type and ~5–7 featured items; 1920×1080 video output where available. These are **candidate values**, not design approval. Validate on actual Windows laptops, room displays and reduced participant video windows.
+1. WCAG 2.2 AA-focused keyboard/contrast/reflow review and data-grid APG assessment.
+2. **Holistic full-workspace** reviews of proposed type, spacing and density at actual corporate laptop sizes and zoom, and on shared meeting displays, both light and dark. Do not approve design tokens before this gate.
+3. Viewing evaluations on a conference display and a video-call screen share, checking legibility at distance, compression tolerance, selected-item focus and absence of hover-only information.
+4. Scenario walkthroughs for opening a workbook, finding a blocked task, editing and saving, inspecting history, generating a report, adding/reparenting a task and starting a new project.
+5. Quantitative task completion, misclick and error evidence versus present baseline.
+6. Independent technical feasibility, regression and security review after design concept approval.
+
+References: [WCAG 2.2](https://www.w3.org/TR/WCAG22/), [ARIA APG Grid](https://www.w3.org/WAI/ARIA/apg/patterns/grid/), [Fluent 2 Layout](https://fluent2.microsoft.design/layout), [GOV.UK Checkboxes](https://design-system.service.gov.uk/components/checkboxes/).
