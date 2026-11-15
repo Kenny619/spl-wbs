@@ -18,13 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Verify source is identical to accepted main, except one packaging workflow
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "8b4cb6b9239ebaf7fd8f3df6cf35df3dc5e91001"
-          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/stage-a-mru-pack.yml"
+          git merge-base --is-ancestor "8b4cb6b9239ebaf7fd8f3df6cf35df3dc5e91001" HEAD
+          test "$(git diff --name-only 8b4cb6b9239ebaf7fd8f3df6cf35df3dc5e91001 HEAD)" = ".github/workflows/stage-a-mru-pack.yml"
           echo "MRU app source matches accepted main 8b4cb6b9239ebaf7fd8f3df6cf35df3dc5e91001 exactly"
       - uses: actions/setup-node@v4
         with:
