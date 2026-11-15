@@ -104,9 +104,6 @@ export class ManagedEditor {
       rerender: () => this.render(),
     });
     doc.body.classList.add("spt-managed");
-    // The Schedule inspector is persistent in DES-012; close via Escape, not a
-    // redundant top-right button. Keep the read-only baseline untouched.
-    doc.getElementById("close")?.remove();
     const topbar = doc.querySelector(".topbar");
     const actions = doc.querySelector(".top-actions");
     if (!topbar || !actions) throw new Error("Approved v18 layout is missing required UI regions.");
@@ -270,6 +267,11 @@ export class ManagedEditor {
       hasUnsavedDraft: this.isDirty(),
     }));
     mountManagedShell(doc, controller, this.reports, this.settings, (action) => this.guard(action));
+    // Managed shell needs the original close node to construct the inspector.
+    // Remove only after its one-time structural initialization has completed;
+    // the approved managed Schedule keeps Task Detail persistently accessible.
+    // The original read-only viewer retains its Close control.
+    doc.getElementById("close")?.remove();
     this.refreshMeeting = mountMeetingReview(doc, controller, this.reports, () => this.watchProjection, action => this.guard(action));
     controller.subscribe(() => this.render());
     doc.defaultView?.addEventListener("beforeunload", (event) => {
