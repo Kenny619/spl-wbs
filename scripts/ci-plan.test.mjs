@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {classifyCI} from "./ci-plan.mjs";
+import {classifyCI,DUPLICATE_PR_BASES,equivalentTriggeredPR,validPreviewHTML} from "./ci-plan.mjs";
 const push=(branch="feature/work")=>({eventName:"push",branch});
 test("docs-only feature push skips expensive jobs",()=>{
   const p=classifyCI(["README.md","docs/guides/example.md"],push());
@@ -99,4 +99,56 @@ test("planner failure falls back to full browser suite with unchanged required n
   const browser=readFileSync(new URL("./run-browser-tier.mjs",import.meta.url),"utf8");
   assert.ok(browser.includes('process.env.CI_BROWSER_SCOPE||"full"'));
   assert.ok(browser.includes('scope!=="full"'));
+});
+
+test("standalone design HTML and static preview assets skip expensive draft checks",()=>{
+  for(const file of ["design/concepts/DES-012-review.html","docs/prototypes/Report-1.1.html","design/concepts/preview.css"]){
+    for(const context of [push(),{eventName:"pull_request",baseBranch:"main",isDraft:true}]){
+      const plan=classifyCI([file],context);
+      assert.equal(plan.tier,"docs-only",file);
+      assert.equal(plan.fast,false,file);
+      assert.equal(plan.browser,false,file);
+    }
+  }
+});
+test("preview-only shortcut is forbidden on main and ready PR or with source changes",()=>{
+  for(const file of ["design/concepts/preview.html","docs/prototypes/preview.html"]){
+    assert.equal(classifyCI([file],push("main")).browserScope,"full");
+    assert.equal(classifyCI([file],{eventName:"pull_request",baseBranch:"main",isDraft:false}).browserScope,"full");
+  }
+  for(const file of ["design/concepts/helper.js","docs/prototypes/runtime.ts","docs/specifications/EMV.md","src/managed/directSave.ts"]){
+    assert.equal(classifyCI([file],push()).browserScope,"full",file);
+  }
+  assert.equal(classifyCI(["design/concepts/preview.html","src/managed/main.ts"],push()).browserScope,"full");
+});
+test("preview markup validator rejects malformed standalone HTML",()=>{
+  assert.equal(validPreviewHTML('<!doctype html><html><body>Mock</body></html>'),true);
+  assert.equal(validPreviewHTML("<html><body>No doctype</body></html>"),false);
+  assert.equal(validPreviewHTML("<!doctype html><html><body>Missing close"),false);
+});
+test("duplicate PR allowlist exactly mirrors configured workflow PR trigger bases",()=>{
+  const workflow=readFileSync(new URL("../.github/workflows/ci.yml",import.meta.url),"utf8");
+  const line=workflow.match(/pull_request:\s*\n(?:[^\n]*\n)*?\s*branches: \[([^\]]+)\]/);
+  assert.ok(line,"Expected an explicit pull_request base allowlist");
+  assert.deepEqual([...DUPLICATE_PR_BASES],line[1].split(",").map(s=>s.trim()));
+});
+test("feature duplicate requires the exact open PR SHA, source branch, repo and eligible base",()=>{
+  const sha="pinned-sha",branch="feature/increment",repo="Kenny619/spl-wbs";
+  const pr=(base="main",overrides={})=>({
+    state:"open",base:{ref:base},head:{sha,ref:branch,repo:{full_name:repo}},...overrides
+  });
+  for(const base of DUPLICATE_PR_BASES)
+    assert.equal(equivalentTriggeredPR([pr(base)],sha,branch,repo),true,base);
+  for(const base of ["feature/unlisted-base","staging","other"])
+    assert.equal(equivalentTriggeredPR([pr(base)],sha,branch,repo),false,base);
+  assert.equal(equivalentTriggeredPR([pr("main",{state:"closed"})],sha,branch,repo),false);
+  assert.equal(equivalentTriggeredPR([pr("main",{head:{sha:"different",ref:branch,repo:{full_name:repo}}})],sha,branch,repo),false);
+  assert.equal(equivalentTriggeredPR([pr("main",{head:{sha,ref:"another",repo:{full_name:repo}}})],sha,branch,repo),false);
+  assert.equal(equivalentTriggeredPR([pr("main",{head:{sha,ref:branch,repo:{full_name:"fork/repo"}}})],sha,branch,repo),false);
+  assert.equal(equivalentTriggeredPR(undefined,sha,branch,repo),false);
+});
+test("explicit full-ci still overrides a positively matched duplicate",()=>{
+  const plan=classifyCI(["design/concepts/mock.html"],{...push(),duplicate:true,forceFull:true});
+  assert.equal(plan.browserScope,"full");
+  assert.equal(plan.fast,true);
 });
