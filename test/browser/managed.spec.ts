@@ -96,6 +96,30 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
   await expect(page.locator(".source-record")).toBeHidden();
 }
 
+test("Stage B attention summary filters actual WBS rows and restores the previous status scope", async ({ page }) => {
+  await openManaged(page);
+  await page.keyboard.press("Escape");
+  const blocked = page.getByRole("button", { name: "Filter WBS to Blocked tasks" });
+  const risk = page.getByRole("button", { name: "Filter WBS to At Risk tasks" });
+  await expect(blocked).toBeVisible();
+  await expect(risk).toBeVisible();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await blocked.click();
+  await expect(blocked).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await risk.click();
+  await expect(risk).toHaveAttribute("aria-pressed", "true");
+  await expect(blocked).toHaveAttribute("aria-pressed", "false");
+  await risk.click();
+  await expect(risk).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  // A second user choice via the existing status filter should break ownership
+  // of the attention shortcut instead of reverting that newer choice.
+  await blocked.click();
+  await page.getByRole("button", { name: "Filter WBS to At Risk tasks" }).click();
+  await expect(risk).toHaveAttribute("aria-pressed", "true");
+});
+
 test("Stage A Recent Projects shows verified workbook and respects unsaved Cancel before reopening",async({page})=>{
   await openManaged(page);
   const menu=page.locator(".managed-project-menu");
