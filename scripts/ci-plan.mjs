@@ -7,7 +7,7 @@ import {execFileSync} from "node:child_process";
 import {resolve} from "node:path";
 import {pathToFileURL} from "node:url";
 
-const critical=/^(?:\.github\/|scripts\/|docs\/verification\/|docs\/specifications\/|docs\/prototypes\/|design\/concepts\/|src\/data\/|src\/main\.ts$|src\/config\/|src\/managed\/(?:directSave|preflight|projectData|workbookCandidate|save|history)|test\/fixtures\/|test\/browser\/release\.spec\.ts)/;
+const critical=/^(?:\.github\/|scripts\/|docs\/verification\/|docs\/specifications\/|docs\/prototypes\/|design\/concepts\/|src\/data\/|src\/main\.ts$|src\/config\/|src\/managed\/(?:directSave|preflight|projectData|workbookCandidate|save|history|recoveryUi|watchUi|watchProjection|draft)|test\/fixtures\/|test\/browser\/release\.spec\.ts)/;
 const regularDocs=/^(?:README\.md|CHANGELOG\.md|LICENSE(?:\.md)?|docs\/|design\/|.*\.(?:png|jpe?g|gif|webp|svg|md)$)/i;
 
 function browserFor(file) {
@@ -29,7 +29,7 @@ function browserFor(file) {
 export function classifyCI(files,ctx={}){
   const paths=[...new Set(files.map(f=>f.replaceAll("\\","/")))];
   const docsOnly=paths.length>0&&paths.every(f=>regularDocs.test(f)&&!critical.test(f));
-  if(ctx.duplicate&&ctx.eventName==="push"&&ctx.branch!=="main")
+  if(ctx.duplicate&&!ctx.forceFull&&ctx.eventName==="push"&&ctx.branch!=="main")
     return {tier:"duplicate-pr",fast:false,browser:false,browserScope:"none",packaging:false};
   const protectedMain=ctx.eventName==="push"&&ctx.branch==="main";
   const readyPR=ctx.eventName==="pull_request"&&ctx.baseBranch==="main"&&!ctx.isDraft;

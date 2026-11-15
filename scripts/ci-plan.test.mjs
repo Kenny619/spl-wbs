@@ -24,7 +24,8 @@ test("managed display edits select real managed suite",()=>{
 });
 test("save, import, CI, specification and unknown changes fail closed",()=>{
   const paths=["src/managed/directSave.ts","src/data/excelReader.ts",
-    ".github/workflows/ci.yml","docs/specifications/EMV.md","src/unmapped/new.ts","scripts/new-build-generator.mjs"];
+    ".github/workflows/ci.yml","docs/specifications/EMV.md","src/unmapped/new.ts","scripts/new-build-generator.mjs",
+    "src/managed/recoveryUi.ts","src/managed/watchUi.ts","src/managed/watchProjection.ts","src/managed/draft.ts"];
   for(const path of paths)assert.equal(classifyCI([path],push()).browserScope,"full",path);
 });
 test("shared UI calendar model and boot changes keep managed browser safety coverage",()=>{
@@ -45,6 +46,20 @@ test("duplicate push only skipped with positive PR evidence",()=>{
   const b=classifyCI(["src/ui/grid.ts"],{...push(),duplicate:false});
   assert.equal(b.browser,true);
   assert.equal(classifyCI(["README.md"],{...push("main"),duplicate:true}).tier,"full");
+});
+test("duplicate feature push cannot suppress explicit full-ci requirement",()=>{
+  const forced=classifyCI(["src/ui/grid.ts"],{...push(),duplicate:true,forceFull:true});
+  assert.equal(forced.tier,"full");
+  assert.equal(forced.fast,true);
+  assert.equal(forced.browserScope,"full");
+  assert.equal(forced.packaging,true);
+  const ordinary=classifyCI(["src/ui/grid.ts"],{...push(),duplicate:true,forceFull:false});
+  assert.equal(ordinary.tier,"duplicate-pr");
+});
+test("manual dispatch with a false flag still fails closed on unknown diff",()=>{
+  const plan=classifyCI(["UNKNOWN_DIFF"],{eventName:"workflow_dispatch",fullRegression:false});
+  assert.equal(plan.tier,"full");
+  assert.equal(plan.browserScope,"full");
 });
 test("unknown diff defaults full and no false pass",()=>{
   assert.equal(classifyCI([],push()).tier,"full");
