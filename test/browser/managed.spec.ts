@@ -44,7 +44,7 @@ test.beforeAll(async () => {
   ))).toString("base64");
 }, { timeout: 120000 });
 
-async function openManaged(page: import("@playwright/test").Page, encoded = base64) {
+async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1) {
   await page.addInitScript(({ encoded }) => {
     const decoded = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
     const files = new Map<string, Uint8Array>([["synthetic-demo.xlsx", decoded]]);
@@ -85,7 +85,7 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
   await expect(page.locator("#title")).toHaveText(encoded === base64 ? "synthetic-demo" : "Synthetic shared project");
-  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(page.locator(".task-row")).toHaveCount(expectedRows);
   await page.locator(".task-row").first().click();
   await expect(page.locator("#panel")).toHaveClass(/open/);
   await expect(page.getByRole("button", { name: "Edit task" })).toBeEnabled();
@@ -1904,7 +1904,7 @@ test("owner UAT: Meeting Exceptions combines recorded Watch, At Risk, Blocked an
     "2026-11-01", "2026-12-01"]);
   sheet.addRow([504, "Overdue active task", "1.5", "Task", 25, "In Progress", "Owner D", "",
     "2026-10-01", "2026-11-01"]);
-  await openManaged(page, Buffer.from(await book.xlsx.writeBuffer()).toString("base64"));
+  await openManaged(page, Buffer.from(await book.xlsx.writeBuffer()).toString("base64"), 4);
   await page.getByRole("button", { name: "Meeting Review", exact: true }).click();
   const agenda = page.getByRole("region", { name: "Meeting agenda", exact: true });
   await expect(agenda.locator('.managed-meeting-task[data-task-id="501"]')).toContainText("Under Watch");
