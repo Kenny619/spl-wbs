@@ -325,6 +325,35 @@ test("Settings relocates existing v18 columns, persists timezone and dark theme 
   await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "dark");
 });
 
+test("Stage B PGCM highlight stays in local Settings and never writes Excel", async ({ page }) => {
+  await openManaged(page);
+  await page.keyboard.press("Escape");
+  const initial = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  const toggle = settings.getByRole("checkbox", { name: "Highlight PGCM dates" });
+  await expect(toggle).toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "on");
+  await toggle.uncheck();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "off");
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await expect(settings.getByRole("checkbox", { name: "Highlight PGCM dates" })).not.toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "off");
+  page.once("dialog", dialog => void dialog.accept());
+  await settings.getByRole("button", { name: "Reset to defaults" }).click();
+  await expect(settings.getByRole("checkbox", { name: "Highlight PGCM dates" })).toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "on");
+  // Reload's independent fake directory has identical original contents: no Save was requested.
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(initial);
+});
+
 test("Settings System appearance follows device and Reset requires confirmation; workbook remains unchanged", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await openManaged(page);
