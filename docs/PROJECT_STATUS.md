@@ -5,7 +5,7 @@
 **Maintained by:** Delivery Management Office (DMO)  
 **Purpose:** The business-facing source of truth for completed milestones, current priorities, future deliverables, decisions and material risks. Technical detail stays in linked GitHub issues and pull requests.
 
-> **Overall status: STAGE A ACCEPTED. STAGE B IS THE NEXT DELIVERY PHASE — requirements and design preparation.** The core Excel-managed application works in the **tested personal Windows/Edge environment**. Corporate deployment, multi-user concurrency and product beta **have not been approved**.
+> **Overall status: STAGE A ACCEPTED. STAGE B ACTIVE — owner-approved direction, bounded development initiated (draft PRs; not accepted).** The core Excel-managed application works in the **tested personal Windows/Edge environment**. Corporate deployment, multi-user concurrency and product beta **have not been approved**.
 
 ## Executive snapshot
 
@@ -13,18 +13,18 @@
 |---|---|
 | **What are we building?** | An easy-to-use project schedule and work breakdown tool where an Excel workbook remains the project-owned source of truth. Project managers can maintain tasks, follow risks and prepare meeting reports; other users can review project progress. |
 | **What is complete?** | **Stage A — reliable Excel-managed foundation, ACCEPTED on 15 November 2026.** Workbook loading, editing, guarded saving, backups, project data, Calendar, Manual Under Watch, Meeting Review, Reports, and **five Recent Projects** passed the agreed personal-PC acceptance checks. The established read-only viewer is preserved. |
-| **Where are we now?** | **Stage B — everyday usability, preparation.** Priorities are a simpler top area, better prioritized notices, actionable “Needs Attention,” and an optional PGCM highlight control. Detailed Stage B design and feature acceptance remain to be agreed. |
+| **Where are we now?** | **Stage B — everyday usability, initiated.** Product Owner approved the proposed Stage B approach and four default design directions on 15 Nov. Documentation contract [PR #79](https://github.com/Kenny619/spl-wbs/pull/79) updated; PGCM display-only implementation started in draft [PR #80](https://github.com/Kenny619/spl-wbs/pull/80). No Stage B feature yet QA-verified or accepted. |
 | **What happens next?** | Deliver and accept Stage B, then **Stage C — create tasks and projects from within the app**, including practical templates. A separate Product Owner decision determines when controlled beta testing may begin **after A, B and C are accepted**. |
 | **Main dependencies?** | Corporate Edge file-access restrictions and two moderate dependency advisories remain outside Stage A personal-PC acceptance. Both must receive an appropriate disposition before any corporate rollout; shared-file concurrency must be separately demonstrated. |
 | **Delivery forecast?** | **No committed Stage B/C completion dates or reliable remaining-effort estimate** yet. Forecasts will be introduced only after their specifications and implementation scope are agreed. |
-| **Decision needed now?** | Review the bounded **Stage B usability direction** and approve its detailed design/acceptance contract before significant implementation. No repeated Stage A owner testing is needed without a functional change. |
+| **Decision needed now?** | **None for starting bounded development**: owner approved the Stage B approach and four design defaults. Later: inspect integrated Stage B interactions and decide acceptance/merge after independent QA. No repeated Stage A owner testing unless affected behavior changes. |
 
 ## Roadmap at a glance
 
 | Phase / milestone | What stakeholders gain | Status as of 15 Nov 2026 | Exit criteria / next gate |
 |---|---|---|---|
 | **Stage A — Excel Managed v1 foundation** | Reliable Excel-backed planning and reporting: task edits, Save/Save As, history, backups, recovery checks, shared Calendar/Watch, Meeting Review, Reports and quick recent-project switching | **ACCEPTED & INTEGRATED** | Owner E1–E17 and MRU-01–03 PASS, full merged-build CI PASS. Scoped to tested personal Windows/Edge with fictional local files; **not a corporate release** |
-| **Stage B — Everyday usability (v1.1)** | Less navigation and visual clutter; notices by importance; task-linked “Needs Attention”; PGCM highlight display preference; selected local preference refinements | **CURRENT — SCOPING / DESIGN** | Agree experience/acceptance spec for [#17](https://github.com/Kenny619/spl-wbs/issues/17), [#16](https://github.com/Kenny619/spl-wbs/issues/16) and bounded [#21](https://github.com/Kenny619/spl-wbs/issues/21); implement, independently verify and obtain owner acceptance |
+| **Stage B — Everyday usability (v1.1)** | Less navigation and visual clutter; notices by importance; task-linked “Needs Attention”; PGCM highlight display preference; selected local preference refinements | **ACTIVE — DESIGN APPROVED / DRAFT DEVELOPMENT** | Agree experience/acceptance spec for [#17](https://github.com/Kenny619/spl-wbs/issues/17), [#16](https://github.com/Kenny619/spl-wbs/issues/16) and bounded [#21](https://github.com/Kenny619/spl-wbs/issues/21); implement, independently verify and obtain owner acceptance |
 | **Stage C — Project authoring (v1.2)** | Add new tasks/entities and launch new projects using an empty workbook or practical preconfigured templates | **PLANNED — NOT STARTED** | Approve and deliver safe [entity creation #23](https://github.com/Kenny619/spl-wbs/issues/23) and [new-project onboarding #24](https://github.com/Kenny619/spl-wbs/issues/24); validate workbook integrity and owner workflow |
 | **Controlled beta — Go/no-go** | A small group of users tests end-to-end viewing, editing, reporting and project creation in a supported environment | **FUTURE DECISION — NOT AUTHORIZED** | Stages **A+B+C accepted**, supported-environment and security assessment, a verified rollback-capable distribution, and separate owner authorization. No automatic beta launch |
 | **Stage D — Additional project configuration** | Broader shared project settings, including multiple blackout periods and their ownership rules | **LATER / DEFERRED** | New functional contract and validated workbook-data behavior; **not required to enter beta** |
@@ -53,7 +53,7 @@
 
 ## Next outcomes and decisions
 
-1. **Stage B functional/design contract.** Define the streamlined top area, notice placement, useful “Needs Attention” navigation/filtering, local PGCM toggle and any limited MRU refinements. Use the approved DES-012 Review08 as the cross-view visual baseline; avoid piecemeal redesign. **Owner approval of the bounded Stage B contract** is the next meaningful decision.
+1. **Stage B owner-approved direction (15 Nov).** The four proposed UI defaults were approved; [draft requirements PR #79](https://github.com/Kenny619/spl-wbs/pull/79) records the implementation/acceptance boundaries. [Draft feature PR #80](https://github.com/Kenny619/spl-wbs/pull/80) starts the isolated browser-local PGCM toggle. Lean header, actionable Needs Attention and prioritized notices remain next. Avoid piecemeal redesign; DES-012 Review08 controls.
 2. **Stage B delivery and acceptance.** Implement the approved usability improvements, retain safe workbook behavior and accessibility, test the integrated build, then obtain Product Owner acceptance.
 3. **Stage C project authoring.** Progress from safe task creation to an empty-project workflow and validated project templates, with separate owner acceptance.
 4. **Beta readiness decision, not an automatic launch.** Review A–C evidence, supported devices, multi-user constraints, security, support and rollback before selecting a pilot.
