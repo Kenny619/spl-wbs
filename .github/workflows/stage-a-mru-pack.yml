@@ -46,7 +46,8 @@ jobs:
           import json
           from pathlib import Path
           d=json.loads(Path("PROVENANCE.json").read_text())
-          assert d["sourceCommit"] == "${GITHUB_SHA}", d
+          import os
+          assert d["sourceCommit"] == os.environ["GITHUB_SHA"], d
           assert d["pr"] == 78 and d["taskCount"] == 23
           assert d["ownerAccepted"] is False and d["securityWaiver"] is False
           content=Path("UAT_CHECKLIST.md").read_text()
