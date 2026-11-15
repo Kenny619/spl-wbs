@@ -224,11 +224,22 @@ export function mountManagedShell(
   const summaryCounts = doc.createElement("div");
   summaryCounts.className = "managed-schedule-summary-counts";
   const countBlocks = new Map<string, HTMLElement>();
+  const attentionButtons = new Map<"Blocked" | "At Risk", HTMLButtonElement>();
+  let activeAttention: "Blocked" | "At Risk" | null = null;
+  let previousAttentionView: { statuses: string[]; columns: string[] } | null = null;
   for (const [key, label] of [
     ["blocked", "Blocked"], ["risk", "At Risk"], ["milestone", "Open milestones"],
   ] as const) {
-    const countBlock = doc.createElement("div");
+    // Status counts navigate the REAL filtered WBS; milestones stay informational
+    // until a distinct milestone navigation contract is approved.
+    const countBlock = doc.createElement(key === "milestone" ? "div" : "button");
     countBlock.className = "managed-schedule-summary-item " + key;
+    if (countBlock instanceof HTMLButtonElement) {
+      countBlock.type = "button";
+      countBlock.setAttribute("aria-label", "Filter WBS to " + label + " tasks");
+      countBlock.setAttribute("aria-pressed", "false");
+      attentionButtons.set(label as "Blocked" | "At Risk", countBlock);
+    }
     const value = doc.createElement("strong");
     value.textContent = "0";
     const caption = doc.createElement("span");
@@ -236,6 +247,39 @@ export function mountManagedShell(
     countBlock.append(value, caption);
     summaryCounts.append(countBlock);
     countBlocks.set(key, value);
+  }
+  const syncAttentionButtons = () => {
+    const view = controller.getState().view;
+    if (activeAttention && (view.statuses.length !== 1 || view.statuses[0] !== activeAttention)) {
+      activeAttention = null;
+      previousAttentionView = null;
+    }
+    for (const [status, button] of attentionButtons) {
+      const active = activeAttention === status;
+      button.setAttribute("aria-pressed", String(active));
+      button.title = active ? "Clear " + status + " attention filter" : "Filter WBS to " + status + " tasks";
+    }
+  };
+  for (const [status, button] of attentionButtons) {
+    button.addEventListener("click", () => guard(() => {
+      const view = controller.getState().view;
+      if (activeAttention === status && previousAttentionView) {
+        const restore = previousAttentionView;
+        activeAttention = null;
+        previousAttentionView = null;
+        controller.patchView({ statuses: restore.statuses, columns: restore.columns });
+      } else {
+        if (!activeAttention) {
+          previousAttentionView = { statuses: [...view.statuses], columns: [...view.columns] };
+        }
+        activeAttention = status;
+        controller.patchView({
+          statuses: [status],
+          columns: view.columns.includes("status") ? [...view.columns] : [...view.columns, "status"],
+        });
+      }
+      syncAttentionButtons();
+    }));
   }
   overview.append(overviewHeading, summaryCounts);
   main.insertBefore(overview, workspace);
@@ -250,7 +294,9 @@ export function mountManagedShell(
     countBlocks.get("milestone")!.textContent = String(leaf.filter((task) => task.taskType === "Milestone").length);
   };
   controller.subscribe(syncOverview);
+  controller.subscribe(syncAttentionButtons);
   syncOverview();
+  syncAttentionButtons();
   // The approved Review08 Task Detail uses a fixed heading and a single
   // scroll-contained live detail/editor body. Move existing editor and close
   // nodes (never clone them) so their workbook handlers stay attached.
