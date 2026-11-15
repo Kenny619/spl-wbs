@@ -353,6 +353,9 @@ test("Stage B PGCM toggle changes actual timeline markers and restores them with
   await toggle.uncheck();
   await settings.getByRole("button", { name: "Close" }).click();
   await page.reload();
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Choose project folder" }).click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
   await expect(markers).toHaveCount(0);
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   page.once("dialog", dialog => void dialog.accept());
