@@ -7,6 +7,10 @@ export type ViewState = {
   owners: string[];
   types: string[];
   workstreams: string[];
+  /** Managed-only exact calendar-date multi-filter; absent in read-only v18. */
+  finishes?: string[];
+  /** Verified shared workbook interval; set only by the separate managed entrypoint. */
+  managedBlackout?: { enabled: boolean; start: string; end: string };
   hideInactive: boolean;
   columns: string[];
   zoom: Zoom;
