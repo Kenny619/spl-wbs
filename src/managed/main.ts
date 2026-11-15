@@ -22,6 +22,7 @@ import type { EditableField, EditValue } from "./workbookCandidate";
 import { ManagedWatchPanel, type WatchSaveOutcome } from "./watchUi";
 import { readProjectContext, remainingProjectDays, type ProjectContext } from "./projectContext";
 import { bundledHolidayCalendar } from "../calendar/jpHolidays";
+import { RecentProjectStore, type RecentProjectEntry } from "./recentProjects";
 import { compactRemaining } from "../calendar/workdays";
 import type { ProjectEdit } from "./projectDataCandidate";
 import { projectWatchProjection, toManagedWatchView, type ManagedWatchView, type WatchProjection } from "./watchProjection";
@@ -93,6 +94,11 @@ export class ManagedEditor {
   private readonly dialog: HTMLDialogElement;
   private readonly settings: ManagedSettings;
   private readonly reports: ManagedReports;
+  private readonly recentStore = new RecentProjectStore();
+  private recentProjects: RecentProjectEntry[] = [];
+  private readonly recentList: HTMLDivElement;
+  private recentPersistent = false;
+  private recentQueue: Promise<void> = Promise.resolve();
   private refreshMeeting: (() => void) | null = null;
 
   constructor(private readonly doc: Document, private readonly controller: ImportController) {
@@ -157,6 +163,17 @@ export class ManagedEditor {
     label.append(this.fileSelect);
     wrap.append(label);
     actions.prepend(wrap);
+    const recentBox = element(doc, "div", "managed-chooser");
+    recentBox.setAttribute("aria-label", "Recent projects");
+    recentBox.append(element(doc, "strong", "", "Recent projects (up to five)"));
+    this.recentList = element(doc, "div", "managed-recent-projects");
+    recentBox.append(this.recentList);
+    actions.prepend(recentBox);
+    void this.recentStore.load().then(snapshot => {
+      this.recentProjects = snapshot.entries;
+      this.recentPersistent = snapshot.persistent;
+      this.renderRecentProjects();
+    }).catch(() => this.renderRecentProjects());
     // A native <input type=file> is independent of showDirectoryPicker and can
     // provide read-only UAT access even when corporate Edge blocks directory handles.
     // It must never create a writable workbook/backup transaction.
@@ -280,6 +297,78 @@ export class ManagedEditor {
       event.returnValue = "";
     });
     this.render();
+  }
+
+  private renderRecentProjects(): void {
+    this.recentList.replaceChildren();
+    if (!this.recentProjects.length) {
+      this.recentList.append(element(this.doc, "span", "", "No verified recent projects yet."));
+      return;
+    }
+    if (!this.recentPersistent) {
+      this.recentList.append(element(this.doc, "span", "",
+        "Recent-project storage unavailable; entries last only for this page."));
+    }
+    for (const entry of this.recentProjects) {
+      const button = element(this.doc, "button", "managed-action", entry.displayName);
+      button.type = "button";
+      button.title = entry.fileName + " · " + entry.directory.name + " · " +
+        new Date(entry.lastAccess).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+      button.setAttribute("aria-label", "Open recent project " + entry.displayName);
+      button.addEventListener("click", () => this.guard(() => { void this.openRecentProject(entry); }));
+      this.recentList.append(button);
+    }
+  }
+
+  private rememberRecentProject(directory: FileSystemDirectoryHandle, fileName: string): void {
+    const displayName = this.projectContext?.kind === "valid" ?
+      this.projectContext.projectName : fileName + " (file only)";
+    const entry: RecentProjectEntry = {
+      directory, fileName, displayName, lastAccess: new Date().toISOString(),
+    };
+    this.recentQueue = this.recentQueue.then(async () => {
+      const snapshot = await this.recentStore.remember(entry);
+      this.recentProjects = snapshot.entries;
+      this.recentPersistent = snapshot.persistent;
+      this.renderRecentProjects();
+    }).catch(() => {
+      this.recentPersistent = false;
+      this.renderRecentProjects();
+    });
+  }
+
+  private async openRecentProject(entry: RecentProjectEntry): Promise<void> {
+    if (this.busy) return;
+    const dir = entry.directory;
+    try {
+      const access = dir as FileSystemDirectoryHandle & {
+        requestPermission?: (options: { mode: "readwrite" }) => Promise<PermissionState>;
+        queryPermission?: (options: { mode: "readwrite" }) => Promise<PermissionState>;
+      };
+      // Initiate from the explicit click (or guard decision) before any await,
+      // so Edge retains the transient permission-request user gesture.
+      const permission = access.requestPermission ?
+        access.requestPermission({ mode: "readwrite" }) :
+        access.queryPermission?.({ mode: "readwrite" });
+      if (!permission || await permission !== "granted") {
+        throw new Error("Folder permission denied or unavailable.");
+      }
+      const names: string[] = [];
+      for await (const [name, handle] of (dir as DirectoryWithEntries).entries()) {
+        if (handle.kind === "file" && /\.xlsx$/i.test(name) && !name.startsWith("~$") &&
+          !/\.(backup|stage)\.xlsx$/i.test(name)) names.push(name);
+      }
+      if (!names.includes(entry.fileName)) {
+        throw new Error("Recent workbook not found in the remembered folder.");
+      }
+      // No bypass: import/sha256/fidelity/preflight/recovery checks remain
+      // exclusively owned by the existing openWorkbook implementation.
+      await this.openWorkbook(entry.fileName, dir, names.sort((a, b) => a.localeCompare(b)));
+    } catch (error) {
+      this.message = "Recent project cannot be reopened: " + errorMessage(error) +
+        ". Use Project → Choose project folder. Previous verified workbook retained.";
+      this.render();
+    }
   }
 
   private isTaskDirty(): boolean {
@@ -475,6 +564,9 @@ export class ManagedEditor {
       this.recoveryHold = false;
       this.clearDraft();
       try { localStorage.setItem(STORAGE_PREFIX + targetDir.name, name); } catch { /* best effort */ }
+      if (eligible && (this.projectContext?.kind === "valid" || this.projectContext?.kind === "legacy")) {
+        this.rememberRecentProject(targetDir, name);
+      }
       this.message = eligible
         ? "Workbook ready. Select a task. Save only disposable copies in this development build."
         : "Viewing allowed, but Save blocked: this workbook uses unsupported Excel features.";
@@ -747,6 +839,9 @@ export class ManagedEditor {
       this.clearDraft();
       this.controller.patchView({ ...view, selectedId: taskId });
       try { localStorage.setItem(STORAGE_PREFIX + directory.name, name); } catch { /* best effort */ }
+      if (this.projectContext?.kind === "valid" || this.projectContext?.kind === "legacy") {
+        this.rememberRecentProject(directory, name);
+      }
       this.message = "Save As verified: " + name + " is now active in " + directory.name + ". Original " + sourceName +
         " was not modified; future direct Saves target " + name + " in the destination folder.";
       return true;
