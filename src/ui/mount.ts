@@ -456,10 +456,11 @@ function bindChrome(
 
 function visibleRows(tasks: readonly Task[], view: ViewState) {
   const filtering = Boolean(
-    view.search.trim() || view.statuses.length || view.owners.length || view.types.length || view.workstreams.length || (view.finishes?.length ?? 0) || view.hideInactive,
+    view.attentionIds !== undefined || view.search.trim() || view.statuses.length || view.owners.length || view.types.length || view.workstreams.length || (view.finishes?.length ?? 0) || view.hideInactive,
   );
   return flattenVisible(tasks, filtering ? new Set(tasks.map((task) => task.id)) : new Set(view.expandedIds), {
     search: view.search,
+    attentionIds: view.attentionIds,
     statuses: view.statuses,
     owners: view.owners,
     types: view.types,
