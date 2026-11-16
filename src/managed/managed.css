@@ -363,9 +363,15 @@ body.spt-managed .managed-project-heading #title {
 }
 body.spt-managed .managed-project-heading .eyebrow,
 body.spt-managed .managed-project-heading #subtitle { display:none; }
-body.spt-managed .managed-project-heading :is(#provenance,#notice) {
+/* Stage B #17: keep informational provenance compact, but never ellipsize
+   workbook/reconnect notices. No message state or severity is changed here. */
+body.spt-managed .managed-project-heading #provenance {
   max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
   font-size:10px;
+}
+body.spt-managed .managed-project-heading #notice {
+  max-width:100%; white-space:normal; overflow-wrap:anywhere;
+  font-size:12px; line-height:1.4;
 }
 body.spt-managed .managed-main-nav {display:flex;align-items:center;gap:5px;white-space:nowrap;}
 body.spt-managed .managed-main-nav .managed-action {
