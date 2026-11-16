@@ -703,6 +703,11 @@ test("Stage B PGCM toggle changes actual timeline markers and restores them with
   await expect(page.locator(".task-row")).toHaveCount(1);
   await expect(markers).toHaveCount(0);
   await expect(page.locator('[data-zoom="week"]')).toHaveAttribute("aria-pressed", "true");
+  // Folder selection can leave the project menu's outside-click dismissal active.
+  // Dismiss it explicitly so the first Settings click opens Settings rather than
+  // merely closing the project menu (same transition as initial openManaged).
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".managed-project-menu")).not.toHaveAttribute("open", "");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const reloadedSettings = page.getByRole("dialog", { name: "Settings" });
   await expect(reloadedSettings).toBeVisible();
