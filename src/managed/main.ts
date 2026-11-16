@@ -888,16 +888,11 @@ export class ManagedEditor {
     catch { return { kind: "unavailable", workbookState: "incompatible", findings: [] }; }
   }
 
-  private render(): void {
-    this.refreshMeeting?.();
-    this.banner.replaceChildren();
-    const intro = element(this.doc, "span");
-    intro.append(element(this.doc, "strong", "", "EXCEL MANAGED · DEVELOPMENT PREVIEW"));
-    intro.append(this.doc.createTextNode("  ·  Approved v18 viewer · Use disposable XLSX copies"));
-    const status = element(this.doc, "span", this.canWrite && !this.recoveryHold ? "" : "managed-alert",
-      (this.recoveryHold ? "Save blocked — inspect recovery files. " : "") +
-      (this.message || (this.sourceName ? "View only" : "Choose project folder")));
-    this.banner.append(intro, status);
+  /**
+   * Refresh only priority notices while a task input is focused. Repainting the
+   * whole managed editor here would destroy the active control/caret and draft.
+   */
+  private renderPriorityNotices(): void {
     // Stage B event-typed urgent strip. Do not inspect message strings for
     // words such as "error" or "green"; trust only verified state/origin.
     const notices: ManagedNotice[] = [];
@@ -918,6 +913,20 @@ export class ManagedEditor {
         element(this.doc, "span", "", notice.message));
       this.priorityNotices.append(item);
     }
+
+  }
+
+  private render(): void {
+    this.refreshMeeting?.();
+    this.banner.replaceChildren();
+    const intro = element(this.doc, "span");
+    intro.append(element(this.doc, "strong", "", "EXCEL MANAGED · DEVELOPMENT PREVIEW"));
+    intro.append(this.doc.createTextNode("  ·  Approved v18 viewer · Use disposable XLSX copies"));
+    const status = element(this.doc, "span", this.canWrite && !this.recoveryHold ? "" : "managed-alert",
+      (this.recoveryHold ? "Save blocked — inspect recovery files. " : "") +
+      (this.message || (this.sourceName ? "View only" : "Choose project folder")));
+    this.banner.append(intro, status);
+    this.renderPriorityNotices();
 
     this.fileSelect.replaceChildren();
     for (const name of this.names) {
@@ -1094,6 +1103,7 @@ export class ManagedEditor {
         draft[field] = value;
         saveButton.disabled = this.busy || this.recoveryHold || !this.isDirty();
         indicator.textContent = this.isDirty() ? "Unsaved changes" : "No unsaved changes";
+        this.renderPriorityNotices();
       });
       wrapper.append(control);
       fields.append(wrapper);
