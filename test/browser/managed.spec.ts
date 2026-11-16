@@ -233,6 +233,38 @@ test("Stage B overdue attention selects actual WBS task and restores original vi
   expect(afterBytes).toEqual(originalBytes);
 });
 
+test("Stage B typed urgent strip keeps unsaved task warnings visible without writing Excel", async ({ page }) => {
+  await openManaged(page);
+  const urgent = page.locator(".managed-priority-notices");
+  await expect(urgent).toBeHidden();
+  const original = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Unsaved change for severity QA");
+  const warning = urgent.locator('[data-notice-kind="unsaved-changes"]');
+  await expect(urgent).toBeVisible();
+  await expect(warning).toContainText("Unsaved task or Under Watch edits");
+  await expect(warning).toHaveAttribute("data-dismissible", "false");
+  await expect(warning).toHaveAttribute("role", "status");
+  await expect(page.getByLabel("Task title")).toHaveValue("Unsaved change for severity QA");
+  // Input remains mounted/focused while the severity strip changes.
+  await expect(page.getByLabel("Task title")).toBeFocused();
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Change folder" }).click();
+  await expect(page.getByRole("dialog", { name: "Unsaved changes" })).toBeVisible();
+  await expect(warning).toBeVisible();
+  await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByLabel("Task title")).toHaveValue("Unsaved change for severity QA");
+  await expect(warning).toBeVisible();
+  await page.getByRole("button", { name: "Discard", exact: true }).click();
+  await expect(urgent).toBeHidden();
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(original);
+});
+
 test("Stage A Recent Projects shows verified workbook and respects unsaved Cancel before reopening",async({page})=>{
   await openManaged(page);
   const menu=page.locator(".managed-project-menu");
@@ -359,7 +391,9 @@ test("Save As after external source change preserves outside edits and uses load
     files.set("synthetic-demo.xlsx", new TextEncoder().encode("EXTERNAL EXCEL MODIFICATION"));
   });
   await page.getByRole("button", { name: "Save to workbook" }).click();
-  await expect(page.getByText(/Save NOT verified:.*changed since it was loaded/)).toBeVisible();
+  await expect(page.locator(".managed-banner").getByText(/Save NOT verified:.*changed since it was loaded/)).toBeVisible();
+  await expect(page.locator('.managed-priority-notices [data-notice-kind="save-unverified"]'))
+    .toContainText(/Save NOT verified:.*changed since it was loaded/);
   await expect(page.getByLabel("Task title")).toHaveValue("From original baseline");
 
   await page.getByRole("button", { name: "Save As…" }).click();
@@ -384,7 +418,9 @@ test("Save As refuses an existing destination and retains the unsaved edit and a
   await page.getByRole("button", { name: "Edit task" }).click();
   await page.getByLabel("Task title").fill("Keep my draft");
   await page.getByRole("button", { name: "Save As…" }).click();
-  await expect(page.getByText(/Save As NOT confirmed:/)).toBeVisible();
+  await expect(page.locator(".managed-banner").getByText(/Save As NOT confirmed:/)).toBeVisible();
+  await expect(page.locator('.managed-priority-notices [data-notice-kind="save-unverified"]'))
+    .toContainText(/Save As NOT confirmed:/);
   await expect(page.getByLabel("Task title")).toHaveValue("Keep my draft");
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
 });
