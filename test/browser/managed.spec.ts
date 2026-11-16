@@ -330,6 +330,51 @@ test("Stage B overdue attention selects actual WBS task and restores original vi
   expect(afterBytes).toEqual(originalBytes);
 });
 
+test("Stage B long denied-folder notice stays readable at 1366/1440 and never writes Excel", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openManaged(page);
+  const before = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.evaluate(() => {
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true,
+      value: async () => { throw new DOMException("corporate-policy-" + "x".repeat(900), "NotAllowedError"); },
+    });
+  });
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Change folder" }).click();
+  const warning = page.locator('.managed-priority-notices [data-notice-kind="permission-denied"]');
+  await expect(warning).toBeVisible();
+  await expect(warning).toHaveAttribute("data-dismissible", "false");
+  await expect(page.locator(".managed-banner")).toContainText("NotAllowedError");
+  for (const width of [1366, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const bounds = await page.locator(".managed-banner").evaluate(el => ({
+      client: el.clientWidth, scroll: el.scrollWidth, right: el.getBoundingClientRect().right,
+    }));
+    expect(bounds.scroll, "long diagnostic banner must wrap, not scroll horizontally")
+      .toBeLessThanOrEqual(bounds.client + 2);
+    expect(bounds.right).toBeLessThanOrEqual(width + 2);
+    await expect(warning).toBeVisible();
+    await testInfo.attach("stage-b-permission-" + width + "-light", {
+      body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+    });
+  }
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("radio", { name: "Dark" }).check();
+  await settings.getByRole("button", { name: "Close" }).click();
+  await expect(warning).toBeVisible();
+  await testInfo.attach("stage-b-permission-1440-dark", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(before);
+});
+
 test("Stage B typed urgent strip keeps unsaved task warnings visible without writing Excel", async ({ page }) => {
   await openManaged(page);
   const urgent = page.locator(".managed-priority-notices");
