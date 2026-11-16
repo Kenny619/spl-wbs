@@ -202,6 +202,58 @@ test("Stage B verified workbook Under Watch shows recorded Open only, not inferr
   expect(after).toEqual(before);
 });
 
+test("Stage B 860px compact attention remains discoverable, keyboard-operable and preserves Gantt", async ({ page }, testInfo) => {
+  await page.clock.install({ time: new Date("2026-11-16T01:00:00.000Z") });
+  await page.setViewportSize({ width: 860, height: 768 });
+  await openManaged(page);
+  const summary = page.locator(".managed-schedule-summary");
+  const expand = page.getByRole("button", { name: "Needs attention · Show filters" });
+  const counts = page.locator(".managed-attention-compact-counts");
+  const actions = page.locator("#managed-attention-actions");
+  await expect(summary).toBeVisible();
+  await expect(expand).toBeVisible();
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+  await expect(counts).toContainText("Blocked 0 · At Risk 0 · Overdue 1 · Watch Unknown");
+  await expect(actions).toBeHidden();
+  let gantt = await page.locator("#gantt").boundingBox();
+  expect(gantt).not.toBeNull();
+  expect(gantt!.height).toBeGreaterThan(260);
+  await expand.focus();
+  await page.keyboard.press("Enter");
+  await expect(expand).toHaveAttribute("aria-expanded", "true");
+  const overdue = page.getByRole("button", { name: "Filter WBS to Overdue tasks" });
+  await expect(overdue).toBeVisible();
+  await overdue.focus();
+  await page.keyboard.press("Enter");
+  await expect(overdue).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(page.locator("#detailTitle")).toContainText("Synthetic milestone");
+  await expect(summary.locator(".managed-attention-context")).toContainText("Showing Overdue");
+  await overdue.click();
+  await expect(overdue).toHaveAttribute("aria-pressed", "false");
+  await expand.click();
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+  await expect(actions).toBeHidden();
+  await expect(counts).toBeVisible();
+  gantt = await page.locator("#gantt").boundingBox();
+  expect(gantt!.height).toBeGreaterThan(260);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(862);
+  await testInfo.attach("stage-b-attention-860-light", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("radio", { name: "Dark" }).check();
+  await settings.getByRole("button", { name: "Close" }).click();
+  await expect(summary).toBeVisible();
+  await expect(expand).toBeVisible();
+  await expect(counts).toContainText("Watch Unknown");
+  await testInfo.attach("stage-b-attention-860-dark", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+});
+
 test("Stage B overdue attention selects actual WBS task and restores original view", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-16T01:00:00.000Z") });
   await page.setViewportSize({ width: 1440, height: 900 });
