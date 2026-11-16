@@ -414,7 +414,7 @@ body.spt-managed .managed-attention-compact-counts {display:none;}
   body.spt-managed .managed-schedule-summary-heading {display:none;}
   body.spt-managed .managed-attention-toggle {
     display:inline-flex; align-items:center; flex:none;
-    font:700 11px/1.4 inherit; font-family:inherit;
+    font:700 11px/1.4 system-ui,sans-serif; font-family:inherit;
     background:var(--r11-raised); color:var(--r11-ink);
     border:1px solid var(--r11-edge); border-radius:6px;
     padding:4px 9px; min-height:29px; cursor:pointer;
