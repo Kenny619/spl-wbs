@@ -95,6 +95,23 @@ jobs:
           path: work/option-a-candidate/
           if-no-files-found: error
           retention-days: 14
+      # Explicit owner request 2026-11-16: one synthetic Stage B B2/B3 UAT
+      # candidate for PR #92 only. Reuse this build runner (no extra Windows
+      # or Ubuntu job). Artifact is NOT accepted until the parallel browser
+      # job also finishes successfully and independent QA clears the scope.
+      - name: Package Stage B #92 controlled fictional UAT candidate
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 92 && success() }}
+        run: |
+          node scripts/package-option-a-integrated-candidate.mjs
+          node scripts/package-stage-b-uat.mjs
+      - name: Publish Stage B #92 candidate artifact (NOT accepted/released)
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 92 && success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: SPT-WBS-StageB-NeedsAttention-Severity-UAT-${{ github.sha }}
+          path: work/option-a-candidate/
+          if-no-files-found: error
+          retention-days: 14
       - name: Unit diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
