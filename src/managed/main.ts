@@ -283,7 +283,8 @@ export class ManagedEditor {
       timeZone: this.settings.getTimeZone(),
       hasUnsavedDraft: this.isDirty(),
     }));
-    mountManagedShell(doc, controller, this.reports, this.settings, (action) => this.guard(action));
+    mountManagedShell(doc, controller, this.reports, this.settings,
+      (action) => this.guard(action), () => this.watchProjection);
     // Managed shell needs the original close node to construct the inspector.
     // Remove only after its one-time structural initialization has completed;
     // the approved managed Schedule keeps Task Detail persistently accessible.
@@ -863,6 +864,9 @@ export class ManagedEditor {
       this.controller.patchView({ managedBlackout: this.projectContext.kind === "valid"
         ? this.projectContext.blackout : { enabled: false, start: "", end: "" } });
       this.watchProjection = await projectWatchProjection(bytes);
+      // Shared Watch is loaded after the controller's earlier task/calendar paint.
+      // Notify Stage B attention subscribers to refresh verified open reasons.
+      this.controller.patchView({});
       return toManagedWatchView(this.watchProjection);
     }
     catch { return { kind: "unavailable", workbookState: "incompatible", findings: [] }; }
