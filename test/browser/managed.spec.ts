@@ -640,6 +640,105 @@ test("Settings relocates existing v18 columns, persists timezone and dark theme 
   await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "dark");
 });
 
+test("Stage B PGCM toggle changes actual timeline markers and restores them without workbook writes", async ({ page }) => {
+  // Freeze the browser clock so the synthetic schedule always includes future PGCM meetings.
+  await page.clock.setFixedTime(new Date("2026-11-16T00:00:00Z"));
+  const book = new ExcelJS.Workbook();
+  const sheet = book.addWorksheet("ProjectWBS");
+  sheet.addRow(["ID", "Title", "WBSCode", "TaskType", "Progress", "TaskStatus",
+    "AssignedTo", "Updates", "PlannedStart", "PlannedEnd"]);
+  sheet.addRow([701, "Future PGCM visibility fixture", "1.1", "Task", 20, "In Progress",
+    "Synthetic owner", "Display-only fixture", "2026-11-16", "2026-12-31"]);
+  const encoded = Buffer.from(await book.xlsx.writeBuffer()).toString("base64");
+  await openManaged(page, encoded, 1, "synthetic-demo");
+  await page.keyboard.press("Escape");
+  const markers = page.locator(".pgcm-marker, .pgcm-day-column, .pgcm-tag, .pgcm-week-tag");
+  // Verify the SELECTED zoom actually renders its own PGCM DOM. A union-only
+  // assertion can be satisfied by stale elements from the previous zoom.
+  for (const zoom of ["day", "week"] as const) {
+    const selected = page.locator(`[data-zoom="${zoom}"]`);
+    await selected.click();
+    await expect(selected).toHaveAttribute("aria-pressed", "true");
+    const current = page.locator(zoom === "day" ? ".pgcm-tag" : ".pgcm-week-tag");
+    const previousZoom = page.locator(zoom === "day"
+      ? ".pgcm-week-tag, .pgcm-marker" : ".pgcm-tag, .pgcm-day-column");
+    await expect(previousZoom).toHaveCount(0);
+    await expect.poll(() => current.count()).toBeGreaterThan(0);
+    const countBefore = await current.count();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Settings" });
+    const zoomToggle = dialog.getByRole("checkbox", { name: "Highlight PGCM dates" });
+    await zoomToggle.uncheck();
+    await expect(markers).toHaveCount(0);
+    await zoomToggle.check();
+    await expect(current).toHaveCount(countBefore);
+    await expect(previousZoom).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Close" }).click();
+  }
+  // Leave Week selected. PGCM markers intentionally do not render in Month
+  // or Quarter zoom, and reload restores the default Week view.
+  const selectedWeek = page.locator('[data-zoom="week"]');
+  await expect(selectedWeek).toHaveAttribute("aria-pressed", "true");
+  const weekMarkers = page.locator(".pgcm-week-tag");
+  const initialCount = await weekMarkers.count();
+  expect(initialCount).toBeGreaterThan(0);
+  const original = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  const toggle = settings.getByRole("checkbox", { name: "Highlight PGCM dates" });
+  await toggle.uncheck();
+  await expect(markers).toHaveCount(0);
+  await toggle.check();
+  await expect(weekMarkers).toHaveCount(initialCount);
+  await toggle.uncheck();
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.reload();
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Choose project folder" }).click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(markers).toHaveCount(0);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  page.once("dialog", dialog => void dialog.accept());
+  await settings.getByRole("button", { name: "Reset to defaults" }).click();
+  await expect(toggle).toBeChecked();
+  await expect(weekMarkers).toHaveCount(initialCount);
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(original);
+});
+
+test("Stage B PGCM highlight stays in local Settings and never writes Excel", async ({ page }) => {
+  await openManaged(page);
+  await page.keyboard.press("Escape");
+  const initial = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  const toggle = settings.getByRole("checkbox", { name: "Highlight PGCM dates" });
+  await expect(toggle).toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "on");
+  await toggle.uncheck();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "off");
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await expect(settings.getByRole("checkbox", { name: "Highlight PGCM dates" })).not.toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "off");
+  page.once("dialog", dialog => void dialog.accept());
+  await settings.getByRole("button", { name: "Reset to defaults" }).click();
+  await expect(settings.getByRole("checkbox", { name: "Highlight PGCM dates" })).toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "on");
+  // Reload's independent fake directory has identical original contents: no Save was requested.
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(initial);
+});
+
 test("Settings System appearance follows device and Reset requires confirmation; workbook remains unchanged", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await openManaged(page);
