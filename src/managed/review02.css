@@ -357,6 +357,23 @@ body.spt-managed button.managed-schedule-summary-item:focus-visible {
 body.spt-managed button.managed-schedule-summary-item[aria-pressed="true"] {
   box-shadow:inset 0 0 0 2px currentColor;
 }
+body.spt-managed .managed-schedule-summary { flex-wrap:wrap; row-gap:7px; }
+body.spt-managed .managed-schedule-summary .managed-attention-context {
+  margin:0; flex-basis:100%; width:100%; color:var(--r11-sub);
+  font-size:11px; line-height:1.35;
+}
+body.spt-managed .managed-schedule-summary .managed-attention-context[hidden] {
+  display:none!important;
+}
+body.spt-managed .managed-schedule-summary-item:disabled {
+  opacity:.65; cursor:not-allowed;
+}
+body.spt-managed .managed-schedule-summary-item.overdue strong {
+  color:#a5622b;
+}
+body.spt-managed[data-managed-theme="dark"] .managed-schedule-summary-item.overdue strong {
+  color:#ffcd95;
+}
 body.spt-managed .managed-schedule-summary-item strong {
   font-size:16px;letter-spacing:-.3px;color:var(--r11-ink);
 }
