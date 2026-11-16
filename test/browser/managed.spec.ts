@@ -202,6 +202,46 @@ test("Stage B verified workbook Under Watch shows recorded Open only, not inferr
   expect(after).toEqual(before);
 });
 
+test("Stage B real five-sheet workbook combines Blocked, Overdue and open Watch without duplicate tasks or writes", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-16T01:00:00.000Z") });
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.load(await projectDataWorkbook("Open"));
+  const wbs = book.getWorksheet("ProjectWBS")!;
+  wbs.getCell("F2").value = "Blocked";
+  wbs.getCell("J2").value = "2026-11-14";
+  wbs.addRow([502, "Second at-risk task", "1.3", "Task", 10, "At Risk",
+    "Owner B", "Follow-up", "2026-11-01", "2026-11-20"]);
+  const encoded = Buffer.from(await book.xlsx.writeBuffer()).toString("base64");
+  await openManaged(page, encoded, 2);
+  const summary = page.locator(".managed-schedule-summary");
+  for (const [category, expected] of [
+    ["blocked", "1"], ["risk", "1"], ["overdue", "1"], ["watch", "1"],
+  ] as const) {
+    await expect(summary.locator(".managed-schedule-summary-item." + category + " strong"))
+      .toHaveText(expected);
+  }
+  const before = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.locator("#search").fill("no-actual-tasks");
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  for (const [name, id] of [
+    ["Blocked", "501"], ["Overdue", "501"], ["Under Watch", "501"], ["At Risk", "502"],
+  ] as const) {
+    await page.getByRole("button", { name: "Filter WBS to " + name + " tasks" }).click();
+    await expect(page.locator(".task-row")).toHaveCount(1);
+    await expect(page.locator(".task-row").first()).toHaveAttribute("data-task-id", id);
+    await expect(page.locator("#panel")).toHaveClass(/open/);
+  }
+  await page.getByRole("button", { name: "Filter WBS to At Risk tasks" }).click();
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await expect(page.locator("#search")).toHaveValue("no-actual-tasks");
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(before);
+});
+
 test("Stage B 860px compact attention remains discoverable, keyboard-operable and preserves Gantt", async ({ page }, testInfo) => {
   await page.clock.install({ time: new Date("2026-11-16T01:00:00.000Z") });
   await page.setViewportSize({ width: 860, height: 768 });
