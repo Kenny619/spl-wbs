@@ -340,6 +340,24 @@ test("Stage B PGCM toggle changes actual timeline markers and restores them with
   const markers = page.locator(".pgcm-marker, .pgcm-day-column, .pgcm-tag, .pgcm-week-tag");
   await expect.poll(() => markers.count()).toBeGreaterThan(0);
   const initialCount = await markers.count();
+  // Exercise both independently rendered PGCM layouts, not just the default zoom.
+  for (const zoom of ["day", "week"] as const) {
+    await page.locator(`[data-zoom="${zoom}"]`).click();
+    await expect.poll(() => markers.count()).toBeGreaterThan(0);
+    const zoomCount = await markers.count();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    const zoomToggle = page.getByRole("dialog", { name: "Settings" })
+      .getByRole("checkbox", { name: "Highlight PGCM dates" });
+    await zoomToggle.uncheck();
+    await expect(markers).toHaveCount(0);
+    await zoomToggle.check();
+    await expect(markers).toHaveCount(zoomCount);
+    await page.getByRole("dialog", { name: "Settings" })
+      .getByRole("button", { name: "Close" }).click();
+  }
+  // Return to the original zoom before verifying persisted preference and Reset.
+  await page.locator('[data-zoom="month"]').click();
+  await expect(markers).toHaveCount(initialCount);
   const original = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
