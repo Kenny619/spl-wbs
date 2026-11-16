@@ -5,6 +5,36 @@ body.spt-managed .source-record { display:none !important; }
   color:#244865; border-radius:7px; font:500 12px/1.5 system-ui,sans-serif; }
 .managed-banner strong { font-weight:700; }
 .managed-alert { color:#a13e26; font-weight:600; }
+/* Stage B typed priority strip; one visible urgent channel without hiding the
+ * accepted Save/permission details or relying on message-text heuristics. */
+body.spt-managed .managed-priority-notices {
+  flex:none; display:flex; flex-direction:column; gap:5px;
+  margin:4px 14px 0; max-height:110px; overflow-y:auto;
+}
+body.spt-managed .managed-priority-notices[hidden] {display:none!important;}
+body.spt-managed .managed-priority-notice {
+  display:flex; align-items:flex-start; gap:10px; padding:7px 12px;
+  font-size:12px; line-height:1.45; border:1px solid; border-radius:7px;
+  overflow-wrap:anywhere;
+}
+body.spt-managed .managed-priority-notice strong {
+  flex:none; min-width:99px; font-weight:800;
+}
+body.spt-managed .managed-severity-critical {
+  background:#fff0ef; border-color:#c57873; color:#832725;
+}
+body.spt-managed .managed-severity-warning {
+  background:#fff7e8; border-color:#d4ab71; color:#80531b;
+}
+body.spt-managed[data-managed-theme="dark"] .managed-severity-critical {
+  background:#4c2b35; border-color:#a56a76; color:#ffced2;
+}
+body.spt-managed[data-managed-theme="dark"] .managed-severity-warning {
+  background:#463827; border-color:#947348; color:#ffe0b2;
+}
+@media(max-width:690px) {
+ body.spt-managed .managed-priority-notice {flex-direction:column;gap:2px;}
+}
 .managed-chooser { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .managed-chooser select { min-width:160px; max-width:230px; border:1px solid #bacbd9;
   border-radius:5px; padding:6px 8px; background:#fff; color:#203448; }
@@ -363,9 +393,14 @@ body.spt-managed .managed-project-heading #title {
 }
 body.spt-managed .managed-project-heading .eyebrow,
 body.spt-managed .managed-project-heading #subtitle { display:none; }
-body.spt-managed .managed-project-heading :is(#provenance,#notice) {
+/* Stage B #17: informational provenance remains compact; workbook notices wrap. */
+body.spt-managed .managed-project-heading #provenance {
   max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
   font-size:10px;
+}
+body.spt-managed .managed-project-heading #notice {
+  max-width:100%; white-space:normal; overflow-wrap:anywhere;
+  font-size:12px; line-height:1.4;
 }
 body.spt-managed .managed-main-nav {display:flex;align-items:center;gap:5px;white-space:nowrap;}
 body.spt-managed .managed-main-nav .managed-action {
