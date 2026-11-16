@@ -408,7 +408,7 @@ body.spt-managed .managed-attention-compact-counts {display:none;}
 @media(max-width:960px){
   body.spt-managed .managed-schedule-summary {
     display:flex; flex-direction:row; flex-wrap:wrap; align-items:center;
-    gap:5px 11px; margin:4px 14px 0; padding:5px 10px;
+    gap:5px 11px; margin:0 14px 0; padding:3px 10px;
     box-shadow:none; border-radius:7px; min-height:0;
   }
   body.spt-managed .managed-schedule-summary-heading {display:none;}
