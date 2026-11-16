@@ -44,7 +44,7 @@ test.beforeAll(async () => {
   ))).toString("base64");
 }, { timeout: 120000 });
 
-async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1) {
+async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1, expectedTitle?: string) {
   await page.addInitScript(({ encoded }) => {
     const decoded = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
     const files = new Map<string, Uint8Array>([["synthetic-demo.xlsx", decoded]]);
@@ -88,13 +88,324 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
-  await expect(page.locator("#title")).toHaveText(encoded === base64 ? "synthetic-demo" : "Synthetic shared project");
+  await expect(page.locator("#title")).toHaveText(expectedTitle ?? (encoded === base64 ? "synthetic-demo" : "Synthetic shared project"));
   await expect(page.locator(".task-row")).toHaveCount(expectedRows);
   await page.locator(".task-row").first().click();
   await expect(page.locator("#panel")).toHaveClass(/open/);
   await expect(page.getByRole("button", { name: "Edit task" })).toBeEnabled();
   await expect(page.locator(".source-record")).toBeHidden();
 }
+
+test("Stage B attention summary filters actual WBS rows and restores the previous status scope", async ({ page }) => {
+  await openManaged(page);
+  await page.keyboard.press("Escape");
+  const blocked = page.getByRole("button", { name: "Filter WBS to Blocked tasks" });
+  const risk = page.getByRole("button", { name: "Filter WBS to At Risk tasks" });
+  await expect(blocked).toBeVisible();
+  await expect(risk).toBeVisible();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await blocked.click();
+  await expect(blocked).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await risk.click();
+  await expect(risk).toHaveAttribute("aria-pressed", "true");
+  await expect(blocked).toHaveAttribute("aria-pressed", "false");
+  await risk.click();
+  await expect(risk).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  // A second user choice via the existing status filter should break ownership
+  // of the attention shortcut instead of reverting that newer choice.
+  await blocked.click();
+  await page.getByRole("button", { name: "Filter WBS to At Risk tasks" }).click();
+  await expect(risk).toHaveAttribute("aria-pressed", "true");
+});
+
+test("Stage B attention shortcuts navigate positive synthetic matches and respect unsaved Cancel", async ({ page }) => {
+  // Build an isolated workbook rather than relying on a zero-match default fixture.
+  const book = new ExcelJS.Workbook();
+  const sheet = book.addWorksheet("ProjectWBS");
+  sheet.addRow(["ID", "Title", "WBSCode", "TaskType", "Progress", "TaskStatus",
+    "AssignedTo", "Updates", "PlannedStart", "PlannedEnd"]);
+  sheet.addRow([601, "Blocked synthetic task", "1.1", "Task", 10, "Blocked",
+    "Owner A", "Blocked evidence", "2026-11-02", "2026-11-06"]);
+  sheet.addRow([602, "At Risk synthetic task", "1.2", "Task", 20, "At Risk",
+    "Owner B", "Risk evidence", "2026-11-02", "2026-11-06"]);
+  sheet.addRow([603, "Normal synthetic task", "1.3", "Task", 30, "In Progress",
+    "Owner C", "Normal evidence", "2026-11-02", "2026-11-06"]);
+  const encoded = Buffer.from(await book.xlsx.writeBuffer()).toString("base64");
+  await openManaged(page, encoded, 3, "synthetic-demo");
+  await page.keyboard.press("Escape");
+  const blocked = page.getByRole("button", { name: "Filter WBS to Blocked tasks" });
+  const risk = page.getByRole("button", { name: "Filter WBS to At Risk tasks" });
+  await expect(blocked.locator("strong")).toHaveText("1");
+  await expect(risk.locator("strong")).toHaveText("1");
+  await blocked.click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(page.locator(".task-row").first()).toContainText("Blocked synthetic task");
+  await risk.click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(page.locator(".task-row").first()).toContainText("At Risk synthetic task");
+  await risk.click();
+  await expect(page.locator(".task-row")).toHaveCount(3);
+
+  // An unsaved editor must not lose its draft or change the active filter on Cancel.
+  await page.locator(".task-row").first().click();
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Keep this unsaved title");
+  await blocked.click();
+  const guard = page.getByRole("dialog", { name: "Unsaved changes" });
+  await expect(guard).toBeVisible();
+  await guard.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByLabel("Task title")).toHaveValue("Keep this unsaved title");
+  await expect(blocked).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".task-row")).toHaveCount(3);
+});
+
+test("Stage B verified workbook Under Watch shows recorded Open only, not inferred Green after resolution", async ({ page }) => {
+  const open = await projectDataWorkbook("Open");
+  await openManaged(page, open.toString("base64"));
+  const watch = page.getByRole("button", { name: "Filter WBS to Under Watch tasks" });
+  await expect(watch).toBeEnabled();
+  await expect(watch.locator("strong")).toHaveText("1");
+  const before = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await watch.click();
+  await expect(watch).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('.task-row[data-task-id="501"]')).toHaveCount(1);
+  await expect(page.locator(".managed-watch-evidence")).toContainText("Under Watch");
+  await watch.click();
+  await expect(watch).toHaveAttribute("aria-pressed", "false");
+
+  // Switch to a separate read-only, verified workbook with only resolved Watch
+  // reasons. No automatic RAG/Clear claim is permitted from this change.
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "resolved-watch.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: await projectDataWorkbook("Resolved"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  await expect(watch).toBeEnabled();
+  await expect(watch.locator("strong")).toHaveText("0");
+  await watch.click();
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await expect(watch).toHaveAttribute("aria-pressed", "true");
+  await watch.click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  // Switching to a different workbook resets the previous Task Detail selection.
+  // Reopen the actual committed task before checking its conservative Watch label.
+  await page.locator(".task-row").first().click();
+  await expect(page.locator(".managed-watch-evidence")).toContainText("Workbook Watch: Unknown");
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(before);
+});
+
+test("Stage B real five-sheet workbook combines Blocked, Overdue and open Watch without duplicate tasks or writes", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-16T01:00:00.000Z") });
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.load(await projectDataWorkbook("Open"));
+  const wbs = book.getWorksheet("ProjectWBS")!;
+  wbs.getCell("F2").value = "Blocked";
+  wbs.getCell("J2").value = "2026-11-14";
+  wbs.addRow([502, "Second at-risk task", "1.3", "Task", 10, "At Risk",
+    "Owner B", "Follow-up", "2026-11-01", "2026-11-20"]);
+  const encoded = Buffer.from(await book.xlsx.writeBuffer()).toString("base64");
+  await openManaged(page, encoded, 2);
+  const summary = page.locator(".managed-schedule-summary");
+  for (const [category, expected] of [
+    ["blocked", "1"], ["risk", "1"], ["overdue", "1"], ["watch", "1"],
+  ] as const) {
+    await expect(summary.locator(".managed-schedule-summary-item." + category + " strong"))
+      .toHaveText(expected);
+  }
+  const before = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.locator("#search").fill("no-actual-tasks");
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  for (const [name, id] of [
+    ["Blocked", "501"], ["Overdue", "501"], ["Under Watch", "501"], ["At Risk", "502"],
+  ] as const) {
+    await page.getByRole("button", { name: "Filter WBS to " + name + " tasks" }).click();
+    await expect(page.locator(".task-row")).toHaveCount(1);
+    await expect(page.locator(".task-row").first()).toHaveAttribute("data-task-id", id);
+    await expect(page.locator("#panel")).toHaveClass(/open/);
+  }
+  await page.getByRole("button", { name: "Filter WBS to At Risk tasks" }).click();
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await expect(page.locator("#search")).toHaveValue("no-actual-tasks");
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(before);
+});
+
+test("Stage B 860px compact attention remains discoverable, keyboard-operable and preserves Gantt", async ({ page }, testInfo) => {
+  await page.clock.install({ time: new Date("2026-11-16T01:00:00.000Z") });
+  await page.setViewportSize({ width: 860, height: 768 });
+  await openManaged(page);
+  const summary = page.locator(".managed-schedule-summary");
+  // Stable element identity: its accessible name changes from Show to Hide on expand.
+  const expand = page.locator(".managed-attention-toggle");
+  await expect(expand).toHaveText("Needs attention · Show filters");
+  const counts = page.locator(".managed-attention-compact-counts");
+  const actions = page.locator("#managed-attention-actions");
+  await expect(summary).toBeVisible();
+  await expect(expand).toBeVisible();
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+  await expect(counts).toContainText("Blocked 0 · At Risk 0 · Overdue 1 · Watch Unknown");
+  await expect(actions).toBeHidden();
+  let gantt = await page.locator("#gantt").boundingBox();
+  expect(gantt).not.toBeNull();
+  expect(gantt!.height).toBeGreaterThan(260);
+  await expand.focus();
+  await page.keyboard.press("Enter");
+  await expect(expand).toHaveAttribute("aria-expanded", "true");
+  const overdue = page.getByRole("button", { name: "Filter WBS to Overdue tasks" });
+  await expect(overdue).toBeVisible();
+  await overdue.focus();
+  await page.keyboard.press("Enter");
+  await expect(overdue).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(page.locator("#detailTitle")).toContainText("Synthetic milestone");
+  await expect(summary.locator(".managed-attention-context")).toContainText("Showing Overdue");
+  await overdue.click();
+  await expect(overdue).toHaveAttribute("aria-pressed", "false");
+  await expand.click();
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+  await expect(actions).toBeHidden();
+  await expect(counts).toBeVisible();
+  gantt = await page.locator("#gantt").boundingBox();
+  expect(gantt!.height).toBeGreaterThan(260);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(862);
+  await testInfo.attach("stage-b-attention-860-light", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("radio", { name: "Dark" }).check();
+  await settings.getByRole("button", { name: "Close" }).click();
+  await expect(summary).toBeVisible();
+  await expect(expand).toBeVisible();
+  await expect(counts).toContainText("Watch Unknown");
+  await testInfo.attach("stage-b-attention-860-dark", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+});
+
+test("Stage B overdue attention selects actual WBS task and restores original view", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-16T01:00:00.000Z") });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page);
+  const overdue = page.getByRole("button", { name: "Filter WBS to Overdue tasks" });
+  const watch = page.getByRole("button", { name: "Filter WBS to Under Watch tasks" });
+  await expect(overdue).toBeVisible();
+  await expect(overdue).toContainText("1");
+  await expect(watch).toBeDisabled(); // synthetic legacy workbook has no verified Watch evidence
+  await expect(page.locator(".managed-schedule-summary-item.watch strong")).toHaveText("—");
+
+  const originalBytes = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  // Starting view can include a search that hides the task. Attention action
+  // temporarily exposes its actual source task and restores the search.
+  await page.locator("#search").fill("does-not-match");
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await overdue.click();
+  await expect(overdue).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(page.locator(".task-row").first()).toContainText("Synthetic milestone");
+  await expect(page.locator("#panel")).toHaveClass(/open/);
+  await expect(page.locator("#detailTitle")).toContainText("Synthetic milestone");
+  await overdue.click();
+  await expect(overdue).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await expect(page.locator("#search")).toHaveValue("does-not-match");
+  const afterBytes = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(afterBytes).toEqual(originalBytes);
+});
+
+test("Stage B long denied-folder notice stays readable at 1366/1440 and never writes Excel", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openManaged(page);
+  const before = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.evaluate(() => {
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true,
+      value: async () => { throw new DOMException("corporate-policy-" + "x".repeat(900), "NotAllowedError"); },
+    });
+  });
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Change folder" }).click();
+  const warning = page.locator('.managed-priority-notices [data-notice-kind="permission-denied"]');
+  await expect(warning).toBeVisible();
+  await expect(warning).toHaveAttribute("data-dismissible", "false");
+  await expect(page.locator(".managed-banner")).toContainText("NotAllowedError");
+  for (const width of [1366, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const bounds = await page.locator(".managed-banner").evaluate(el => ({
+      client: el.clientWidth, scroll: el.scrollWidth, right: el.getBoundingClientRect().right,
+    }));
+    expect(bounds.scroll, "long diagnostic banner must wrap, not scroll horizontally")
+      .toBeLessThanOrEqual(bounds.client + 2);
+    expect(bounds.right).toBeLessThanOrEqual(width + 2);
+    await expect(warning).toBeVisible();
+    await testInfo.attach("stage-b-permission-" + width + "-light", {
+      body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+    });
+  }
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await settings.getByRole("radio", { name: "Dark" }).check();
+  await settings.getByRole("button", { name: "Close" }).click();
+  await expect(warning).toBeVisible();
+  await testInfo.attach("stage-b-permission-1440-dark", {
+    body: await page.screenshot({ animations: "disabled" }), contentType: "image/png",
+  });
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(before);
+});
+
+test("Stage B typed urgent strip keeps unsaved task warnings visible without writing Excel", async ({ page }) => {
+  await openManaged(page);
+  const urgent = page.locator(".managed-priority-notices");
+  await expect(urgent).toBeHidden();
+  const original = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task title").fill("Unsaved change for severity QA");
+  const warning = urgent.locator('[data-notice-kind="unsaved-changes"]');
+  await expect(urgent).toBeVisible();
+  await expect(warning).toContainText("Unsaved task or Under Watch edits");
+  await expect(warning).toHaveAttribute("data-dismissible", "false");
+  await expect(warning).toHaveAttribute("role", "status");
+  await expect(page.getByLabel("Task title")).toHaveValue("Unsaved change for severity QA");
+  // Input remains mounted/focused while the severity strip changes.
+  await expect(page.getByLabel("Task title")).toBeFocused();
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Change folder" }).click();
+  await expect(page.getByRole("dialog", { name: "Unsaved changes" })).toBeVisible();
+  await expect(warning).toBeVisible();
+  await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByLabel("Task title")).toHaveValue("Unsaved change for severity QA");
+  await expect(warning).toBeVisible();
+  await page.getByRole("button", { name: "Discard", exact: true }).click();
+  await expect(urgent).toBeHidden();
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(original);
+});
 
 test("Stage A Recent Projects shows verified workbook and respects unsaved Cancel before reopening",async({page})=>{
   await openManaged(page);
@@ -222,7 +533,9 @@ test("Save As after external source change preserves outside edits and uses load
     files.set("synthetic-demo.xlsx", new TextEncoder().encode("EXTERNAL EXCEL MODIFICATION"));
   });
   await page.getByRole("button", { name: "Save to workbook" }).click();
-  await expect(page.getByText(/Save NOT verified:.*changed since it was loaded/)).toBeVisible();
+  await expect(page.locator(".managed-banner").getByText(/Save NOT verified:.*changed since it was loaded/)).toBeVisible();
+  await expect(page.locator('.managed-priority-notices [data-notice-kind="save-unverified"]'))
+    .toContainText(/Save NOT verified:.*changed since it was loaded/);
   await expect(page.getByLabel("Task title")).toHaveValue("From original baseline");
 
   await page.getByRole("button", { name: "Save As…" }).click();
@@ -247,7 +560,9 @@ test("Save As refuses an existing destination and retains the unsaved edit and a
   await page.getByRole("button", { name: "Edit task" }).click();
   await page.getByLabel("Task title").fill("Keep my draft");
   await page.getByRole("button", { name: "Save As…" }).click();
-  await expect(page.getByText(/Save As NOT confirmed:/)).toBeVisible();
+  await expect(page.locator(".managed-banner").getByText(/Save As NOT confirmed:/)).toBeVisible();
+  await expect(page.locator('.managed-priority-notices [data-notice-kind="save-unverified"]'))
+    .toContainText(/Save As NOT confirmed:/);
   await expect(page.getByLabel("Task title")).toHaveValue("Keep my draft");
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
 });

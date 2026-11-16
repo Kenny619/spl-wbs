@@ -1,3 +1,7 @@
+import type { ViewState } from "../app/state";
+import { todayInTimeZone } from "../calendar/dateOnly";
+import { projectAttention, type AttentionKind } from "./attentionFoundation";
+import type { WatchProjection } from "./watchProjection";
 import type { ManagedReports } from "./reportsUi";
 import type { ImportController } from "../data/importController";
 import type { ManagedSettings } from "./settingsUi";
@@ -15,6 +19,7 @@ export function mountManagedShell(
   reports: ManagedReports,
   settings: ManagedSettings,
   guard: (action: () => void) => void,
+  getWatchProjection: () => WatchProjection | null,
 ): void {
   const main = doc.querySelector<HTMLElement>(".main");
   const topbar = doc.querySelector<HTMLElement>(".topbar");
@@ -223,34 +228,166 @@ export function mountManagedShell(
   overviewHeading.append(eyebrow, headingText);
   const summaryCounts = doc.createElement("div");
   summaryCounts.className = "managed-schedule-summary-counts";
+  summaryCounts.id = "managed-attention-actions";
+  const compactToggle = doc.createElement("button");
+  compactToggle.type = "button";
+  compactToggle.className = "managed-attention-toggle";
+  compactToggle.textContent = "Needs attention · Show filters";
+  compactToggle.setAttribute("aria-controls", summaryCounts.id);
+  compactToggle.setAttribute("aria-expanded", "false");
+  const compactCounts = doc.createElement("span");
+  compactCounts.className = "managed-attention-compact-counts";
+  overview.dataset.compactExpanded = "false";
+  compactToggle.addEventListener("click", () => {
+    const expanded = overview.dataset.compactExpanded !== "true";
+    overview.dataset.compactExpanded = String(expanded);
+    compactToggle.setAttribute("aria-expanded", String(expanded));
+    compactToggle.textContent = expanded
+      ? "Needs attention · Hide filters" : "Needs attention · Show filters";
+  });
   const countBlocks = new Map<string, HTMLElement>();
-  for (const [key, label] of [
-    ["blocked", "Blocked"], ["risk", "At Risk"], ["milestone", "Open milestones"],
+  const attentionButtons = new Map<AttentionKind, HTMLButtonElement>();
+  let activeAttention: AttentionKind | null = null;
+  let previousAttentionView: Partial<ViewState> | null = null;
+  const getSnapshot = () => {
+    const watch = getWatchProjection();
+    // A valid Excel Watch projection proves recorded open reasons, not RAG
+    // completeness, authenticated authorship, Green or automatic clearance.
+    const verifiedOpenIds = watch?.workbookState === "valid" && watch.schemaValidated &&
+      watch.projectName !== null
+      ? new Set(watch.tasks.filter(task => task.openReasons.length > 0).map(task => task.taskId))
+      : null;
+    return projectAttention(controller.getState().tasks ?? [],
+      todayInTimeZone(new Date(), settings.getTimeZone()), verifiedOpenIds);
+  };
+  for (const [key, label, kind] of [
+    ["blocked", "Blocked", "blocked"],
+    ["risk", "At Risk", "at-risk"],
+    ["overdue", "Overdue", "overdue"],
+    ["watch", "Under Watch", "under-watch"],
+    ["milestone", "Open milestones", null],
   ] as const) {
-    const countBlock = doc.createElement("div");
+    const countBlock = doc.createElement(kind === null ? "div" : "button");
     countBlock.className = "managed-schedule-summary-item " + key;
+    if (kind !== null && countBlock instanceof HTMLButtonElement) {
+      countBlock.type = "button";
+      countBlock.setAttribute("aria-label", "Filter WBS to " + label + " tasks");
+      countBlock.setAttribute("aria-pressed", "false");
+      attentionButtons.set(kind, countBlock);
+    }
     const value = doc.createElement("strong");
-    value.textContent = "0";
+    value.textContent = kind === "under-watch" ? "—" : "0";
     const caption = doc.createElement("span");
     caption.textContent = label;
     countBlock.append(value, caption);
     summaryCounts.append(countBlock);
     countBlocks.set(key, value);
   }
-  overview.append(overviewHeading, summaryCounts);
+  const attentionState = doc.createElement("p");
+  attentionState.className = "managed-attention-context";
+  attentionState.setAttribute("role", "status");
+  attentionState.hidden = true;
+
+  const syncAttentionButtons = () => {
+    const view = controller.getState().view;
+    if (activeAttention && view.attentionIds === undefined) {
+      activeAttention = null;
+      previousAttentionView = null;
+    }
+    for (const [kind, button] of attentionButtons) {
+      const available = getSnapshot().taskIdsByKind[kind] !== null;
+      button.disabled = !available;
+      button.setAttribute("aria-pressed", String(activeAttention === kind));
+      button.title = !available
+        ? "Watch evidence unavailable in this workbook; not a verified zero"
+        : activeAttention === kind ? "Clear attention filter and restore previous view"
+          : "Show matching tasks and open Task Detail";
+    }
+    attentionState.hidden = !activeAttention;
+    attentionState.textContent = activeAttention
+      ? "Showing " + (activeAttention === "at-risk" ? "At Risk" : activeAttention === "under-watch"
+        ? "recorded Under Watch" : activeAttention === "blocked" ? "Blocked" : "Overdue") +
+        " tasks in the existing WBS. Select again to restore previous filters."
+      : "";
+  };
+
+  for (const [kind, button] of attentionButtons) {
+    button.addEventListener("click", () => guard(() => {
+      const view = controller.getState().view;
+      const snapshot = getSnapshot();
+      const targetIds = snapshot.taskIdsByKind[kind];
+      if (!targetIds) return; // Unverified Watch is unknown, never zero.
+      if (activeAttention === kind && previousAttentionView) {
+        const restore = previousAttentionView;
+        activeAttention = null;
+        previousAttentionView = null;
+        controller.patchView({ ...restore, attentionIds: restore.attentionIds });
+      } else {
+        if (!activeAttention) {
+          previousAttentionView = {
+            search: view.search, statuses: [...view.statuses], owners: [...view.owners],
+            types: [...view.types], workstreams: [...view.workstreams],
+            finishes: view.finishes ? [...view.finishes] : undefined,
+            hideInactive: view.hideInactive, columns: [...view.columns],
+            expandedIds: [...view.expandedIds], selectedId: view.selectedId,
+            attentionIds: view.attentionIds ? [...view.attentionIds] : undefined,
+          };
+        }
+        activeAttention = kind;
+        // Compact Schedule must keep the clear-filter control accessible.
+        overview.dataset.compactExpanded = "true";
+        compactToggle.setAttribute("aria-expanded", "true");
+        compactToggle.textContent = "Needs attention · Hide filters";
+        controller.patchView({
+          attentionIds: [...targetIds],
+          search: "", statuses: kind === "blocked" ? ["Blocked"] : kind === "at-risk" ? ["At Risk"] : [],
+          owners: [], types: [], workstreams: [], finishes: [], hideInactive: false,
+          columns: view.columns.includes("status") ? [...view.columns] : [...view.columns, "status"],
+          selectedId: targetIds[0] ?? null,
+        });
+      }
+      syncAttentionButtons();
+    }));
+  }
+  overview.append(overviewHeading, compactToggle, compactCounts, summaryCounts, attentionState);
   main.insertBefore(overview, workspace);
   const syncOverview = () => {
     const tasks = controller.getState().tasks;
     overview.hidden = !tasks;
     if (!tasks) return;
-    const leaf = tasks.filter((task) => task.taskType !== "Summary" &&
-      task.status !== "Completed" && task.status !== "Cancelled");
-    countBlocks.get("blocked")!.textContent = String(leaf.filter((task) => task.status === "Blocked").length);
-    countBlocks.get("risk")!.textContent = String(leaf.filter((task) => task.status === "At Risk").length);
-    countBlocks.get("milestone")!.textContent = String(leaf.filter((task) => task.taskType === "Milestone").length);
+    const snapshot = getSnapshot();
+    for (const [key, kind] of [
+      ["blocked", "blocked"], ["risk", "at-risk"],
+      ["overdue", "overdue"], ["watch", "under-watch"],
+    ] as const) {
+      countBlocks.get(key)!.textContent = snapshot.counts[kind] === null
+        ? "—" : String(snapshot.counts[kind]);
+    }
+    const milestones = tasks.filter(task =>
+      task.taskType === "Milestone" && task.status !== "Completed" && task.status !== "Cancelled").length;
+    countBlocks.get("milestone")!.textContent = String(milestones);
+    compactCounts.textContent =
+      "Blocked " + snapshot.counts.blocked + " · At Risk " + snapshot.counts["at-risk"] +
+      " · Overdue " + snapshot.counts.overdue + " · Watch " +
+      (snapshot.counts["under-watch"] === null ? "Unknown" : snapshot.counts["under-watch"]);
+    compactCounts.title = compactCounts.textContent;
+    // Changes to the workbook, including a verified Watch Save, must never
+    // leave stale task IDs in an active attention filter.
+    if (activeAttention) {
+      const target = snapshot.taskIdsByKind[activeAttention];
+      const current = controller.getState().view.attentionIds;
+      if (target !== null && current && (target.length !== current.length ||
+        target.some((id, i) => current[i] !== id))) {
+        controller.patchView({ attentionIds: [...target],
+          selectedId: target.includes(controller.getState().view.selectedId ?? "")
+            ? controller.getState().view.selectedId : target[0] ?? null });
+      }
+    }
   };
   controller.subscribe(syncOverview);
+  controller.subscribe(syncAttentionButtons);
   syncOverview();
+  syncAttentionButtons();
   // The approved Review08 Task Detail uses a fixed heading and a single
   // scroll-contained live detail/editor body. Move existing editor and close
   // nodes (never clone them) so their workbook handlers stay attached.

@@ -88,6 +88,31 @@ describe("summary rollup", () => {
   });
 });
 
+describe("Stage B explicit attention restriction", () => {
+  const rows = [
+    task({ id: "s", taskType: "Summary", wbsCode: "1" }),
+    task({ id: "a", taskType: "Task", parentId: "s", wbsCode: "1.1", status: "Blocked" }),
+    task({ id: "b", taskType: "Task", parentId: "s", wbsCode: "1.2", status: "At Risk" }),
+  ];
+
+  it("includes only evidence-backed task IDs plus ancestry and excludes unrelated siblings", () => {
+    expect(flattenVisible(rows, new Set(["s"]), { attentionIds: ["b"] }).map(t => t.id))
+      .toEqual(["s", "b"]);
+  });
+
+  it("keeps the meaning of an empty active attention filter distinct from no restriction", () => {
+    expect(flattenVisible(rows, new Set(["s"]), { attentionIds: [] })).toEqual([]);
+    expect(flattenVisible(rows, new Set(["s"])).map(t => t.id)).toEqual(["s", "a", "b"]);
+  });
+
+  it("intersects an attention ID with current explicit column/status filtering", () => {
+    const filtered = flattenVisible(rows, new Set(["s"]), {
+      attentionIds: ["a", "b"], statuses: ["Blocked"], columns: { status: true },
+    });
+    expect(filtered.map(t => t.id)).toEqual(["s", "a"]);
+  });
+});
+
 describe("tree filters", () => {
   const tasks = [
     task({ id: "1", taskType: "Summary", status: "Cancelled", owner: "P", wbsCode: "1", sortOrder: 1 }),

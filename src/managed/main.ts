@@ -14,6 +14,7 @@ import { openManagedHistory } from "./historyUi";
 import { ManagedSettings } from "./settingsUi";
 import { ManagedReports } from "./reportsUi";
 import { mountManagedShell } from "./shell";
+import { prioritizeManagedNotices, type ManagedNotice } from "./attentionFoundation";
 import { renderManagedReview08Header, renderManagedReview08TaskDetail } from "./review08TaskDetail";
 import { todayInTimeZone } from "../calendar/dateOnly";
 import { MANAGED_APP_VERSION as APP_VERSION } from "./version";
@@ -90,6 +91,9 @@ export class ManagedEditor {
   private pending: (() => void) | null = null;
   private readonly slot: HTMLDivElement;
   private readonly banner: HTMLDivElement;
+  private readonly priorityNotices: HTMLDivElement;
+  private explicitNotice: ManagedNotice | null = null;
+  private lastRenderedPriorityNoticeKey: string | null = null;
   private readonly fileSelect: HTMLSelectElement;
   private readonly dialog: HTMLDialogElement;
   private readonly settings: ManagedSettings;
@@ -116,6 +120,9 @@ export class ManagedEditor {
     this.banner = element(doc, "div", "managed-banner");
     this.banner.setAttribute("role", "status");
     topbar.after(this.banner);
+    this.priorityNotices = element(doc, "div", "managed-priority-notices");
+    this.priorityNotices.setAttribute("aria-label", "Important workbook notices");
+    this.banner.after(this.priorityNotices);
     this.slot = element(doc, "div", "managed-editor");
     doc.getElementById("panel")?.append(this.slot);
     this.dialog = element(doc, "dialog", "managed-dialog");
@@ -254,6 +261,7 @@ export class ManagedEditor {
         this.projectContext = null;
         this.inspectionName = null;
         this.recoveryHold = false;
+        this.explicitNotice = null;
         this.names = [];
         this.canWrite = false;
         this.clearDraft();
@@ -283,7 +291,8 @@ export class ManagedEditor {
       timeZone: this.settings.getTimeZone(),
       hasUnsavedDraft: this.isDirty(),
     }));
-    mountManagedShell(doc, controller, this.reports, this.settings, (action) => this.guard(action));
+    mountManagedShell(doc, controller, this.reports, this.settings,
+      (action) => this.guard(action), () => this.watchProjection);
     // Managed shell needs the original close node to construct the inspector.
     // Remove only after its one-time structural initialization has completed;
     // the approved managed Schedule keeps Task Detail persistently accessible.
@@ -452,6 +461,7 @@ export class ManagedEditor {
       this.names = [];
       this.canWrite = false;
       this.recoveryHold = false;
+      this.explicitNotice = null;
       this.clearDraft();
       this.message = "Read-only preview loaded: " + file.name +
         ". Folder write access remains unavailable; Save, Save As and History write verification are disabled.";
@@ -490,6 +500,10 @@ export class ManagedEditor {
     catch (error) {
       const name = error instanceof Error ? error.name : "UnknownError";
       const detail = errorMessage(error);
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        this.explicitNotice = { id: "folder-permission", kind: "permission-denied",
+          message: "Folder access was denied. Use the read-only XLSX option or contact your administrator." };
+      }
       this.message = "Edge folder picker did not grant a folder (" + name + ": " + detail +
         "). Folder selection may have been cancelled, not confirmed, or restricted by policy. " +
         "Retry Project → Choose project folder: explicitly select the NEW disposable test folder " +
@@ -562,6 +576,7 @@ export class ManagedEditor {
       this.watchView = await this.readWatchSnapshot(bytes);
       this.canWrite = eligible;
       this.recoveryHold = false;
+      this.explicitNotice = null;
       this.clearDraft();
       try { localStorage.setItem(STORAGE_PREFIX + targetDir.name, name); } catch { /* best effort */ }
       if (eligible && (this.projectContext?.kind === "valid" || this.projectContext?.kind === "legacy")) {
@@ -667,12 +682,14 @@ export class ManagedEditor {
       this.watchPanel.cancel();
       this.controller.patchView({ ...view, managedBlackout: this.projectContext?.kind === "valid"
         ? this.projectContext.blackout : { enabled: false, start: "", end: "" } });
+      this.explicitNotice = null;
       this.message = "Verified Save: project evidence and ProjectAudit persisted; predecessor backup retained.";
       return { kind: "saved", message: this.message };
     } catch (error) {
       // Block retries after any uncertain result, including post-write import failure.
       this.recoveryHold = true;
       this.message = "Project Save NOT verified: " + errorMessage(error) + ". Draft retained; inspect and reload before retrying.";
+      this.explicitNotice = { id: "project-save-unverified", kind: "save-unverified", message: this.message };
       return { kind: "blocked", message: this.message };
     } finally {
       this.busy = false;
@@ -714,6 +731,7 @@ export class ManagedEditor {
       const reloaded = this.controller.getState();
       if (!reloaded.tasks || reloaded.loadError) {
         this.message = "Workbook bytes saved, but screen refresh failed. Draft retained; inspect the workbook before retrying.";
+        this.explicitNotice = { id: "save-unverified", kind: "save-unverified", message: this.message };
         return false;
       }
       this.loadedHash = result.sourceHash;
@@ -721,6 +739,7 @@ export class ManagedEditor {
       this.watchView = await this.readWatchSnapshot(verified);
       this.clearDraft();
       this.controller.patchView({ ...view, selectedId: taskId });
+      this.explicitNotice = null;
       this.message = "Verified Save: task and UpdateHistory persisted; predecessor backup retained.";
       return true;
     } catch (error) {
@@ -731,6 +750,7 @@ export class ManagedEditor {
       }
       this.message = "Save NOT verified: " + errorMessage(error) +
         ". Draft retained. If the source changed externally, use Save As to make a copy from the last loaded version; Reload requires discarding edits.";
+      this.explicitNotice = { id: "save-unverified", kind: "save-unverified", message: this.message };
       return false;
     } finally {
       this.busy = false;
@@ -842,12 +862,14 @@ export class ManagedEditor {
       if (this.projectContext?.kind === "valid" || this.projectContext?.kind === "legacy") {
         this.rememberRecentProject(directory, name);
       }
+      this.explicitNotice = null;
       this.message = "Save As verified: " + name + " is now active in " + directory.name + ". Original " + sourceName +
         " was not modified; future direct Saves target " + name + " in the destination folder.";
       return true;
     } catch (error) {
       this.message = "Save As NOT confirmed: " + errorMessage(error) +
         ". The original remains the active source; pending edits retained. Inspect any destination staging files before retrying.";
+      this.explicitNotice = { id: "save-as-unverified", kind: "save-unverified", message: this.message };
       return false;
     } finally {
       this.busy = false;
@@ -863,9 +885,43 @@ export class ManagedEditor {
       this.controller.patchView({ managedBlackout: this.projectContext.kind === "valid"
         ? this.projectContext.blackout : { enabled: false, start: "", end: "" } });
       this.watchProjection = await projectWatchProjection(bytes);
+      // Keep the unified attention projection in sync with verified workbook Watch facts.
+      this.controller.patchView({});
       return toManagedWatchView(this.watchProjection);
     }
     catch { return { kind: "unavailable", workbookState: "incompatible", findings: [] }; }
+  }
+
+  /**
+   * Refresh only priority notices while a task input is focused. Repainting the
+   * whole managed editor here would destroy the active control/caret and draft.
+   */
+  private renderPriorityNotices(): void {
+    // Stage B event-typed urgent strip. Do not inspect message strings for
+    // words such as "error" or "green"; trust only verified state/origin.
+    const notices: ManagedNotice[] = [];
+    if (this.recoveryHold) notices.push({ id: "recovery", kind: "recovery-blocked",
+      message: "Save safety hold: inspect recovery files before attempting another write." });
+    if (this.isDirty()) notices.push({ id: "unsaved", kind: "unsaved-changes",
+      message: "Unsaved task or Under Watch edits. Save, Discard or Cancel before leaving." });
+    if (this.explicitNotice) notices.push(this.explicitNotice);
+    const ordered = prioritizeManagedNotices(notices);
+    const key = JSON.stringify(ordered.map(({ id, kind, severity, message }) =>
+      [id, kind, severity, message]));
+    if (key === this.lastRenderedPriorityNoticeKey) return;
+    this.lastRenderedPriorityNoticeKey = key;
+    this.priorityNotices.replaceChildren();
+    this.priorityNotices.hidden = ordered.length === 0;
+    for (const notice of ordered) {
+      const item = element(this.doc, "div", "managed-priority-notice managed-severity-" + notice.severity);
+      item.dataset.noticeKind = notice.kind;
+      item.dataset.dismissible = String(notice.dismissible);
+      item.setAttribute("role", notice.severity === "critical" ? "alert" : "status");
+      item.append(element(this.doc, "strong", "", notice.severity === "critical" ? "Action required" : "Attention"),
+        element(this.doc, "span", "", notice.message));
+      this.priorityNotices.append(item);
+    }
+
   }
 
   private render(): void {
@@ -878,6 +934,7 @@ export class ManagedEditor {
       (this.recoveryHold ? "Save blocked — inspect recovery files. " : "") +
       (this.message || (this.sourceName ? "View only" : "Choose project folder")));
     this.banner.append(intro, status);
+    this.renderPriorityNotices();
 
     this.fileSelect.replaceChildren();
     for (const name of this.names) {
@@ -1054,6 +1111,7 @@ export class ManagedEditor {
         draft[field] = value;
         saveButton.disabled = this.busy || this.recoveryHold || !this.isDirty();
         indicator.textContent = this.isDirty() ? "Unsaved changes" : "No unsaved changes";
+        this.renderPriorityNotices();
       });
       wrapper.append(control);
       fields.append(wrapper);
