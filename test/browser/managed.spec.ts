@@ -247,7 +247,9 @@ test("Stage B 860px compact attention remains discoverable, keyboard-operable an
   await page.setViewportSize({ width: 860, height: 768 });
   await openManaged(page);
   const summary = page.locator(".managed-schedule-summary");
-  const expand = page.getByRole("button", { name: "Needs attention · Show filters" });
+  // Stable element identity: its accessible name changes from Show to Hide on expand.
+  const expand = page.locator(".managed-attention-toggle");
+  await expect(expand).toHaveText("Needs attention · Show filters");
   const counts = page.locator(".managed-attention-compact-counts");
   const actions = page.locator("#managed-attention-actions");
   await expect(summary).toBeVisible();
