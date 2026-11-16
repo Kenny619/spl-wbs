@@ -8,6 +8,8 @@ export type TaskFilter = {
   owners?: readonly string[];
   types?: readonly string[];
   workstreams?: readonly string[];
+  /** Optional managed-only task-ID attention restriction. [] deliberately means show none. */
+  attentionIds?: readonly string[];
   /** Optional managed-only Finish date selections, date-only ISO or empty for unscheduled. */
   finishes?: readonly string[];
   hideInactive?: boolean;
@@ -96,19 +98,21 @@ function visibleIds(tasks: readonly Task[], filter: TaskFilter): Set<string> {
     workstream: filter.columns?.workstream ?? true,
   };
   const search = filter.search?.trim().toLowerCase() ?? "";
+  const attention = filter.attentionIds === undefined ? null : new Set(filter.attentionIds);
   const statuses = columns.status ? new Set(filter.statuses ?? []) : new Set<string>();
   const owners = columns.owner ? new Set(filter.owners ?? []) : new Set<string>();
   const types = columns.type ? new Set(filter.types ?? []) : new Set<string>();
   const workstreams = columns.workstream ? new Set(filter.workstreams ?? []) : new Set<string>();
   const finishes = (filter.columns?.finish ?? false) ? new Set(filter.finishes ?? []) : new Set<string>();
   const filtering = Boolean(
-    search || statuses.size || owners.size || types.size || workstreams.size || finishes.size || filter.hideInactive,
+    search || statuses.size || owners.size || types.size || workstreams.size || finishes.size || filter.hideInactive || attention !== null,
   );
   if (!filtering) return new Set(tasks.map((task) => task.id));
 
   const byId = new Map(tasks.map((task) => [task.id, task]));
   const matched = new Set<string>();
   for (const task of tasks) {
+    if (attention && !attention.has(task.id)) continue;
     if (filter.hideInactive && INACTIVE.includes(task.status)) continue;
     if (search) {
       const haystack = `${task.wbsCode} ${task.taskName} ${task.owner}`.toLowerCase();
