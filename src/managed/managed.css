@@ -2,8 +2,9 @@
 body.spt-managed .source-record { display:none !important; }
 .managed-banner { display:flex; gap:12px; align-items:center; justify-content:space-between;
   margin:0 0 12px; padding:10px 14px; background:#eef5fb; border:1px solid #bfd7eb;
-  color:#244865; border-radius:7px; font:500 12px/1.5 system-ui,sans-serif; }
+  color:#244865; border-radius:7px; font:500 12px/1.5 system-ui,sans-serif; overflow-wrap:anywhere; }
 .managed-banner strong { font-weight:700; }
+.managed-banner > span {min-width:0; overflow-wrap:anywhere;}
 .managed-alert { color:#a13e26; font-weight:600; }
 /* Stage B typed priority strip; one visible urgent channel without hiding the
  * accepted Save/permission details or relying on message-text heuristics. */
