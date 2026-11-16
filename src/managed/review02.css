@@ -399,11 +399,47 @@ body.spt-managed[data-managed-theme="dark"] .managed-schedule-summary-item.risk 
   body.spt-managed .managed-schedule-summary-item {min-width:0;flex:1;}
 }
 
-/* Preserve the already accepted 860px conference/laptop Gantt height.
- * The priority strip remains available at desktop width; smaller widths use
- * Gantt-local Exceptions/Workstreams and semantic status chips instead. */
+/* Stage B QA: compact, discoverable attention at 860px without consuming
+ * the Gantt's accepted chart height until the user explicitly opens filters.
+ * All four factual counts remain visible in the collapsed one-row summary.
+ * Never hide urgent notices or misstate unknown Watch as zero. */
+body.spt-managed .managed-attention-toggle,
+body.spt-managed .managed-attention-compact-counts {display:none;}
 @media(max-width:960px){
-  body.spt-managed .managed-schedule-summary{display:none!important;}
+  body.spt-managed .managed-schedule-summary {
+    display:flex; flex-direction:row; flex-wrap:wrap; align-items:center;
+    gap:5px 11px; margin:4px 14px 0; padding:5px 10px;
+    box-shadow:none; border-radius:7px; min-height:0;
+  }
+  body.spt-managed .managed-schedule-summary-heading {display:none;}
+  body.spt-managed .managed-attention-toggle {
+    display:inline-flex; align-items:center; flex:none;
+    font:700 11px/1.4 inherit; font-family:inherit;
+    background:var(--r11-raised); color:var(--r11-ink);
+    border:1px solid var(--r11-edge); border-radius:6px;
+    padding:4px 9px; min-height:29px; cursor:pointer;
+  }
+  body.spt-managed .managed-attention-toggle:focus-visible {
+    outline:3px solid var(--r11-ink); outline-offset:2px;
+  }
+  body.spt-managed .managed-attention-compact-counts {
+    display:inline; flex:1; min-width:0; color:var(--r11-sub);
+    font-size:10px; font-weight:650; overflow-wrap:anywhere;
+  }
+  body.spt-managed .managed-schedule-summary-counts {
+    display:none; flex-basis:100%; width:100%; gap:5px;
+  }
+  body.spt-managed .managed-schedule-summary[data-compact-expanded="true"]
+    .managed-schedule-summary-counts {display:flex;}
+  body.spt-managed .managed-schedule-summary-item {
+    padding:5px 7px; min-width:92px; font-size:10px;
+  }
+  body.spt-managed .managed-schedule-summary-item strong {font-size:14px;}
+}
+@media(max-width:700px) {
+  body.spt-managed .managed-schedule-summary {flex-direction:row;align-items:center;gap:5px 9px;}
+  body.spt-managed .managed-schedule-summary-counts {flex-wrap:wrap;}
+  body.spt-managed .managed-schedule-summary-item {min-width:92px;flex:1;}
 }
 
 /* At 860px the Gantt header wraps. Keep the DES-010 accepted minimum
