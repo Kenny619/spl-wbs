@@ -161,6 +161,44 @@ test("Stage B attention shortcuts navigate positive synthetic matches and respec
   await expect(page.locator(".task-row")).toHaveCount(3);
 });
 
+test("Stage B verified workbook Under Watch shows recorded Open only, not inferred Green after resolution", async ({ page }) => {
+  const open = await projectDataWorkbook("Open");
+  await openManaged(page, open.toString("base64"));
+  const watch = page.getByRole("button", { name: "Filter WBS to Under Watch tasks" });
+  await expect(watch).toBeEnabled();
+  await expect(watch.locator("strong")).toHaveText("1");
+  const before = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await watch.click();
+  await expect(watch).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('.task-row[data-task-id="501"]')).toHaveCount(1);
+  await expect(page.locator(".managed-watch-evidence")).toContainText("Under Watch");
+  await watch.click();
+  await expect(watch).toHaveAttribute("aria-pressed", "false");
+
+  // Switch to a separate read-only, verified workbook with only resolved Watch
+  // reasons. No automatic RAG/Clear claim is permitted from this change.
+  await page.getByLabel("Choose an XLSX for read-only preview").setInputFiles({
+    name: "resolved-watch.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: await projectDataWorkbook("Resolved"),
+  });
+  await expect(page.locator(".managed-banner")).toContainText("Read-only preview loaded");
+  await expect(watch).toBeEnabled();
+  await expect(watch.locator("strong")).toHaveText("0");
+  await watch.click();
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await expect(watch).toHaveAttribute("aria-pressed", "true");
+  await watch.click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(page.locator(".managed-watch-evidence")).toContainText("Workbook Watch: Unknown");
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(before);
+});
+
 test("Stage B overdue attention selects actual WBS task and restores original view", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-16T01:00:00.000Z") });
   await page.setViewportSize({ width: 1440, height: 900 });
