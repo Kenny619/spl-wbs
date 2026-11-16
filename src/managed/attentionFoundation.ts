@@ -20,13 +20,22 @@ export type AttentionSnapshot = Readonly<{
   distinctAttentionTaskCount: number;
 }>;
 
+/** Strict Gregorian ISO date-only validation: impossible dates never become overdue facts. */
+function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day || year < 1000 || month > 12) return false;
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return day <= daysInMonth;
+}
+
 export function projectAttention(
   tasks: readonly Task[],
   today: string,
   /** Null means Watch evidence has not been verified, not "no Watch reasons". */
   verifiedOpenWatchTaskIds: ReadonlySet<string> | null = null,
 ): AttentionSnapshot {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) {
+  if (!isCalendarDate(today)) {
     throw new Error("Attention requires an ISO date-only today, not a timestamp.");
   }
   const ids: Record<AttentionKind, string[] | null> = {
@@ -47,7 +56,7 @@ export function projectAttention(
     seen.add(task.id);
     if (task.status === "Blocked") append(task.id, "blocked", "recorded-task-status");
     if (task.status === "At Risk") append(task.id, "at-risk", "recorded-task-status");
-    if (task.plannedEnd && /^\d{4}-\d{2}-\d{2}$/.test(task.plannedEnd)
+    if (task.plannedEnd && isCalendarDate(task.plannedEnd)
       && task.plannedEnd < today && task.status !== "Completed" && task.status !== "Cancelled") {
       append(task.id, "overdue", "planned-finish-date");
     }
