@@ -641,6 +641,9 @@ test("Settings relocates existing v18 columns, persists timezone and dark theme 
 });
 
 test("Stage B PGCM toggle changes actual timeline markers and restores them without workbook writes", async ({ page }) => {
+  // This covers both zoom renderers, repeated Settings changes, reload and
+  // reset. The default 30-second budget times out on slower Windows runners.
+  test.setTimeout(60000);
   // Freeze the browser clock so the synthetic schedule always includes future PGCM meetings.
   await page.clock.setFixedTime(new Date("2026-11-16T00:00:00Z"));
   const book = new ExcelJS.Workbook();
@@ -699,10 +702,13 @@ test("Stage B PGCM toggle changes actual timeline markers and restores them with
   await page.getByRole("button", { name: "Choose project folder" }).click();
   await expect(page.locator(".task-row")).toHaveCount(1);
   await expect(markers).toHaveCount(0);
+  await expect(page.locator('[data-zoom="week"]')).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const reloadedSettings = page.getByRole("dialog", { name: "Settings" });
+  await expect(reloadedSettings).toBeVisible();
   page.once("dialog", dialog => void dialog.accept());
-  await settings.getByRole("button", { name: "Reset to defaults" }).click();
-  await expect(toggle).toBeChecked();
+  await reloadedSettings.getByRole("button", { name: "Reset to defaults" }).click();
+  await expect(reloadedSettings.getByRole("checkbox", { name: "Highlight PGCM dates" })).toBeChecked();
   await expect(weekMarkers).toHaveCount(initialCount);
   const after = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
