@@ -10,7 +10,8 @@ import { join } from "node:path";
 const dir = "work/option-a-candidate";
 const workbook = "SPT-WBS_OptionA_Fictional_23_Task_Project.xlsx";
 const html = "managed.html";
-const sourceCommit = process.env.GITHUB_SHA || "LOCAL_UNPINNED";
+const sourceCommit = process.env.UAT_SOURCE_COMMIT || process.env.GITHUB_SHA || "LOCAL_UNPINNED";
+const ciCheckoutCommit = process.env.GITHUB_SHA || "LOCAL_UNPINNED";
 const runId = process.env.GITHUB_RUN_ID || "LOCAL_UNPINNED";
 const metaFile = join(dir, "PROVENANCE.json");
 const meta = JSON.parse(await readFile(metaFile, "utf8"));
@@ -87,8 +88,8 @@ await writeFile(join(dir, "UAT_CHECKLIST.md"), checklist+"\n");
 const provenance = {
   ...meta, scope: "stage-b-b2-b3-needs-attention-and-severity",
   pr: 92, status: "OWNER_UAT_CANDIDATE_NOT_ACCEPTED",
-  sourceCommit, ciRun: runId,
-  stageAAlreadyAccepted: true, stageBAccepted: false, mergerAuthorized: false,
+  sourceCommit, ciCheckoutCommit, ciRun: runId,
+  stageAAlreadyAccepted: true, stageBAccepted: false, mergeAuthorized: false,
   stageBChecks: ["B2-01","B2-02","B3-01"],
   knownDeferred: ["Corporate Edge file-picker policies", "RAG/Green/Clear policy",
     "Stage C task and project authoring", "moderate dependency advisories"],
