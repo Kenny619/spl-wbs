@@ -110,10 +110,18 @@ test("Stage B typed urgent strip keeps unsaved task warnings visible without wri
   await expect(warning).toContainText("Unsaved task or Under Watch edits");
   await expect(warning).toHaveAttribute("data-dismissible", "false");
   await expect(warning).toHaveAttribute("role", "status");
+  await expect(page.getByLabel("Task title")).toHaveValue("Unsaved change for severity QA");
+  // Input remains mounted/focused while the severity strip changes.
+  await expect(page.getByLabel("Task title")).toBeFocused();
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Change folder" }).click();
   await expect(page.getByRole("dialog", { name: "Unsaved changes" })).toBeVisible();
   await expect(warning).toBeVisible();
+  await page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByLabel("Task title")).toHaveValue("Unsaved change for severity QA");
+  await expect(warning).toBeVisible();
+  await page.getByRole("button", { name: "Discard", exact: true }).click();
+  await expect(urgent).toBeHidden();
   const after = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
@@ -246,7 +254,9 @@ test("Save As after external source change preserves outside edits and uses load
     files.set("synthetic-demo.xlsx", new TextEncoder().encode("EXTERNAL EXCEL MODIFICATION"));
   });
   await page.getByRole("button", { name: "Save to workbook" }).click();
-  await expect(page.getByText(/Save NOT verified:.*changed since it was loaded/)).toBeVisible();
+  await expect(page.locator(".managed-banner").getByText(/Save NOT verified:.*changed since it was loaded/)).toBeVisible();
+  await expect(page.locator('.managed-priority-notices [data-notice-kind="save-unverified"]'))
+    .toContainText(/Save NOT verified:.*changed since it was loaded/);
   await expect(page.getByLabel("Task title")).toHaveValue("From original baseline");
 
   await page.getByRole("button", { name: "Save As…" }).click();
@@ -271,7 +281,9 @@ test("Save As refuses an existing destination and retains the unsaved edit and a
   await page.getByRole("button", { name: "Edit task" }).click();
   await page.getByLabel("Task title").fill("Keep my draft");
   await page.getByRole("button", { name: "Save As…" }).click();
-  await expect(page.getByText(/Save As NOT confirmed:/)).toBeVisible();
+  await expect(page.locator(".managed-banner").getByText(/Save As NOT confirmed:/)).toBeVisible();
+  await expect(page.locator('.managed-priority-notices [data-notice-kind="save-unverified"]'))
+    .toContainText(/Save As NOT confirmed:/);
   await expect(page.getByLabel("Task title")).toHaveValue("Keep my draft");
   await expect(page.getByLabel("Active Excel workbook")).toHaveValue("synthetic-demo.xlsx");
 });
