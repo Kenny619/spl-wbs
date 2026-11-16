@@ -338,26 +338,35 @@ test("Stage B PGCM toggle changes actual timeline markers and restores them with
   await openManaged(page, encoded, 1, "synthetic-demo");
   await page.keyboard.press("Escape");
   const markers = page.locator(".pgcm-marker, .pgcm-day-column, .pgcm-tag, .pgcm-week-tag");
-  await expect.poll(() => markers.count()).toBeGreaterThan(0);
-  const initialCount = await markers.count();
-  // Exercise both independently rendered PGCM layouts, not just the default zoom.
+  // Verify the SELECTED zoom actually renders its own PGCM DOM. A union-only
+  // assertion can be satisfied by stale elements from the previous zoom.
   for (const zoom of ["day", "week"] as const) {
-    await page.locator(`[data-zoom="${zoom}"]`).click();
-    await expect.poll(() => markers.count()).toBeGreaterThan(0);
-    const zoomCount = await markers.count();
+    const selected = page.locator(`[data-zoom="${zoom}"]`);
+    await selected.click();
+    await expect(selected).toHaveAttribute("aria-pressed", "true");
+    const current = page.locator(zoom === "day" ? ".pgcm-tag" : ".pgcm-week-tag");
+    const previousZoom = page.locator(zoom === "day"
+      ? ".pgcm-week-tag, .pgcm-marker" : ".pgcm-tag, .pgcm-day-column");
+    await expect(previousZoom).toHaveCount(0);
+    await expect.poll(() => current.count()).toBeGreaterThan(0);
+    const countBefore = await current.count();
     await page.getByRole("button", { name: "Settings", exact: true }).click();
-    const zoomToggle = page.getByRole("dialog", { name: "Settings" })
-      .getByRole("checkbox", { name: "Highlight PGCM dates" });
+    const dialog = page.getByRole("dialog", { name: "Settings" });
+    const zoomToggle = dialog.getByRole("checkbox", { name: "Highlight PGCM dates" });
     await zoomToggle.uncheck();
     await expect(markers).toHaveCount(0);
     await zoomToggle.check();
-    await expect(markers).toHaveCount(zoomCount);
-    await page.getByRole("dialog", { name: "Settings" })
-      .getByRole("button", { name: "Close" }).click();
+    await expect(current).toHaveCount(countBefore);
+    await expect(previousZoom).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Close" }).click();
   }
-  // Return to the original zoom before verifying persisted preference and Reset.
-  await page.locator('[data-zoom="month"]').click();
-  await expect(markers).toHaveCount(initialCount);
+  // Leave Week selected. PGCM markers intentionally do not render in Month
+  // or Quarter zoom, and reload restores the default Week view.
+  const selectedWeek = page.locator('[data-zoom="week"]');
+  await expect(selectedWeek).toHaveAttribute("aria-pressed", "true");
+  const weekMarkers = page.locator(".pgcm-week-tag");
+  const initialCount = await weekMarkers.count();
+  expect(initialCount).toBeGreaterThan(0);
   const original = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
@@ -367,7 +376,7 @@ test("Stage B PGCM toggle changes actual timeline markers and restores them with
   await toggle.uncheck();
   await expect(markers).toHaveCount(0);
   await toggle.check();
-  await expect(markers).toHaveCount(initialCount);
+  await expect(weekMarkers).toHaveCount(initialCount);
   await toggle.uncheck();
   await settings.getByRole("button", { name: "Close" }).click();
   await page.reload();
@@ -379,7 +388,7 @@ test("Stage B PGCM toggle changes actual timeline markers and restores them with
   page.once("dialog", dialog => void dialog.accept());
   await settings.getByRole("button", { name: "Reset to defaults" }).click();
   await expect(toggle).toBeChecked();
-  await expect(markers).toHaveCount(initialCount);
+  await expect(weekMarkers).toHaveCount(initialCount);
   const after = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
       .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
