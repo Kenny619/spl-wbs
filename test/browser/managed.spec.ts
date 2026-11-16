@@ -161,6 +161,40 @@ test("Stage B attention shortcuts navigate positive synthetic matches and respec
   await expect(page.locator(".task-row")).toHaveCount(3);
 });
 
+test("Stage B overdue attention selects actual WBS task and restores original view", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-16T01:00:00.000Z") });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openManaged(page);
+  const overdue = page.getByRole("button", { name: "Filter WBS to Overdue tasks" });
+  const watch = page.getByRole("button", { name: "Filter WBS to Under Watch tasks" });
+  await expect(overdue).toBeVisible();
+  await expect(overdue).toContainText("1");
+  await expect(watch).toBeDisabled(); // synthetic legacy workbook has no verified Watch evidence
+  await expect(page.locator(".managed-schedule-summary-item.watch strong")).toHaveText("—");
+
+  const originalBytes = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  // Starting view can include a search that hides the task. Attention action
+  // temporarily exposes its actual source task and restores the search.
+  await page.locator("#search").fill("does-not-match");
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await overdue.click();
+  await expect(overdue).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(page.locator(".task-row").first()).toContainText("Synthetic milestone");
+  await expect(page.locator("#panel")).toHaveClass(/open/);
+  await expect(page.locator("#detailTitle")).toContainText("Synthetic milestone");
+  await overdue.click();
+  await expect(overdue).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".task-row")).toHaveCount(0);
+  await expect(page.locator("#search")).toHaveValue("does-not-match");
+  const afterBytes = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(afterBytes).toEqual(originalBytes);
+});
+
 test("Stage A Recent Projects shows verified workbook and respects unsaved Cancel before reopening",async({page})=>{
   await openManaged(page);
   const menu=page.locator(".managed-project-menu");
