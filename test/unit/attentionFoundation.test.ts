@@ -55,11 +55,16 @@ describe("Stage B actionable attention foundation", () => {
       task("today", { plannedEnd: "2026-11-16" }),
       task("later", { plannedEnd: "2026-11-17" }),
       task("malformed", { plannedEnd: "16/11/2026" }),
+      task("invalid-month", { plannedEnd: "2026-00-15" }),
+      task("invalid-day", { plannedEnd: "2026-02-30" }),
+      task("valid-leap", { plannedEnd: "2024-02-29" }),
       task("duplicate", { plannedEnd: "2026-11-15" }),
       task("duplicate", { plannedEnd: "2026-11-15" }),
     ], "2026-11-16");
-    expect(snapshot.taskIdsByKind.overdue).toEqual(["late", "duplicate"]);
+    expect(snapshot.taskIdsByKind.overdue).toEqual(["late", "valid-leap", "duplicate"]);
     expect(() => projectAttention([], "2026-11-16T00:00Z")).toThrow(/date-only/);
+    expect(() => projectAttention([], "2026-02-30")).toThrow(/date-only/);
+    expect(() => projectAttention([], "2026-13-01")).toThrow(/date-only/);
   });
 
   it("keeps independent Under Watch and task status flags on the same task", () => {
