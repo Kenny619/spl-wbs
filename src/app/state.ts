@@ -7,6 +7,8 @@ export type ViewState = {
   owners: string[];
   types: string[];
   workstreams: string[];
+  /** Managed-only exact task identities for a verified attention shortcut; undefined is inactive, [] matches none. */
+  attentionIds?: string[];
   /** Managed-only exact calendar-date multi-filter; absent in read-only v18. */
   finishes?: string[];
   /** Verified shared workbook interval; set only by the separate managed entrypoint. */
