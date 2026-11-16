@@ -101,6 +101,8 @@ jobs:
       # job also finishes successfully and independent QA clears the scope.
       - name: Package Stage B #92 controlled fictional UAT candidate
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 92 && success() }}
+        env:
+          UAT_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
         run: |
           node scripts/package-option-a-integrated-candidate.mjs
           node scripts/package-stage-b-uat.mjs
