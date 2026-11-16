@@ -228,6 +228,23 @@ export function mountManagedShell(
   overviewHeading.append(eyebrow, headingText);
   const summaryCounts = doc.createElement("div");
   summaryCounts.className = "managed-schedule-summary-counts";
+  summaryCounts.id = "managed-attention-actions";
+  const compactToggle = doc.createElement("button");
+  compactToggle.type = "button";
+  compactToggle.className = "managed-attention-toggle";
+  compactToggle.textContent = "Needs attention · Show filters";
+  compactToggle.setAttribute("aria-controls", summaryCounts.id);
+  compactToggle.setAttribute("aria-expanded", "false");
+  const compactCounts = doc.createElement("span");
+  compactCounts.className = "managed-attention-compact-counts";
+  overview.dataset.compactExpanded = "false";
+  compactToggle.addEventListener("click", () => {
+    const expanded = overview.dataset.compactExpanded !== "true";
+    overview.dataset.compactExpanded = String(expanded);
+    compactToggle.setAttribute("aria-expanded", String(expanded));
+    compactToggle.textContent = expanded
+      ? "Needs attention · Hide filters" : "Needs attention · Show filters";
+  });
   const countBlocks = new Map<string, HTMLElement>();
   const attentionButtons = new Map<AttentionKind, HTMLButtonElement>();
   let activeAttention: AttentionKind | null = null;
@@ -317,6 +334,10 @@ export function mountManagedShell(
           };
         }
         activeAttention = kind;
+        // Compact Schedule must keep the clear-filter control accessible.
+        overview.dataset.compactExpanded = "true";
+        compactToggle.setAttribute("aria-expanded", "true");
+        compactToggle.textContent = "Needs attention · Hide filters";
         controller.patchView({
           attentionIds: [...targetIds],
           search: "", statuses: kind === "blocked" ? ["Blocked"] : kind === "at-risk" ? ["At Risk"] : [],
@@ -328,7 +349,7 @@ export function mountManagedShell(
       syncAttentionButtons();
     }));
   }
-  overview.append(overviewHeading, summaryCounts, attentionState);
+  overview.append(overviewHeading, compactToggle, compactCounts, summaryCounts, attentionState);
   main.insertBefore(overview, workspace);
   const syncOverview = () => {
     const tasks = controller.getState().tasks;
@@ -342,8 +363,14 @@ export function mountManagedShell(
       countBlocks.get(key)!.textContent = snapshot.counts[kind] === null
         ? "—" : String(snapshot.counts[kind]);
     }
-    countBlocks.get("milestone")!.textContent = String(tasks.filter(task =>
-      task.taskType === "Milestone" && task.status !== "Completed" && task.status !== "Cancelled").length);
+    const milestones = tasks.filter(task =>
+      task.taskType === "Milestone" && task.status !== "Completed" && task.status !== "Cancelled").length;
+    countBlocks.get("milestone")!.textContent = String(milestones);
+    compactCounts.textContent =
+      "Blocked " + snapshot.counts.blocked + " · At Risk " + snapshot.counts["at-risk"] +
+      " · Overdue " + snapshot.counts.overdue + " · Watch " +
+      (snapshot.counts["under-watch"] === null ? "Unknown" : snapshot.counts["under-watch"]);
+    compactCounts.title = compactCounts.textContent;
     // Changes to the workbook, including a verified Watch Save, must never
     // leave stale task IDs in an active attention filter.
     if (activeAttention) {
