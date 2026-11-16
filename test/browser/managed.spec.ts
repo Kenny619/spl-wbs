@@ -192,6 +192,9 @@ test("Stage B verified workbook Under Watch shows recorded Open only, not inferr
   await expect(watch).toHaveAttribute("aria-pressed", "true");
   await watch.click();
   await expect(page.locator(".task-row")).toHaveCount(1);
+  // Switching to a different workbook resets the previous Task Detail selection.
+  // Reopen the actual committed task before checking its conservative Watch label.
+  await page.locator(".task-row").first().click();
   await expect(page.locator(".managed-watch-evidence")).toContainText("Workbook Watch: Unknown");
   const after = await page.evaluate(() =>
     Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
