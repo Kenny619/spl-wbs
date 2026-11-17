@@ -1,41 +1,82 @@
-# Under Watch / Clear / RAG — decision and verification vectors (DRAFT)
+# SPT-WBS | Health / RAG / Under Watch — Decision Register and Verification Vectors
 
-Status: **analysis only, not an approved health policy**. Prepared against main `6306b9f3bfae61af1560ca27df2ffb4b07d4a8f5` on 2026-11-16 JST for [Issue #82](https://github.com/Kenny619/spl-wbs/issues/82). This is **not** an amendment to the frozen [Report 1.1](../specifications/EMV_REPORT_1_1_FROZEN.md), [Manual Watch addendum](../specifications/REPORT11_MANUAL_WATCH_ADDENDUM_1.md), or workbook schema. No inferred Green, Clear, or authenticated actor.
+**Status:** Controlled Stage B **specification working draft**, last reconciled **2026-11-17 JST**. Individual Product Owner directions below are recorded; **the overall health lifecycle specification is NOT yet frozen**, and no feature/schema/report implementation, protected merge, corporate release, or beta follows from this document.
 
-## Separation of facts and proposed decisions
+**Source of truth:** [Issue #82](https://github.com/Kenny619/spl-wbs/issues/82). Related drafts [HW-05 authorization PR #100](https://github.com/Kenny619/spl-wbs/pull/100) and [HW-02 effective status PR #101](https://github.com/Kenny619/spl-wbs/pull/101). Preserve [frozen Report 1.1](EMV_REPORT_1_1_FROZEN.md), [Manual Watch addendum 1](REPORT11_MANUAL_WATCH_ADDENDUM_1.md), approved five-sheet ProjectData 0.1.2 and existing accepted Stage A/B functionality.
 
-| Input | Existing evidence that may be displayed | Unapproved interpretation that MUST NOT be emitted |
+## 1. Resolved Product Owner decisions — do not re-ask
+
+| Decision | Explicit accepted direction | Boundary |
 | --- | --- | --- |
-| Task status Blocked or At Risk | Explicit task status and matching task filter | Certified Red or Amber health |
-| Open manual Watch reason | Reason, open/resolved state, existing audit evidence | Automatically Red or automatically not Green |
-| Resolved manual Watch reason | Recorded resolution and retained history | Overall Clear, Green, or verification of all independent causes |
-| Overdue task / schedule exception | Derived schedule exception with its source and date context | Automatically Red, or automatic resolution when schedule changes |
-| Missing or legacy health assessment | No verified health assessment | Default Green |
-| Report period with resolution event | Historical event within period plus current open/resolved facts separately | Retroactively treating prior periods as Green |
+| **HW-01 RAG taxonomy** | **Red:** observed issue impacts scope/timeline/deliverable/cost/structure **even after underlying issue is resolved**. **Amber:** observed risk that could impact those dimensions. **Green:** normal, no issue/risk observed. **Unknown and Clear removed as health/RAG states.** | A task's source `TaskStatus` `Unknown` or an unavailable evidence source is **not** a fourth health status; never silently assign Green to incomplete or unverified evidence. |
+| **HW-02 source versus effective status** | **Option A**: retain original `ProjectWBS.TaskStatus` in Excel, calculate a transparent **effective TaskStatus** for display from the same verified workbook/date/calendar/dependency inputs. No automatic write or audit claim. | This is *task/schedule status*, **not** a direct RAG decision. Exact overdue/milestone/precedence/filter boundary details remain open. |
+| **HW-02 schedule triggers direction** | Owner proposed **within 5 working days** of planned finish, effective `At Risk` when any: progress below 50%, recorded `Not Started`, or no substantive `Updates` recorded. Also propagate effective `Blocked` through validated downstream predecessor relationships, with causal explanation. | The exact inclusive boundary (recommended 0..5), edge cases and automatic clearance precedence remain for confirmation; no direct workbook mutation. |
+| **HW-02 update-presence rule** | **No update ever entered** intent = no **substantive update currently recorded in workbook Updates**. One meaningful update, however old, satisfies update-presence trigger. Detect never-maintained-looking tasks such as `In Progress` with no notes. | A blank present-day cell cannot prove an update was never entered then erased. Do not use generic `Modified` as an Updates timestamp. **Defer age/staleness review monitoring until after user testing.** |
+| **HW-05 control direction** | Lightweight **PM password gate** for manual Watch Add/Resolve/future Reopen and future manual RAG edits. View status/history without password. | Browser gate deters casual edits but **cannot prevent direct Excel modification or authenticate user identity**. Keep audit actor unverified. Verifier storage/bootstrap/rotation/recovery and timeout not yet approved. [PR #100](https://github.com/Kenny619/spl-wbs/pull/100) is a draft, no code. |
+| **HW-07 reports** | **Retain existing Under Watch filter and task listing under Exceptions. Emphasize current Under Watch items in Latest Status and Progress & Risks. DEFER detailed report content finalization** until all task and Watch specs are settled. | Preserve current Report 1.1/Manual Watch addendum, current vs selected-period distinction, HTML/plain/Outlook parity, workstream grouping and no report writes. Detailed Change Audit and Meeting Review unchanged for now. Version a new report delta only after owner review. |
 
-## Acceptance vectors requiring owner-approved expected outcomes
+Direct issue comments: [HW-01](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6949427305), [HW-05](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6949707407), [HW-02 Option A](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6950049738), [HW-02 no-update](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6950220272), [HW-07](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6950328377).
 
-| ID | Synthetic scenario | Invariant to verify now | Decision required before health implementation |
-| --- | --- | --- | --- |
-| H-01 | One open manual Watch reason; task status On Track | Preserve reason and provenance | Whether open Watch constrains RAG |
-| H-02 | Two independent open Watch reasons; resolve only one | Other reason stays open; no implicit clearance | Whether Clear requires all reasons closed and review |
-| H-03 | Reopen a previously resolved reason | Preserve both historical transitions | Who may reopen and whether prior clearance becomes stale |
-| H-04 | Task overdue with no manual Watch reason | Show overdue independently | Whether and how overdue affects assessed RAG |
-| H-05 | Schedule becomes on time while an independent Watch reason remains | Never auto-resolve manual Watch | Whether prior RAG assessment expires |
-| H-06 | Legacy workbook with no approved health fields | Preserve workbook and avoid synthesized Green | Unknown display, migration/version strategy |
-| H-07 | Health assessment contradicts task status or Watch facts | Expose conflicting sources without silently overriding | Precedence and reviewer authority |
-| H-08 | Report period includes reason resolution, followed by reopen outside period | Keep period events distinct from current state | Report sections, historical-as-of rules |
-| H-09 | Unsaved editor change, then health action attempted | Existing guard must prevent misleading persisted state | Health transaction boundary and audit actor semantics |
-| H-10 | Save fails, stale workbook, or second writer intervenes | No false success or loss of existing history | Conflict, backup, recovery and no-multiwriter guarantee |
-| H-11 | Report HTML/plain/Outlook representations | Preserve approved Report 1.1 contract and parity | Versioned report delta after policy freeze |
-| H-12 | Read-only Viewer loads future-version workbook | No mutation; clear unsupported/unknown indication | Forward compatibility and feature gating |
+## 2. Remaining business decisions for concise individual review
 
-## Minimal decision sequence
+**HW-03 — Reason lifecycle and health persistence** (genuine owner decision):
+- When may a recorded `Open` reason be `Resolved`, or `Reopened`? Are reason/resolution notes required? Preserve every transition and previously incurred Red project impact regardless of issue closure.
+- What evidence/review is sufficient to reassess a Red-impacted task and eventually declare Green? Do not resurrect separate `Clear` health state. Do not automatically turn Red into Green when the last reason is resolved.
 
-1. **Taxonomy and authority:** define whether Clear refers to an individual Watch reason, a reviewed aggregate, or a separate state; define Red/Amber/Green/Unknown, assessment authority, evidence, staleness and conflicting-source precedence.
-2. **Transition table:** specify Add/Resolve/Reopen, approval and audit identity limitations; decide whether schedule exceptions affect assessed health or remain independent signals.
-3. **Versioned persistence:** compare keeping the current five-sheet schema unchanged versus an additive, backward-compatible versioned extension. Do not implement either without a frozen decision and integrity plan.
-4. **Report delta:** map current facts, period events, unverified assessments, and resolved causes to Latest Status, Progress & Risks, Detailed Change Audit and Meeting Review. Maintain HTML/plain/Outlook parity.
-5. **Only after Stage C authoring stabilizes:** implement common projections, independent unit/browser/workbook round-trip tests, report integration, focused owner UAT and explicit acceptance before beta.
+**HW-04 — Multiple concurrent causes** (proposed safest default, not yet accepted):
+- Preserve all independent reasons (including resolved history); an unrelated issue or risk may remain after one is resolved. Show each reason and the aggregate effective task conditions. Resolution of one cause must not silence others. Explicitly decide competing risk/issue precedence for final RAG health.
 
-**Current gate:** Stage B may finalize this specification, but no application, schema or Report 1.1 business-semantic change is authorized by this draft. Continue #17/#16 QA and #25 UX audit independently.
+**HW-02 outstanding precise rule edges** (proposal, not approved yet):
+- Whether `within five working days` means remaining days **0–5 inclusive**; overdue handling after finish; treatment of `Completed`, `Cancelled`, `Summary`, `Milestone`, nullable progress and inconsistent recorded status.
+- Use only verified Japanese holidays and the **committed shared project blackout** (not browser-local settings) for workday computation; select common project business date, proposed JST. Unsupported/missing dependency and cycles must not fabricate inherited Blocked. Preserve root TaskID evidence through transitive/multiple Blocked paths.
+- Clarify where effective versus recorded TaskStatus drives filter/exception counts and which source labels users see; no frozen Report 1.1 delta until after the detailed task/Watch specs.
+
+**HW-05 remaining protection design** (not an authorization to implement):
+- Where to provision a per-project password verifier, how to bootstrap, rotate/reset/recover and lock after idle, and which existing status edit operations beyond Watch/RAG should be protected. No default password or hashed secret stored in uncontrolled client HTML/JS. No claim that a shared password certifies the identity of an editor.
+
+**HW-06 common status projection** (design pending):
+- Ensure one shared source-backed projection feeds Schedule, Needs Attention, Task Detail, Meeting Review and future versioned Reports. Do not mix task status, manual reason states, schedule exceptions and RAG health. Source detail/keyboard labels accompany colors.
+
+**HW-08 missing/legacy/future data** (owner decision pending):
+- With obsolete health `Unknown`, choose a **non-RAG availability message** (e.g., `Health assessment unavailable`) for missing/invalid/unverified source. Never fabricate Green, never corrupt legacy/future workbooks and require migration/compatibility approval before any new health-specific Excel fields.
+
+**Persistence and reporting sequencing:** Any new RAG assessment or Reopen transaction must follow an independently approved versioned schema, guarded workbook Save, append-only audit, backward compatibility and PM gate design. Defer detailed report content and versioned Report 1.1 delta until task/Watch lifecycle is settled. Health/report integration is a **separate pre-beta implementation milestone after Stage C**, not a license to implement during this Stage B specification-only review.
+
+## 3. Existing evidence versus forbidden assumptions
+
+| Existing evidence available | Safe statement | Do not assert |
+| --- | --- | --- |
+| Source `Blocked` or `At Risk` TaskStatus | Recorded task execution condition | Verified RAG Red or Amber unless separately assessed |
+| Open Watch reason | Recorded reason is open, source and provenance disclosed | That it automatically has a complete and authenticated RAG decision |
+| Resolved Watch reason | Resolution is recorded, past impact and reason trail preserved | Independent impacts are gone or project health is Green |
+| Overdue / ≤5-workday condition | Calculated date signal with verified working-day inputs and source | Automatic confirmed Red, historic report event, or self-cleared Watch reason |
+| Blank Updates field | No substantive update currently recorded | Proof the task was never historically reviewed, or that notes are stale |
+| Legacy/invalid health source | Health assessment **unavailable**, explicit evidence-quality warning | Green or a fourth RAG badge called Unknown |
+| Current Watch item in a period report | Current source snapshot, clearly labeled current | Newly opened during that period without a recorded period event |
+
+## 4. Synthetic scenario checklist (future tests, NOT executed)
+
+| ID | Scenario | Invariant / pending policy |
+| --- | --- | --- |
+| H-01 | Open manual Watch issue and source `In Progress` | Preserve reason/source and Red impact evidence without inventing health calculation |
+| H-02 | Two independent Watch reasons; resolve only one | Other stays open and complete history remains; no automatic Green |
+| H-03 | Reopen a previously resolved reason | Preserve transition trail; authority/PM Mode, evidence and Red reassessment pending |
+| H-04 | Five-day boundary, 49% progress, dated update | Calculated effective At Risk with original Excel status intact; exact day boundary pending |
+| H-05 | Five-day boundary, 80% progress, In Progress, blank Updates | Calculated effective At Risk for no update currently recorded |
+| H-06 | Five-day boundary, 80% progress, In Progress, old substantive Updates | No missing-update At Risk; age monitoring explicitly deferred |
+| H-07 | Source Blocked A -> dependent B -> C | Derived effective Blocked, origin A/ID, no workbook writes or fake Watch reasons |
+| H-08 | A and D independently block B; A unblocked | B stays effectively Blocked via D |
+| H-09 | A unblocked while B has independent open Watch reason | Only inherited flag clears; Watch remains open |
+| H-10 | Legacy/future-version workbook without valid health fields | Do not mutate, invent Green or show obsolete RAG Unknown |
+| H-11 | Health assessment conflicts with source status/Watch | Preserve actual independent facts, define precedence and authority before implementation |
+| H-12 | Report selected period includes resolution; reopen occurs outside it | Period events and current snapshot clearly distinct; defer content finalization |
+| H-13 | Save fails, stale source, concurrent writer or recovery hold | No false Save success, history loss or password bypass |
+| H-14 | HTML/plain/Outlook output and read-only Viewer | Preserve existing frozen outputs, no report writes, future delta gated |
+
+## 5. Exit sequence and governance
+
+1. Record outstanding HW-02/03/04/05/06/08 owner decisions individually and reconcile the above matrix without requesting approval again for already decided HW-01/HW-02 Option A/HW-05 direction/HW-07 deferral.
+2. Propose a consolidated **versioned health lifecycle functional-spec freeze** only when conflict/transition and missing-evidence rules are complete. This document and PR remain **documentation-only draft** pending approval and normal documentation integration checks.
+3. After Stage C authoring stabilizes, separately authorize any versioned workbook schema/health calculation and Report 1.1 delta; independently QA + owner UAT before beta. No implicit merge/release or corporate permission claim.
+
+**Current gate:** Stage B health specification analysis, **not** implementation or a completed owner health-policy freeze.
