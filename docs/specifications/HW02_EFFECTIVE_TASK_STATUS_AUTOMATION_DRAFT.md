@@ -1,7 +1,7 @@
 # SPT-WBS | HW-02 Calculated Effective Task Status — Functional Specification
 
 **Date:** 2026-11-17 JST  
-**Review state:** **Owner approved Option A (recorded vs effective status separation); detailed triggers/clearance and edge-case policy remain draft until separately reviewed.**  
+**Review state:** **Owner approved Option A (recorded vs effective status separation) and explicitly selected the "no update ever entered" safeguard. Stale/time-based update monitoring is deferred until after user testing. Other trigger/clearance edge cases remain draft until separately reviewed.**  
 **Related:** [Health lifecycle Issue #82](https://github.com/Kenny619/spl-wbs/issues/82), [HW-01 RAG taxonomy owner decision](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6949427305), [HW-05 PM password-gate draft PR #100](https://github.com/Kenny619/spl-wbs/pull/100), [Stage B accepted factual attention PR #92](https://github.com/Kenny619/spl-wbs/pull/92).
 
 ## 1. Explicitly approved Option A
@@ -25,9 +25,18 @@
 - `remainingWorkdays` excludes weekends, verified Japanese public holidays, and the workbook's **committed project blackout dates**. Count future eligible workdays after the evaluation date through the finish date inclusive. The current managed code implements this counting, but the 0..5 policy and displayed effective status are **new draft requirements**.
 - On finish date, count is 0 and it falls inside the proposed window; after the finish date, maintain a **distinct overdue signal** rather than quietly treating an overdue task as normal. Whether overdue additionally becomes effective `At Risk` must be approved; do not conceal overdue.
 - **Progress:** existing model allows nullable progress `0..100`; a missing percent is not assumed to be 0. However, `Not Started` or absence of update can independently trigger the rule.
-- **No update recorded:** suggested conservative baseline means `Updates` absent/empty after normalization, not an old `Modified` timestamp. `Modified` tracks any task change and cannot establish last actual status update. Stale-update thresholds require a separate policy.
+- **No update ever entered — approved intent:** the safeguard targets tasks marked `In Progress` (and other otherwise-eligible statuses) that appear never to have received a meaningful task update. For current source evidence, use an **absent/blank substantive `ProjectWBS.Updates` value** (including whitespace or formatting-only empty rich text), not the `Modified` field, which is not an Updates timestamp. **Do not evaluate the age of an existing update.** A substantive update from any date satisfies the update-presence condition; other triggers (progress <50% or `Not Started`) still apply. Absence in today's workbook is evidence of **no update currently recorded**, not definitive proof that none was ever entered then removed. Do not invent historical provenance; an eventual audit-history-based 'ever' check requires separately verified source fields and policy. The owner explicitly **deferred stale-update/elapsed-time monitoring until after user testing**.
 - If planned finish is missing/invalid, source workbook is unverified, holiday calendar coverage is incomplete, or a required committed blackout cannot be verified, show **calculation unavailable with explanation**, not an invented workday count or false At Risk/Green.
 - A resolved or old Watch reason does not directly feed this calculation; independent Watch evidence remains visible and unchanged.
+
+
+## 2A. Explicit Product Owner decision on update presence (2026-11-17)
+
+**Decision:** `no update recorded` means **no substantive update is presently recorded**; use this as a practical failsafe for tasks moved into `In Progress` without evidence that anyone subsequently reviewed or updated them. An existing substantive update, **however old**, is sufficient to avoid the missing-update branch. The owner's goal is to catch *never-maintained-looking* tasks, **not** to add time-staleness rules before user testing.
+
+**Important evidence qualification:** the existing ProjectWBS `Updates` field is optional and may contain rich-text markup. Empty, whitespace-only or formatting-only content must not count as an entered update. A nonempty meaningful update counts regardless of date. The existing `Modified` date does not timestamp a specific update. A workbook with a currently blank Updates field does not prove that an earlier update was never entered and later removed; the UI must say **`No update recorded`**, not `historically never reviewed` as a verified fact.
+
+**Deferred:** Any `last review was X days ago`, `stale update`, `update freshness` timer, configurable age threshold, automatic notifications for old notes, or retrospective last-edit inference. Revisit only **after user testing** with separately approved evidence source and owner decision.
 
 ## 3. Owner-proposed inherited Blocked rule (detail awaiting policy freeze)
 
@@ -63,7 +72,11 @@ Conceptual fields (not an approved workbook schema): `taskId`, `recordedStatus`,
 |---|---|---|
 | HW02-01 | 5 workdays left, progress 49%, In Progress, update exists | Calculated At Risk with threshold explanation; source status unchanged. |
 | HW02-02 | 4 workdays left, progress >=50%, status Not Started | Calculated At Risk, original Not Started visible. |
-| HW02-03 | 0..5 left, progress >=50%, In Progress, no Updates | Calculated At Risk due to no update; Modified field irrelevant. |
+| HW02-03 | 0..5 left, progress >=50%, In Progress, no substantive Updates ever evidenced by current source | Calculated At Risk due to absent recorded update; Modified field irrelevant. |
+| HW02-03A | 0..5 left, progress >=50%, In Progress, one substantive update entered long ago | No At Risk **from missing-update rule alone**; update recency monitoring deferred until after user testing. |
+| HW02-03B | 0..5 left, progress >=50%, In Progress, blank/whitespace/formatting-only rich text Updates | Calculated At Risk due to no substantive update recorded; no fabricated 'last update' time. |
+| HW02-03C | 0..5 left, progress 35%, In Progress, one substantive update entered long ago | At Risk **because of progress <50%**, not because the update is stale. |
+| HW02-03D | Workbook Updates blank, but past update deletion cannot be disproven from verified source | Treat as absent **currently recorded** update; do not assert a proven never-ever historical fact. |
 | HW02-04 | 6 verified workdays left, otherwise concerning progress | No **near-finish** auto flag; show any separate explicit/manual exception. |
 | HW02-05 | Completed/Cancelled with old finish date | Do not auto-change saved status; preserve historical source and other independent facts. |
 | HW02-06 | No finish / incomplete JP holiday coverage / invalid shared blackout | Calculation unavailable, no fabricated due-date judgment or Green. |
@@ -79,7 +92,7 @@ Conceptual fields (not an approved workbook schema): `taskId`, `recordedStatus`,
 ## 7. Policy details still to confirm individually
 
 1. **Threshold/window:** interpret `5 working days away` as `0..5 inclusive`; determine how overdue tasks are treated in effective status beyond separate overdue alert.
-2. **Update condition:** absent/empty Updates vs requiring *recent* dated task progress notes; no available reliable update-timestamp field.
+2. **Update-presence rule — decided:** only the absence of a substantive recorded update triggers this branch; old-but-present updates **do not** trigger it. Apply only within the agreed near-finish rule. **Post-user-testing backlog:** revisit stale/aged update monitoring after actual user testing, with reliable update-specific timestamps and separate owner approval. No time-age threshold in initial delivery.
 3. **Eligibility:** Task vs Milestone vs Summary; explicit Completed/Cancelled precedence and source `Unknown` as task-data quality.
 4. **Propagation:** supported FS links, transitive paths, multiple-source provenance; contradictory completed/blocked successors and incomplete dependency graph.
 5. **Time basis:** common Asia/Tokyo business date for consistency independent of users' display timezone; unavailable verified holiday coverage.
