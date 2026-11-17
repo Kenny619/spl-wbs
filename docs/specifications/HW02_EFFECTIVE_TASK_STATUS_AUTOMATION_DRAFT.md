@@ -1,0 +1,91 @@
+# SPT-WBS | HW-02 Calculated Effective Task Status — Functional Specification
+
+**Date:** 2026-11-17 JST  
+**Review state:** **Owner approved Option A (recorded vs effective status separation); detailed triggers/clearance and edge-case policy remain draft until separately reviewed.**  
+**Related:** [Health lifecycle Issue #82](https://github.com/Kenny619/spl-wbs/issues/82), [HW-01 RAG taxonomy owner decision](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6949427305), [HW-05 PM password-gate draft PR #100](https://github.com/Kenny619/spl-wbs/pull/100), [Stage B accepted factual attention PR #92](https://github.com/Kenny619/spl-wbs/pull/92).
+
+## 1. Explicitly approved Option A
+
+1. **Recorded task status** comes from the workbook's `ProjectWBS.TaskStatus`. It must remain unchanged by automatic schedule/dependency calculations. The workbook, preserved historical audit events and guarded Save operations remain the source of truth.
+2. **Effective task status** is a **read-only, calculated projection** for a specified verified workbook snapshot, selected evaluation date, validated schedule/calendar context, task updates/progress and supported predecessor graph. The UI must show the original value and each underlying calculation reason.
+3. Every view consuming derived status (Schedule, Needs Attention, Task Detail, Meeting Review and, following separately approved report delta, Reports) should use **one shared pure projection**, not independent formulas with inconsistent outcomes.
+4. No derived status is silently persisted to Excel, written into `UpdateHistory` or `ProjectAudit`, or represented as a manually saved transition. Computed warnings are recalculated when the verified source or evaluation date changes.
+5. **TaskStatus is not assessed RAG health.** The approved HW-01 health taxonomy is exactly Red/Amber/Green: Red concerns identified project impact even after underlying issue resolution; Amber concerns possible impact from a risk; Green requires no observed issue/risk. No derived `At Risk` or `Blocked` alone certifies Red/Amber/Green, no automatic Green, and no `Clear`/`Unknown` as RAG health badge. An existing source TaskStatus `Unknown` remains a *task-data parsing/display value* under the existing import contract, not a fourth RAG outcome.
+6. All users with **the same committed workbook bytes and the same evaluation date/calendar coverage/rules** must get the same projection, independent of user layout/theme/display preferences or whether PM Mode is unlocked. A calculation can change the next business day without a workbook Save; it is not a synchronized, persisted event.
+
+## 2. Owner-proposed automatic At Risk rule (detail awaiting policy freeze)
+
+**Owner direction:** raise `At Risk` when a task is near its planned finish and ANY of three conditions holds: progress under 50%, recorded status `Not Started`, or no task update recorded.
+
+**Recommended explicit predicate** (not yet separately accepted in every edge case):
+
+`0 <= remainingWorkdays(task.plannedEnd, evaluationDate) <= 5 AND (progress < 50 OR recordedStatus = Not Started OR noRecordedUpdate)`.
+
+- Apply to scheduled, non-Summary, active tasks (Task/Milestone eligibility requires final review), excluding `Completed` and `Cancelled`; an already explicitly or inherited `Blocked` task stays Blocked at higher precedence.
+- `remainingWorkdays` excludes weekends, verified Japanese public holidays, and the workbook's **committed project blackout dates**. Count future eligible workdays after the evaluation date through the finish date inclusive. The current managed code implements this counting, but the 0..5 policy and displayed effective status are **new draft requirements**.
+- On finish date, count is 0 and it falls inside the proposed window; after the finish date, maintain a **distinct overdue signal** rather than quietly treating an overdue task as normal. Whether overdue additionally becomes effective `At Risk` must be approved; do not conceal overdue.
+- **Progress:** existing model allows nullable progress `0..100`; a missing percent is not assumed to be 0. However, `Not Started` or absence of update can independently trigger the rule.
+- **No update recorded:** suggested conservative baseline means `Updates` absent/empty after normalization, not an old `Modified` timestamp. `Modified` tracks any task change and cannot establish last actual status update. Stale-update thresholds require a separate policy.
+- If planned finish is missing/invalid, source workbook is unverified, holiday calendar coverage is incomplete, or a required committed blackout cannot be verified, show **calculation unavailable with explanation**, not an invented workday count or false At Risk/Green.
+- A resolved or old Watch reason does not directly feed this calculation; independent Watch evidence remains visible and unchanged.
+
+## 3. Owner-proposed inherited Blocked rule (detail awaiting policy freeze)
+
+- If task **A** has source `Blocked`, show any active successor that depends on A as **effectively Blocked**, including transitive validated Finish-to-Start relationships (A -> B -> C). Show `Blocked — inherited from A` with source TaskID/WBS link.
+- Do **not** overwrite `ProjectWBS.TaskStatus` of B or C, silently create a Manual Watch reason, or write anything to Excel. Inheritance is source-attributed **effective status**.
+- Derive edges from supported validated `PredecessorIDs`, **not** `ParentTaskID` WBS tree relationships. Do not infer unsupported dependency types, missing IDs or bad edges as valid blockers. Cycle-safe traversal is required; dependency errors must be surfaced and should not make false completed inferences.
+- If multiple predecessors are Blocked, retain **every direct/root blocking source** and show an aggregated explanation; never let resolution of just one predecessor clear the other.
+- Removing the source `Blocked` condition recomputes inherited flags, but only the flag whose causal chain is gone disappears. An independent manual Watch reason stays Open until an authorized person resolves it.
+- Proposed precedence: existing recorded `Blocked` or inherited Blocked -> existing recorded `At Risk` -> calculated `At Risk` -> otherwise recorded status. `Completed` / `Cancelled` successors with a blocked predecessor need an explicit contradiction indicator, not silent rewriting; exact display behavior requires review.
+- The proposal should not transform a successor from a persisted `Completed` into a newly persisted `Blocked` automatically. Partial/incomplete graph results should say the propagation is incomplete rather than implying every dependency is verified.
+
+## 4. Shared projection and UI requirements
+
+Conceptual fields (not an approved workbook schema): `taskId`, `recordedStatus`, `effectiveStatus`, `derivedReasons[]`, `sourceTaskIds[]`, `remainingBusinessDays`, `evaluationDate`, `calendarCoverage`, `derivationQuality`. These are **in-memory** values.
+
+- Default visible status may prioritize the effective value while keeping the source status and explanation inspectable in Task Detail and accessible label/tooltip; no color-only explanation. Indicate source as **Recorded**, **Calculated: near finish**, or **Inherited: dependency**, not falsely as an owner-entered change.
+- Existing Needs Attention TaskStatus filters must distinguish a **recorded** value from the derived effective one. Whether the Status filter switches to effective matching by default is an outstanding UX choice; no implicit redefinition of previously accepted filter behavior.
+- On a fresh workbook load, recompute based on verified bytes and the same deterministic date/calendar basis. Recompute on committed workbook reload and once when the evaluation date rolls over; do not make a browser-local override appear shared.
+- For consistency across users, the evaluation date must be specified by one **project-wide timezone basis**, not an individual's optional display timezone. **Proposed for initial Japan-targeted scope: Asia/Tokyo (JST)**, pending confirmation; all clients should use that same clock date and authoritative calendar/blackout snapshot. Users loading at different moments near midnight may legitimately see different flags.
+- No auto-Save, new ProjectData worksheet/column, audit log entry or historical status event follows from a pure derived warning. Source status changes remain under existing explicit edited-field Save; future RAG changes are controlled by HW-05 PM Mode once separately implemented and authorized.
+- Reports require an **explicit versioned Report 1.1 delta** before derived signals enter current snapshot sections. Never backdate calculated flags into historical audit periods.
+
+## 5. Lifecycle and clearance principles
+
+- A near-finish At Risk flag ends only when no longer caused by its own qualifying conditions, or when task becomes inactive under the final policy. Do not clear an explicit source `At Risk` due to progress or an update; it needs a separate authorized source edit.
+- Inherited Blocked ends only when **all active blocking causal paths** have ceased (or dependency changes remove those paths), not just one of several predecessors.
+- Automatically recalculated status may **never resolve, reopen, erase or alter** recorded Watch reasons, imply that past Red impact is gone, or unilaterally certify project Green.
+- Manual acknowledgment should be a **separate recorded/user-facing action only if later approved**. A local acknowledgment must not silently hide a shared effective warning or be misrepresented as an authenticated project-wide override. Any shared dismissal/override needs its own versioned persistence and audit contract.
+
+## 6. Acceptance vectors — specification targets, not QA PASS
+
+| ID | Scenario | Expected projection / invariant |
+|---|---|---|
+| HW02-01 | 5 workdays left, progress 49%, In Progress, update exists | Calculated At Risk with threshold explanation; source status unchanged. |
+| HW02-02 | 4 workdays left, progress >=50%, status Not Started | Calculated At Risk, original Not Started visible. |
+| HW02-03 | 0..5 left, progress >=50%, In Progress, no Updates | Calculated At Risk due to no update; Modified field irrelevant. |
+| HW02-04 | 6 verified workdays left, otherwise concerning progress | No **near-finish** auto flag; show any separate explicit/manual exception. |
+| HW02-05 | Completed/Cancelled with old finish date | Do not auto-change saved status; preserve historical source and other independent facts. |
+| HW02-06 | No finish / incomplete JP holiday coverage / invalid shared blackout | Calculation unavailable, no fabricated due-date judgment or Green. |
+| HW02-07 | Blocked A -> dependent B -> dependent C | B/C effective Blocked with links to causal A; original Excel TaskStatus unchanged. |
+| HW02-08 | Blocked A and D both precede B; A unblocked | B remains inherited Blocked through D. |
+| HW02-09 | Source A unblocked; independent Watch reason on B still Open | Derived dependency block clears; B's Watch reason stays Open unchanged. |
+| HW02-10 | Unsupported dependency, duplicate/missing ID or cycle | No invented verified propagation; display source/graph diagnostic. |
+| HW02-11 | Same workbook/date/calendar opened by two users | Same effective values and explanations; independent theme/PGCM preferences irrelevant. |
+| HW02-12 | Day boundary, verified holiday and committed blackout | Recomputed count and trigger on shared date basis; historical workbook bytes/audit unaffected. |
+| HW02-13 | Explicit source At Risk with improved schedule | Remains At Risk until explicit source update; no automatic Green. |
+| HW02-14 | Current report vs historical period output | Current calculated signal only after approved report delta; not backdated as prior event. |
+
+## 7. Policy details still to confirm individually
+
+1. **Threshold/window:** interpret `5 working days away` as `0..5 inclusive`; determine how overdue tasks are treated in effective status beyond separate overdue alert.
+2. **Update condition:** absent/empty Updates vs requiring *recent* dated task progress notes; no available reliable update-timestamp field.
+3. **Eligibility:** Task vs Milestone vs Summary; explicit Completed/Cancelled precedence and source `Unknown` as task-data quality.
+4. **Propagation:** supported FS links, transitive paths, multiple-source provenance; contradictory completed/blocked successors and incomplete dependency graph.
+5. **Time basis:** common Asia/Tokyo business date for consistency independent of users' display timezone; unavailable verified holiday coverage.
+6. **UI/reports:** whether existing filters switch to effective value, and report placement after a separate delta.
+7. **Manual acknowledgement/overrides:** whether authorized PM Mode can record a shared override, its expiration, reason and audit behavior.
+
+## 8. Scope boundaries
+
+**Approved now:** **Option A**, with recorded Excel status untouched and transparent effective status recomputed from verified workbook facts. This **does not** authorize automatically persisted TaskStatus changes, Watch reason changes, RAG determinations, RAG schema/migration, modifying existing status filters without acceptance, updating frozen Report 1.1, making code changes, initiating broader QA, merging or releasing. The detailed rule edge-cases in this draft are proposals to review with the Product Owner. Preserve prior Stage A/B functional acceptances, HW-01 RAG semantics, HW-05 password-gate direction and source Save/recovery safeguards.
