@@ -96,6 +96,42 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
   await expect(page.locator(".source-record")).toBeHidden();
 }
 
+test("Stage B header source details are keyboard accessible and never truncate workbook provenance", async ({ page }) => {
+  await page.setViewportSize({ width: 860, height: 768 });
+  await openManaged(page);
+  const initial = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  const source = page.locator(".managed-source-details");
+  const summary = source.locator("summary");
+  const text = source.locator("#provenance");
+  await expect(source).toBeVisible();
+  await expect(summary).toHaveText("Source details");
+  await expect(text).toBeHidden();
+  for (const width of [860, 1366, 1440]) {
+    await page.setViewportSize({ width, height: 768 });
+    await summary.focus();
+    await page.keyboard.press("Enter");
+    await expect(source).toHaveAttribute("open", "");
+    await expect(text).toBeVisible();
+    await expect(text).not.toBeEmpty();
+    const rect = await text.boundingBox();
+    expect(rect).not.toBeNull();
+    expect(rect!.x).toBeGreaterThanOrEqual(-2);
+    expect(rect!.x + rect!.width).toBeLessThanOrEqual(width + 2);
+    const whiteSpace = await text.evaluate(el => getComputedStyle(el).whiteSpace);
+    expect(whiteSpace).toBe("normal");
+    await page.keyboard.press("Escape");
+    await expect(source).not.toHaveAttribute("open", "");
+    await expect(summary).toBeFocused();
+    await expect(page.locator(".managed-banner")).toBeVisible();
+  }
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(initial);
+});
+
 test("Stage B attention summary filters actual WBS rows and restores the previous status scope", async ({ page }) => {
   await openManaged(page);
   await page.keyboard.press("Escape");
