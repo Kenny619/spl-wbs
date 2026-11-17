@@ -1,0 +1,66 @@
+name: Stage B PR98 synthetic owner UAT package (isolated)
+on:
+  push:
+    branches:
+      - chore/stage-b-98-uat-packaging-20261117
+    paths:
+      - .github/workflows/stage-b-pr98-uat-package.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build and verify pinned synthetic UAT package
+        env:
+          UAT_SOURCE_COMMIT: 74ef5e22ce06cf537d52cef6338984ec116148a2
+        run: node scripts/package-stage-b-98-uat.mjs
+      - name: Independently inspect ZIP manifest and synthetic payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import hashlib, json
+          path=Path('work/SPT-WBS_StageB_PR98_Owner_UAT.zip')
+          assert path.exists() and path.stat().st_size > 100000
+          with ZipFile(path) as z:
+              names=set(z.namelist())
+              required={'managed.html','SPT-WBS_OptionA_Fictional_23_Task_Project.xlsx','START_HERE.md','UAT_CHECKLIST.md','PROVENANCE.json','SHA256SUMS.txt'}
+              assert names==required, (names,required)
+              manifest=z.read('SHA256SUMS.txt').decode().splitlines()
+              assert len(manifest)==5
+              for line in manifest:
+                  digest,name=line.split('  ',1)
+                  assert name in required and hashlib.sha256(z.read(name)).hexdigest()==digest
+              meta=json.loads(z.read('PROVENANCE.json'))
+              assert meta['sourceCommit']=='74ef5e22ce06cf537d52cef6338984ec116148a2'
+              assert meta['ownerAccepted'] is False and meta['stageBAccepted'] is False
+              checklist=z.read('UAT_CHECKLIST.md').decode()
+              assert all(x in checklist for x in ('PGCM-01','PGCM-02','H17-01'))
+              assert b'pgcm' in z.read('managed.html').lower()
+              assert b'provenance' in z.read('managed.html').lower()
+              assert z.testzip() is None
+          print('Independent ZIP structure, hashes, synthetic-only filename and provenance PASS')
+          PY
+          sha256sum work/SPT-WBS_StageB_PR98_Owner_UAT.zip
+      - name: Upload candidate (not owner-accepted)
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage-b-pr98-synthetic-owner-uat-candidate
+          path: work/SPT-WBS_StageB_PR98_Owner_UAT.zip
+          if-no-files-found: error
+          retention-days: 7
