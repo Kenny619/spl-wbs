@@ -1,8 +1,7 @@
 name: Stage B PR98 synthetic owner UAT package (isolated)
 on:
-  push:
-    branches:
-      - chore/stage-b-98-uat-packaging-20261117
+  pull_request:
+    types: [opened, synchronize, reopened]
     paths:
       - .github/workflows/stage-b-pr98-uat-package.yml
       - scripts/package-stage-b-98-uat.mjs
