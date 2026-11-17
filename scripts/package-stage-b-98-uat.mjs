@@ -1,11 +1,11 @@
 /**
  * PR #98 synthetic-only owner UAT overlay. Run after:
- * npm ci && npm run build:managed
- * node scripts/package-option-a-integrated-candidate.mjs
+ * npm ci (once, before this script); the script then builds fresh and packages.
  * UAT_SOURCE_COMMIT=74ef5e22ce06cf537d52cef6338984ec116148a2 node scripts/package-stage-b-98-uat.mjs
  * No corporate workbooks, GitHub Actions or deployment involved.
  */
-import { readFile, writeFile, stat, mkdir } from "node:fs/promises";
+import { readFile, writeFile, stat, mkdir, rm } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import JSZip from "jszip";
@@ -13,6 +13,22 @@ import JSZip from "jszip";
 const expected = "74ef5e22ce06cf537d52cef6338984ec116148a2";
 const sourceCommit = process.env.UAT_SOURCE_COMMIT;
 if (sourceCommit !== expected) throw new Error("Refusing unpinned/wrong PR #98 source");
+// Fail closed: independently establish exact application source and regenerate output.
+// Run this script from a clean, committed checkout of the packaging branch.
+const git = (...args) => execFileSync("git", args, { encoding:"utf8" }).trim();
+const head = git("rev-parse","HEAD");
+if (head === expected) throw new Error("Packaging overlay commit is absent");
+try { git("merge-base","--is-ancestor",expected,"HEAD"); }
+catch { throw new Error("Current HEAD is not descended from approved PR #98 application SHA"); }
+const sourcePaths = ["src","test","package.json","package-lock.json","vite.config.ts"];
+if (git("diff","--name-only",expected,"HEAD","--",...sourcePaths))
+  throw new Error("Packaging branch modifies application/build/test source after approved PR #98");
+if (git("status","--porcelain","--untracked-files=no","--",...sourcePaths,"scripts/package-stage-b-98-uat.mjs"))
+  throw new Error("Uncommitted source or packaging-script changes: refuse to package");
+// Do not accept stale managed.html or workbook outputs from an earlier build.
+await rm("work/option-a-candidate",{recursive:true,force:true});
+execFileSync("npm",["run","build:managed"],{stdio:"inherit",shell:process.platform==="win32"});
+execFileSync(process.execPath,["scripts/package-option-a-integrated-candidate.mjs"],{stdio:"inherit"});
 const dir = "work/option-a-candidate";
 const workbook = "SPT-WBS_OptionA_Fictional_23_Task_Project.xlsx";
 const html = "managed.html";
@@ -96,4 +112,4 @@ for (const name of names) {
 }
 if ((await checkZip.file("SHA256SUMS.txt").async("string"))!==sums)
   throw new Error("ZIP manifest mismatch");
-console.log("Verified synthetic PR #98 UAT ZIP: "+out+"; exact app source "+expected);
+console.log("Verified synthetic PR #98 UAT ZIP: "+out+"; approved app source "+expected+"; packaging HEAD "+head);
