@@ -9,6 +9,7 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import JSZip from "jszip";
+import ExcelJS from "exceljs";
 
 const expected = "74ef5e22ce06cf537d52cef6338984ec116148a2";
 const sourceCommit = process.env.UAT_SOURCE_COMMIT;
@@ -21,7 +22,7 @@ if (head === expected) throw new Error("Packaging overlay commit is absent");
 try { git("merge-base","--is-ancestor",expected,"HEAD"); }
 catch { throw new Error("Current HEAD is not descended from approved PR #98 application SHA"); }
 const sourcePaths = ["src","test","package.json","package-lock.json","vite.config.ts"];
-if (git("diff","--name-only",expected,"HEAD","--",...sourcePaths))
+if (git("diff","--name-only",expected,"HEAD","--",...sourcePaths,"scripts/package-option-a-integrated-candidate.mjs","scripts/prepare-managed-html.mjs","scripts/package-report11-uat.mjs","scripts/package-des010-uat.mjs","vite.managed.config.ts","docs/specifications/EMV_PROJECT_DATA_0_1_2_FROZEN.json"))
   throw new Error("Packaging branch modifies application/build/test source after approved PR #98");
 if (git("status","--porcelain","--untracked-files=no","--",...sourcePaths,"scripts/package-stage-b-98-uat.mjs"))
   throw new Error("Uncommitted source or packaging-script changes: refuse to package");
@@ -39,6 +40,25 @@ if (metadata.contract !== "EMV-PROJECT-DATA-0.1.2" || metadata.taskCount !== 23 
 if ((await stat(join(dir,html))).size < 100000 ||
     (await stat(join(dir,workbook))).size < 5000)
   throw new Error("Managed app or synthetic workbook absent");
+// Independently open the generated XLSX rather than trusting PROVENANCE.json alone.
+const verifiedWorkbook = new ExcelJS.Workbook();
+await verifiedWorkbook.xlsx.readFile(join(dir,workbook));
+const expectedSheets = ["ProjectWBS","UpdateHistory","ProjectMeta","ProjectCalendar","WatchReasons","ProjectCommitments","ProjectAudit"];
+const actualSheets = verifiedWorkbook.worksheets.map(sheet => sheet.name);
+if (actualSheets.join("|") !== expectedSheets.join("|") ||
+    verifiedWorkbook.getWorksheet("ProjectWBS")?.rowCount !== 24 ||
+    verifiedWorkbook.getWorksheet("UpdateHistory")?.rowCount !== 6 ||
+    verifiedWorkbook.getWorksheet("WatchReasons")?.rowCount !== 3 ||
+    verifiedWorkbook.getWorksheet("ProjectAudit")?.rowCount !== 5) {
+  throw new Error("Independent synthetic workbook sheet/fixture validation failed");
+}
+const watchSheet = verifiedWorkbook.getWorksheet("WatchReasons");
+const watchHeaders = watchSheet.getRow(1).values.map(value => String(value ?? ""));
+const stateCol = watchHeaders.indexOf("State");
+if (stateCol < 1 ||
+    [2,3].map(row => String(watchSheet.getRow(row).getCell(stateCol).value)).sort().join("|") !== "Open|Resolved") {
+  throw new Error("Synthetic Watch Open/Resolved fixtures missing");
+}
 const app = await readFile(join(dir,html),"utf8");
 if (!/pgcm/i.test(app) || !/provenance/i.test(app))
   throw new Error("Managed HTML lacks PGCM or provenance indicators; inspect build");
