@@ -5,6 +5,7 @@ on:
       - chore/stage-b-98-uat-packaging-20261117
     paths:
       - .github/workflows/stage-b-pr98-uat-package.yml
+      - scripts/package-stage-b-98-uat.mjs
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,6 +35,8 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           from zipfile import ZipFile
+          from io import BytesIO
+          from xml.etree import ElementTree as ET
           import hashlib, json
           path=Path('work/SPT-WBS_StageB_PR98_Owner_UAT.zip')
           assert path.exists() and path.stat().st_size > 100000
@@ -51,6 +54,13 @@ jobs:
               assert meta['ownerAccepted'] is False and meta['stageBAccepted'] is False
               checklist=z.read('UAT_CHECKLIST.md').decode()
               assert all(x in checklist for x in ('PGCM-01','PGCM-02','H17-01'))
+              xlsx=z.read('SPT-WBS_OptionA_Fictional_23_Task_Project.xlsx')
+              with ZipFile(BytesIO(xlsx)) as wb:
+                  wbxml=ET.fromstring(wb.read('xl/workbook.xml'))
+                  ns={'x':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+                  sheets=[e.attrib['name'] for e in wbxml.findall('x:sheets/x:sheet',ns)]
+                  assert sheets==['ProjectWBS','UpdateHistory','ProjectMeta','ProjectCalendar','WatchReasons','ProjectCommitments','ProjectAudit'],sheets
+                  assert wb.testzip() is None
               assert b'pgcm' in z.read('managed.html').lower()
               assert b'provenance' in z.read('managed.html').lower()
               assert z.testzip() is None
