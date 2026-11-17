@@ -708,6 +708,11 @@ test("Stage B PGCM toggle changes actual timeline markers and restores them with
   // merely closing the project menu (same transition as initial openManaged).
   await page.keyboard.press("Escape");
   await expect(page.locator(".managed-project-menu")).not.toHaveAttribute("open", "");
+  // Task rows render before asynchronous Watch import finishes; navigation is
+  // guarded while the managed app is busy. Wait for this import's final banner.
+  await expect(page.locator(".managed-banner")).toContainText(
+    "Workbook ready. Select a task.", { timeout: 15000 },
+  );
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const reloadedSettings = page.getByRole("dialog", { name: "Settings" });
   await expect(reloadedSettings).toBeVisible();
