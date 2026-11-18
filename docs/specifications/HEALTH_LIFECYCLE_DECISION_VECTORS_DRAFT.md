@@ -1,6 +1,6 @@
 # SPT-WBS | Manual PM-Owned RAG — Decision Register and Acceptance Vectors
 
-**Status:** Stage B documentation draft, reconciled **2026-11-18 JST**, **NOT FROZEN**. The latest Product Owner direction in [Issue #82](https://github.com/Kenny619/spl-wbs/issues/82) **supersedes** the previous proposed Under Watch / reason lifecycle / Clear and automatic RAG design. Historical decisions remain in issue comments and Git history; they do not govern the new RAG target where inconsistent. Functional candidate: [HW-FUNC-0.4](HEALTH_LIFECYCLE_FUNCTIONAL_FREEZE_CANDIDATE.md).
+**Status:** **APPROVED functional acceptance requirements**, 2026-11-18 JST; these are specified verification vectors, **not executed QA results**. The latest Product Owner direction in [Issue #82](https://github.com/Kenny619/spl-wbs/issues/82) **supersedes** the previous proposed Under Watch / reason lifecycle / Clear and automatic RAG design. Historical decisions remain in issue comments and Git history; they do not govern the new RAG target where inconsistent. Frozen specification: [HW-FUNC-1.0](HEALTH_LIFECYCLE_FUNCTIONAL_FREEZE_CANDIDATE.md).
 
 ## 1. Binding owner decisions
 
@@ -69,11 +69,11 @@ All successful RAG changes record item ID, previous/current RAG, supplied requir
 - Watch reason Open/Resolved/Reopened UI lifecycle, reason-specific precedence and multi-cause aggregation as a separate status model.
 - Resolving the last Watch reason and invoking Clear.
 - RAG Unknown, auto-Green on reason closure, persistent current Red after authorized manual Green, and any automatic schedule→RAG classification.
-- New UAT for obsolete Watch editing beyond minimum **legacy data preservation and migration regression**. The Stage A manual Watch tests were accepted previously and do not need full replay for this policy change.
+- No new UAT for obsolete Watch editing; retain only **non-destructive compatibility regression**, not a separate migration test suite. Stage A manual Watch tests were accepted previously and do not need replay for this new policy.
 
 Owner confirms **no active Under Watch data**. No Watch-specific migration/backfill or special viewer is necessary. Do not falsify/destroy any existing audit bytes. Existing Watch page/filter/report surface in the accepted app stays until a separately authorized RAG implementation replaces it.
 
-## 5. Remaining design decisions and gate
+## 5. Technical implementation design still pending after functional freeze
 
 1. **PM authority model:** project-scoped vs device-local verifier, setup/rotation/reset/recovery, unlock timeout, exact edit permissions. Shared PM password gate cannot prove personal identity; do not store plaintext client secrets. [PM Mode draft #100](https://github.com/Kenny619/spl-wbs/pull/100) must eliminate old Watch-specific edit permissions.
 2. **RAG persistence:** approved separate Project Impact + Path to Green fields required when setting Amber/Red, and required Resolution on return to Green. Design per-item current fields and append-only old/new/timestamp/all supplied input history; guarded workbook Save and report event source. Exact physical Excel columns/tables require later schema approval; **do not reopen whether these inputs are mandatory**.
@@ -81,4 +81,4 @@ Owner confirms **no active Under Watch data**. No Watch-specific migration/backf
 4. **Reports:** freeze a new Report 1.1 delta only after agreed target UI, with RAG replacing current Under Watch sections; no changes to accepted report before then.
 5. **Effective TaskStatus edges:** finish the already-authorized HW-02 date/filter/incomplete-source technical decisions independently; do not reopen the completed task-type, 0–5 day, overdue and terminal-successor approvals.
 
-**Current status:** Owner approved manual RAG policy **and the exact required transition fields**; these documents are reconciled drafts, **not** an overall freeze. No implementation, schema/password creation, main merge or beta authorization follows.
+**Current status:** Product Owner **froze HW-FUNC-1.0** and the mandatory Project Impact / Path to Green / Resolution acceptance requirements on 2026-11-18 JST. These vectors have **NOT been executed**. Future exact schema, PM credentials, implementation and report amendment require separate approval. Documentation-only protected integration is subject to normal exact-head checks; this approval is not a release/beta authorization.
