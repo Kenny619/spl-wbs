@@ -72,6 +72,30 @@ The Product Owner explicitly **approved Option A** following a comparison of two
 - Proposed precedence: existing recorded `Blocked` or inherited Blocked -> existing recorded `At Risk` -> calculated `At Risk` -> otherwise recorded status. `Completed` / `Cancelled` successors with a blocked predecessor need an explicit contradiction indicator, not silent rewriting; exact display behavior requires review.
 - The proposal should not transform a successor from a persisted `Completed` into a newly persisted `Blocked` automatically. Partial/incomplete graph results should say the propagation is incomplete rather than implying every dependency is verified.
 
+## 3A. HW-02 task-type and terminal-dependency rules — owner review proposal (2026-11-18)
+
+**Decision status: PROPOSED, NOT APPROVED.** This section specifies the remaining task-type exception and completed/cancelled successor treatment. It does not reopen the approved 0–5-day / separate Overdue Option A rule or authorize implementation.
+
+**Verified baseline:** `TaskType` is one of `Summary`, `Task` and `Milestone`. Summary progress and dates roll up from children and are protected against direct edits; milestones are single-date items and typically have no meaningful percentage progress. Existing factual attention counters deliberately exclude Summary rows. Supported `PredecessorIDs` are explicit task-ID **Finish-to-Start** edges, not WBS parent/child links; bad references and unsupported dependency tokens are diagnosed and cannot be treated as verified causal paths.
+
+| Source TaskType / recorded state | **Option A — recommended conservative rule** | Why |
+| --- | --- | --- |
+| Active, scheduled **Task** with verified source/calendar | Use the **approved 0–5 inclusive** near-finish At Risk OR predicates, a separate Overdue exception once past due, and inherited Blocked from validated predecessor paths. | Leaf tasks carry meaningful progress and updates. |
+| Active **Milestone** (valid one-day start = finish) | **Do not infer near-finish At Risk** from blank progress, absent Updates or default Not Started. Show due/approaching-date information and **separate Overdue** once past due. Explicit recorded At Risk/Blocked and validated inherited Blocked still apply. | Milestones are date checkpoints; missing percent or ordinary Not Started is not itself evidence of risk. An explicit blocker of a required predecessor remains meaningful. |
+| **Summary** (derived parent) | No independently computed near-finish At Risk or Overdue, and do not propagate inherited Blocked through a Summary node. Instead surface its underlying child Task/Milestone exceptions with source links; retain separately recorded Summary status as source fact. | Summary dates and progress are calculated; flagging a parent again would double-count the same children. A Summary predecessor edge cannot be assumed to prove a leaf FS causal path. |
+| **Completed** or **Cancelled** successor with Blocked predecessor | **Preserve terminal recorded status**. Show a source-attributed *dependency inconsistency* when appropriate (e.g., `Completed while predecessor A remains Blocked`), rather than converting effective status to Blocked. **Stop propagation of this root block through the terminal successor**; never falsely block its active downstream successors from this invalid causal chain alone. | A completed dependency may have been satisfied independently; a cancelled item terminates normal execution. This requires investigation, not an unaudited rewrite. |
+| Active Task/Milestone with a validated active Blocked predecessor | Derive effective **Blocked**, preserving all independent root TaskIDs and any existing recorded At Risk reason, even across transitive eligible active successors. | Implements the owner's requested downstream block inheritance while retaining source. |
+| Successor of **Cancelled** predecessor but no recorded Blocked | Show an unresolved/cancelled-predecessor dependency **diagnostic** rather than inventing a recorded/inherited Blocked. | Cancelled is a separate source status and not automatically identical to Blocked. |
+| Unknown/invalid TaskType, missing IDs, unsupported dependency type, cycle or incomplete graph | Explicitly show a source-quality/dependency diagnostic. Propagate only through validated, cycle-safe causal paths; do not claim full completeness or invent upstream Blocked. | Prevent false flags or infinite traversals. |
+
+**Alternative B (specific unresolved choice):** also derive near-finish **At Risk** for a valid active Milestone whose recorded status is `Not Started` when `0–5` verified working days remain. Do **not** use percentage progress or missing Updates as Milestone triggers. All other safeguards, terminal-state treatment, independently recorded statuses and Overdue Option A stay the same. This offers stronger checkpoint escalation but may flag otherwise on-track milestones routinely recorded Not Started until their completion date.
+
+**Proposed precedence with terminal guard** (requires explicit acceptance): `Completed/Cancelled` terminal source status remains terminal, with contradictory dependency diagnostic. For eligible active Task/Milestone, `recorded Blocked or valid inherited Blocked` > `recorded At Risk` > `calculated near-finish At Risk (only where type policy permits)` > recorded ordinary status. A source `At Risk` is **never automatically cleared**. Under Watch reasons and assessed RAG are separate and cannot be modified by this projection.
+
+**No automatic exception masking:** a blocked Task can independently be Overdue; show both separate facts. One predecessor releasing Blocked only clears that root. If a successor is already independently recorded Blocked, preserve it. When a terminal successor interrupts a chain, display the contradiction to the PM but do not infer a new Blocked status for successors reached *only* through that terminal item.
+
+**Policy still awaiting approval:** task-type Option A vs B, plus the terminal-guard and blocked-dependency rules above. Common evaluation date (proposed JST), filter defaults, owner acknowledgment/override and full dependency-validation semantics remain separately reviewable. No existing task-source status, manual reason, RAG, audit or Report 1.1 contract changes.
+
 ## 4. Shared projection and UI requirements
 
 Conceptual fields (not an approved workbook schema): `taskId`, `recordedStatus`, `effectiveStatus`, `derivedReasons[]`, `sourceTaskIds[]`, `remainingBusinessDays`, `evaluationDate`, `calendarCoverage`, `derivationQuality`. These are **in-memory** values.
@@ -114,6 +138,13 @@ Conceptual fields (not an approved workbook schema): `taskId`, `recordedStatus`,
 | HW02-08 | Blocked A and D both precede B; A unblocked | B remains inherited Blocked through D. |
 | HW02-09 | Source A unblocked; independent Watch reason on B still Open | Derived dependency block clears; B's Watch reason stays Open unchanged. |
 | HW02-10 | Unsupported dependency, duplicate/missing ID or cycle | No invented verified propagation; display source/graph diagnostic. |
+| HW02-10A | Milestone tomorrow, Not Started, no Updates and no progress | **Proposed A:** upcoming date only, no new near-finish At Risk; **B:** effective At Risk solely from Not Started, with original unchanged. |
+| HW02-10B | Milestone yesterday, 0% Progress, In Progress | Prominent **separate Overdue**; no At Risk solely from being overdue or blank progress. |
+| HW02-10C | Summary enclosing two At Risk children and one Overdue milestone | Show child-sourced exceptions/links; no independently generated Summary warning or triple count. |
+| HW02-10D | Blocked A -> Completed B -> active C | B remains Completed with contradiction diagnostic; no inherited Blocked in C solely via terminal B. |
+| HW02-10E | Blocked A -> active Milestone B -> active Task C | B/C inherited Blocked with root A provenance if all FS edges verified. |
+| HW02-10F | Cancelled predecessor A -> active Task B, no independent Blocked | Show cancelled-predecessor diagnostic; do not invent Blocked. |
+| HW02-10G | Blocked A -> B; B itself source Blocked; A unblocked | B remains Blocked due to its own source; active successors of B remain inherited Blocked from B. |
 | HW02-11 | Same workbook/date/calendar opened by two users | Same effective values and explanations; independent theme/PGCM preferences irrelevant. |
 | HW02-12 | Day boundary, verified holiday and committed blackout | Recomputed count and trigger on shared date basis; historical workbook bytes/audit unaffected. |
 | HW02-13 | Explicit source At Risk with improved schedule | Remains At Risk until explicit source update; no automatic Green. |
@@ -123,7 +154,7 @@ Conceptual fields (not an approved workbook schema): `taskId`, `recordedStatus`,
 
 1. **Threshold/window / overdue — APPROVED Option A:** `0–5 working days inclusive` for the near-finish trigger and a **separate prominent Overdue** exception for past-due active tasks, without calculated effective At Risk solely for being overdue. **Still pending:** Summary/Milestone/zero-duration eligibility, completed-successor inconsistency and other exception handling. Do not re-ask the boundary/overdue choice.
 2. **Update-presence rule — decided:** only the absence of a substantive recorded update triggers this branch; old-but-present updates **do not** trigger it. Apply only within the agreed near-finish rule. **Post-user-testing backlog:** revisit stale/aged update monitoring after actual user testing, with reliable update-specific timestamps and separate owner approval. No time-age threshold in initial delivery.
-3. **Eligibility:** Task vs Milestone vs Summary; explicit Completed/Cancelled precedence and source `Unknown` as task-data quality.
+3. **Task-type and terminal dependency eligibility — owner decision pending:** proposed **Option A** applies near-finish rule to active leaf Tasks only, milestone gets due/Overdue and inherited Blocked but no automatic near-finish At Risk; Summary only child-sourced alerts. Alternative B adds Milestone Not Started as near-finish At Risk. Completed/Cancelled successors remain terminal, show blocked-predecessor inconsistency, and stop that inherited path. Source `Unknown` is a data-quality value, not RAG.
 4. **Propagation:** supported FS links, transitive paths, multiple-source provenance; contradictory completed/blocked successors and incomplete dependency graph.
 5. **Time basis:** common Asia/Tokyo business date for consistency independent of users' display timezone; unavailable verified holiday coverage.
 6. **UI/reports:** whether existing filters switch to effective value, and report placement after a separate delta.
