@@ -9,11 +9,16 @@ import {pathToFileURL} from "node:url";
 
 const critical=/^(?:\.github\/|scripts\/|docs\/verification\/|docs\/specifications\/|docs\/prototypes\/|design\/concepts\/|src\/data\/|src\/main\.ts$|src\/config\/|src\/managed\/(?:directSave|preflight|projectData|workbookCandidate|save|history|recoveryUi|watchUi|watchProjection|draft|main|shell)|test\/fixtures\/|test\/browser\/release\.spec\.ts)/;
 const regularDocs=/^(?:README\.md|CHANGELOG\.md|LICENSE(?:\.md)?|docs\/|design\/|.*\.(?:png|jpe?g|gif|webp|svg|md)$)/i;
+// Product specification Markdown is text-only: keep draft/push checks cheap.
+// Non-Markdown files under docs/specifications remain critical. Protected main,
+// ready PRs, explicit full CI and unknown diffs still force the full suite.
+const specMarkdown=/^docs\/specifications\/.+\.md$/i;
 
 // Standalone design previews are not production Vite inputs. Scripts and
 // other executable files in these directories remain full-regression changes.
 const previewStatic=/^(?:docs\/prototypes\/|design\/concepts\/).+\.(?:html?|md|css|svg|png|jpe?g|gif|webp)$/i;
 const previewHTML=/^(?:docs\/prototypes\/|design\/concepts\/).+\.html?$/i;
+const criticalPath=(file)=>critical.test(file)&&!previewStatic.test(file)&&!specMarkdown.test(file);
 export const DUPLICATE_PR_BASES=new Set([
   "main",
   "feature/excel-managed-des010-ui",
@@ -55,14 +60,14 @@ function browserFor(file) {
 }
 export function classifyCI(files,ctx={}){
   const paths=[...new Set(files.map(f=>f.replaceAll("\\","/")))];
-  const docsOnly=paths.length>0&&paths.every(f=>(regularDocs.test(f)&&!critical.test(f))||previewStatic.test(f));
+  const docsOnly=paths.length>0&&paths.every(f=>(regularDocs.test(f)&&!criticalPath(f))||previewStatic.test(f));
   if(ctx.duplicate&&!ctx.forceFull&&ctx.eventName==="push"&&ctx.branch!=="main")
     return {tier:"duplicate-pr",fast:false,browser:false,browserScope:"none",packaging:false};
   const protectedMain=ctx.eventName==="push"&&ctx.branch==="main";
   const readyPR=ctx.eventName==="pull_request"&&ctx.baseBranch==="main"&&!ctx.isDraft;
   const dispatch=ctx.eventName==="workflow_dispatch"&&ctx.fullRegression!==false;
   const forced=ctx.forceFull||paths.length===0||paths.includes("UNKNOWN_DIFF")||
-    paths.some(f=>critical.test(f)&&!previewStatic.test(f));
+    paths.some(criticalPath);
   const full=Boolean(protectedMain||readyPR||dispatch||forced);
   const scopes=[...new Set(paths.flatMap(browserFor))];
   const browserScope=full||scopes.includes("full")?"full":
