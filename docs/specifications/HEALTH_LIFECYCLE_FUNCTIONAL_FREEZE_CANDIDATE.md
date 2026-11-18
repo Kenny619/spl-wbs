@@ -1,6 +1,6 @@
 # SPT-WBS | Manual RAG — Stage B Functional Freeze Candidate
 
-**Version:** HW-FUNC-0.4 (reconciled 2026-11-18 JST) — **WORKING DRAFT, NOT FROZEN OR IMPLEMENTATION-AUTHORIZED**  
+**Version:** HW-FUNC-0.5 (reconciled 2026-11-18 JST) — **WORKING DRAFT, NOT FROZEN OR IMPLEMENTATION-AUTHORIZED**  
 **Binding source:** [Owner decisions, Issue #82](https://github.com/Kenny619/spl-wbs/issues/82). Supersedes the previous Under Watch / Clear / reason-lifecycle design and previous interpretation that Red persists as the *current* health after remediation. Retain historical issue comments and commits for traceability.
 
 ## 1. User model and scope — Product Owner-approved direction
@@ -25,12 +25,17 @@ Every valid WBS **Task, Milestone and Summary** item is **Green unless an author
 
 1. Default RAG Green is a rule, not necessarily a persisted Green record for every row. For a valid workbook with no explicit manual RAG value, render **Green (default)**.
 2. Viewing RAG and full historical assessment changes is read-only for project members. Editing RAG is enabled only after the approved PM-gated flow. No other workflow may write RAG.
-3. PM selects a WBS item, chooses **Green / Amber / Red**, and saves by the existing guarded workbook Save transaction. A change is committed only after validation and verified success. If no change, do not fabricate a change event.
-4. **Proposed audit minimum** (technical design pending): TaskID, previous/current RAG, UTC decision time, concise substantive PM explanation/remediation note, source workbook/version and non-authenticated PM Mode editor label. Each change is append-only in history. Old Amber/Red entries never disappear when current becomes Green.
+3. PM selects a WBS item and chooses **Green / Amber / Red**. The required form changes with the transition:
+   - **Any manual change to Amber or Red** (Green→Amber/Red, Amber→Red, Red→Amber): require two **separate nonblank text fields**, **Project Impact** (actual or potential impact on project delivery, cost, scope or deliverables) and **Path to Green** (corrective actions and the criteria needed to return to Green). For Amber↔Red explicitly update both values as a new assessment.
+   - **Amber or Red → Green**: require a separate **Resolution** text field that explains actual remediation/completion; previous Project Impact and Path to Green remain in historical assessment records.
+   - **No RAG change**: no form or audit event.
+   - Do not allow a blank, whitespace-only or uncommitted draft value to satisfy mandatory fields.
+   - Save only through the separately authorized guarded workbook Save transaction. A change is committed only after validation and verified success. No automation may set/alter RAG.
+4. **Approved required input policy; proposed exact audit schema:** each transition preserves WBS TaskID, previous/current RAG, UTC decision time, the required **Project Impact and Path to Green** for Amber/Red decisions **or Resolution** for return to Green, source workbook/version and non-authenticated PM Mode editor label. Preserve prior versions of the fields in append-only history. After resolution, display current RAG Green while keeping previous impact, plan, resolution and Red/Amber records auditable.
 5. Every accepted workbook copy with the same saved data must show the same current RAG and history. RAG is NOT a browser-local preference. Save As, reload, read-only viewer, backup, stale-source and second-writer rules apply.
 6. A PM password is only a workflow gate; **it cannot prove the human PM's identity or block Excel edits outside the app**. Never call a password-unlock event a verified author signature. See [draft PM Mode PR #100](https://github.com/Kenny619/spl-wbs/pull/100); its Watch-specific scope is obsolete and needs specification-only revision.
 
-**Owner confirmation still useful but not blocking drafting:** should an explanation be **required** for all manual changes, or only for changes returning to Green? Recommended low-friction default: one concise explanation for *every* actual change so that leadership can interpret prior Amber/Red and remediation. No obligation to register or close separate Watch reasons.
+**Required-input policy is now fully owner-approved.** Do not re-ask whether notes are optional: Project Impact + Path to Green are mandatory on entry/change to Amber/Red; Resolution mandatory on change from Amber/Red back to Green. No additional separate Watch-reason entry or closure is needed.
 
 ## 3. Previously approved HW-02 *effective TaskStatus* rules — explicitly NOT RAG automation
 
@@ -46,15 +51,15 @@ These approved decisions remain intact, because they change only **read-only exe
 
 ## 4. Retiring accepted Stage A Under Watch without losing project information
 
-The existing released/accepted Stage A workbook contains independently saved **WatchReasons** and project audit. The owner has now **superseded Under Watch as a future business concept**, but has **not** approved destroying project data or removing working features immediately.
+The accepted Stage A workbook includes a WatchReasons capability; the Product Owner confirms there is **no active Under Watch data** to migrate. Under Watch is **superseded as a future business concept**. No dedicated Watch data conversion, reconciliation, migration tool or historical Watch viewer is required; no destructive changes to existing workbooks or audit history are authorized.
 
 Migration design must:
 - Preserve the current accepted five-sheet ProjectData 0.1.2 workbook until a separately approved **versioned, backward-compatible** format and guarded migration are available. No silent rewrite or removal of `WatchReasons`, `ProjectAudit`, `UpdateHistory` or historical reason details.
-- Treat legacy Watch records as **historical facts only**; they **do not automatically convert to Red/Amber**, and no legacy Watch event can automatically set today's RAG. A valid legacy item with no manual RAG is Green by the new product rule, with a transparent notice about legacy data at transition.
-- Provide a read-only history/access/export path as needed for historical Watch entries; prevent future Watch Add/Resolve/Reopen once the new RAG workflow is explicitly authorized and shipped. Plan a safe rollback/compatibility path for older viewers before any data change.
+- No active Watch data needs conversion. If any previously saved legacy Watch record is encountered, treat it as unchanged historical data only; never translate it automatically to Red/Amber. A valid legacy item with no manual RAG is Green by the new product rule.
+- Retire the current Watch UI/operations when the new RAG implementation is separately authorized and shipped; leave existing accepted Watch tabs/audit bytes non-destructively intact. No special legacy Watch history page/export or bespoke migration project is needed. Preserve ordinary workbook backup/rollback safeguards.
 - Do not interpret unrecognized, invalid, future-version, failed or corrupt workbook content as trustworthy Green. Show a **load/data-quality error**, not a fourth RAG status; refuse unsafe writes. Valid workbook with absent health value is different: **Green by default**.
 
-A deprecation/migration design and owner authorization are prerequisites for code edits that replace accepted Watch behavior. No instant feature removal is authorized by this specification reconciliation.
+Separately authorized implementation and schema compatibility/backup checks are prerequisites to replacing accepted Watch behavior. **Legacy Watch migration is not a required workstream.** No instant feature removal is authorized by this specification reconciliation.
 
 ## 5. Common view, attention and reporting contract
 
@@ -65,15 +70,15 @@ A deprecation/migration design and owner authorization are prerequisites for cod
 
 ## 6. Technical policy and open decisions (not blockers to recorded owner direction)
 
-- **HW-05 PM Mode:** password-gated RAG edit, read-only member views, exact protected mutation scope, verifier provision/rotation/recovery/idle lock. No built-in default password or plaintext client secret. Shared verifier does not authenticate an actual PM.
-- **Workbook persistence:** schema design for per-item manual RAG plus append-only audit, atomic Save/backup/conflict detection, verified SourceID/TaskID and legacy compatibility; no current schema or writer change authorized.
-- **Audit UX:** lightweight explanatory text and edited-by attribution without false authentication claim; avoid creating separate risk/reason registers.
+- **HW-05 PM Mode / architecture recommendation:** use a **PM-only Node.js localhost editor** with server-side gate and guarded workbook writer, and a separate **read-only Edge viewer**. Bind localhost to loopback, protect cross-origin/CSRF access, avoid secrets embedded in static HTML/JS, and enforce Windows filesystem/share write permissions where possible; record that a shared PM password is not human identity verification or protection from out-of-app Excel writes. Exact PM gate scope, verifier provisioning/rotation/recovery/idle lock still need technical design approval. This is recommended architecture, **not** authorization to build the two-app variation yet.
+- **Workbook persistence:** versioned schema design for per-item RAG; current **Project Impact**, **Path to Green** while Amber/Red, and **Resolution** on return to Green; append-only full previous/new RAG and input audit; atomic Save/backup/conflict detection, verified SourceID/TaskID and backward-compatible read; no current schema or writer change authorized.
+- **Audit UX:** on Amber/Red show two clearly labeled required fields with review/read-only presentation; on Green return show required Resolution, retain prior Impact/Path values in history. Show edited-by as **unverified** unless real authentication is deployed; avoid creating separate risk/reason registers.
 - **Visibility:** design display hierarchy if a default Green item is separately Overdue or effectively Blocked, preserving both facts clearly rather than forcing a matching RAG.
-- **Acceptance:** small targeted tests for default Green, manually set Amber/Red and manual Green, independence from TaskStatus/schedule, multi-item/source reload, failed/unauthorized/stale Save, preserved legacy Watch history, report current-vs-period, and viewer readonly parity. Reuse already accepted Stage A/B coverage; do not rerun obsolete Watch functional cases against future target.
+- **Acceptance:** targeted tests for required Impact+Path-to-Green and Resolution on correct transitions (including Amber↔Red), default Green, full field/audit history retention, RAG independence from TaskStatus, save/reload, failed/unauthorized/stale Save, non-destructive old workbook compatibility, report current-vs-period and viewer read-only parity. Reuse accepted Stage A/B coverage; **no dedicated Watch migration or obsolete Watch lifecycle regression suite**.
 
 ## 7. Governance and exit
 
-**Already approved and no need to ask again:** RAG exactly Green/Amber/Red, Green default on valid items, manual PM-only changes including return to Green after remediation, full RAG/TaskStatus independence, Under Watch and Clear removed from target product, no RAG automation; previous HW-02 effective TaskStatus approvals continue without RAG linkage.
+**Already approved and no need to ask again:** RAG Green/Amber/Red only; Green default; manual PM changes; Project Impact + Path to Green mandatory on any change to Amber/Red, Resolution mandatory when returning to Green; per-transition history; TaskStatus independence; Under Watch and Clear removed from target product; no active legacy Watch data to migrate; never automate RAG. Previous HW-02 effective TaskStatus approvals continue without RAG linkage.
 
 **Stage B owner gate:** review this reconciled functional candidate and any remaining concise evidence/authorization questions, then expressly freeze it. **After Stage C**, seek separate approval for backward-compatible workbook implementation, UI replacement, Report 1.1 versioned delta, focused independent QA and owner UAT, before beta. Holistic UX gate remains separate.
 
