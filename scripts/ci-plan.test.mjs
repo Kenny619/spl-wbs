@@ -7,6 +7,40 @@ test("docs-only feature push skips expensive jobs",()=>{
   const p=classifyCI(["README.md","docs/guides/example.md"],push());
   assert.equal(p.tier,"docs-only");assert.equal(p.fast,false);assert.equal(p.browser,false);
 });
+test("documentation-only specification Markdown skips expensive draft and feature checks",()=>{
+  const files=["docs/specifications/HEALTH_LIFECYCLE_FUNCTIONAL_FREEZE_CANDIDATE.md",
+    "docs/specifications/nested/compatibility.MD","docs/PROJECT_STATUS.md"];
+  for(const ctx of [push(),{eventName:"pull_request",baseBranch:"main",isDraft:true}]){
+    const p=classifyCI(files,ctx);
+    assert.equal(p.tier,"docs-only");
+    assert.equal(p.fast,false);
+    assert.equal(p.browser,false);
+    assert.equal(p.packaging,false);
+  }
+});
+test("specification Markdown cannot bypass protected integration or explicit full-ci",()=>{
+  const files=["docs/specifications/EMV.md"];
+  for(const ctx of [push("main"),
+    {eventName:"pull_request",baseBranch:"main",isDraft:false},
+    {...push(),forceFull:true},
+    {eventName:"workflow_dispatch",fullRegression:true}]){
+    const p=classifyCI(files,ctx);
+    assert.equal(p.tier,"full");assert.equal(p.browserScope,"full");
+  }
+});
+test("specification executable files and mixed changes retain required CI",()=>{
+  for(const file of ["docs/specifications/build.mjs","docs/specifications/schema.json",
+    "docs/specifications/generated.html","docs/verification/contract.md"]){
+    const p=classifyCI([file],push());
+    assert.equal(p.tier,"full",file);
+  }
+  for(const file of ["src/data/normalize.ts","scripts/ci-plan.mjs",
+    ".github/workflows/ci.yml","src/managed/directSave.ts"]){
+    assert.equal(classifyCI(["docs/specifications/HW-FUNC.md",file],push()).tier,"full",file);
+  }
+  assert.equal(classifyCI(["docs/specifications/HW-FUNC.md","UNKNOWN_DIFF"],push()).tier,"full");
+});
+
 test("protected main always keeps full Windows suite",()=>{
   const p=classifyCI(["README.md"],push("main"));
   assert.equal(p.browserScope,"full");assert.equal(p.fast,true);assert.equal(p.packaging,false);
@@ -25,7 +59,7 @@ test("managed display edits select real managed suite",()=>{
 });
 test("save, import, CI, specification and unknown changes fail closed",()=>{
   const paths=["src/managed/directSave.ts","src/data/excelReader.ts",
-    ".github/workflows/ci.yml","docs/specifications/EMV.md","src/unmapped/new.ts","scripts/new-build-generator.mjs",
+    ".github/workflows/ci.yml","docs/specifications/EMV.json","src/unmapped/new.ts","scripts/new-build-generator.mjs",
     "src/managed/recoveryUi.ts","src/managed/watchUi.ts","src/managed/watchProjection.ts","src/managed/draft.ts"];
   for(const path of paths)assert.equal(classifyCI([path],push()).browserScope,"full",path);
 });
@@ -116,7 +150,7 @@ test("preview-only shortcut is forbidden on main and ready PR or with source cha
     assert.equal(classifyCI([file],push("main")).browserScope,"full");
     assert.equal(classifyCI([file],{eventName:"pull_request",baseBranch:"main",isDraft:false}).browserScope,"full");
   }
-  for(const file of ["design/concepts/helper.js","docs/prototypes/runtime.ts","docs/specifications/EMV.md","src/managed/directSave.ts"]){
+  for(const file of ["design/concepts/helper.js","docs/prototypes/runtime.ts","docs/specifications/EMV.json","src/managed/directSave.ts"]){
     assert.equal(classifyCI([file],push()).browserScope,"full",file);
   }
   assert.equal(classifyCI(["design/concepts/preview.html","src/managed/main.ts"],push()).browserScope,"full");
