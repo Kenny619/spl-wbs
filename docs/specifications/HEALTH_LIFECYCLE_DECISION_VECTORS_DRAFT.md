@@ -1,96 +1,67 @@
-# SPT-WBS | Health / RAG / Under Watch — Decision Register and Verification Vectors
+# SPT-WBS | Manual PM-Owned RAG — Decision Register and Acceptance Vectors
 
-**Status:** Controlled Stage B **specification working draft**, last reconciled **2026-11-18 JST**. Individual Product Owner directions below are recorded; **the overall health lifecycle specification is NOT yet frozen**, and no feature/schema/report implementation, protected merge, corporate release, or beta follows from this document.
+**Status:** Stage B documentation draft, reconciled **2026-11-18 JST**, **NOT FROZEN**. The latest Product Owner direction in [Issue #82](https://github.com/Kenny619/spl-wbs/issues/82) **supersedes** the previous proposed Under Watch / reason lifecycle / Clear and automatic RAG design. Historical decisions remain in issue comments and Git history; they do not govern the new RAG target where inconsistent. Functional candidate: [HW-FUNC-0.4](HEALTH_LIFECYCLE_FUNCTIONAL_FREEZE_CANDIDATE.md).
 
-**Source of truth:** [Issue #82](https://github.com/Kenny619/spl-wbs/issues/82). Related drafts [HW-05 authorization PR #100](https://github.com/Kenny619/spl-wbs/pull/100) and [HW-02 effective status PR #101](https://github.com/Kenny619/spl-wbs/pull/101). Preserve [frozen Report 1.1](EMV_REPORT_1_1_FROZEN.md), [Manual Watch addendum 1](REPORT11_MANUAL_WATCH_ADDENDUM_1.md), approved five-sheet ProjectData 0.1.2 and existing accepted Stage A/B functionality.
+## 1. Binding owner decisions
 
-## 1. Resolved Product Owner decisions — do not re-ask
-
-| Decision | Explicit accepted direction | Boundary |
+| ID | Current owner directive | Safe technical consequence |
 | --- | --- | --- |
-| **HW-01 RAG taxonomy** | **Red:** observed issue impacts scope/timeline/deliverable/cost/structure **even after underlying issue is resolved**. **Amber:** observed risk that could impact those dimensions. **Green:** normal, no issue/risk observed. **Unknown and Clear removed as health/RAG states.** | A task's source `TaskStatus` `Unknown` or an unavailable evidence source is **not** a fourth health status; never silently assign Green to incomplete or unverified evidence. |
-| **HW-02 source versus effective status** | **Option A**: retain original `ProjectWBS.TaskStatus` in Excel, calculate a transparent **effective TaskStatus** for display from the same verified workbook/date/calendar/dependency inputs. No automatic write or audit claim. | This is *task/schedule status*, **not** a direct RAG decision. Exact overdue/milestone/precedence/filter boundary details remain open. |
-| **HW-02 five-day/Overdue Option A — APPROVED** | Near finish means **0–5 inclusive verified working days**. Calculate effective At Risk if progress below 50%, recorded Not Started, or no substantive Updates. For active tasks already past the finish date, show an independent prominent **Overdue** exception, but **do not derive At Risk solely from overdue**. Downstream effective Blocked is owner-proposed via validated predecessor chains. | Keep recorded TaskStatus in Excel unchanged; do not automatically infer RAG. Summary/Milestone eligibility and dependency contradictions still require review. No derived overdue-only At Risk. |
-| **HW-02 update-presence rule** | **No update ever entered** intent = no **substantive update currently recorded in workbook Updates**. One meaningful update, however old, satisfies update-presence trigger. Detect never-maintained-looking tasks such as `In Progress` with no notes. | A blank present-day cell cannot prove an update was never entered then erased. Do not use generic `Modified` as an Updates timestamp. **Defer age/staleness review monitoring until after user testing.** |
-| **HW-02 task-type/terminal-guard Option A — APPROVED** | Auto near-finish At Risk only on active scheduled leaf Tasks. Milestone gets dates, separate Overdue and independently recorded/inherited Blocked/At Risk but no near-finish At Risk from Not Started or blank Progress/Updates. Summary only child-sourced exceptions. Completed/Cancelled successors retain terminal status, show blocked-predecessor contradiction and stop inherited root propagation through them. | Never overwrite recorded Excel TaskStatus or synthesize a RAG/Watch reason. Remaining common evaluation-date, view filter and invalid-graph quality behavior still requires review. |
-| **HW-03 Red reassessment — Option A** | Historical Red impact, prior Red assessment, and associated reason/audit history are **permanently preserved**. **Current** Red may change only following an **explicit PM reassessment with documented supporting evidence and a complete saved audit transition**. | Neither reason resolution nor a calculated schedule improvement can auto-change Red. Amber/Green require a justified review of independent causes; PM password gate does not authenticate the individual's identity. |
-| **HW-05 control direction** | Lightweight **PM password gate** for manual Watch Add/Resolve/future Reopen and future manual RAG edits. View status/history without password. | Browser gate deters casual edits but **cannot prevent direct Excel modification or authenticate user identity**. Keep audit actor unverified. Verifier storage/bootstrap/rotation/recovery and timeout not yet approved. [PR #100](https://github.com/Kenny619/spl-wbs/pull/100) is a draft, no code. |
-| **HW-07 reports** | **Retain existing Under Watch filter and task listing under Exceptions. Emphasize current Under Watch items in Latest Status and Progress & Risks. DEFER detailed report content finalization** until all task and Watch specs are settled. | Preserve current Report 1.1/Manual Watch addendum, current vs selected-period distinction, HTML/plain/Outlook parity, workstream grouping and no report writes. Detailed Change Audit and Meeting Review unchanged for now. Version a new report delta only after owner review. |
+| **HW-01** | Each valid WBS item **Green by default**; PM may set Amber or Red. Exactly three RAG states. | A valid legacy item without an explicit saved RAG is Green. No Unknown or Clear badge. A failed/unsupported workbook is a load error, not a fourth RAG. |
+| **HW-02** | **Never automate RAG**. | Existing approved *effective TaskStatus* schedule/dependency computations are independent, readonly and cannot write or derive RAG. |
+| **HW-03** | Authorized PM manually returns Amber/Red to Green after remediation. | No automatic clear/downgrade; previous Amber/Red and material-impact history remain auditable. Current badge is latest explicitly saved valid PM selection or Green default. |
+| **HW-04** | Under Watch and Clear **obsolete** in target specification. | Remove future current Watch status, reason Add/Resolve/Reopen, separate reason aggregation, Watch filter and Watch-specific report controls. Preserve already saved legacy Watch/audit records via reviewed versioned migration. |
+| **HW-05** | Only authorized PM edits RAG. | PM Mode gate to be specified; shared password ≠ authenticated identity and does not prevent direct Excel writes. Never claim verified actor. |
+| **HW-06** | TaskStatus independent of RAG. | Valid combinations include In Progress/Amber, Blocked/Green, Completed/Red, Not Started/Green. |
+| **HW-07** | One shared current RAG across applicable views, future Report 1.1 replacement. | Report current snapshot vs period-valid RAG transitions separately, no report writes or historical backfill, preserve workstream grouping and export parity. |
+| **HW-08** | Shared workbook truth, manual history protected. | Future additive schema/audit design, Save/backup/concurrency checks, legacy read-only history and unsupported-file rejection need separate authorization. |
 
-Direct issue comments: [HW-01](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6949427305), [HW-05](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6949707407), [HW-02 Option A](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6950049738), [HW-02 no-update](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6950220272), [HW-07](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6950328377).
+### Preserved HW-02 execution-status approvals (NOT RAG)
+- Recorded TaskStatus never automatically overwritten. Verified, read-only **effective TaskStatus** may derive an *At Risk execution-status warning* for active scheduled **leaf Task** at **0–5 inclusive working days** with progress <50%, recorded Not Started or no substantive current Updates. Old meaningful updates qualify; stale-age rules deferred.
+- Active overdue work gets separate **Overdue**, not automatic effective At Risk solely because it is late. Milestones do not get automatic near-finish At Risk from missing progress/Updates/Not Started; Summary only displays child-sourced exceptions.
+- Only validated Finish-to-Start predecessor chains propagate effective Blocked, with root-source TaskIDs; Completed/Cancelled successors retain terminal status and stop inherited propagation, with contradiction notice. Invalid graph/source quality never produces fabricated Blocked.
+- All workday calculations use verified business calendar and committed shared blackout; common evaluation-date/filter semantics still to finalize in [HW-02 PR #101](https://github.com/Kenny619/spl-wbs/pull/101).
+- **None of these calculations modifies RAG or creates RAG change history.**
 
-## 2. Remaining business decisions for concise individual review
+## 2. Target UAT / independent QA scenarios (designed; NOT EXECUTED)
 
-**HW-03 — Option A Red reassessment APPROVED; other reason-transition details still open**:
-- **Approved:** an issue that caused material project impact remains in permanent historical Red evidence, but its **current** Red assessment can change only by explicit, evidence-backed PM reassessment with a fully preserved old/new/timestamp/rationale/source audit trail. No implicit Green on reason closure. Do not repeat the permanent-Red-versus-reassessment decision.
-- **Still open:** exact required evidence and note formats for `Open → Resolved` and future `Resolved → Reopened`, no-op handling, and how all independent causes constrain current reassessment. Schema/persistence implementation requires a separate future approval. A shared PM password does not certify reviewer identity.
-
-**HW-04 — Multiple concurrent causes** (proposed safest default, not yet accepted):
-- Preserve all independent reasons (including resolved history); an unrelated issue or risk may remain after one is resolved. Show each reason and the aggregate effective task conditions. Resolution of one cause must not silence others. Explicitly decide competing risk/issue precedence for final RAG health.
-
-**HW-02 remaining precise rule edges** (partially approved):
-- **Approved:** 0–5 inclusive verified working days and separate prominent Overdue without effective At Risk from overdue alone. **Approved task-type Option A:** near-finish At Risk only for active scheduled leaf Task; Milestones show dates and Overdue plus recorded/inherited Blocked/At Risk, no derived near-finish At Risk from Not Started or blank percent/Updates; Summary shows child-sourced exceptions, avoiding duplicate counts. **Approved terminal guard:** Completed/Cancelled successor stays terminal, blocked-predecessor contradiction is disclosed, and inherited root propagation stops at terminal. **Alternative B was not selected**. Invalid-graph and cross-view precedence details remain open.
-- Use only verified Japanese holidays and the **committed shared project blackout** (not browser-local settings) for workday computation; select common project business date, proposed JST. Unsupported/missing dependency and cycles must not fabricate inherited Blocked. Preserve root TaskID evidence through transitive/multiple Blocked paths.
-- Clarify where effective versus recorded TaskStatus drives filter/exception counts and which source labels users see; no frozen Report 1.1 delta until after the detailed task/Watch specs.
-
-**HW-05 remaining protection design** (not an authorization to implement):
-- Where to provision a per-project password verifier, how to bootstrap, rotate/reset/recover and lock after idle, and which existing status edit operations beyond Watch/RAG should be protected. No default password or hashed secret stored in uncontrolled client HTML/JS. No claim that a shared password certifies the identity of an editor.
-
-**HW-06 common status projection** (design pending):
-- Ensure one shared source-backed projection feeds Schedule, Needs Attention, Task Detail, Meeting Review and future versioned Reports. Do not mix task status, manual reason states, schedule exceptions and RAG health. Source detail/keyboard labels accompany colors.
-
-**HW-08 missing/legacy/future data** (owner decision pending):
-- With obsolete health `Unknown`, choose a **non-RAG availability message** (e.g., `Health assessment unavailable`) for missing/invalid/unverified source. Never fabricate Green, never corrupt legacy/future workbooks and require migration/compatibility approval before any new health-specific Excel fields.
-
-**Persistence and reporting sequencing:** Any new RAG assessment or Reopen transaction must follow an independently approved versioned schema, guarded workbook Save, append-only audit, backward compatibility and PM gate design. Defer detailed report content and versioned Report 1.1 delta until task/Watch lifecycle is settled. Health/report integration is a **separate pre-beta implementation milestone after Stage C**, not a license to implement during this Stage B specification-only review.
-
-## 3. Existing evidence versus forbidden assumptions
-
-| Existing evidence available | Safe statement | Do not assert |
+| ID | Synthetic scenario | Required result |
 | --- | --- | --- |
-| Source `Blocked` or `At Risk` TaskStatus | Recorded task execution condition | Verified RAG Red or Amber unless separately assessed |
-| Open Watch reason | Recorded reason is open, source and provenance disclosed | That it automatically has a complete and authenticated RAG decision |
-| Resolved Watch reason | Resolution is recorded, past impact and reason trail preserved | Independent impacts are gone or project health is Green |
-| Overdue / ≤5-workday condition | Calculated date signal with verified working-day inputs and source | Automatic confirmed Red, historic report event, or self-cleared Watch reason |
-| Blank Updates field | No substantive update currently recorded | Proof the task was never historically reviewed, or that notes are stale |
-| Legacy/invalid health source | Health assessment **unavailable**, explicit evidence-quality warning | Green or a fourth RAG badge called Unknown |
-| Current Watch item in a period report | Current source snapshot, clearly labeled current | Newly opened during that period without a recorded period event |
+| **R-01** | Open a valid new/legacy workbook with WBS items and no manual RAG data | Every item displays **Green (default)**, with no write necessary and no RAG Unknown. |
+| **R-02** | PM manually sets In Progress Task A from Green to Amber | TaskStatus stays In Progress; current RAG Amber only after successful guarded Save; audit captures old/new RAG. |
+| **R-03** | PM manually sets Task A Amber → Red, then Red → Green after remediation | Current RAG Green; **both earlier Amber and Red retained historically**; no independent Clear/Resolve operation. |
+| **R-04** | Date becomes overdue while RAG remains Green | Separate Overdue indicator is visible; RAG **stays Green**. Never auto-Amber/Red. |
+| **R-05** | Verified near-finish criteria calculate effective At Risk while PM-set RAG is Green | Effective TaskStatus At Risk with provenance; RAG remains Green. Recorded source TaskStatus unchanged. |
+| **R-06** | Recorded Blocked Task or validated inherited effective Blocked but PM-set RAG Amber | Each status shown independently; no auto-Red, no RAG edit/audit event. |
+| **R-07** | PM manually sets Completed item to Red | Display Completed + Red (if valid source); completion does not auto-clear RAG. |
+| **R-08** | One parent Summary with Red child, parent manually Green | Parent remains Green; Red child may appear in child-exception rollup, **not a parent RAG mutation**. |
+| **R-09** | Previously accepted WatchReasons row is Open, but there is no saved explicit RAG for its item | New target RAG shows **Green default**, with transparent accessible legacy history; no automatic Watch→Amber/Red mapping. Must not delete prior Watch source/audit. |
+| **R-10** | Read-only Viewer loads project with Amber/Red RAG | Viewer shows shared saved RAG/history; no manual RAG write affordance. Personal dark mode/columns remain local. |
+| **R-11** | PM attempts RAG edit without PM Mode | Reject write without changing current RAG or audit. Password unlock never claims verified personal identity. |
+| **R-12** | PM Mode unlocked but stale workbook, concurrent writer or backup/recovery error | No false success, partial RAG write, lost audit, corrupt workbook, or gate bypass. |
+| **R-13** | Valid older schema has no RAG field; unreadable/future schema is then loaded | Valid old source → Green default; invalid/future/unverifiable source → explicit load/error handling, preserve bytes and no forced Green. |
+| **R-14** | Report chosen period predates a current Amber edit | Current snapshot may say Amber now; period history does **not** falsely claim the edit happened during the selected period. |
+| **R-15** | Report current RAG and period transitions output HTML/plain/Outlook | Same facts, workstream groups and correct time basis; no Excel writes from report operations. |
+| **R-16** | Green→Amber action with no change to recorded TaskStatus | Only RAG and approved audit fields change, through guarded Save, no effective TaskStatus recalculation side effect. |
+| **R-17** | PM selects same RAG as current | Treat no-op as no change event; do not create fabricated assessment history. |
+| **R-18** | Auto overdue flag clears due to verified schedule correction | RAG unchanged, independent previously saved PM health assessments and history intact. |
+| **R-19** | Migration from existing accepted five-sheet workbook to future version | Preserve WatchReasons/ProjectAudit/UpdateHistory and backups; old clients/future-version behavior explicitly tested; no silent Watch-to-RAG mapping. |
+| **R-20** | A previously material Red issue is remediated and PM manually sets Green with explanation | Current Green; historical Red impact and prior assessment preserved. No rule forces current Red to persist indefinitely. |
 
-## 4. Synthetic scenario checklist (future tests, NOT executed)
+## 3. Superseded scenarios — DO NOT BUILD as future product
 
-| ID | Scenario | Invariant / pending policy |
-| --- | --- | --- |
-| H-01 | Open manual Watch issue and source `In Progress` | Preserve reason/source and Red impact evidence without inventing health calculation |
-| H-02 | Two independent Watch reasons; resolve only one | Other stays open and complete history remains; no automatic Green |
-| H-03 | Reopen a previously resolved reason | Preserve transition trail; authority/PM Mode and Reopen rationale still pending; separate PM assessment required for any current Red change |
-| H-03A | Material-impact Red reason resolved with no PM RAG reassessment | **Current Red remains; original impact and prior Red event persist** |
-| H-03B | PM explicitly reassesses a previously impacted Red to Green with complete evidence of no current risks/issues | **Current RAG can change only via documented guarded PM transaction; original Red and complete history remain**; future schema and multi-cause verification separately approved |
-| H-03C | One of several reasons resolves while another risk remains | No automatic Green or aggregate downgrade; independent risk retained, Amber eligibility subject to HW-04 |
-| H-04 | Exactly five verified working days, 49% progress, update exists | **Approved boundary:** calculated effective At Risk; original Excel status intact |
-| H-04A | Six verified working days remaining, 49% progress | No near-finish derived At Risk; independent recorded/inherited flags remain |
-| H-04B | Active task already overdue, with 90% progress and substantive update | **Approved Option A:** prominent separate Overdue, no calculated effective At Risk solely due to overdue |
-| H-04C | An overdue task also has a separately recorded At Risk or Blocked cause | Retain that independently sourced status **and** the separate Overdue indicator |
-| H-04D | Past-due date corrected through verified Save | Recompute Overdue; preserve independently Open Watch reasons, historical events and Red impact |
-| H-04E | Active Milestone with missing progress and no Updates; 1 working day to finish | **Approved Option A:** date attention only, no auto near-finish At Risk even if recorded Not Started |
-| H-04F | Summary with multiple child risks and overdue | Child-provenance rollup only; no duplicate independent Summary flag |
-| H-04G | Blocked A → Completed B → active Task C | **Approved safeguard:** show B contradiction; keep Completed and do not inherit A through B to C |
-| H-04H | Blocked A → active Milestone B → active Task C, valid FS edges | Effective Blocked inherited by B and C with A root provenance |
-| H-04I | Cancelled A → active Task B, no other blocker | Source dependency diagnostic; Cancelled alone not invented as Blocked |
-| H-05 | Five-day boundary, 80% progress, In Progress, blank Updates | Calculated effective At Risk for no update currently recorded |
-| H-06 | Five-day boundary, 80% progress, In Progress, old substantive Updates | No missing-update At Risk; age monitoring explicitly deferred |
-| H-07 | Source Blocked A -> dependent B -> C | Derived effective Blocked, origin A/ID, no workbook writes or fake Watch reasons |
-| H-08 | A and D independently block B; A unblocked | B stays effectively Blocked via D |
-| H-09 | A unblocked while B has independent open Watch reason | Only inherited flag clears; Watch remains open |
-| H-10 | Legacy/future-version workbook without valid health fields | Do not mutate, invent Green or show obsolete RAG Unknown |
-| H-11 | Health assessment conflicts with source status/Watch | Preserve actual independent facts, define precedence and authority before implementation |
-| H-12 | Report selected period includes resolution; reopen occurs outside it | Period events and current snapshot clearly distinct; defer content finalization |
-| H-13 | Save fails, stale source, concurrent writer or recovery hold | No false Save success, history loss or password bypass |
-| H-14 | HTML/plain/Outlook output and read-only Viewer | Preserve existing frozen outputs, no report writes, future delta gated |
+- Watch reason Open/Resolved/Reopened UI lifecycle, reason-specific precedence and multi-cause aggregation as a separate status model.
+- Resolving the last Watch reason and invoking Clear.
+- RAG Unknown, auto-Green on reason closure, persistent current Red after authorized manual Green, and any automatic schedule→RAG classification.
+- New UAT for obsolete Watch editing beyond minimum **legacy data preservation and migration regression**. The Stage A manual Watch tests were accepted previously and do not need full replay for this policy change.
 
-## 5. Exit sequence and governance
+Historical Watch rows are not discarded, nor should old audit entries be falsified. Any old page/filter/report surface remains in the accepted running application until a separately authorized migration replaces it; the table above is the future target.
 
-1. Record outstanding HW-02 (common evaluation date, view filter and incomplete/invalid evidence handling)/03 (reason notes/reopen details only)/04/05/06/08 owner decisions individually. Do **not** re-ask HW-01, HW-02 recorded/effective Option A, update-presence, **five-day/Overdue Option A**, **task-type/terminal-guard Option A**, HW-03 historical Red Option A, HW-05 gate direction or HW-07 report deferral.
-2. Propose a consolidated **versioned health lifecycle functional-spec freeze** only when conflict/transition and missing-evidence rules are complete. This document and PR remain **documentation-only draft** pending approval and normal documentation integration checks.
-3. After Stage C authoring stabilizes, separately authorize any versioned workbook schema/health calculation and Report 1.1 delta; independently QA + owner UAT before beta. No implicit merge/release or corporate permission claim.
+## 4. Remaining design decisions and gate
 
-**Current gate:** Stage B health specification analysis, **not** implementation or a completed owner health-policy freeze.
+1. **PM authority model:** project-scoped vs device-local verifier, setup/rotation/reset/recovery, unlock timeout, exact edit permissions. Shared PM password gate cannot prove personal identity; do not store plaintext client secrets. [PM Mode draft #100](https://github.com/Kenny619/spl-wbs/pull/100) must eliminate old Watch-specific edit permissions.
+2. **RAG persistence and minimal explanation:** propose one per-item RAG field plus append-only old/new/timestamp/reason history, guarded workbook Save and report event source. Exact fields and mandatory note rule need later owner-reviewed schema approval.
+3. **Retirement/migration:** preserve all existing five-sheet Watch/audit data, disable new Watch editing in the future RAG product only after approved transition, maintain read-only historical access, version and rollback.
+4. **Reports:** freeze a new Report 1.1 delta only after agreed target UI, with RAG replacing current Under Watch sections; no changes to accepted report before then.
+5. **Effective TaskStatus edges:** finish the already-authorized HW-02 date/filter/incomplete-source technical decisions independently; do not reopen the completed task-type, 0–5 day, overdue and terminal-successor approvals.
+
+**Current status:** Owner **has approved the new high-level manual RAG policy**; these documents are reconciled specification drafts, **not** an overall functional freeze. No implementation, schema/password creation, main merge, or beta authorization follows from the update.
