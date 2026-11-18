@@ -1,6 +1,6 @@
-# SPT-WBS | Manual RAG — Stage B Functional Freeze Candidate
+# SPT-WBS | Manual RAG — Stage B Approved Functional Specification
 
-**Version:** HW-FUNC-0.5 (reconciled 2026-11-18 JST) — **WORKING DRAFT, NOT FROZEN OR IMPLEMENTATION-AUTHORIZED**  
+**Version:** HW-FUNC-1.0 — **PRODUCT OWNER APPROVED / FROZEN 2026-11-18 JST; IMPLEMENTATION NOT AUTHORIZED**  
 **Binding source:** [Owner decisions, Issue #82](https://github.com/Kenny619/spl-wbs/issues/82). Supersedes the previous Under Watch / Clear / reason-lifecycle design and previous interpretation that Red persists as the *current* health after remediation. Retain historical issue comments and commits for traceability.
 
 ## 1. User model and scope — Product Owner-approved direction
@@ -59,7 +59,7 @@ Migration design must:
 - Retire the current Watch UI/operations when the new RAG implementation is separately authorized and shipped; leave existing accepted Watch tabs/audit bytes non-destructively intact. No special legacy Watch history page/export or bespoke migration project is needed. Preserve ordinary workbook backup/rollback safeguards.
 - Do not interpret unrecognized, invalid, future-version, failed or corrupt workbook content as trustworthy Green. Show a **load/data-quality error**, not a fourth RAG status; refuse unsafe writes. Valid workbook with absent health value is different: **Green by default**.
 
-Separately authorized implementation and schema compatibility/backup checks are prerequisites to replacing accepted Watch behavior. **Legacy Watch migration is not a required workstream.** No instant feature removal is authorized by this specification reconciliation.
+Separately authorized implementation and schema compatibility/backup checks are prerequisites to replacing accepted Watch behavior. **Legacy Watch migration is not a required workstream.** No instant feature removal follows from this functional approval.
 
 ## 5. Common view, attention and reporting contract
 
@@ -68,7 +68,7 @@ Separately authorized implementation and schema compatibility/backup checks are 
 - Reports show **current manual RAG snapshot** separately from **RAG transition events that occurred in the requested reporting period**. Never present today's Amber/Red as if it changed during a historical reporting period. Keep workstream grouping, HTML/plain text/Outlook copy parity, readonly Generate/Copy/Download and source provenance. Future Report 1.1 delta will remove *current* Under Watch content/controls but may provide historical legacy audit reference.
 - The frozen Report 1.1 and existing Manual Watch addendum remain operational until a separately approved versioned replacement. Do not silently amend prior approved report content.
 
-## 6. Technical policy and open decisions (not blockers to recorded owner direction)
+## 6. Technical design follow-ups (not part of the approved functional freeze)
 
 - **HW-05 PM Mode / architecture recommendation:** use a **PM-only Node.js localhost editor** with server-side gate and guarded workbook writer, and a separate **read-only Edge viewer**. Bind localhost to loopback, protect cross-origin/CSRF access, avoid secrets embedded in static HTML/JS, and enforce Windows filesystem/share write permissions where possible; record that a shared PM password is not human identity verification or protection from out-of-app Excel writes. Exact PM gate scope, verifier provisioning/rotation/recovery/idle lock still need technical design approval. This is recommended architecture, **not** authorization to build the two-app variation yet.
 - **Workbook persistence:** versioned schema design for per-item RAG; current **Project Impact**, **Path to Green** while Amber/Red, and **Resolution** on return to Green; append-only full previous/new RAG and input audit; atomic Save/backup/conflict detection, verified SourceID/TaskID and backward-compatible read; no current schema or writer change authorized.
@@ -80,6 +80,6 @@ Separately authorized implementation and schema compatibility/backup checks are 
 
 **Already approved and no need to ask again:** RAG Green/Amber/Red only; Green default; manual PM changes; Project Impact + Path to Green mandatory on any change to Amber/Red, Resolution mandatory when returning to Green; per-transition history; TaskStatus independence; Under Watch and Clear removed from target product; no active legacy Watch data to migrate; never automate RAG. Previous HW-02 effective TaskStatus approvals continue without RAG linkage.
 
-**Stage B owner gate:** review this reconciled functional candidate and any remaining concise evidence/authorization questions, then expressly freeze it. **After Stage C**, seek separate approval for backward-compatible workbook implementation, UI replacement, Report 1.1 versioned delta, focused independent QA and owner UAT, before beta. Holistic UX gate remains separate.
+**Stage B health/RAG functional specification gate: FROZEN following explicit Product Owner approval (“Approved. Keep going”), 2026-11-18 JST.** This freezes the requirements in sections 1–5 and the transition input/audit requirements in section 2, while section 6 enumerates still-unapproved technical architecture/schema/access-control choices. **After Stage C**, separately approve implementation of the backward-compatible workbook contract, UI replacement and versioned Report 1.1 delta; perform proportionate independent QA and focused Owner UAT before beta. Holistic UX gate remains separate.
 
-**Not authorized by this draft:** implementation; password/credential creation; workbook schema or migration; deleting Watch data; production changes; protected-main merge; release or beta.
+**Scope of this functional approval:** specification only. It does not authorize application implementation, PM credential creation, workbook schema changes or migration, destructive Watch cleanup, production changes, unreviewed protected-main changes, release or beta. Documentation-only protected integration may proceed subject to exact-head checks and branch protections.
