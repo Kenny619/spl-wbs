@@ -60,3 +60,36 @@ Chronology requires a documented total order for events sharing a timestamp. `Ch
 ## Release and authority boundary
 
 This document recommends validation invariants and tests only. It **does not freeze 0.1.3**, authorize schema mutation, workbook-writing code integration, PM password/localhost controls, corporate Edge distribution, Report 1.1 amendment, beta, production release or deployment. Keep Stage A accepted workbook data, previous audit chronology and old-client fail-closed behavior intact. Avoid repeating accepted MRU/PGCM/header owner UAT; limit future checks to changed creation, historical continuity and rollback surfaces.
+
+## Independent QA remediation proposals — 2026-11-18 (not approved)
+
+The following are **candidate contract choices**, not implemented behavior or an approved 0.1.3 schema. They address the two CONCERN findings in the PR review without silently changing the fourteen-column ProjectAudit or accepted UpdateHistory.
+
+### C1 — creation-time recognized-field manifest
+
+**Preferred candidate:** define one reserved, explicitly versioned *metadata record* inside the existing ProjectAudit transaction, with an unambiguous reserved Field identifier and canonical sorted JSON payload enumerating the exact normalized ProjectWBS source columns recognized **at Create time**, plus schema version. Reserve and validate this identifier before accepting any Create; exclude this metadata row from ordinary WBS field replay and require exactly one manifest per logical `(ChangeSetID, TaskID)` Create group. Its precise placement/Field encoding, allowed JSON shape, identity and uniqueness rules, and whether the existing fourteen-column reader can safely ignore it **must be agreed against the actual ProjectAudit contract before freeze**. If this cannot be made backward-compatible, stop and present an explicit versioned alternative; do not overload a real WBS field or add a worksheet silently.
+
+**Alternative:** a fixed schema-version-to-recognized-field-set registry, but only if every historical creation schema and future optional-column introduction is uniquely versioned and provably mapped. A version string without an immutable field-set registry does not solve the ambiguity.
+
+**Required validation:** compare the Create field set to the persisted creation-time manifest/registry, not today's ProjectWBS headers. Explicit blank and numeric zero count as present. Missing a manifest, unknown version, duplicate field, unsupported metadata, or mismatch must fail guarded writes; older 0.1.2 items with no Create remain valid legacy items, not fabricated events. A manifest proves structural completeness relative to the claimed schema, **not** immunity from direct Excel tampering.
+
+### C2 — tied-timestamp UpdateHistory chronology
+
+The existing `src/managed/history.ts` reader groups `ChangeSetID`, preserves individual row numbers, and displays events sorted by descending timestamp with lexicographic UUID tie-break. This is a **view sort**, not a verified historical replay order. Do not reuse that ordering to validate Create-to-current continuity.
+
+**Preferred candidate:** accept physical worksheet row order for replay only after confirming the writer appends each ChangeSetID as one contiguous transaction block, never rewrites/reorders prior rows, and preserves that invariant across save/readback. Require monotonic nondecreasing UTC timestamps between transaction blocks (equal timestamps permitted), one consistent timestamp per block, and reject noncontiguous reappearance of the same ChangeSetID. For equal timestamps, block starting-row order is the tie-break; within each block, retain row order and validate field transition uniqueness. A reordered or noncontiguous history is ambiguous and must fail guarded writes rather than silently sort by UUID.
+
+**Fallback:** if append-order preservation cannot be demonstrated on both 0.1.2 history and 0.1.3 candidate round-trips, reject equal-timestamp conflicting edits as ambiguous for replay and do not claim full historical continuity. Preserve read-only history viewing where safe; do not retroactively rewrite legacy history to manufacture an order.
+
+### Targeted synthetic QA to add before contract freeze
+
+| ID | Fixture | Required result |
+| --- | --- | --- |
+| B2-CONT-08 | Optional column introduced after Create, with valid earlier manifest | Earlier Create remains structurally complete |
+| B2-CONT-09 | Optional column existed at Create but its audit field is missing | Reject truncated Create; no workbook write |
+| B2-CONT-10 | Explicit blank and numeric zero in Create | Both retained and counted as present |
+| B2-CONT-11 | Two different ChangeSetIDs edit same field at same UTC millisecond, contiguous append blocks | Replay in verified block-row order, not UUID order |
+| B2-CONT-12 | Same ChangeSetID reappears after another block, or timestamp regresses | Fail closed for unsafe replay/write |
+| B2-CONT-13 | Legacy 0.1.2 audit and first 0.1.3 Create round-trip | Preserve old history and reject fabricated historical Create |
+
+**Gate:** independent technical QA must validate the proposed encoding against the actual ProjectAudit reader/writer and prove physical append behavior before either candidate is adopted. No runtime code, schema change, workbook writer, CI escalation, merge or release is authorized by this appendix.
