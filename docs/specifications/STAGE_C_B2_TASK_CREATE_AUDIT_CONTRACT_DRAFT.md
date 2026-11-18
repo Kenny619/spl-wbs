@@ -52,7 +52,7 @@ For **each** initial field snapshot, append a `ProjectAudit` row with these **ex
 
 ### 2.2 Initial snapshot completeness
 
-Create must record every supported initial ProjectWBS field, not just Title. **Proposed canonical field set** (using worksheet headers, independent of `UpdateHistory.EDITABLE_FIELDS`):
+Create must record **every recognized and physically present initial ProjectWBS field**, not just Title; optional columns absent from the workbook are not fabricated. **Proposed canonical field vocabulary** (using normalized recognized headers, independent of `UpdateHistory.EDITABLE_FIELDS`):
 
 `ID`, `Title`, `WBSCode`, `TaskType`, `ParentTaskID`, `TaskStatus`, `PlannedStart`, `PlannedEnd`, `Progress`, `AssignedTo`, `Workstream`, `PredecessorIDs`, `Priority`, `Description`, `Updates`, `SortOrder`, `Modified`, `ItemURL`.
 
@@ -62,6 +62,17 @@ Create must record every supported initial ProjectWBS field, not just Title. **P
 - **Workstream** remains a text property of the entity, not a separate source of truth. **RAG Green default is a computed display policy for a valid item, not a new RAG field or event on creation.**
 - Define exact serialization for every optional field (notably Excel datetime, percentages, hyperlinks and SortOrder) before implementing; equality is against the **normalized saved WBS row** after XLSX roundtrip, not only the raw draft.
 - The selected B2 storage is still an **ordinary Excel audit**, not tamper-proof cryptographic proof: out-of-app manual Excel modification cannot be attributed to a person.
+
+### 2.2A Workbook-column presence and canonical source-of-truth rules
+
+**Compatibility refinement (source-backed, 2026-11-18):** The accepted `ProjectWBS` reader requires only ID, Title, WBSCode and TaskType, while optional columns can legitimately be absent or have accepted header aliases. A B2 writer must **not silently add optional workbook columns** merely to satisfy a fixed audit list.
+
+- Snapshot **every recognized ProjectWBS field physically present in the normalized, committed source row**, including explicit blanks; require the four canonical identity fields. A missing optional *column* is **absent from the snapshot** and must not be represented as an invented authored blank. A present optional column with a blank *cell* is recorded with `NewValue=""`. Audit validator compares the field set with the actual recognized source columns, so a truncated “Create” group cannot masquerade as a complete snapshot.
+- Normalize known legacy header aliases to the canonical field names before emitting audit fields. Preserve the original worksheet's actual headers/styles/formula/text data; never rename or fill existing user columns as a side-effect.
+- Canonical first-save values are taken **after workbook candidate readback**, not an unsaved UI draft or derived Summary rollup. Use ISO calendar dates `YYYY-MM-DD`, canonical 0–100 progress, unambiguous finite numeric SortOrder, true blank `""`, and a JSON array of TaskID strings for PredecessorIDs. Reject non-finite numeric values, invalid dates, duplicated/unknown references, formula/control text or overlong serialized cells before writing a candidate.
+- The `ProjectAudit` version-aware validator must enforce one unique `Field` per Task/Create logical group, all required identity fields, same `EntityID`/`TaskID` and ChangeSetID/UTC/provenance on each row, and **exact field/value matching** to the WBS row. It must reject duplicate ID or ChangeSetID across historical events, truncated snapshots, and missing/extra fields. Do not rely on the old generic `ProjectAudit` row validator alone.
+- A create-event audit references the item **as initially saved**. Subsequent legitimate `UpdateHistory` changes may make its original values differ from today's WBS row; validation needs to compare against a replayed/proven initial state or a separately documented continuity rule, rather than incorrectly rejecting a workbook after a later edit. **Before shipping**, define and test that reconciliation invariant.
+- A missing field, unsupported header alias, or source/audit mismatch blocks *Create*, not the historical read-only display of previously accepted workbooks. Viewer fallback and old-writer fail-closed behavior remain distinct.
 
 ### 2.3 Create transaction atomicity and append-only evidence
 
