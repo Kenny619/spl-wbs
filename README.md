@@ -2,7 +2,7 @@
 
 # Gantt Viewer
 
-**[Project Status & Roadmap — executive summary](docs/PROJECT_STATUS.md)** · Stage A accepted · Stage B next. View phases, milestones, business deliverables, upcoming decisions and release risks in one place.
+**[Project Status & Roadmap — executive summary](docs/PROJECT_STATUS.md)** · Stage A accepted · Stage B owner UAT ready (acceptance pending). View phases, milestones, business deliverables, upcoming decisions and release risks in one place.
 
 Read-only schedule viewer for one project. Open a SharePoint List `.xlsx` export and review the WBS, dates, progress, and calendar in the browser. The viewer never writes back to the workbook or to SharePoint.
 
@@ -25,9 +25,16 @@ The page title is the file name without `.xlsx`.
 
 **Implementation status (2026-11-15):** Stage A Excel-managed application and **Five Recent Projects** are merged on main at `8b4cb6b9239ebaf7fd8f3df6cf35df3dc5e91001` via [PR #78](https://github.com/Kenny619/spl-wbs/pull/78), with integrated Calendar, Manual Watch, Meeting Review, Reports and guarded Save/backup. [Post-merge CI #43703177075](https://github.com/Kenny619/spl-wbs/actions/runs/43703177075) passed **22 policy / 270 unit / 94 Windows Chromium tests**. Owner already physically accepted earlier E1–E17 on the personal PC (E18 was not applicable/skipped). **Product Owner MRU-01/02/03 all PASS on the verified personal-PC package. Stage A functional development milestone is formally ACCEPTED, scoped to local personal Windows/Edge and fictional workbooks.** Corporate Edge file:// picker remains deferred; the future read-only Viewer and Node.js localhost Manager will be assessed after shared features/design. Two inherited moderate ExcelJS/UUID advisories remain open; no corporate or production release is authorized.
 
-## Single current verified package — Stage A MRU (Owner-accepted reference)
+## Current owner UAT package — Stage B PGCM + accessible header (pending physical acceptance)
 
-**[Download the latest Stage A MRU acceptance ZIP — GitHub Actions artifact](https://github.com/Kenny619/spl-wbs/actions/runs/43704946355/artifacts/14157449864)**
+**[Download the verified Stage B owner UAT ZIP — GitHub Actions artifact #14360233663](https://github.com/Kenny619/spl-wbs/actions/runs/44155915482/artifacts/14360233663)** · [PR #98 application candidate](https://github.com/Kenny619/spl-wbs/pull/98) · [PR #99 verified packaging evidence](https://github.com/Kenny619/spl-wbs/pull/99).
+
+Application SHA `74ef5e22ce06cf537d52cef6338984ec116148a2`; combined automated CI [#44033611876](https://github.com/Kenny619/spl-wbs/actions/runs/44033611876) PASS; packaging [#44155915482](https://github.com/Kenny619/spl-wbs/actions/runs/44155915482) PASS. Independent ZIP CRC, five SHA-256 payload entries, managed HTML and fictional seven-sheet workbook verified. Download the outer Actions artifact ZIP, extract the inner owner UAT ZIP, then follow `START_HERE.md` with a disposable fictional workbook on personal Edge. **Only three new checks:** PGCM-01 Day/Week ON/OFF; PGCM-02 persistence after reload and Reset; H17-01 keyboard-accessible provenance disclosure, focus and critical notice preservation. Record PASS/FAIL/BLOCKED. Prior Stage A and B2/B3 checks are accepted and must not be repeated. **Owner physical UAT, explicit functional acceptance and separate protected-main merge authorization are still pending.** No beta or corporate release is authorized. Artifact retention through 2026-11-24 19:11 UTC.
+
+### Historical Stage A MRU reference (accepted; no longer the current download)
+
+
+The previously accepted Stage A MRU package is historical evidence; its earlier artifact download is intentionally not presented as a current UAT package.
 
 **Provenance:** executable `managed.html` and fictional 23-task workbook built from the **same application source as main `8b4cb6b9239ebaf7fd8f3df6cf35df3dc5e91001`**. A disposable packaging branch added *only* its own one-time workflow YAML; [packaging run #43704946355](https://github.com/Kenny619/spl-wbs/actions/runs/43704946355) validated the pinned source tree, workbook and **all five SHA256 payloads**. The archive's `PROVENANCE.json` records packaging commit `c8ace681660f0d2e85ced44afbe3afabd01ec438`, which differs from main **only by the packaging workflow**. This is an owner UAT candidate, not an acceptance, release or deployment.
 
