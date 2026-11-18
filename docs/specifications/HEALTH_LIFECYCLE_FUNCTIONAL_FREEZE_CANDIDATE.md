@@ -1,6 +1,6 @@
 # SPT-WBS Health Lifecycle | Stage B Functional Freeze Candidate
 
-**Version:** HW-FUNC-0.3 — **CANDIDATE, NOT FROZEN**  
+**Version:** HW-FUNC-0.3 — **CANDIDATE, NOT FROZEN** (HW-03 Option A approved, 2026-11-18 JST)  
 **Prepared:** 2026-11-18 JST  
 **Owner instruction:** Continue Stage B specification closure after acceptance of the Stage B usability integration. This authorizes **drafting and decision reconciliation**, not unreviewed policy assumptions, schema changes, application implementation or release.  
 **Controlling issue:** [#82](https://github.com/Kenny619/spl-wbs/issues/82)  
@@ -24,6 +24,7 @@ All users loading identical committed workbook bytes and evaluating with the sam
 | **HW-02 Option A** | Keep workbook `TaskStatus` unchanged; use a read-only effective execution status with visible source/trigger provenance. | Do not save a computed flag to `TaskStatus`, `ProjectAudit`, `UpdateHistory` or Watch reason. |
 | **HW-02 update presence** | `No update` means no substantive `Updates` content **currently recorded**. An old but meaningful update meets presence. | Defer stale/aged-update or review-recency thresholds until **after user testing**; generic `Modified` is NOT an update timestamp. Blank current source cannot prove update never existed historically. |
 | **HW-02 other owner direction** | Within approximately **five working days** of finish, flag effective At Risk if progress <50%, recorded Not Started, or no substantive update. If a task is Blocked, propagate effective Blocked to successors. | Exact inclusive/overdue and exceptional-task semantics remain **proposed**, not owner-finalized. |
+| **HW-03 Option A — Red reassessment** | Historical material project impact and the original Red record are **permanently retained**. The **current** Red health assessment may change only through **explicit PM reassessment with documented evidence and complete audit history**. | Reason resolution, schedule recovery, or disappearance of a calculated flag can **never** auto-downgrade Red or synthesize Green. Current Amber/Green must be justified using all independent issues and risks. Shared PM password is only a workflow gate; actor identity remains unverified. |
 | **HW-05** | Lightweight PM password unlock before manual Watch Add/Resolve/future Reopen or future RAG edit. Read-only Watch/history remains available without unlock. | Shared password is only a workflow deterrent, **not** user authentication, file-level access control or protection against direct Excel write. Keep actor labels unverified. |
 | **HW-07** | Preserve Under Watch Exception filter/list; emphasize current Under Watch items in Latest Status and Progress & Risks. | Final report content/layout **deferred** until task/Watch specifications finish; frozen Report 1.1/Manual Watch addendum unchanged. |
 
@@ -37,7 +38,7 @@ All users loading identical committed workbook bytes and evaluating with the sam
 
 **P-HW02-4: UX/filters.** One common source-attributed calculation feeds the applicable views; show calculated vs recorded label and an explanation without relying solely on color. Status filtering must not silently switch from recorded to effective semantics in already accepted reports/views; any UX mapping requires an explicit versioned addendum.
 
-## 4. Under Watch reason lifecycle — proposed business contract, NOT yet owner-approved (HW-03/HW-04)
+## 4. Under Watch reason lifecycle — HW-03 Red reassessment approved; other lifecycle details pending (HW-03/HW-04)
 
 - One unique **ReasonID per independent reason**. Every reason has a subject TaskID, origin, concise nonempty title, actual evidence/description if provided, state, and saved transaction provenance. A reason is a factual risk/issue record, not automatically a Red/Amber assessment.
 - **Add:** a PM-unlocked user adds an independently identified reason through the existing guarded, verified workbook Save. Duplicate intent/no-op cannot masquerade as a new audit event. Reason title mandatory (existing accepted behavior).
@@ -45,14 +46,15 @@ All users loading identical committed workbook bytes and evaluating with the sam
 - **Reopen (future operation):** permitted only for a Resolved reason, requires a new explanation/reason; preserve prior Open/Resolved chronology and original ReasonID plus new audit transition. The accepted five-sheet schema may not currently preserve this complete lifecycle without an independently approved extension.
 - **No-op and conflicts:** resolving an already Resolved reason, reopening one already Open or making a stale-source transaction should never create a false audit event or success. Guard against concurrent writer changes, backup failure, unverified source, unsupported future schema, and recovery hold.
 - **Multiple causes:** keep all active and resolved reasons. Resolution of A leaves B independently Open. A task with one documented Red-impact issue and an unrelated Amber-risk cause must not be collapsed by a last-write-wins rule or automatically downgraded from Red.
-- **Historical Red persistence:** an issue's material past impact remains evident even when its reason is resolved. **Outstanding genuine decision:** does the current assessed Red remain Red until a project manager manually reassesses with auditable evidence/accepted remediation, or is a Red assessment permanent once material impact occurred? **Do not infer a Green downgrade from resolution.**
+- **HW-03 Option A — APPROVED:** retain the historical Red assessment, underlying material-impact facts, prior reason states and audit events permanently. **Current Red persists** even after a reason is marked Resolved, until the PM performs an **explicit evidence-backed reassessment** and records a new current assessment through a verified guarded Save under the future approved health model. Never silently downgrade Red due to a reason being resolved, a schedule becoming healthy, or any automatic flag disappearing. A PM may reassess to Amber only when a supported potential-impact risk remains and no unresolved current material issue requires Red under the eventual assessment aggregation policy. A PM may reassess to Green only with sufficient recorded evidence that **no observed issue or risk remains** and other independent causes have been reviewed; no auto-Green from an empty/open-reason list alone. The precise cross-cause aggregation/eligibility rules remain an **HW-04 owner decision**.
+- **Reassessment record requirement — APPROVED principle, exact schema pending:** preserve old/new RAG, decision timestamp, documented rationale and supporting evidence, linkage to affected reason(s) and recorded unverified actor provenance in append-only history. The prior Red record must remain visible and auditable. **No password-unlock event may be represented as authenticated identity or reviewer approval.** No current workbook field or new Write API is authorized by this document.
 - **Reviewer authority:** HW-05 PM Mode gates Add/Resolve/future Reopen and assessed RAG edits. It cannot prove who is typing: no authenticated reviewer, signature or verified approval claim. Project member viewing remains unaffected.
 
 ## 5. Explicit assessed-RAG projection — proposed, NOT yet owner-approved (HW-04/HW-06/HW-08)
 
 - **RAG is NOT TaskStatus.** `At Risk` is not automatically `Amber`, `Blocked` not automatically `Red`. Verified, source-backed manual health assessments control the RAG badge; computed schedule signals display alongside as supporting evidence, not stealth health edits.
 - **Red over Amber / independent causes:** if an accepted manual assessment includes a material issue, preserve Red and the issue provenance even when a second independent Amber-risk cause is present. An explicit human reassessment is needed for changed assessed RAG. No implicit transition on just one reason resolving.
-- **Green guard:** Green must mean no observed outstanding issue/risk **under the final approved historical-impact reassessment policy**. It is not automatically assigned by absence of open Manual Watch reasons or by healthy schedule metrics. Missing data is not evidence of zero issues.
+- **HW-03 Red-to-current-RAG guard (APPROVED):** the historical impact and prior Red remain retained even if a PM records a later different current assessment with documented evidence. The current badge is the **latest valid explicit PM assessment**, not an automatic lifecycle result. A later Green must be supported by a PM review establishing **no observed outstanding issue/risk across independent causes**; a residual potential-impact risk may support Amber subject to HW-04 aggregation; an unresolved material issue cannot be ignored. No Green from merely having no Open Manual Watch reasons, a healthy schedule, or missing data.
 - **Missing/legacy/future/unverified source:** show **`Health assessment unavailable`** as a source-quality message, not a fourth RAG badge, and fail closed for health writes; preserve bytes. The currently used historical Watch display `Unknown` may be harmonized by a separately approved UI migration, never by silently rewriting report history or schema.
 - **Common provenance:** include verified/unverified source quality, reason state, assessment origin, effective-status reasons and computation date separately. No fabricated timestamps or actor trust.
 
@@ -83,7 +85,11 @@ All users loading identical committed workbook bytes and evaluating with the sam
 | HC-06 | A unblocked but B has another blocked predecessor | B still effectively Blocked; don't erase other causes |
 | HC-07 | Blocked A clears, B has open Manual Watch | Only effective blocker clears; Watch remains Open |
 | HC-08 | Watch reason 1 Resolved while reason 2 Open | Reason 2 remains; all past entries retained |
-| HC-09 | Previously material Red issue marked Resolved | Past impact remains; **never automatic Green** |
+| HC-09 | Previously material Red issue marked Resolved | Current Red remains, past impact permanently retained; **never automatic Green** |
+| HC-09A | PM explicitly reassesses a resolved Red with evidence; no independent active issues/risks | Proposed current Green can be recorded under later authorized persistence design; preserve original Red and full transition audit; do not infer authenticated PM identity |
+| HC-09B | PM reassesses after Red resolution but a separate potential-impact risk persists | May record current Amber only after evidence-backed review and owner-approved multi-cause aggregation; historical Red never disappears |
+| HC-09C | Resolved Red followed by automatic schedule recovery without PM reassessment | Current Red remains unchanged; automatic projection cannot write RAG or clear historical impact |
+| HC-09D | PM attempts reassessment without sufficient explanation, stale source, or outside PM Mode | Reject guarded Save; no new RAG or misleading audit entry |
 | HC-10 | Invalid/legacy workbook lacks verified assessment | No RAG Green or obsolete Unknown badge synthesized |
 | HC-11 | PM Mode locked and attempted Watch/RAG write | Block action and guarded Save; no audit success |
 | HC-12 | PM Mode unlocked, source changed by another writer | Conflict holds; no bypass by shared password |
@@ -93,7 +99,7 @@ All users loading identical committed workbook bytes and evaluating with the sam
 
 ## 9. Owner decisions still required BEFORE this becomes a frozen Stage B specification
 
-1. **HW-03 historical Red reassessment** (highest-priority unresolved policy): can a PM manually reassess an already-impacted Red to Amber/Green after issue resolution, with documented evidence, **or must Red stay permanently** for that project task?
+1. **HW-03 Option A — RESOLVED (2026-11-18):** historical Red stays permanently auditable; current Red may change **only** after explicit evidence-backed PM reassessment with full audit history. Do **not** ask again. The form of saved health-assessment transactions awaits a separately approved schema/persistence model.
 2. **HW-02 threshold and overdue exception:** confirm **0..5 inclusive** working days and treatment of overdue beyond the finish date; confirm milestone/summary eligibility and blocked-completed anomaly.
 3. **HW-04 reason detail & multi-cause:** require resolution/reopen reason and retain independent causes; distinguish aggregate manual RAG judgment from source task status.
 4. **HW-05 provisioning details:** confirm workbook-verifier vs device-local, recovery/rotation/idle-lock policy and exact locked mutation scope.
