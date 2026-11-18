@@ -33,10 +33,9 @@ Application SHA `74ef5e22ce06cf537d52cef6338984ec116148a2`; combined automated C
 
 ### Historical Stage A MRU reference (accepted; no longer the current download)
 
-
 The previously accepted Stage A MRU package is historical evidence; its earlier artifact download is intentionally not presented as a current UAT package.
 
-**Provenance:** executable `managed.html` and fictional 23-task workbook built from the **same application source as main `8b4cb6b9239ebaf7fd8f3df6cf35df3dc5e91001`**. A disposable packaging branch added *only* its own one-time workflow YAML; [packaging run #43704946355](https://github.com/Kenny619/spl-wbs/actions/runs/43704946355) validated the pinned source tree, workbook and **all five SHA256 payloads**. The archive's `PROVENANCE.json` records packaging commit `c8ace681660f0d2e85ced44afbe3afabd01ec438`, which differs from main **only by the packaging workflow**. This is an owner UAT candidate, not an acceptance, release or deployment.
+**Provenance:** executable `managed.html` and fictional 23-task workbook built from the **same application source as main `8b4cb6b9239ebaf7fd8f3df6cf35df3dc5e91001`**. A disposable packaging branch added *only* its own one-time workflow YAML; [packaging run #43704946355](https://github.com/Kenny619/spl-wbs/actions/runs/43704946355) validated the pinned source tree, workbook and **all five SHA256 payloads**. The archive's `PROVENANCE.json` records packaging commit `c8ace681660f0d2e85ced44afbe3afabd01ec438`, which differs from main **only by the packaging workflow**. This Stage A package was subsequently accepted for the scoped personal-PC functional milestone; that acceptance does not authorize corporate deployment, beta or release.
 
 **Owner-accepted MRU-01 to MRU-03 — historical minimal verification criteria (ALL PASS):**
 
