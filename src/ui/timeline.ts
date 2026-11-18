@@ -38,6 +38,7 @@ export function renderTimeline(options: {
   today: string;
   blackout: BlackoutInterval;
   calendar: HolidayCalendar;
+  showPgcmHighlight?: boolean;
   onOpen: (id: string) => void;
 }): void {
   const bounds = scheduleBounds(options.tasks);
@@ -67,7 +68,7 @@ export function renderTimeline(options: {
     }
   });
   if (bounds) appendToday(options.rows, bounds, px, options.today);
-  if (bounds) appendPgcm(options.head, options.rows, bounds, px, options.zoom, options.today, options.calendar, options.blackout);
+  if (bounds && options.showPgcmHighlight !== false) appendPgcm(options.head, options.rows, bounds, px, options.zoom, options.today, options.calendar, options.blackout);
   if (options.showDependencies && bounds) appendDependencies(options.rows, options.rowsData, byId, bounds.start, px, width);
 }
 

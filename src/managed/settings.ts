@@ -7,6 +7,8 @@ export type ManagedPreferences = {
   timeZone: string;
   columns: string[];
   appearance: Appearance;
+  /** Browser-local display control; never written to Excel. */
+  pgcmHighlight: boolean;
 };
 export type PreferenceStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 const OPTIONAL = COLUMN_DEFS.filter((item) => !item.fixed).map((item) => item.id);
@@ -25,7 +27,7 @@ export function detectedTimeZone(): string {
 }
 
 export function defaultPreferences(): ManagedPreferences {
-  return { timeZone: detectedTimeZone(), columns: [...DEFAULT_COLUMNS], appearance: "system" };
+  return { timeZone: detectedTimeZone(), columns: [...DEFAULT_COLUMNS], appearance: "system", pgcmHighlight: true };
 }
 
 export function validateColumns(value: unknown): string[] {
@@ -43,6 +45,7 @@ export function normalizePreferences(value: unknown): ManagedPreferences {
     columns: validateColumns(candidate.columns),
     appearance: candidate.appearance === "dark" || candidate.appearance === "light" ||
       candidate.appearance === "system" ? candidate.appearance : "system",
+    pgcmHighlight: typeof candidate.pgcmHighlight === "boolean" ? candidate.pgcmHighlight : true,
   };
 }
 

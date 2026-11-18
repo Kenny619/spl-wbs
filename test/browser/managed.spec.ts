@@ -96,6 +96,42 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
   await expect(page.locator(".source-record")).toBeHidden();
 }
 
+test("Stage B header source details are keyboard accessible and never truncate workbook provenance", async ({ page }) => {
+  await page.setViewportSize({ width: 860, height: 768 });
+  await openManaged(page);
+  const initial = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  const source = page.locator(".managed-source-details");
+  const summary = source.locator("summary");
+  const text = source.locator("#provenance");
+  await expect(source).toBeVisible();
+  await expect(summary).toHaveText("Source details");
+  await expect(text).toBeHidden();
+  for (const width of [860, 1366, 1440]) {
+    await page.setViewportSize({ width, height: 768 });
+    await summary.focus();
+    await page.keyboard.press("Enter");
+    await expect(source).toHaveAttribute("open", "");
+    await expect(text).toBeVisible();
+    await expect(text).not.toBeEmpty();
+    const rect = await text.boundingBox();
+    expect(rect).not.toBeNull();
+    expect(rect!.x).toBeGreaterThanOrEqual(-2);
+    expect(rect!.x + rect!.width).toBeLessThanOrEqual(width + 2);
+    const whiteSpace = await text.evaluate(el => getComputedStyle(el).whiteSpace);
+    expect(whiteSpace).toBe("normal");
+    await page.keyboard.press("Escape");
+    await expect(source).not.toHaveAttribute("open", "");
+    await expect(summary).toBeFocused();
+    await expect(page.locator(".managed-banner")).toBeVisible();
+  }
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(initial);
+});
+
 test("Stage B attention summary filters actual WBS rows and restores the previous status scope", async ({ page }) => {
   await openManaged(page);
   await page.keyboard.press("Escape");
@@ -638,6 +674,121 @@ test("Settings relocates existing v18 columns, persists timezone and dark theme 
   await expect(restored.locator("#columnOptions input[data-column='owner']")).not.toBeChecked();
   await expect(restored.locator("#columnOptions input[data-column='workstream']")).toBeChecked();
   await expect(page.locator("body")).toHaveAttribute("data-managed-theme", "dark");
+});
+
+test("Stage B PGCM toggle changes actual timeline markers and restores them without workbook writes", async ({ page }) => {
+  // This covers both zoom renderers, repeated Settings changes, reload and
+  // reset. The default 30-second budget times out on slower Windows runners.
+  test.setTimeout(60000);
+  // Freeze the browser clock so the synthetic schedule always includes future PGCM meetings.
+  await page.clock.setFixedTime(new Date("2026-11-16T00:00:00Z"));
+  const book = new ExcelJS.Workbook();
+  const sheet = book.addWorksheet("ProjectWBS");
+  sheet.addRow(["ID", "Title", "WBSCode", "TaskType", "Progress", "TaskStatus",
+    "AssignedTo", "Updates", "PlannedStart", "PlannedEnd"]);
+  sheet.addRow([701, "Future PGCM visibility fixture", "1.1", "Task", 20, "In Progress",
+    "Synthetic owner", "Display-only fixture", "2026-11-16", "2026-12-31"]);
+  const encoded = Buffer.from(await book.xlsx.writeBuffer()).toString("base64");
+  await openManaged(page, encoded, 1, "synthetic-demo");
+  await page.keyboard.press("Escape");
+  const markers = page.locator(".pgcm-marker, .pgcm-day-column, .pgcm-tag, .pgcm-week-tag");
+  // Verify the SELECTED zoom actually renders its own PGCM DOM. A union-only
+  // assertion can be satisfied by stale elements from the previous zoom.
+  for (const zoom of ["day", "week"] as const) {
+    const selected = page.locator(`[data-zoom="${zoom}"]`);
+    await selected.click();
+    await expect(selected).toHaveAttribute("aria-pressed", "true");
+    const current = page.locator(zoom === "day" ? ".pgcm-tag" : ".pgcm-week-tag");
+    const previousZoom = page.locator(zoom === "day"
+      ? ".pgcm-week-tag, .pgcm-marker" : ".pgcm-tag, .pgcm-day-column");
+    await expect(previousZoom).toHaveCount(0);
+    await expect.poll(() => current.count()).toBeGreaterThan(0);
+    const countBefore = await current.count();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Settings" });
+    const zoomToggle = dialog.getByRole("checkbox", { name: "Highlight PGCM dates" });
+    await zoomToggle.uncheck();
+    await expect(markers).toHaveCount(0);
+    await zoomToggle.check();
+    await expect(current).toHaveCount(countBefore);
+    await expect(previousZoom).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Close" }).click();
+  }
+  // Leave Week selected. PGCM markers intentionally do not render in Month
+  // or Quarter zoom, and reload restores the default Week view.
+  const selectedWeek = page.locator('[data-zoom="week"]');
+  await expect(selectedWeek).toHaveAttribute("aria-pressed", "true");
+  const weekMarkers = page.locator(".pgcm-week-tag");
+  const initialCount = await weekMarkers.count();
+  expect(initialCount).toBeGreaterThan(0);
+  const original = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  const toggle = settings.getByRole("checkbox", { name: "Highlight PGCM dates" });
+  await toggle.uncheck();
+  await expect(markers).toHaveCount(0);
+  await toggle.check();
+  await expect(weekMarkers).toHaveCount(initialCount);
+  await toggle.uncheck();
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.reload();
+  await page.locator(".managed-project-menu summary").click();
+  await page.getByRole("button", { name: "Choose project folder" }).click();
+  await expect(page.locator(".task-row")).toHaveCount(1);
+  await expect(markers).toHaveCount(0);
+  await expect(page.locator('[data-zoom="week"]')).toHaveAttribute("aria-pressed", "true");
+  // Folder selection can leave the project menu's outside-click dismissal active.
+  // Dismiss it explicitly so the first Settings click opens Settings rather than
+  // merely closing the project menu (same transition as initial openManaged).
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".managed-project-menu")).not.toHaveAttribute("open", "");
+  // Task rows render before asynchronous Watch import finishes; navigation is
+  // guarded while the managed app is busy. Wait for this import's final banner.
+  await expect(page.locator(".managed-banner")).toContainText(
+    "Workbook ready. Select a task.", { timeout: 15000 },
+  );
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const reloadedSettings = page.getByRole("dialog", { name: "Settings" });
+  await expect(reloadedSettings).toBeVisible();
+  page.once("dialog", dialog => void dialog.accept());
+  await reloadedSettings.getByRole("button", { name: "Reset to defaults" }).click();
+  await expect(reloadedSettings.getByRole("checkbox", { name: "Highlight PGCM dates" })).toBeChecked();
+  await expect(weekMarkers).toHaveCount(initialCount);
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(original);
+});
+
+test("Stage B PGCM highlight stays in local Settings and never writes Excel", async ({ page }) => {
+  await openManaged(page);
+  await page.keyboard.press("Escape");
+  const initial = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  const toggle = settings.getByRole("checkbox", { name: "Highlight PGCM dates" });
+  await expect(toggle).toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "on");
+  await toggle.uncheck();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "off");
+  await settings.getByRole("button", { name: "Close" }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await expect(settings.getByRole("checkbox", { name: "Highlight PGCM dates" })).not.toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "off");
+  page.once("dialog", dialog => void dialog.accept());
+  await settings.getByRole("button", { name: "Reset to defaults" }).click();
+  await expect(settings.getByRole("checkbox", { name: "Highlight PGCM dates" })).toBeChecked();
+  await expect(page.locator("body")).toHaveAttribute("data-managed-pgcm-highlight", "on");
+  // Reload's independent fake directory has identical original contents: no Save was requested.
+  const after = await page.evaluate(() =>
+    Array.from((window as unknown as { __managedFixtureFiles: Map<string, Uint8Array> })
+      .__managedFixtureFiles.get("synthetic-demo.xlsx")!));
+  expect(after).toEqual(initial);
 });
 
 test("Settings System appearance follows device and Reset requires confirmation; workbook remains unchanged", async ({ page }) => {

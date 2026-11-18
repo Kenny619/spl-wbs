@@ -14,7 +14,7 @@ class StorageStub {
 describe("Excel Managed frozen EMV-SET-1.0 preference contract", () => {
   it("defaults to detected browser timezone, v18 columns, System appearance", () => {
     expect(defaultPreferences()).toEqual({
-      timeZone: detectedTimeZone(), columns: [...DEFAULT_COLUMNS], appearance: "system",
+      timeZone: detectedTimeZone(), columns: [...DEFAULT_COLUMNS], appearance: "system", pgcmHighlight: true,
     });
     expect(validTimeZone("Asia/Tokyo")).toBe(true);
     expect(validTimeZone("UTC")).toBe(true);
@@ -26,6 +26,7 @@ describe("Excel Managed frozen EMV-SET-1.0 preference contract", () => {
     const storage = new StorageStub();
     const updated = {
       timeZone: "Asia/Tokyo", columns: ["status", "workstream"], appearance: "dark" as const,
+      pgcmHighlight: false,
     };
     expect(persistPreferences(updated, storage)).toBe(true);
     expect(loadPreferences(storage)).toEqual(updated);
@@ -43,6 +44,19 @@ describe("Excel Managed frozen EMV-SET-1.0 preference contract", () => {
     expect(bad.timeZone).toBe(detectedTimeZone());
     expect(bad.columns).toEqual(["status"]);
     expect(bad.appearance).toBe("system");
+    expect(bad.pgcmHighlight).toBe(true);
+    expect(normalizePreferences({ pgcmHighlight: false }).pgcmHighlight).toBe(false);
+    expect(normalizePreferences({ pgcmHighlight: "false" }).pgcmHighlight).toBe(true);
+  });
+  it("migrates pre-Stage-B browser preferences without changing the stored workbook", () => {
+    const storage = new StorageStub();
+    storage.setItem(SETTINGS_KEY, JSON.stringify({
+      timeZone: "Asia/Tokyo", columns: ["owner"], appearance: "light",
+    }));
+    expect(loadPreferences(storage).pgcmHighlight).toBe(true);
+    expect(persistPreferences({ ...loadPreferences(storage), pgcmHighlight: false }, storage)).toBe(true);
+    expect(loadPreferences(storage).pgcmHighlight).toBe(false);
+    expect(JSON.parse(storage.getItem(SETTINGS_KEY)!).pgcmHighlight).toBe(false);
   });
   it("keeps existing fixed WBS/task fields off the visibility list and uses v18 column order", () => {
     expect(validateColumns(["type", "task", "owner", "wbs", "finish", "type"]))

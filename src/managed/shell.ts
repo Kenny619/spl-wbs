@@ -47,6 +47,39 @@ export function mountManagedShell(
 
   const title = doc.getElementById("title")?.parentElement;
   title?.classList.add("managed-project-heading");
+  // Stage B #17: keep provenance available on demand without consuming a
+  // permanent header line or hiding any workbook safety/permission notice.
+  // Move the EXISTING live source element; paintChrome still updates it.
+  const provenance = doc.getElementById("provenance");
+  if (title && provenance) {
+    const sourceDetails = doc.createElement("details");
+    sourceDetails.className = "managed-source-details";
+    const sourceSummary = doc.createElement("summary");
+    sourceSummary.textContent = "Source details";
+    sourceSummary.setAttribute("aria-label", "Show workbook source details");
+    sourceDetails.append(sourceSummary, provenance);
+    title.append(sourceDetails);
+    const syncSource = () => {
+      const state = controller.getState();
+      sourceDetails.hidden = state.status !== "ready" || !state.loadedAt;
+      if (sourceDetails.hidden) sourceDetails.open = false;
+    };
+    controller.subscribe(syncSource);
+    syncSource();
+    // Native details handles Enter/Space/ARIA; Escape dismisses and restores
+    // focus, while pointer dismissal never steals editor focus.
+    doc.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && sourceDetails.open) {
+        event.preventDefault();
+        sourceDetails.open = false;
+        sourceSummary.focus();
+      }
+    });
+    doc.addEventListener("pointerdown", (event) => {
+      if (sourceDetails.open && event.target instanceof Node &&
+          !sourceDetails.contains(event.target)) sourceDetails.open = false;
+    }, true);
+  }
 
   const nav = doc.createElement("nav");
   nav.className = "managed-main-nav";

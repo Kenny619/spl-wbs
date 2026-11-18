@@ -15,6 +15,7 @@ export class ManagedSettings {
   private readonly selector: HTMLSelectElement;
   private readonly saveNote: HTMLParagraphElement;
   private readonly appearanceInputs: HTMLInputElement[] = [];
+  private readonly pgcmInput: HTMLInputElement;
   private readonly scheme: MediaQueryList | null;
 
   constructor(
@@ -135,6 +136,22 @@ export class ManagedSettings {
     appearance.append(radioGroup);
     body.append(appearance);
 
+    const calendarDisplay = make("section", undefined, "managed-settings-section");
+    calendarDisplay.append(make("h3", "Schedule highlights"));
+    const pgcmLabel = make("label", undefined, "managed-settings-radio");
+    this.pgcmInput = make("input");
+    this.pgcmInput.type = "checkbox";
+    this.pgcmInput.checked = this.preferences.pgcmHighlight;
+    this.pgcmInput.setAttribute("aria-label", "Highlight PGCM dates");
+    this.pgcmInput.addEventListener("change", () => {
+      this.preferences = { ...this.preferences, pgcmHighlight: this.pgcmInput.checked };
+      this.applyPgcmHighlight();
+      this.persist();
+    });
+    pgcmLabel.append(this.pgcmInput, make("span", "Highlight PGCM dates"));
+    calendarDisplay.append(pgcmLabel, make("p", "Only the timeline highlight changes. PGCM meeting dates and project calendar calculations are unchanged.", "managed-settings-hint"));
+    body.append(calendarDisplay);
+
     const about = make("section", undefined, "managed-settings-section");
     about.append(make("h3", "About this application"),
       make("p", "Managed development version: " + MANAGED_APP_VERSION, "managed-settings-hint"),
@@ -146,9 +163,11 @@ export class ManagedSettings {
     const reset = make("button", "Reset to defaults", "managed-action");
     reset.type = "button";
     reset.addEventListener("click", () => {
-      if (!doc.defaultView?.confirm("Reset timezone, columns and appearance to their defaults?")) return;
+      if (!doc.defaultView?.confirm("Reset timezone, columns, appearance and PGCM highlight to their defaults?")) return;
       this.preferences = defaultPreferences();
       this.selector.value = this.preferences.timeZone;
+      this.pgcmInput.checked = this.preferences.pgcmHighlight;
+      this.applyPgcmHighlight();
       for (const radio of this.appearanceInputs) radio.checked = radio.value === "system";
       // Preserve v18 reset parity: clear filters dependent on the restored columns.
       this.controller.patchView({
@@ -181,6 +200,13 @@ export class ManagedSettings {
       }
     });
     this.applyAppearance();
+    this.applyPgcmHighlight();
+  }
+
+  private applyPgcmHighlight(): void {
+    this.doc.body.dataset.managedPgcmHighlight = this.preferences.pgcmHighlight ? "on" : "off";
+    // Repaint using the existing view lifecycle; no task/workbook mutation.
+    this.controller.patchView({});
   }
 
   getLaunchButton(): HTMLButtonElement { return this.launch; }

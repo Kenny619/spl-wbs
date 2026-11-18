@@ -403,6 +403,43 @@ body.spt-managed .managed-project-heading #notice {
   max-width:100%; white-space:normal; overflow-wrap:anywhere;
   font-size:12px; line-height:1.4;
 }
+/* Stage B #17: source provenance lives in a keyboard-operated native
+ * disclosure instead of an unreadable permanently truncated header line.
+ * Workbook notices stay in the same visible header and urgent strip. */
+body.spt-managed .managed-project-heading {
+  display:grid; grid-template-columns:minmax(0,1fr) max-content;
+  align-items:center; column-gap:7px; row-gap:2px; position:relative;
+}
+body.spt-managed .managed-project-heading #title {
+  grid-column:1; grid-row:1; min-width:0;
+}
+body.spt-managed .managed-project-heading .managed-source-details {
+  grid-column:2; grid-row:1; position:relative; min-width:0;
+}
+body.spt-managed .managed-project-heading .managed-source-details[hidden] {
+  display:none!important;
+}
+body.spt-managed .managed-source-details > summary {
+  cursor:pointer; list-style:revert; white-space:nowrap;
+  color:var(--muted); font:650 10px/1.35 system-ui,sans-serif;
+  padding:5px 6px; border-radius:5px;
+}
+body.spt-managed .managed-source-details > summary:focus-visible {
+  outline:2px solid var(--ink); outline-offset:2px;
+}
+body.spt-managed .managed-project-heading .managed-source-details #provenance {
+  position:absolute; top:calc(100% + 5px); right:0; z-index:30;
+  width:min(430px,calc(100vw - 32px)); max-width:min(430px,calc(100vw - 32px));
+  max-height:min(45dvh,300px); overflow:auto;
+  white-space:normal; overflow-wrap:anywhere;
+  color:var(--ink); font-size:11px; line-height:1.5;
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:7px; padding:11px 12px;
+  box-shadow:0 10px 30px #07192c35;
+}
+body.spt-managed .managed-project-heading #notice {
+  grid-column:1/-1; min-width:0;
+}
 body.spt-managed .managed-main-nav {display:flex;align-items:center;gap:5px;white-space:nowrap;}
 body.spt-managed .managed-main-nav .managed-action {
   padding:9px 14px; border-radius:7px;
