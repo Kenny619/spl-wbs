@@ -1,55 +1,78 @@
-# Stage C authoring — compatibility and acceptance design (draft, 2026-11-17 JST)
+# SPT-WBS | Stage C Authoring — Functional & Engineering Freeze Candidate
 
-> **2026-11-18 reconciliation with frozen HW-FUNC-1.0 (Issue #82; merged PR #84):** This Stage C document remains a **technical design draft**, not a current business-policy source. Stage B usability and manual-RAG *functional specification* are now accepted/integrated; implementation and beta are not. The **target** health model is Green by default for valid items, with only PM-initiated Amber/Red/Green transitions and mandatory Impact/Path-to-Green or Resolution inputs plus preserved audit. Under Watch/Clear, Watch Add/Resolve/Reopen and automatic RAG assignment are **retired from the target model**. There is no active Watch data requiring migration. Existing accepted Stage A workbook tabs, historical Watch/audit records and runtime must remain intact until separately authorized replacement. Calculated effective TaskStatus/Overdue is independent of RAG. **Any mention below of Manual Watch as future feature scope, automatic health, or Stage B still pending is superseded by this note and [HW-FUNC-1.0](https://github.com/Kenny619/spl-wbs/blob/main/docs/specifications/HEALTH_LIFECYCLE_FUNCTIONAL_FREEZE_CANDIDATE.md).** No workbook schema, RAG writer, security gate, Report 1.1 delta, Stage C implementation or beta is authorized by this document.
+**Version:** C-AUTHOR-0.2 — **REVIEW CANDIDATE / NOT FROZEN; NO CODE OR RELEASE AUTHORIZATION IN THIS DOCUMENT**  
+**Updated:** 2026-11-18 JST  
+**Parent:** [Issue #23 — Add new entity](https://github.com/Kenny619/spl-wbs/issues/23) → [Issue #24 — New project onboarding](https://github.com/Kenny619/spl-wbs/issues/24); [Project roadmap](../PROJECT_STATUS.md).  
+**Baseline:** Stage A accepted; Stage B usability owner-accepted through PRs #92/#98; **manual RAG HW-FUNC-1.0 is now owner-frozen and merged on main via PR #84**, but RAG implementation remains a separate post-Stage-C pre-beta milestone. **DES-012 Review08** remains the controlling cross-view visual design reference.
 
+## 1. Source-backed technical preflight — verified on current protected main
 
-**Scope:** Issues [#23](https://github.com/Kenny619/spl-wbs/issues/23) and [#24](https://github.com/Kenny619/spl-wbs/issues/24). Specification/QA planning only; no implementation, schema migration, release, or Product Owner acceptance. Baseline: protected main `8a511472322966d06e5a99df1bec73f076ac430b`, Stage A accepted; Stage B B2/B3 integrated. Stage B remains active. DES-012 Review08 remains the sole approved cross-view visual baseline.
+| Current source | Finding | Consequence for Stage C |
+| --- | --- | --- |
+| `src/data/types.ts`, `src/data/normalize.ts` | `TaskType` exactly **Summary / Task / Milestone**; IDs accept canonical string keys from either text or safe integers. Each item requires ID, title, WBSCode and TaskType; duplicate ID/WBS and missing/cyclic parent are fatal. | Generate a **new immutable string TaskID**, while preserving existing numeric/text IDs. Validate against *all* existing rows, not just visible/filtered rows. Reuse the canonical import parser in candidate readback. |
+| `src/managed/workbookCandidate.ts` | `buildManagedCandidate` requires **exactly one existing TaskID** and edits its allowed fields; `UpdateHistory` is strictly validated as **field-edit records**. | **Do not** fake entity creation via existing edit candidate or append unsupported `Field=Created` directly. New validated create candidate and explicit creation-audit semantics are necessary. |
+| `src/managed/history.ts` | Rejects `UpdateHistory.Field` not in `EDITABLE_FIELDS`. | Any new "Create" event requires a **versioned and backward-compatible history-reader/writer contract**; legacy reports/history must not break on newly created files. |
+| `src/managed/projectDataInspector.ts`, `src/managed/projectDataCandidate.ts` | Accepted **ProjectData v0.1.2 five-sheet** extension: ProjectMeta, ProjectCalendar, WatchReasons, ProjectCommitments, ProjectAudit. `ProjectAudit` validates entity/action semantics and is not a general unrestricted Task creation log. | **Do not** silently repurpose ProjectAudit or add Task entity/action values without explicitly specifying compatibility/versioning. The existing WatchReasons sheet can remain empty; no active Watch conversion is required. |
+| `src/managed/directSave.ts`, `src/managed/preflight.ts` | Verified guarded direct Save/Save As, source hash, preflight and recovery protections exist. | All new creation and onboarding write paths must reuse the accepted **candidate → verify/readback → guarded write → reload** flow; never write immediately from a form or bypass backup/conflict checks. |
+| `src/managed/main.ts` | Managed application has task editor, unsaved-change protection, folder picker, read-only inspection and separate user-local recent projects. | Stage C may introduce "Add" and onboarding controls without modifying the read-only viewer. Corporate `file://` folder-picker failure is NOT resolved. |
 
-## Authority and invariants
+**Critical gating finding:** the immutable ID / header / spreadsheet compatibility and create-audit format have to be defined together. Pure domain validation/preparation and fictional fixtures can proceed independently, but **no runnable workbook-create path should be promoted into protected main until a tested creation-event history contract is approved**. Do not build a second ad hoc event format.
 
-1. Excel is the **project-owned source of truth** for tasks, relationships, Calendar, Manual Watch and append-only ProjectAudit/UpdateHistory. Browser-local theme, PGCM display, columns and recent-file history must never be written into the shared workbook.
-2. Preserve the accepted **five-sheet ProjectData contract** and its current version. Any extra column, sheet, version or migration is a separate owner decision, **not authorized** by this document. No assumption that workbook rows may be silently rewritten.
-3. New entity creation must pass the same validation, explicit Save/Save As, backup, conflict detection, verified persistence, reload and recovery guards as edits. Draft creation is not persisted creation. Save failure must leave a visible unsaved draft, never a success notice.
-4. Append auditable create events with verified before/after meaning under the **existing** approved history mechanism; determine whether the current event model supports creation without a schema change before coding. Do not fabricate authenticated actor identity.
-5. Never change the frozen read-only viewer into a writer, upload workbook bytes, silently grant file permissions, or treat corporate managed Edge file-picker failure as solved. No claims about concurrent Excel editors or file locks.
-6. A task's WBS code, parent, dependency and TaskID are distinct concerns. Do not automatically recode existing WBS siblings or rewrite existing dependencies; resolve any contract conflict through owner-approved change control.
+## 2. Proposed #23 first delivery — create an entity within an existing workbook
 
-## #23 — proposed entity creation workflow (decision candidates, not defaults)
+**Owner request:** create entities from the HTML application. Deliver **existing-project task creation first**; project-wide workbook remains the source of truth, and view preferences stay local.
 
-| Topic | Safe proposed direction | Verification / unresolved decision |
-|---|---|---|
-| Entry | Explicit Add Task/Entity action within managed UI; keyboard reachable | Owner confirms which entity types are in first slice and where entry appears |
-| Identity | Validate a unique TaskID against **all existing workbook records**, not just current filter; reject collision before Save | Inspect current ID types and historical references; decide allocation algorithm and import collisions |
-| Hierarchy | Select existing parent by stable identity; validate parent exists and is not self/cyclic | Confirm how new workstream/project/root entries map to frozen workbook columns |
-| WBS | Explicit validated code, preserving all existing codes | Owner decision if automatic new-code suggestion is desired; no silent recoding |
-| Dependencies | Validate target existence and reject self/cycle; no phantom predecessor | Confirm current dependency representation and empty-value semantics |
-| Lifecycle | Draft → validate → guarded Save → reload-backed committed state; Cancel/Discard leaves workbook unchanged | Existing unsaved-change guard must protect switching tasks/workbooks, closing and Save As |
-| Audit | Record creation once after successful write, preserving preexisting history | Test rollback/retry to avoid duplicated create history on failed Save |
-| Cross-view | New committed entity appears consistently in Schedule, Task Detail, filters, Meeting Review and reports as supported | No invented health/RAG/Clear or automatic Watch classification |
+### Recommended initial contract (for one concise Product Owner freeze)
 
-## #24 — proposed new-project onboarding workflow
+1. **Types:** allow Summary, Task and Milestone under the existing `ProjectWBS` schema; no new database entity or independent Workstream table. Workstream remains a shared string in WBS rows. Default new leaf type is **Task**.
+2. **Entry:** "Add entity" from the managed Schedule/Task Detail flow. Inline form (not a second permanently open editor), keyboard reachable and accessible at laptop/conference sizes. Selected parent/active workstream may prefill but **must be reviewable**; never make hidden filters change identity.
+3. **TaskID:** generate a collision-resistant UUID string per creation attempt; recheck its uniqueness across the entire latest workbook just before guarded Save. Never reuse a previously deleted identifier if history could reference it; support existing text/numeric IDs without coercive rewrite.
+4. **WBSCode:** suggest a next unused code under selected Summary parent (e.g., `3.2.1`); allow manual override before Save; reject duplicates, invalid blank/control input and parent-code conflict. **No cascade renumbering or rewrite of existing WBSCode/TaskIDs.**
+5. **Hierarchy:** parent optional for root item; if provided it must refer to an existing valid **Summary**, not the new item; reject orphan/cycle/non-Summary parent. Summary dates/progress are derived; Milestone single date; active leaf Task accepts optional dates only if existing parser permits unscheduled rows, otherwise valid ordered dates required. First delivery uses the existing source date semantics, not an invented date system.
+6. **Defaults and validation:** require title, type and WBS. Default source TaskStatus `Not Started`, optional Owner/Workstream/Description/priority/progress/date; never assign an invented owner or create a project commitment/Watch reason. Treat formula/control-character injection and unsupported field types as invalid. Distinguish blank progress from 0.
+7. **Dependencies:** opt-in validated `PredecessorIDs`, referencing *existing verified TaskIDs* with supported Finish-to-Start relation only. Reject self-reference and cycles for a newly authored row; do not rely on read-only importer warnings that silently drop invalid tokens. No relation change to existing rows.
+8. **Save lifecycle:** new item is a local draft until guarded Save succeeds. Compose a disposable XLSX copy, validate all sheets and history, reload with the canonical parser, verify new TaskID and preexisting row identity, then commit with existing source hash/backup/recovery safeguards. Cancel, deny, failure or conflict → **no persisted entity, no false success**.
+9. **Create history:** define a single explicit creation event with item ID, item type, WBS, editor provenance as **unverified**, timestamp and initial field snapshot; ensure existing Change History and Report readers remain compatible. **This event format and any extension version require separately approved, backward-compatible contract**; current `UpdateHistory.Field` whitelist rejects a new create marker.
+10. **RAG:** new valid item displays **Green by default**, *not* a manual PM health assessment or recorded Green audit event. Later PM-only Amber/Red entry requires **Project Impact + Path to Green**, and return to Green requires **Resolution**, under frozen HW-FUNC-1.0; do not implement manual RAG in the Stage C creation slice.
+11. **Cross-view:** committed item appears once in Schedule, Task Detail, Meeting Review, Needs Attention, filtering/reporting as supported; readonly viewer can load the workbook but **never mutate**.
+12. **No hidden scope:** no multi-row bulk creation, drag/drop hierarchy, cascade WBS renumbering, role auth or production shared-workbook concurrency claim in first slice.
 
-**Phase 1 (low-risk candidate):** create an **empty valid workbook** using only the existing accepted schema and default sheets/headers. Provide explicit destination selection or download with user-controlled Save; never overwrite an existing workbook without confirmation. Open through the same validated import path, not a privileged alternate writer.
+### Candidate acceptance matrix — only new functionality, NOT executed
 
-**Phase 2 (templates, requires separate acceptance):** offer a small catalog of **synthetic** templates that instantiate valid workstreams/tasks and approved parent/dependency relations. Template metadata and browser display preferences stay separate from shared project facts. A template must not create fictitious verified Watch, Green/Clear or Report history.
+| ID | Test | Required evidence |
+| --- | --- | --- |
+| **C23-01** | Add Task with valid Summary parent, Save, reopen | Exactly one new stable ID/WBS, correct parent, row and cross-view |
+| **C23-02** | Add root Summary, then a child Task and Milestone | Accepted three TaskTypes, valid dates/derived Summary, no duplicate rollup |
+| **C23-03** | Duplicate WBS/ID, non-Summary parent, invalid date or self/cyclic predecessor | Rejected before Save, source unchanged and clear typed error |
+| **C23-04** | New Task unscheduled with blank Progress vs explicit 0 | Exact canonical existing import semantics, no guessed schedule/RAG |
+| **C23-05** | Cancel draft, change workbook, leave page with unsaved data | Guarded discard/return; no phantom committed row |
+| **C23-06** | Second writer, stale loaded hash, backup failure or denied folder | No partial row, no false Save success, recoverable draft |
+| **C23-07** | Save creation; inspect new + previous history | One explicit Create event with stable identity; old history unaltered; reload/Report reader succeeds |
+| **C23-08** | Read resulting workbook in readonly Viewer and compare | Identical workbook facts; no write affordance or user-local preference leakage |
+| **C23-09** | Create item with no explicit RAG, near finish/Overdue criteria met | Green default unchanged, separate source-attributed task-status/Overdue warnings |
+| **C23-10** | Existing project has incompatible/future/partial ProjectData | Creation fails closed, without repairing/rewriting its sheets |
 
-**Decision points:** Which project/entity fields are required on creation? What counts as a blank project with no tasks for current report/overview engines? Is TaskID allocation numeric or another accepted type? Which template categories and relationships are in first delivery? Should first Save be download-only when directory picker is denied? These are not silently decided here.
+## 3. Proposed #24 onboarding after #23 creator is accepted
 
-## Focused independent QA matrix
+**Required by the Product Owner:** (1) create Excel at chosen location and add items via HTML; (2) download an empty workbook with guidance; (3) choose from multiple prepared templates that generate workstreams, parent-child and dependency relationships.
 
-| ID | Fixture / action | Required outcome |
-|---|---|---|
-| C23-01 | Add task to fictional five-sheet workbook; Save, close, reopen | Exactly one committed task, same identity/parent/WBS, consistent cross-view |
-| C23-02 | Duplicate ID, invalid parent, self/cyclic dependency, invalid date | Fail closed; original workbook bytes unchanged |
-| C23-03 | Edit unsaved new task; switch entity, workbook, Cancel/Discard | Existing unsaved guard and reversible draft; no phantom persisted row |
-| C23-04 | Permission denial, changed source, Save As, backup failure | Clear typed notice, no false success, no damaged original, recovery path retained |
-| C23-05 | Create, Save, reload, inspect audit and Reports | One auditable creation; no invented historical status/Watch/RAG |
-| C24-01 | Blank workbook generation, download, import and Save | Accepted five-sheet schema, parseable empty project, no browser prefs in Excel |
-| C24-02 | Each synthetic template; validate all IDs/parents/dependencies | Valid import, stable relationships, no cycle, no unintended existing-row rewrite |
-| C24-03 | Repeated template generation with existing filename / denied picker | Explicit overwrite prevention and fallback; no silent write |
-| C-RO-01 | Load created workbook in frozen read-only viewer | Read works; editing and direct Save remain unavailable |
-| C-UX-01 | Keyboard-only and 860/1366/1440 light/dark navigation | Labels, focus, overflow, error disclosure; DES-012 Review08 consistency |
+**Delivery sequence — recommended:**
+- **C24-A Blank new project:** Explicit name and destination choice; create valid `ProjectWBS` headers, empty UpdateHistory and five accepted ProjectData sheets with legitimate ProjectMeta ID/name/version. Ensure an empty ProjectWBS round-trips with current parsers and report/list views; don't fabricate empty task or human assessment rows.
+- **C24-B Save location / fallback:** If the directory picker is denied under `file://`, offer **Download XLSX** with user-selected Save destination, then normal verified import into managed app. Never overwrite an existing name silently; no folder-write assumption on corporate Edge. A separately approved localhost writer may improve corporate permissions later.
+- **C24-C Template catalog:** propose three **synthetic** starter profiles (Simple Project / Cross-functional Program / Milestone-led Delivery) plus Blank; preview workstreams/entity counts, hierarchy/dependencies and default dates before generation. Templates reuse the **same validated TaskID/parent/dependency creator** as #23, not a second ad hoc writer. No fictional past history, Watch reason or manually assessed Amber/Red.
+- **C24-D Post-create handoff:** verified workbook becomes active only after accepted path/import/readback. Recent Projects local list updates only after success, not on cancelled/failing attempt. Do not alter the previous workbook/session on failed onboarding.
+- **C24-E Compatibility:** generated book must open in managed and read-only variants, preserve the accepted project schema and full current Excel semantics, and pass safe Save As/reopen.
 
-**Before implementation:** inspect existing workbook parser/writer, create-event audit expressiveness, report empty-project handling and TaskID semantics; freeze the minimum contract with Product Owner. Prefer targeted unit + fictional workbook roundtrip before selective Windows Chromium. Full integration/owner UAT only for a candidate, not this document.
+**Focused candidate acceptance (NOT executed):** C24-01 empty valid workbook roundtrip; C24-02 download and folder choice; C24-03 each template valid IDs/parents/predecessors; C24-04 no overwrite; C24-05 deny/cancel without phantom session; C24-06 save/reload/history and recent-file registration; C24-07 readonly viewer; C24-08 keyboard/light/dark/860px usability; C24-09 no invented RAG audit or obsolete Watch data.
 
-**Sequencing:** finish Stage B remaining functionality and #82 policy freeze in parallel; Stage C #23 creation safety before #24 template-generated entities. Health/Report 1.1 unified semantics remain a separate post-Stage-C pre-beta gate. Holistic UX consolidation remains another mandatory pre-beta gate.
+## 4. Engineering sequence and gates
+
+**Already frozen, never reopen by implication:** Stage A workbook/history, safe Save and read-only behavior; Stage B accepted usability; HW-FUNC-1.0 manual RAG semantics (separate pre-beta implementation); DES-012 Review08 overarching UI authority.
+
+1. **Stage C design close:** review this candidate, validate `ProjectWBS` columns/unique-ID semantics, confirm create-audit event representation and template minimum. Clearly distinguish *recommended* Stage C choices from Product Owner-approved policy.
+2. **#23 safe creator foundation:** validate-only pure create draft + unit cases → in-memory workbook candidate + explicit approved history semantics → guarded Save integration → targeted Windows/Edge functional review → focused Owner UAT.
+3. **#24 onboarding:** blank starter and safe download flow → template catalog and preview → same creation engine + validation → targeted QA/Owner UAT.
+4. **After Stage C:** independent manual RAG workbook/UI/PM authorization/report implementation & UAT and holistic UX consolidation, both mandatory before beta. Stage D multi-blackout and Stage E drag/drop still deferred.
+5. **CI cost:** prefer file-diff scoped unit/relevant browser tests, no replay of Stage A MRU or six already accepted Stage B physical UAT cases; avoid promoting documentation drafts merely to trigger full Windows regressions.
+
+**No implementation, workbook/schema mutation, code merge, corporate release or beta is authorized by this unapproved candidate.** The latest owner “Proceed” advances Stage C analysis/delivery preparation; it does not silently ratify unresolved schema/audit choices.
