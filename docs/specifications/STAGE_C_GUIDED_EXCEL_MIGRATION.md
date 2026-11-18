@@ -1,9 +1,9 @@
-# Stage C2 — Guided Excel WBS migration (C-IMPORT-0.1)
+# Stage C2 — Guided Excel WBS migration (C-IMPORT-1.0)
 
-**2026-11-19 JST — Product Owner direction recorded; detailed contract proposed.**
+**2026-11-19 JST — Product Owner APPROVED functional design (C-IMPORT-1.0).**
 The owner endorsed three onboarding routes (scratch, import, template) and clarified import is between legacy and arbitrary Excel: minimize manual effort migrating an existing managed WBS, establish a minimum input guideline (column names and required columns), map every existing item into the platform schedule, and generate the managed source Excel. This is not a general-purpose arbitrary spreadsheet ETL tool. Related #24, #23, C-AUTHOR-0.3, B2 architecture.
 
-## Proposed input profile
+## Approved functional input profile
 
 Accept .xlsx, one explicitly selected worksheet, tabular header row, one WBS item per nonempty data row. Exact native headers preferred; offer documented common aliases and a small reviewable column mapping step only where needed. No macros, merged hierarchical layout interpretation, arbitrary multi-sheet joins or formula execution. Read evaluated cached values only where supported and safe; missing/unsupported values must be surfaced, never guessed.
 
@@ -21,7 +21,7 @@ Accept .xlsx, one explicitly selected worksheet, tabular header row, one WBS ite
 | PredecessorIDs / Predecessor WBS | Optional | Resolve through identity map; supported Finish-to-Start only; reject unresolved, ambiguous or cyclic links |
 | Priority / Description / Updates / SortOrder / Modified / ItemURL | Optional | Preserve supported values using canonical normalization; report unsupported values/columns and obtain explicit review before omission |
 
-**Proposed minimum is Title alone**, with user-reviewed generated identity/root WBS/default Task. For structured migration recommend Title + WBSCode, plus explicit hierarchy and dependency references where available. Exact minimum, aliases, inference and default rules require focused functional review; existing native workbook parser still requires ID, Title, WBSCode, TaskType in the **generated target**, not necessarily in the external input. Never silently flatten supplied hierarchy or discard nonempty rows. No silent type/field inference from visual formatting.
+**Approved minimum is Title alone**, with user-reviewed generated identity/root WBS/default Task. For structured migration recommend Title + WBSCode, plus explicit hierarchy and dependency references where available. The approved functional defaults govern; exact alias dictionaries, supported cell encodings and technical normalization require implementation verification. The existing native workbook parser still requires ID, Title, WBSCode, TaskType in the **generated target**, not necessarily in the external input. Never silently flatten supplied hierarchy or discard nonempty rows. No silent type/field inference from visual formatting.
 
 ## User journey
 
@@ -32,7 +32,7 @@ Accept .xlsx, one explicitly selected worksheet, tabular header row, one WBS ite
 5. Generate canonical ProjectWBS and required managed workbook structures through the same validated authoring/candidate path as #23/#24. Record imported entities as new-to-platform initial snapshots at migration time using the approved B2 direction once exact schema/writer approved; never invent original creation dates, past edits, authenticated identity, or manual RAG. Imported source Modified values, if supported, are source facts, not audit timestamps. Do not erase native history.
 6. Validate serialized target, compare row count and normalized mapped values/references, save only to a new destination (download fallback if picker denied), verify destination readback when possible. Do not claim a download is a verified managed reopen; open via normal flow and register Recent Projects only after successful load. Keep existing session unchanged on cancel/failure.
 
-## Proposed targeted QA (not executed)
+## Targeted QA (not executed)
 
 | ID | Required outcome |
 | --- | --- |
@@ -49,4 +49,8 @@ Accept .xlsx, one explicitly selected worksheet, tabular header row, one WBS ite
 
 ## Delivery and authority
 
-Stage C2 includes three routes: scratch/blank (including starter download), guided migration and predefined templates. C1 creator remains a shared dependency; input mapping/preview validation can be prepared in parallel without workbook writes. Scope direction is owner-endorsed; exact field mapping and persistence contract are proposed, not frozen. No writer/schema mutation, beta, deployment or production release authorized. Keep QA targeted; do not replay accepted Stage A/B UAT.
+Stage C2 includes three routes: scratch/blank (including starter download), guided migration and predefined templates. C1 creator remains a shared dependency; input mapping/preview validation can be prepared in parallel without workbook writes. Functional design is owner-approved, including minimum input, automated mapping with user-reviewed defaults, preview, preservation and separate managed output. Exact alias dictionary, normalization and physical persistence contract require technical verification. No writer/schema mutation, beta, deployment or production release authorized. Keep QA targeted; do not replay accepted Stage A/B UAT.
+
+## Product Owner decision record
+
+2026-11-19 JST: Owner explicitly stated **“approved your design.”** Approval covers the presented Stage C2 guided migration functional design, including Title-only external minimum, optional/defaulted fields, three onboarding routes, structured relationship preservation, review of ambiguous data, and a separate generated managed workbook. Proceed with bounded mapping/preview preparation in parallel with C1; do not reopen these functional decisions without a material finding. Keep B2 schema/writer authorization and release gates separate. No QA or implementation completion is implied.
