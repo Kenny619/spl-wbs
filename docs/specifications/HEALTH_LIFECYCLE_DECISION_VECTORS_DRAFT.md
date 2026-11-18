@@ -28,7 +28,7 @@ Direct issue comments: [HW-01](https://github.com/Kenny619/spl-wbs/issues/82#iss
 - Preserve all independent reasons (including resolved history); an unrelated issue or risk may remain after one is resolved. Show each reason and the aggregate effective task conditions. Resolution of one cause must not silence others. Explicitly decide competing risk/issue precedence for final RAG health.
 
 **HW-02 remaining precise rule edges** (partially approved):
-- **Approved:** 0–5 inclusive verified working days and separate prominent Overdue without effective At Risk from overdue alone. **Still open:** `Completed`, `Cancelled`, `Summary`, `Milestone` and zero-duration eligibility, nullable progress and contradictory recorded status.
+- **Approved:** 0–5 inclusive verified working days and separate prominent Overdue without effective At Risk from overdue alone. **Owner-choice proposal:** A (recommended) automatic near-finish At Risk only for active leaf Task; date and Overdue only for Milestone, plus recorded/inherited Blocked; Summary shows child-sourced exceptions without duplicate flag. B additionally At Risk for Not Started Milestone inside 0–5 days (never from blank progress/Updates). **Proposed terminal guard:** Completed/Cancelled successor remains terminal with conflicting-dependency diagnostic, and propagation of that upstream root stops at terminal. Still pending owner decision, as are invalid-graph and cross-view precedence rules.
 - Use only verified Japanese holidays and the **committed shared project blackout** (not browser-local settings) for workday computation; select common project business date, proposed JST. Unsupported/missing dependency and cycles must not fabricate inherited Blocked. Preserve root TaskID evidence through transitive/multiple Blocked paths.
 - Clarify where effective versus recorded TaskStatus drives filter/exception counts and which source labels users see; no frozen Report 1.1 delta until after the detailed task/Watch specs.
 
@@ -70,6 +70,11 @@ Direct issue comments: [HW-01](https://github.com/Kenny619/spl-wbs/issues/82#iss
 | H-04B | Active task already overdue, with 90% progress and substantive update | **Approved Option A:** prominent separate Overdue, no calculated effective At Risk solely due to overdue |
 | H-04C | An overdue task also has a separately recorded At Risk or Blocked cause | Retain that independently sourced status **and** the separate Overdue indicator |
 | H-04D | Past-due date corrected through verified Save | Recompute Overdue; preserve independently Open Watch reasons, historical events and Red impact |
+| H-04E | Active Milestone with missing progress and no Updates; 1 working day to finish | Proposed A: date attention only; B: auto At Risk *only* if recorded Not Started |
+| H-04F | Summary with multiple child risks and overdue | Child-provenance rollup only; no duplicate independent Summary flag |
+| H-04G | Blocked A → Completed B → active Task C | Proposed: show B contradiction, do not overwrite Completed or propagate A through B to C |
+| H-04H | Blocked A → active Milestone B → active Task C, valid FS edges | Effective Blocked inherited by B and C with A root provenance |
+| H-04I | Cancelled A → active Task B, no other blocker | Source dependency diagnostic; Cancelled alone not invented as Blocked |
 | H-05 | Five-day boundary, 80% progress, In Progress, blank Updates | Calculated effective At Risk for no update currently recorded |
 | H-06 | Five-day boundary, 80% progress, In Progress, old substantive Updates | No missing-update At Risk; age monitoring explicitly deferred |
 | H-07 | Source Blocked A -> dependent B -> C | Derived effective Blocked, origin A/ID, no workbook writes or fake Watch reasons |
