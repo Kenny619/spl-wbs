@@ -1,7 +1,7 @@
 # SPT-WBS | HW-02 Calculated Effective Task Status — Functional Specification
 
 **Date:** 2026-11-17 JST  
-**Review state:** **Owner approved Option A (recorded vs effective status separation) and explicitly selected the "no update ever entered" safeguard. Stale/time-based update monitoring is deferred until after user testing. Other trigger/clearance edge cases remain draft until separately reviewed.**  
+**Review state:** **Owner approved Option A (recorded vs effective status separation), the "no update currently recorded" safeguard, and HW-02 boundary/overdue Option A (0–5 inclusive working days; separate Overdue exception without auto-At Risk solely for lateness). Stale-update monitoring is deferred until after user testing. Task-type eligibility and other dependency/clearance edge cases remain draft.**  
 **Related:** [Health lifecycle Issue #82](https://github.com/Kenny619/spl-wbs/issues/82), [HW-01 RAG taxonomy owner decision](https://github.com/Kenny619/spl-wbs/issues/82#issuecomment-6949427305), [HW-05 PM password-gate draft PR #100](https://github.com/Kenny619/spl-wbs/pull/100), [Stage B accepted factual attention PR #92](https://github.com/Kenny619/spl-wbs/pull/92).
 
 ## 1. Explicitly approved Option A
@@ -38,25 +38,29 @@
 
 **Deferred:** Any `last review was X days ago`, `stale update`, `update freshness` timer, configurable age threshold, automatic notifications for old notes, or retrospective last-edit inference. Revisit only **after user testing** with separately approved evidence source and owner decision.
 
-## 2B. HW-02 near-finish boundary and overdue proposal — awaiting owner decision (2026-11-18)
+## 2B. HW-02 near-finish boundary and Overdue — Option A APPROVED (2026-11-18)
 
-**Recommended choice: 0–5 inclusive working days for At Risk, with overdue as a separate visible exception.** This section is a **proposed explicit policy**, not a newly approved decision.
+**APPROVED Option A:** use a **0–5 inclusive working-day** near-finish window and a **separate prominent Overdue exception**. Overdue does **not** automatically set the effective TaskStatus to At Risk **solely because the finish date has passed**. The original TaskStatus and independently recorded/inherited At Risk or Blocked remain authoritative or visible under their own rules. Rules for Summary/Milestone eligibility, precedence and other edge cases remain proposals, not silently accepted.
 
 | Verified current-source condition | Proposed outcome | Source-write / health safeguards |
 | --- | --- | --- |
 | Scheduled active Task, **6 or more** workdays until finish | No **near-finish** derived At Risk flag | Preserve any source At Risk, source Blocked, inherited Blocked or independently recorded Watch reason. |
 | Scheduled active Task, **0 through 5** workdays left (inclusive) and any owner trigger applies | Effective **At Risk** with attribution to all actual qualifying triggers | Source TaskStatus/Excel unchanged; never auto-RAG Amber. |
 | Scheduled active Task, **0 through 5** workdays left and none of the owner triggers applies | Keep ordinary recorded effective TaskStatus, except higher-priority explicitly recorded or inherited Blocked/At Risk | This is not proof of project health Green. |
-| Active Task with planned finish **before** project evaluation date | Show **Overdue** separately and prominently regardless of progress or note presence | **Do not silently convert to a new persisted or effective At Risk** solely because it is overdue under the recommended option; recorded and inherited Blocked/At Risk remain visible. If owner chooses an overdue-derived At Risk status instead, this requires a separate explicit choice. |
+| Active Task with planned finish **before** project evaluation date | Show **Overdue** separately and prominently regardless of progress or note presence | **APPROVED:** do not convert to a persisted or effective At Risk solely because it is overdue; independently recorded/calculated/inherited At Risk and Blocked remain visible when supported by their own distinct reasons. |
 | Task **Completed** / **Cancelled** | Exclude from new near-finish or overdue automation, retaining recorded final status | Show source contradictions and historical events where applicable, not a synthetic changed workbook status. |
 | Summary row or Milestone / zero-duration item | **Do not apply progress/note-based near-finish automation by default** until the task-type-specific rule is explicitly approved; existing milestone dates and legitimate overdue exceptions remain independently visible | Never treat a missing milestone progress value as 0%; don't turn a Summary roll-up into independently flagged leaf task without a source-backed rule. |
 | Invalid or missing finish, incomplete verified Japanese holiday calendar, or unverified committed shared blackout | Show **schedule evaluation unavailable** / evidence-quality note | Do not manufacture a precise workday count, At Risk, or Green. |
 
 **Exact day-count contract:** use the existing `remainingWorkdays` semantics: count eligible working dates **strictly after the project evaluation date through the planned finish date inclusive**, excluding weekends, verified JP holidays and shared committed blackout dates. If finish equals today, classify as **0** and eligible for the near-finish rule (subject to actual trigger and valid evidence). A finish date before today is an **Overdue** branch, not `0` workdays. A future nonworking finish date can yield zero future eligible working days; retain the actual finish date for clarity instead of claiming the deadline is today. The proposed common business-date timezone is `Asia/Tokyo`, pending final owner acceptance; the user's per-device display timezone must not change the project-wide status calculation.
 
-**Recommended calculated-flag clearance:** a five-day flag ceases if its own conditions are no longer met, the task becomes inactive, or a guarded source change moves the due date out of the qualifying horizon; the Overdue exception ends once the verified finish date is no longer in the past or the task becomes inactive. Both recompute read-only. Neither clearance resolves a Manual Watch reason, deletes a historical overdue period, overwrites explicit source At Risk/Blocked, or changes manually assessed RAG (including prior Red). The independent current and period reporting rules remain unchanged until an approved versioned Report 1.1 delta.
+**Calculated-flag clearance principle for approved Option A** (specific edge cases pending): a five-day flag ceases if its own conditions are no longer met, the task becomes inactive, or a guarded source change moves the due date out of the qualifying horizon; the Overdue exception ends once the verified finish date is no longer in the past or the task becomes inactive. Both recompute read-only. Neither clearance resolves a Manual Watch reason, deletes a historical overdue period, overwrites explicit source At Risk/Blocked, or changes manually assessed RAG (including prior Red). The independent current and period reporting rules remain unchanged until an approved versioned Report 1.1 delta.
 
-**Alternatives to decide:** (A, recommended) separate persistent Overdue signal with recorded/effective TaskStatus otherwise governed by source and inherited flags; or (B) make Overdue also derive effective `At Risk`, retaining an equally prominent `Overdue` reason, with explicit precedence and no workbook write. Both keep past-due evidence and do not auto-RAG Red/Amber.
+**Decision recorded:** Option A is selected. The alternative of deriving effective `At Risk` **from overdue alone** is **not approved**. Keep the overdue exception prominent and recalculate it from verified source, without Excel writes or auto-RAG.
+
+## 2C. Owner-approval record — HW-02 window and overdue (2026-11-18)
+
+The Product Owner explicitly **approved Option A** following a comparison of two choices: (A) `0–5` inclusive near-finish At Risk based on the three existing triggers, **plus a separate prominent Overdue signal that does not by itself change effective TaskStatus**, versus (B) Overdue also deriving effective At Risk. Option B was **not selected**. At Risk may still be recorded or independently calculated/inherited on an overdue task for another reason; that separate fact must not be hidden. Historical Watch reasons and assessed Red are unaffected. This approval does **not** settle milestone/summary eligibility, invalid dependencies, or automatic conflict precedence and authorizes **no runtime change or schema amendment**.
 
 ## 3. Owner-proposed inherited Blocked rule (detail awaiting policy freeze)
 
@@ -102,7 +106,7 @@ Conceptual fields (not an approved workbook schema): `taskId`, `recordedStatus`,
 | HW02-06 | No finish / incomplete JP holiday coverage / invalid shared blackout | Calculation unavailable, no fabricated due-date judgment or Green. |
 | HW02-06A | Today equals finish date, 35% complete, no substantive update | Zero remaining working days and calculated At Risk; project health unchanged. |
 | HW02-06B | Verified six working days left, 35% complete | No *near-finish* calculated At Risk; recorded/inherited flags still visible. |
-| HW02-06C | Active Task past its finish date, status In Progress, progress 90%, recent update | Separate Overdue exception regardless of progress/update; whether also effective At Risk awaits owner choice. |
+| HW02-06C | Active Task past its finish date, status In Progress, progress 90%, substantive update exists | Separate prominent Overdue exception; no effective At Risk derived **solely** from the overdue condition. Source/effective independent flags remain visible. |
 | HW02-06D | Finish moved from overdue into future via guarded Save | Derived Overdue signal recalculates, but independent Manual Watch/Red history and saved schedule-change event persist. |
 | HW02-06E | Future nonworking finish date with zero future eligible workdays | Preserve actual finish date and source quality; don't mislabel finish as today. |
 | HW02-06F | Summary row, Milestone with no progress, and Completed Task | No unapproved threshold conversion of Summary/Milestone or inactive Task; existing date/status signals preserved. |
@@ -117,7 +121,7 @@ Conceptual fields (not an approved workbook schema): `taskId`, `recordedStatus`,
 
 ## 7. Policy details still to confirm individually
 
-1. **Threshold/window / overdue — owner decision pending:** recommend `0–5 working days inclusive`, with a distinct, persistent **Overdue** exception for active past-due tasks instead of automatically converting solely overdue tasks to effective At Risk; alternate is derived At Risk plus separate Overdue reason. Summary/Milestone and zero-duration eligibility remains a separate accepted rule to finalize.
+1. **Threshold/window / overdue — APPROVED Option A:** `0–5 working days inclusive` for the near-finish trigger and a **separate prominent Overdue** exception for past-due active tasks, without calculated effective At Risk solely for being overdue. **Still pending:** Summary/Milestone/zero-duration eligibility, completed-successor inconsistency and other exception handling. Do not re-ask the boundary/overdue choice.
 2. **Update-presence rule — decided:** only the absence of a substantive recorded update triggers this branch; old-but-present updates **do not** trigger it. Apply only within the agreed near-finish rule. **Post-user-testing backlog:** revisit stale/aged update monitoring after actual user testing, with reliable update-specific timestamps and separate owner approval. No time-age threshold in initial delivery.
 3. **Eligibility:** Task vs Milestone vs Summary; explicit Completed/Cancelled precedence and source `Unknown` as task-data quality.
 4. **Propagation:** supported FS links, transitive paths, multiple-source provenance; contradictory completed/blocked successors and incomplete dependency graph.
