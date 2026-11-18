@@ -18,6 +18,17 @@
 
 **Critical gating finding:** the immutable ID / header / spreadsheet compatibility and create-audit format have to be defined together. Pure domain validation/preparation and fictional fixtures can proceed independently, but **no runnable workbook-create path should be promoted into protected main until a tested creation-event history contract is approved**. Do not build a second ad hoc event format.
 
+## 1A. Audit compatibility options — isolated design decision
+
+The accepted `UpdateHistory` table has ten columns and validates `Field` against `EDITABLE_FIELDS`; that list **does not include `PredecessorIDs`**. The accepted `ProjectAudit` permits actions including `Create`, but `EntityType` is restricted to `ProjectMeta`, `Blackout`, `WatchReason` and `Commitment` — **not Task**. The difference between an audit event with the correct name and a fully recorded new task matters.
+
+| Option | Approach | Compatibility and consequence |
+| --- | --- | --- |
+| **A — schema-stable bounded slice** | Append existing allowed `UpdateHistory` field rows under one new ChangeSetID, including **`Title: null → new title`** as an implicit create convention. The new history UI may label that group “Created task” after verifying the new TaskID and complete one-time field evidence. | **No physical column/schema change**; older reader accepts the rows. However there is **no explicit Create action** and no permitted `PredecessorIDs` history field. It is suitable only for a genuinely bounded first slice with **no predecessor initialization** (or a separately approved relationship audit). The UI must not falsely claim a fully auditable dependency snapshot. |
+| **B — explicit versioned task creation** | Define a new, typed **Task Create** audit event with immutable TaskID, WBS, full initial values **including dependencies**, UTC change ID and unverified actor, through a compatible versioned workbook/history reader+writable contract. | **Recommended for the full Stage C acceptance**, because template generation requires auditable new predecessor relationships and truthful task creation. Must design backward-compatible reading of old files and safe refusal by older writers on future formats, then obtain separate schema approval. Higher initial change cost but avoids a later divergent audit model. |
+
+**DMO recommendation:** use **B for the complete Stage C implementation contract**; optionally prepare validation-only/unsaved draft logic in parallel. Do not silently adopt A to pretend that accepted historical field edits are explicit creation events, and do not smuggle `PredecessorIDs` into other fields. A genuine schema decision remains a **Product Owner gate** before any workbook-changing creation code is integrated.
+
 ## 2. Proposed #23 first delivery — create an entity within an existing workbook
 
 **Owner request:** create entities from the HTML application. Deliver **existing-project task creation first**; project-wide workbook remains the source of truth, and view preferences stay local.
