@@ -82,7 +82,14 @@ export function prepareNewEntity(input: NewEntityInput,
 
   const wbsCode = (input.wbsCode?.trim() || suggestWbsCode(existing, parent?.wbsCode ?? null));
   if (!safeLabel(wbsCode)) errors.push("WBS code is required and must be safe text.");
-  if (existing.some(task => task.wbsCode === wbsCode)) errors.push("WBS code already exists.");
+  if (existing.some(task => task.wbsCode.trim() === wbsCode)) errors.push("WBS code already exists.");
+  // A manually entered WBS code must match the selected parent hierarchy.
+  // Root items occupy one segment; child items are direct descendants only.
+  const expectedPrefix = parent ? parent.wbsCode.trim() + "." : "";
+  const suffix = parent ? wbsCode.startsWith(expectedPrefix) ? wbsCode.slice(expectedPrefix.length) : "" : wbsCode;
+  if (!/^[1-9][0-9]*$/.test(suffix) || (parent && !wbsCode.startsWith(expectedPrefix))) {
+    errors.push("WBS code must be a direct child of the selected parent (or a root code).");
+  }
 
   let start = input.plannedStart?.trim() || null;
   let end = input.plannedEnd?.trim() || null;
