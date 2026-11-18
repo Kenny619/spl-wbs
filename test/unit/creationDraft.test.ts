@@ -49,6 +49,40 @@ describe("Stage C validation-only creator foundation", () => {
     }
   });
 
+
+  it("rejects manual WBS codes inconsistent with parent hierarchy", () => {
+    const wrongParent = prepareNewEntity({
+      title: "Wrong branch", taskType: "Task", parentId: "summary-1", wbsCode: "9.7",
+    }, existing, NEW_ID);
+    expect(wrongParent.ok).toBe(false);
+    if (!wrongParent.ok) expect(wrongParent.errors).toContain(
+      "WBS code must be a direct child of the selected parent (or a root code).");
+    const skippedLevel = prepareNewEntity({
+      title: "Skipped level", taskType: "Task", parentId: "summary-1", wbsCode: "3.2.3.1",
+    }, existing, NEW_ID);
+    expect(skippedLevel.ok).toBe(false);
+    const wrongRoot = prepareNewEntity({
+      title: "Root with nested code", taskType: "Task", wbsCode: "4.1",
+    }, existing, NEW_ID);
+    expect(wrongRoot.ok).toBe(false);
+    const valid = prepareNewEntity({
+      title: "Correct branch", taskType: "Task", parentId: "summary-1", wbsCode: "3.2.3",
+    }, existing, NEW_ID);
+    expect(valid.ok).toBe(true);
+  });
+
+  it("rejects duplicate WBS codes after whitespace normalization", () => {
+    const withWhitespace = [...existing, {
+      id: "task-3", wbsCode: "3.2.2 ", parentId: "summary-1", taskType: "Task" as const,
+    }];
+    const duplicate = prepareNewEntity({
+      title: "Duplicate normalized code", taskType: "Task", parentId: "summary-1", wbsCode: "3.2.2",
+    }, withWhitespace, NEW_ID);
+    expect(duplicate.ok).toBe(false);
+    if (!duplicate.ok) expect(duplicate.errors).toContain("WBS code already exists.");
+    expect(suggestWbsCode(withWhitespace, "3.2")).toBe("3.2.3");
+  });
+
   it("requires a canonical generated UUID", () => {
     const result = prepareNewEntity({ title: "Invalid ID", taskType: "Task" }, [], "not-uuid");
     expect(result.ok).toBe(false);
