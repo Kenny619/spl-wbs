@@ -119,3 +119,50 @@ A Task/Create transaction in `ProjectAudit` and subsequent edits in `UpdateHisto
 | B2-CONT-17 | Candidate serialization/readback preserves each sheet independently but loses the proposed cross-sheet causality evidence | Reject guarded write success and preserve backup/recoverable draft |
 
 **Independent QA gate:** validate an exact proposed marker/encoding against the fourteen-column ProjectAudit contract, the existing UpdateHistory columns and real XLSX round-trip behavior before marking this issue resolved. Avoid adding an undocumented column, rewriting historical rows, or treating unverified timestamps as proof of transaction order.
+
+
+## Simplified recommended resolution — per-Task causal boundary (2026-11-19 JST)
+
+**Decision candidate, not approval:** Prefer a task-scoped creation boundary to a workbook-wide event ordinal. Stage C requires reliable Create-to-edit continuity for each newly created immutable TaskID; it does not require a global total order across unrelated project events. This narrows the change to the existing Task/Create group and existing UpdateHistory rows. The global-ordinal proposal above remains an alternative if future product requirements genuinely require cross-task total ordering.
+
+### Exact candidate wire representation (for review)
+
+Use **one reserved ProjectAudit Field literal `__TaskCreateManifestV1`** within each 0.1.3 Task/Create group. It uses the existing fourteen headers, distinct unique EventID, the group's ChangeSetID, TaskID/EntityID, TimestampUTC, actor, source and app version, and blank OldValue. NewValue is the canonical compact JSON object:
+
+```json
+{"v":1,"fields":["ID","TaskType","Title","WBSCode"],"historyBoundary":0}
+```
+
+The example represents a minimal source sheet with no nonempty UpdateHistory data rows. The exact historical field list MUST contain each recognized present field exactly once, sorted in ascending ASCII order, including all four mandatory identity fields. Its value is bounded by the existing Excel cell limit (32,767 UTF-16 units); reject unknown keys, unknown fields, malformed/noncanonical JSON, missing/duplicate manifest, unsupported version, negative/noninteger/unsafe boundary and manifest/field-row mismatch. The reserved field cannot be a WBS attribute. It is structural metadata, not a separate business event; exclude it from user-visible field lists and replay.
+
+`historyBoundary` is the count of **nonempty physical UpdateHistory data rows** immediately before Create, measured from the verified original workbook (zero for absent/empty history). It is an append-prefix boundary, not a global event ordinal or a timestamp. No previous rows are rewritten and no UpdateHistory header or sheet is added by the manifest itself.
+
+### Task-scoped ordering/readback invariant
+
+- Preflight: new UUID TaskID must be absent from **all** source WBS rows and all existing TaskID-bearing audit/history references, not merely the active grid; reject collision/reuse. At creation, no prior edit for that ID can exist. Multiple new entities in one template Save share the same boundary and ChangeSetID; each has its own manifest. Validate all against the original source before appending anything.
+- Persist the complete Task/Create group and recorded boundary in the guarded candidate; compare its field snapshot to the normalized serialized WBS row. Verify the complete prior history prefix and audit rows remain unchanged; candidate and destination readback must agree. This is append-only evidence, not cryptographic tamper resistance.
+- For a B2-created task, every UpdateHistory row bearing its ID must lie **after** the recorded prefix boundary. Reject an edit in the prefix, boundary beyond the available history, a reused Create ID, or a duplicate/discontiguous change-set block involving this task. Replay that task's later edits in physical append block order, verifying each typed OldValue/NewValue chain and complete current editable field equality. Preserve within-block row order and reject duplicate field transitions within a task/change-set. Verify block boundaries and prefix preservation on subsequent writer saves.
+- Equal UTC milliseconds across Create/edit or between edit blocks are allowed **when the persisted boundary and verified append order establish causality**; never use UUID lexical order. For B2-created tasks reject timestamps earlier than their Create time or regressing within their own validated edit sequence; clock regressions produce a clear write refusal, not fabricated history. Unrelated legacy timestamps do not impose a new global monotonicity rule. Existing legacy 0.1.2 edit/read semantics stand; legacy entities without Create require no manifest or invented boundary.
+- Scope the new replay proof to B2 Task/Create and subsequent supported field edits. For fields outside the accepted edit whitelist, preserve their initial snapshot and require unchanged values while no legitimate versioned change operation exists. If a future column is introduced, it is not retroactively part of the original snapshot; its initial/edited value needs a separately defined extension policy. Do not assert full replay proof for values/aliases whose canonical mapping has not been implemented. Out-of-app rewrites/reordering can defeat ordinary Excel audit integrity; fail closed for detectable inconsistencies. No authentication or tamper-proof claims.
+- On ambiguity, unsupported encoding or loss of continuity: reject guarded writes, preserve the original, and offer the established safe diagnostic/read-only path. Do not rewrite legacy rows to manufacture evidence.
+
+### Evidence and limitations
+
+Source review confirms existing `UpdateHistory` has ChangeSetID/TaskID and physical row positions; `workbookCandidate.ts` appends the changes in a contiguous loop, while `history.ts` sorts display events by time then UUID. Therefore the proposed boundary avoids changing the 10 existing UpdateHistory columns and requires a separate replay validator instead of reusing display sorting. Existing `ProjectAudit` text columns can carry the JSON record, but its 0.1.2 EntityType whitelist excludes Task; the 0.1.3 version-specific validation remains mandatory. Do not claim old readers accept the new format. The boundary also does not prove arbitrary cross-task event ordering, which is intentionally outside this recommendation; reports requiring such semantics would need a separate contract.
+
+### Focused proof before freeze (not yet executed)
+
+| ID | Test | Required result |
+| --- | --- | --- |
+| B2-BOUND-01 | Existing history prefix with legacy edits; create new UUID then same-millisecond edit | New edit after saved boundary; causal replay succeeds without UUID sort |
+| B2-BOUND-02 | Two created tasks in one template transaction; interleaved later edits | Both manifests share boundary; each task independently replays |
+| B2-BOUND-03 | New ID already referenced by a prior history/audit row | Preflight refuses; original unchanged |
+| B2-BOUND-04 | Missing/duplicate/unknown manifest, field omission, noncanonical JSON | Reject candidate |
+| B2-BOUND-05 | Insert or move edit for created ID into pre-Create prefix; boundary beyond available rows | Reject write; no false success |
+| B2-BOUND-06 | Tied-timestamp edit blocks with UUID order opposite physical order | Replay physical order, validate typed old/new chain |
+| B2-BOUND-07 | Discontiguous/duplicate task change-set or timestamp regression | Reject ambiguous writes |
+| B2-BOUND-08 | Actual synthetic XLSX candidate serialization loses prefix, manifest or row ordering | Reject readback; preserve source/backup |
+| B2-BOUND-09 | Legacy file or legacy task with no Create manifest | Existing supported behavior; no backfill or forced upgrade |
+| B2-BOUND-10 | Optional column introduced later versus omitted field present in manifest | First case structurally valid under extension policy; second rejected |
+
+**Next actionable engineering:** pure in-memory proof of manifest validation, prefix boundary and task-scoped replay with these fixtures, followed by independent review and synthetic XLSX roundtrip. The exact 0.1.3 schema, writer integration and release are not approved by this recommendation. Avoid another global-order design loop unless a concrete product need is demonstrated.
