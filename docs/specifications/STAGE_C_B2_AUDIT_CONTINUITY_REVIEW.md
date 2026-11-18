@@ -105,3 +105,17 @@ Reviewed current protected-main `src/managed/projectDataInspector.ts`, `src/mana
 - **Additional cross-stream constraint:** ProjectAudit Create and UpdateHistory edit records are separate sheets. A common timestamp cannot establish whether a Create or edit happened first; the future verifier must use per-Task existence and an explicit cross-stream ordering/causality rule, or fail closed. A UUID sort is not a valid substitute.
 
 **Disposition:** C1/C2 remain design CONCERN, not independently QA-passed or owner-frozen. No implementation, schema change, new CI run, merge or workbook modification follows from this checkpoint.
+
+
+### Cross-sheet causality decision gate — proposed synthetic vectors (2026-11-18 JST)
+
+A Task/Create transaction in `ProjectAudit` and subsequent edits in `UpdateHistory` cannot be ordered by physical worksheet position across sheets. Until the contract supplies a verified per-Task creation boundary, the replay verifier must **fail closed for writes** rather than infer causality from equal timestamps or UUIDs. The accepted 0.1.2 viewer remains independently readable; these proposals do not authorize a new writer.
+
+| ID | Synthetic scenario | Required result before 0.1.3 freeze |
+| --- | --- | --- |
+| B2-CONT-14 | Newly created Task has Create and Update events with identical TimestampUTC, distinct ChangeSetIDs | Require an explicit verifiable cross-sheet causality marker or reject replay-dependent write; never sort by UUID or sheet position |
+| B2-CONT-15 | An UpdateHistory event for a newly created Task has a timestamp earlier than its Create event | Reject as impossible chronology for guarded writes, preserving source and diagnostic evidence |
+| B2-CONT-16 | Legacy 0.1.2 Task has edit history but no Task/Create event; a different Task is first created under 0.1.3 | Preserve legacy history without invented Create or cross-task ordering; validate the new Task separately |
+| B2-CONT-17 | Candidate serialization/readback preserves each sheet independently but loses the proposed cross-sheet causality evidence | Reject guarded write success and preserve backup/recoverable draft |
+
+**Independent QA gate:** validate an exact proposed marker/encoding against the fourteen-column ProjectAudit contract, the existing UpdateHistory columns and real XLSX round-trip behavior before marking this issue resolved. Avoid adding an undocumented column, rewriting historical rows, or treating unverified timestamps as proof of transaction order.
