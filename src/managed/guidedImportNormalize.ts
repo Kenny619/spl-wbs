@@ -1,4 +1,6 @@
 import { excelSerialToIso, parseIsoDateOnly } from "../calendar/dateOnly";
+import { sanitizeItemUrl } from "../data/normalize";
+import { SHAREPOINT_HOSTS } from "../config/decisions";
 import { KNOWN_STATUSES, TASK_TYPES, type TaskType } from "../data/types";
 import { type PreviewRow, type ImportField } from "./guidedImportMapping";
 
@@ -12,7 +14,9 @@ type Options = {date1904: boolean; progressScale?: "percent-points" | "fraction"
 type Draft = {sourceRow: number; id: string; title: string; wbsCode: string;
   taskType: TaskType; parentId: string | null; predecessorIds: string[];
   plannedStart: string | null; plannedEnd: string | null; progress: number | null;
-  status: string; owner: string; workstream: string; original: PreviewRow["values"]};
+  status: string; owner: string; workstream: string;
+  priority: string | null; description: string | null; updates: string | null;
+  sortOrder: number | null; modified: string | null; itemUrl: string | null; original: PreviewRow["values"]};
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const safeText = (s: string) => s.length <= 32767 && !/[\u0000-\u0008\u000B-\u001F\u007F]/.test(s)
   && !/^[=+\-@]/.test(s.trimStart());
@@ -93,9 +97,32 @@ export function normalizeGuidedRows(rows: readonly PreviewRow[], opts: Options) 
     if (start && end && end < start) fail("PlannedEnd","reversed-dates");
     const p = progress(values.Progress, row.values.Progress, opts.progressScale);
     if (values.Progress != null && p === null) fail("Progress","ambiguous-or-invalid-progress");
+    const optionalText = (field: "Priority" | "Description" | "Updates") => {
+      const value = values[field];
+      if (value == null) return null;
+      if (typeof value !== "string" || !safeText(value)) {
+        fail(field,"invalid-text"); return null;
+      }
+      return value;
+    };
+    const sortRaw = values.SortOrder;
+    const sortOrder = typeof sortRaw === "number" ? sortRaw :
+      typeof sortRaw === "string" && /^-?\d+(?:\.\d+)?$/.test(sortRaw) ? Number(sortRaw) : null;
+    if (sortRaw != null && (sortOrder === null || !Number.isFinite(sortOrder))) fail("SortOrder","invalid-sort-order");
+    const modifiedRaw = values.Modified;
+    let modified: string | null = null;
+    if (typeof modifiedRaw === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(modifiedRaw) &&
+      Number.isFinite(Date.parse(modifiedRaw)) && new Date(modifiedRaw).toISOString() === modifiedRaw) {
+      modified = modifiedRaw;
+    } else if (modifiedRaw != null) fail("Modified","timestamp-review-required");
+    const urlRaw = values.ItemURL;
+    const itemUrl = typeof urlRaw === "string" ? sanitizeItemUrl(urlRaw,SHAREPOINT_HOSTS) : null;
+    if (urlRaw != null && !itemUrl) fail("ItemURL","unsupported-item-url");
     const d: Draft = {sourceRow:row.excelRow,id,title,wbsCode,taskType:type ?? "Task",
       parentId:null,predecessorIds:[],plannedStart:start,plannedEnd:end,progress:p,
-      status:status ?? "Not Started",owner:String(values.AssignedTo ?? ""),workstream:String(values.Workstream ?? ""),original:{...row.values}};
+      status:status ?? "Not Started",owner:String(values.AssignedTo ?? ""),workstream:String(values.Workstream ?? ""),
+      priority:optionalText("Priority"),description:optionalText("Description"),updates:optionalText("Updates"),
+      sortOrder:sortOrder !== null && Number.isFinite(sortOrder) ? sortOrder : null,modified,itemUrl,original:{...row.values}};
     if (byId.has(id)) fail("ID","duplicate-id");
     else byId.set(id,d);
     if (byWbs.has(wbsCode)) fail("WBSCode","duplicate-wbs");
@@ -161,7 +188,6 @@ export function normalizeGuidedRows(rows: readonly PreviewRow[], opts: Options) 
       else {d.plannedStart ??= d.plannedEnd; d.plannedEnd ??= d.plannedStart;}
     }
   }
-  // Not import-ready: remaining optional-field normalization and source
-  // review/reader integration are deliberately not represented as success.
+  // Core diagnostic only: explicit source review and B2 persistence are separate.
   return {drafts,issues,coreValid:issues.length===0};
 }
