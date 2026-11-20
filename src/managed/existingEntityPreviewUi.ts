@@ -37,6 +37,7 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
  review.type="checkbox";predecessors.multiple=true;predecessors.size=4;
  button.type="button";button.disabled=true;
  for(const item of TASK_TYPES)type.append(option(item,item));
+ type.value="Task"; // Safe first-entry default; Summary and Milestone remain selectable.
  parent.append(option("","No parent (root)"));
  section.append(
   label("Task title",title),label("Task type",type),label("Parent Summary",parent),
