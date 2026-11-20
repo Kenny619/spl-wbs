@@ -69,6 +69,8 @@ export async function preparePopulatedProjectProof(request:Request){
  });
  if(!versionFound)return fail("missing-version");
  const generate=request.generateEventId??(()=>crypto.randomUUID());
+ audit.addRow([generate(),request.createChangeSetId,request.project.timestampUTC,"ProjectMeta","ProjectDataSchemaVersion",null,
+   "Update","ProjectDataSchemaVersion","0.1.2","0.1.3",request.project.actorLabel,"UnverifiedLocal","Web UI",request.project.appVersion]);
  for(const s of snapshots){
    const taskId=String(s.ID);
    const p=planB2TaskCreateAudit({
