@@ -10,7 +10,10 @@ import { projectDataWorkbook } from "../fixtures/projectDataWorkbook";
 const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const timestampUTC = "2026-11-19T00:00:00.000Z";
 const appVersion = "synthetic-b2";
-const fields = ["ID", "Title", "WBSCode", "TaskType", "Progress"] as const;
+const fields = [
+  "ID", "Title", "WBSCode", "TaskType", "Progress", "TaskStatus", "AssignedTo", "Updates",
+  "PlannedStart", "PlannedEnd",
+] as const satisfies readonly B2CreateField[];
 const auditColumns = [
   "EventID", "ChangeSetID", "TimestampUTC", "EntityType", "EntityID", "TaskID", "Action",
   "Field", "OldValue", "NewValue", "ActorLabel", "ActorProvenance", "Source", "AppVersion",
@@ -45,6 +48,7 @@ async function fixture() {
   const history = workbook.getWorksheet("UpdateHistory")!;
   const audit = workbook.getWorksheet("ProjectAudit")!;
   const wbs = workbook.getWorksheet("ProjectWBS")!;
+  expect(fields).toEqual(fields.map((_, index) => wbs.getRow(1).getCell(index + 1).value));
   const legacyHistory = record(history.getRow(2), HISTORY_COLUMNS);
   const legacyAudit = record(audit.getRow(2), auditColumns);
   expect(inspectProjectData(workbook)).toMatchObject({ kind: "valid", schemaVersion: "0.1.2" });
@@ -54,14 +58,18 @@ async function fixture() {
   workbook.getWorksheet("ProjectMeta")!.getRow(4).getCell(2).value = "0.1.3";
   const tasks = [uuid(1), uuid(2)];
   for (const [index, ID] of tasks.entries()) {
-    const values = { ID, Title: `Task ${index + 1}`, WBSCode: String(index + 2), TaskType: "Task", Progress: null };
+    const values = {
+      ID, Title: `Task ${index + 1}`, WBSCode: String(index + 2), TaskType: "Task",
+      Progress: index === 0 ? null : 0, TaskStatus: "Not Started", AssignedTo: null, Updates: null,
+      PlannedStart: null, PlannedEnd: null,
+    };
     const plan = planB2TaskCreateAudit({
       taskId: ID, changeSetId: uuid(3), timestampUTC, actorLabel: "Synthetic editor", appVersion,
-      fields, values, eventIds: fields.map((_, field) => uuid(10 + index * 10 + field)),
+      fields, values, eventIds: fields.map((_, field) => uuid(10 + index * 20 + field)),
     });
     if (!plan.ok) throw new Error(plan.errors.join(", "));
     const group: AuditRow[] = [...plan.rows, {
-      ...plan.rows[0], EventID: uuid(15 + index * 10), Field: MANIFEST_FIELD,
+      ...plan.rows[0], EventID: uuid(10 + index * 20 + fields.length), Field: MANIFEST_FIELD,
       NewValue: encodeCreateManifest(fields, 1),
     }];
     for (const entry of group) audit.addRow(auditColumns.map(column => entry[column]));
@@ -111,6 +119,7 @@ describe("Stage C B2 synthetic XLSX continuity", () => {
 
   it.each([
     ["missing manifest", "manifest-count"],
+    ["missing legacy prefix row", "edit-in-prefix"],
     ["missing replay row", "invalid-transition"],
     ["reordered edits", "invalid-transition"],
   ])("rejects serialized %s", async (defect, error) => {
@@ -119,8 +128,8 @@ describe("Stage C B2 synthetic XLSX continuity", () => {
     const history = workbook.getWorksheet("UpdateHistory")!;
     if (defect === "missing manifest") {
       audit.spliceRows(rows(audit).find(row => row.getCell(8).value === MANIFEST_FIELD)!.number, 1);
-    } else if (defect === "missing replay row") {
-      history.spliceRows(3, 1);
+    } else if (defect === "missing replay row" || defect === "missing legacy prefix row") {
+      history.spliceRows(defect === "missing replay row" ? 3 : 2, 1);
     } else {
       const first = history.getRow(3).values;
       history.getRow(3).values = history.getRow(5).values;
