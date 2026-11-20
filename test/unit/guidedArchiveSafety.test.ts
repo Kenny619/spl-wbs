@@ -30,6 +30,10 @@ describe("guided archive bounded preparation",()=>{
   const normalized=await archive({"é":"x","é":"y"});
   await expect(prepareBoundedGuidedArchive(normalized,limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
+ it("rejects file/directory ancestor conflicts before rebuilding",async()=>{
+  await expect(prepareBoundedGuidedArchive(await archive({"xl":"file","xl/workbook.xml":"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
+  await expect(prepareBoundedGuidedArchive(await archive({"XL":"file","xl/workbook.xml":"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
+ });
  it("rejects a forged smaller declared size rather than trusting metadata",async()=>{
   const source=await archive({"big":"x".repeat(2000)});
   const view=new DataView(source.buffer,source.byteOffset,source.byteLength);

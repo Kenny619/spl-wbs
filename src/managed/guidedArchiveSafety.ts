@@ -83,6 +83,15 @@ function directory(bytes: Uint8Array, limits: Limits) {
     if(name.endsWith("/") && (packed!==0 || plain!==0)) reject();
     names.set(name,{size:plain,crc}); folded.add(lower); spans.push([local,spanEnd]); at+=46+n+x+c;
   }
+  // A file cannot simultaneously be a parent directory of another entry.
+  // Compare folded paths to avoid case and normalization aliases across entries.
+  for (const name of names.keys()) {
+    const parts=name.normalize("NFC").toLowerCase().split("/");
+    for(let i=1;i<parts.length;i++){
+      const parent=parts.slice(0,i).join("/");
+      if(folded.has(parent))reject();
+    }
+  }
   spans.sort((a,b)=>a[0]-b[0]);
   if(at!==end || spans[0]?.[0]!==0 || spans.at(-1)?.[1]!==start || spans.some((s,i)=>i>0 && s[0]!==spans[i-1][1])) reject();
   return names;
