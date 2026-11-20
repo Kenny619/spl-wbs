@@ -3,6 +3,7 @@ import JSZip from "jszip";
 import { interpretExcelDate, interpretExcelTimestamp } from "../calendar/dateOnly";
 import { previewMappedRows, type HeaderOverride, type SourceRecord } from "./guidedImportMapping";
 import { normalizeGuidedRows } from "./guidedImportNormalize";
+import { prepareGuidedTargetIdentity } from "./guidedImportIdentity";
 
 type ReadIssue = {code: string; row?: number; column?: number};
 type Grid = {kind:"grid"; sheetName:string; otherSheets:string[]; date1904:boolean; headers:string[]; records:SourceRecord[]; issues:ReadIssue[]};
@@ -84,9 +85,11 @@ export function prepareGuidedPreview(grid:Grid, generatedIds:Readonly<Record<num
   overrides:readonly HeaderOverride[]=[], progressScale?:"percent-points"|"fraction"){
   const mapping=previewMappedRows(grid.headers,grid.records,overrides);
   const normalized=normalizeGuidedRows(mapping.rows,{date1904:grid.date1904,generatedIds,progressScale});
+  const corePreviewValid = mapping.rows.length > 0 && grid.issues.length === 0 &&
+    mapping.mappingReady && normalized.coreValid;
+  const targetIdentity = corePreviewValid ? prepareGuidedTargetIdentity(normalized.drafts, generatedIds) : null;
   return {mapping,normalized,readerIssues:grid.issues,sourceItemCount:mapping.rows.length,
-    sourceSheet:grid.sheetName,otherSheets:grid.otherSheets,
-    corePreviewValid:mapping.rows.length > 0 && grid.issues.length===0 && mapping.mappingReady && normalized.coreValid,
+    sourceSheet:grid.sheetName,otherSheets:grid.otherSheets,corePreviewValid,targetIdentity,
     // Explicitly not permission to create a workbook.
     persistenceReady:false as const};
 }
