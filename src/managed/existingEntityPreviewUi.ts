@@ -11,7 +11,7 @@ import {MANAGED_APP_VERSION} from "./version";
  * session replacement or source workbook mutation is accessible from here. */
 export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Array){
  const doc=root.ownerDocument,source=loadedSource.slice();
- let alive=true,revision=0,busy=false,taskId=crypto.randomUUID(),tasks:Task[]=[];
+ let alive=true,revision=0,busy=false,taskId:string=crypto.randomUUID(),tasks:Task[]=[];
  const make=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string)=>{
   const e=doc.createElement(tag);if(text!==undefined)e.textContent=text;return e;
  };
