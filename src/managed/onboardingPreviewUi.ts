@@ -17,11 +17,18 @@ export function mountOnboardingPreview(root:HTMLElement){
  let generation=0,route:Route="scratch",grid:Grid|null=null,source:Uint8Array|null=null;
  let allocated:Record<number,string>={},overrides:HeaderOverride[]=[],page=0;
  let scale:"percent-points"|"fraction"|undefined;
- let reviewed=false;
+ let reviewed=false,labelSequence=0;
  const el=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string)=>{
    const node=doc.createElement(tag);if(text!==undefined)node.textContent=text;return node;
  };
- function labeled(label:string,control:HTMLElement){const l=el("label",label+" ");l.append(control);return l;}
+ function labeled(label:string,control:HTMLElement){
+   const l=el("label"),caption=el("span",label);
+   // Reference only the label text, never the nested select options. Native
+   // label association is retained for pointer and keyboard accessibility.
+   caption.id="onboarding-label-"+(++labelSequence);
+   control.setAttribute("aria-labelledby",caption.id);
+   l.append(caption,doc.createTextNode(" "),control);return l;
+ }
  function button(text:string,run:()=>void){const b=el("button",text);b.type="button";b.addEventListener("click",run);return b;}
  function option(value:string,label:string){const o=el("option",label);o.value=value;return o;}
  const routes=el("nav"),body=el("section"),result=el("section"),message=el("p"),heading=el("h1","New project — review preview");
