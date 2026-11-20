@@ -4,6 +4,7 @@ import {B2_CREATE_FIELDS,planB2TaskCreateAudit,type B2CreateField,type B2Snapsho
 import {encodeCreateManifest,MANIFEST_FIELD} from "./b2ContinuityProof";
 import {verifyB2WorkbookReadback} from "./b2WorkbookReadback";
 import {verifyPhysicalPrefix} from "./b2TypedProof";
+import {mapB2WbsColumns} from "./b2HeaderMapping";
 import {inspectProjectData} from "./projectDataInspector";
 import {preflightManagedWorkbook} from "./preflight";
 import {importWorkbook} from "../data/normalize";
@@ -32,7 +33,7 @@ function positions(s:ExcelJS.Worksheet){
 }
 /** Synthetic, non-persisting first-Create proof for a verified 0.1.2 workbook.
  * No production schema activation, no migration of real data, no Save adapter.
- * Canonical physical headers only; aliases remain a subsequent compatibility gate. */
+ * Recognized native WBS aliases map to canonical audit fields without renaming columns. */
 export async function prepareExistingEntityProof(input:Request){
  const source=input.source.slice();
  await preflightManagedWorkbook(source);
@@ -45,9 +46,9 @@ export async function prepareExistingEntityProof(input:Request){
  const d=prepared.draft;
  const book=await open(source),wbs=book.getWorksheet("ProjectWBS")!,audit=book.getWorksheet("ProjectAudit")!,meta=book.getWorksheet("ProjectMeta")!;
  if(!wbs||!audit||!meta)return fail("missing-canonical-sheets");
- const h=positions(wbs),ah=positions(audit);
- if([...h.keys()].some(f=>!B2_CREATE_FIELDS.some(x=>x===f))||auditFields.some(f=>!ah.has(f)))return fail("unsupported-header");
- const fields=[...h.keys()] as B2CreateField[];
+ const h=mapB2WbsColumns(wbs),ah=positions(audit);
+ if(auditFields.some(f=>!ah.has(f)))return fail("unsupported-header");
+ const fields=[...h.keys()];
  const snapshot:Record<B2CreateField,B2SnapshotValue>={
    ID:d.id,Title:d.title,WBSCode:d.wbsCode,TaskType:d.taskType,ParentTaskID:d.parentId,
    PlannedStart:d.plannedStart,PlannedEnd:d.plannedEnd,Progress:null,TaskStatus:d.sourceTaskStatus,

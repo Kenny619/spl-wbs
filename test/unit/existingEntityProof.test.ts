@@ -38,4 +38,31 @@ describe("synthetic existing-project creation candidate",()=>{
   const req=input(await fixture());
   await expect(prepareExistingEntityProof({...req,changeSetId:"c6dbf481-6868-48b7-b9b5-8726be2e2561"})).rejects.toThrow("reused-change-set");
  });
+ it("creates with accepted legacy header aliases without rewriting the header or adding columns",async()=>{
+   const b=new ExcelJS.Workbook();
+   await b.xlsx.load(await fixture() as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+   const w=b.getWorksheet("ProjectWBS")!;
+   w.getCell("B1").value="Task name";w.getCell("C1").value="WBS";w.getCell("D1").value="Type";
+   w.getCell("E1").value="Done";w.getCell("F1").value="Status";w.getCell("G1").value="Owner";
+   w.getCell("I1").value="Start";w.getCell("J1").value="Finish";
+   const headers=w.getRow(1).values;
+   const p=await prepareExistingEntityProof(input(new Uint8Array(await b.xlsx.writeBuffer())));
+   const after=new ExcelJS.Workbook();
+   await after.xlsx.load(p.bytes as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+   expect(after.getWorksheet("ProjectWBS")!.getRow(1).values).toEqual(headers);
+   expect(after.getWorksheet("ProjectWBS")!.columnCount).toBe(11);
+   expect(after.getWorksheet("ProjectWBS")!.getCell("B3").value).toBe("New task");
+   const fields=after.getWorksheet("ProjectAudit")!.getColumn(8).values;
+   expect(fields).toEqual(expect.arrayContaining(["Title","WBSCode","TaskType","Progress","AssignedTo"]));
+   expect(fields).not.toContain("Task name");
+ });
+ it("refuses ambiguous aliases and unexpected populated columns before candidate creation",async()=>{
+   const b=new ExcelJS.Workbook();
+   await b.xlsx.load(await fixture() as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+   const w=b.getWorksheet("ProjectWBS")!;
+   w.getCell("L1").value="Task name";
+   await expect(prepareExistingEntityProof(input(new Uint8Array(await b.xlsx.writeBuffer())))).rejects.toThrow("invalid-source-wbs");
+   w.getCell("L1").value="Unrecognized business field";w.getCell("L2").value="Retain";
+   await expect(prepareExistingEntityProof(input(new Uint8Array(await b.xlsx.writeBuffer())))).rejects.toThrow("unsupported-header");
+ });
 });

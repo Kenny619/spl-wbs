@@ -1,15 +1,15 @@
 import ExcelJS from "exceljs";
-import { B2_CREATE_FIELDS, type B2CreateField, type B2SnapshotValue } from "./b2CreateAuditPlan";
+import { type B2CreateField, type B2SnapshotValue } from "./b2CreateAuditPlan";
 import { MANIFEST_FIELD, parseCreateManifest } from "./b2ContinuityProof";
 import { validateTypedB2Groups, verifyPhysicalPrefix } from "./b2TypedProof";
 import { HISTORY_COLUMNS, EDITABLE_FIELDS } from "./workbookCandidate";
 import { PREDECESSOR_SEPARATOR } from "../config/decisions";
+import { mapB2WbsColumns } from "./b2HeaderMapping";
 
 const AUDIT_COLUMNS=["EventID","ChangeSetID","TimestampUTC","EntityType","EntityID","TaskID","Action","Field","OldValue","NewValue","ActorLabel","ActorProvenance","Source","AppVersion"] as const;
 type Group=Parameters<typeof validateTypedB2Groups>[0][number];
 type Edit=Parameters<typeof validateTypedB2Groups>[1][number];
 type Snapshot=Partial<Record<B2CreateField,B2SnapshotValue>>;
-const required=["ID","Title","WBSCode","TaskType"];
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const fail=(message:string):never=>{throw new Error(message);};
 function rows(sheet:ExcelJS.Worksheet|undefined):ExcelJS.Row[]{
@@ -40,7 +40,7 @@ function columns(s:ExcelJS.Worksheet,recognized:readonly string[],mandatory:read
   });
   return result;
 }
-function value(row:ExcelJS.Row,col:Map<string,number>,name:string):ExcelJS.CellValue{
+function value(row:ExcelJS.Row,col:ReadonlyMap<string,number>,name:string):ExcelJS.CellValue{
   const index=col.get(name);
   if(index===undefined)return fail("missing-field:"+name);
   return row.getCell(index).value;
@@ -85,7 +85,7 @@ function snapshotValue(cell:ExcelJS.Cell,field:B2CreateField):B2SnapshotValue{
 }
 
 /** Experimental readback proof, not the versioned managed inspector.
- * Exact canonical headers only; unsupported legacy aliases fail closed here.
+ * Native-reader WBS aliases supported; original physical headers remain unchanged.
  * Does not write, authorize or upgrade any workbook. */
 export function verifyB2WorkbookReadback(original:ExcelJS.Workbook,candidate:ExcelJS.Workbook){
   try{
@@ -96,7 +96,7 @@ export function verifyB2WorkbookReadback(original:ExcelJS.Workbook,candidate:Exc
       if(before&&(!after||!verifyPhysicalPrefix(physical(before),physical(after))))return fail("prefix-changed:"+name);
     }
     const aCols=columns(audit,AUDIT_COLUMNS,AUDIT_COLUMNS);
-    const wCols=columns(wbs,B2_CREATE_FIELDS,required);
+    const wCols=mapB2WbsColumns(wbs);
     const hCols=history?columns(history,HISTORY_COLUMNS,HISTORY_COLUMNS):new Map<string,number>();
     const allGroups=new Map<string,Group[number][]>();
     const priorEventIds:string[]=[];
@@ -104,7 +104,7 @@ export function verifyB2WorkbookReadback(original:ExcelJS.Workbook,candidate:Exc
     const originalIds=new Set<string>();
     const originalWbs=sheet(original,"ProjectWBS");
     if(originalWbs){
-      const originalColumns=columns(originalWbs,B2_CREATE_FIELDS,required);
+      const originalColumns=mapB2WbsColumns(originalWbs);
       for(const row of rows(originalWbs)){
         const key=idKey(identity(value(row,originalColumns,"ID")));
         if(originalIds.has(key))return fail("duplicate-original-wbs-id");
