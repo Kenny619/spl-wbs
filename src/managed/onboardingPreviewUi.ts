@@ -4,6 +4,8 @@ import {IMPORT_FIELDS,planImportHeaders,type HeaderOverride,type ImportField} fr
 import {starterTemplateCatalog,type StarterTemplateId} from "./starterProjectTemplates";
 import {prepareBoundedGuidedArchive} from "./guidedArchiveSafety";
 import {MANAGED_APP_VERSION} from "./version";
+import {preparePopulatedProjectProof} from "./populatedProjectProof";
+import type {BlankProjectInput} from "./blankProjectCandidate";
 
 type Grid=Extract<Awaited<ReturnType<typeof readGuidedSource>>,{kind:"grid"}>;
 type Route="scratch"|"import"|"template";
@@ -70,11 +72,46 @@ export function mountOnboardingPreview(root:HTMLElement){
    function render(){const old=container.parentNode;if(old){const focus=doc.activeElement===prev?"prev":"next";const nextNode=showRows(drafts);old.replaceChild(nextNode,container);const buttons=nextNode.querySelectorAll("button");(focus==="prev"?buttons[0]:buttons[1])?.focus();}}
    controls.append(prev,count,next);container.append(title,wrap,controls);return container;
  }
- function confirmation(valid:boolean){
+ function confirmation(valid:boolean,verify?:(project:BlankProjectInput,changeSetId:string)=>ReturnType<typeof preparePopulatedProjectProof>){
    const holder=el("div"),check=el("input");check.type="checkbox";check.disabled=!valid;
    check.checked=reviewed;const status=el("p",reviewed?"Review acknowledged. Saving remains disabled.":"Review not acknowledged.");
-   check.addEventListener("change",()=>{reviewed=check.checked;status.textContent=reviewed?"Review acknowledged. Saving remains disabled.":"Review not acknowledged.";});
+   const name=el("input"),actor=el("input"),proof=el("p");
+   name.maxLength=160;actor.maxLength=160;
+   proof.setAttribute("role","status");
+   let revision=0;
+   const verifyButton=button("Verify disposable populated workbook",()=>{
+     if(!verify||!reviewed||!name.value.trim()||!actor.value.trim())return;
+     const token=generation,ticket=++revision;
+     verifyButton.disabled=true;
+     proof.textContent="Constructing and reopening a disposable candidate…";
+     const project:BlankProjectInput={projectId:makeId(),projectName:name.value.trim(),actorLabel:actor.value.trim(),
+       changeSetId:makeId(),timestampUTC:new Date().toISOString(),appVersion:MANAGED_APP_VERSION};
+     void verify(project,makeId()).then(candidate=>{
+       if(!current(token)||ticket!==revision||!reviewed)return;
+       proof.textContent="Disposable workbook verified: "+candidate.taskCount+" tasks, "+candidate.auditRows+" task audit rows. No file saved.";
+       verifyButton.disabled=false;
+     }).catch(error=>{
+       if(!current(token)||ticket!==revision||!reviewed)return;
+       proof.textContent="Candidate refused: "+(error instanceof Error?error.message:"Unexpected verification failure");
+       verifyButton.disabled=false;
+     });
+   });
+   function syncProof(){
+     revision++;proof.textContent="";
+     verifyButton.disabled=!valid||!reviewed||!name.value.trim()||!actor.value.trim();
+     name.disabled=!valid||!reviewed;actor.disabled=!valid||!reviewed;
+   }
+   check.addEventListener("change",()=>{
+     reviewed=check.checked;
+     status.textContent=reviewed?"Review acknowledged. Saving remains disabled.":"Review not acknowledged.";
+     syncProof();
+   });
    holder.append(labeled("I have reviewed the proposed project and its diagnostics.",check),status);
+   if(verify){
+     name.addEventListener("input",syncProof);actor.addEventListener("input",syncProof);
+     holder.append(labeled("Candidate project name",name),labeled("Candidate local actor (unverified)",actor),verifyButton,proof);
+     syncProof();
+   }
    return holder;
  }
  function diagnostics(title:string,items:readonly unknown[]){
@@ -113,7 +150,12 @@ export function mountOnboardingPreview(root:HTMLElement){
        .then(r=>{if(!current(token)||r.route!=="template")return;
          if(!r.preview.ok){message.textContent="Template needs correction.";result.append(diagnostics("Issues",r.preview.errors));return;}
          message.textContent="Template reviewed in memory; populated saving is not enabled.";
-         result.append(showRows(r.preview.drafts),confirmation(true));
+         const drafts=r.preview.drafts,templateId=r.templateId,milestoneDate=date.value||undefined;
+         result.append(showRows(drafts),confirmation(true,(project,createChangeSetId)=>{
+           let index=0;
+           return preparePopulatedProjectProof({route:"template",project,createChangeSetId,templateId,milestoneDate,
+             generateTaskId:()=>drafts[index++]?.id??""});
+         }));
        }).catch(e=>{if(current(token))message.textContent=e instanceof Error?e.message:"Template failed";});
    }));sync();
  }
@@ -187,7 +229,8 @@ export function mountOnboardingPreview(root:HTMLElement){
        diagnostics("Normalization issues",p.normalized.issues),diagnostics("Generated / defaulted / inferred values",p.normalized.review),
        diagnostics("Explicit exclusions",p.mapping.excludedCells),diagnostics("Identity issues",p.targetIdentity&&!p.targetIdentity.ok?p.targetIdentity.issues:[]));
      if(p.normalized.drafts.length)result.append(showRows(p.normalized.drafts));
-     result.append(confirmation(valid&&p.mapping.excludedCells.length<=200&&p.normalized.review.length<=200&&p.otherSheets.length<=200));
+     result.append(confirmation(valid&&p.mapping.excludedCells.length<=200&&p.normalized.review.length<=200&&p.otherSheets.length<=200,
+       (project,createChangeSetId)=>preparePopulatedProjectProof({route:"import",project,createChangeSetId,preview:p})));
    }
  }
  select("scratch");

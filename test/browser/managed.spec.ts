@@ -44,7 +44,7 @@ test.beforeAll(async () => {
   ))).toString("base64");
 }, { timeout: 120000 });
 
-async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1, expectedTitle?: string) {
+async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1, expectedTitle?: string, stageCPreview = false) {
   await page.addInitScript(({ encoded }) => {
     const decoded = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
     const files = new Map<string, Uint8Array>([["synthetic-demo.xlsx", decoded]]);
@@ -84,7 +84,7 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
       configurable: true, value: async () => dir,
     });
   }, { encoded });
-  await page.goto(fileUrl);
+  await page.goto(fileUrl + (stageCPreview ? "?stageCPreview=1" : ""));
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
@@ -2483,4 +2483,37 @@ test.describe("Stage C isolated onboarding review",()=>{
     await expect(page.getByRole("checkbox")).toHaveCount(0);
     await expect(page.getByText("Source review — Plan")).toHaveCount(0);
   });
+});
+
+
+test("Stage C opt-in managed integration closes without changing workbook or active task",async({page})=>{
+ await openManaged(page,base64,1,undefined,true);
+ const snapshot=()=>page.evaluate(()=>{
+  const files=(window as unknown as {__managedFixtureFiles:Map<string,Uint8Array>}).__managedFixtureFiles;
+  return [...files].map(([name,bytes])=>[name,Array.from(bytes)]);
+ });
+ const before=await snapshot();
+ await page.locator(".managed-project-menu summary").click();
+ await page.getByRole("button",{name:"New project — preview…"}).click();
+ const modal=page.getByRole("dialog",{name:"Stage C project preparation"});
+ await expect(modal).toBeVisible();
+ await modal.getByRole("button",{name:"Use a starter template"}).click();
+ await modal.getByRole("button",{name:"Preview template"}).click();
+ await expect(modal.locator("tbody tr")).toHaveCount(3);
+ await modal.getByRole("checkbox").check();
+ await modal.getByLabel("Candidate project name").fill("Synthetic new project");
+ await modal.getByLabel("Candidate local actor (unverified)").fill("Synthetic PM");
+ await modal.getByRole("button",{name:"Verify disposable populated workbook"}).click();
+ await expect(modal.getByText("Disposable workbook verified: 3 tasks, 57 task audit rows. No file saved.")).toBeVisible();
+ await modal.getByRole("button",{name:"Close preview"}).click();
+ await expect(modal).toHaveCount(0);
+ await expect(page.locator("#title")).toHaveText("synthetic-demo");
+ await expect(page.locator(".task-row")).toHaveCount(1);
+ await expect(page.getByRole("button",{name:"Edit task"})).toBeEnabled();
+ expect(await snapshot()).toEqual(before);
+});
+test("Stage C review is not exposed in ordinary managed mode",async({page})=>{
+ await openManaged(page);
+ await page.locator(".managed-project-menu summary").click();
+ await expect(page.getByRole("button",{name:"New project — preview…"})).toHaveCount(0);
 });
