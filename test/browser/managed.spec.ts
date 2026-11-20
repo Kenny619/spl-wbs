@@ -2426,3 +2426,61 @@ test("owner UAT: Meeting Exceptions combines recorded Watch, At Risk, Blocked an
   await expect(agenda).toContainText("status/date exceptions");
   await expect(agenda).toContainText("no automatic Green or clearance inferred");
 });
+
+
+test.describe("Stage C isolated onboarding review",()=>{
+  let server:import("vite").ViteDevServer;
+  let url:string;
+  test.beforeAll(async()=>{
+    const {createServer}=await import("vite");
+    server=await createServer({server:{host:"127.0.0.1",port:0},clearScreen:false});
+    await server.listen();
+    const address=server.httpServer?.address();
+    if(!address||typeof address==="string")throw Error("Missing preview server address");
+    url="http://127.0.0.1:"+address.port+"/stage-c-onboarding-preview.html";
+  });
+  test.afterAll(async()=>{await server?.close();});
+  test("scratch review remains isolated and changing the name clears acknowledgment",async({page})=>{
+    await page.goto(url);
+    await page.getByLabel("Project name",{exact:true}).fill("Synthetic preview");
+    await page.getByLabel("Local actor label (unverified)").fill("Synthetic PM");
+    await page.getByRole("button",{name:"Prepare empty project"}).click();
+    await expect(page.getByRole("status")).toContainText("Empty candidate verified in memory");
+    const acknowledgment=page.getByRole("checkbox");
+    await acknowledgment.check();
+    await expect(page.getByText("Review acknowledged. Saving remains disabled.")).toBeVisible();
+    await page.getByLabel("Project name",{exact:true}).fill("Changed project");
+    await expect(acknowledgment).toHaveCount(0);
+    await expect(page.getByRole("button",{name:/save|download/i})).toHaveCount(0);
+  });
+  test("template requires milestone date and previews task relationships",async({page})=>{
+    await page.goto(url);
+    await page.getByRole("button",{name:"Use a starter template"}).click();
+    await page.getByLabel("Template",{exact:true}).selectOption("milestone-led-delivery");
+    await page.getByRole("button",{name:"Preview template"}).click();
+    await expect(page.getByRole("status")).toHaveText("Template needs correction.");
+    await page.getByLabel("Milestone date").fill("2026-12-01");
+    await page.getByRole("button",{name:"Preview template"}).click();
+    await expect(page.locator("tbody tr")).toHaveCount(3);
+    await expect(page.getByText("Launch decision",{exact:true})).toBeVisible();
+    await expect(page.getByRole("checkbox")).toBeEnabled();
+  });
+  test("guided import selects worksheet, accounts for exclusions, and cancels on switching route",async({page})=>{
+    const b=new ExcelJS.Workbook(),s=b.addWorksheet("Plan");
+    s.addRow(["Title","ID","WBS","Source notes"]);s.addRow(["Delivery","old-parent","1","retain in source"]);s.addRow(["Prepare","old-child","1.1","review omission"]);
+    b.addWorksheet("Notes").addRow(["Unselected"]);
+    await page.goto(url);
+    await page.getByRole("button",{name:"Import Excel"}).click();
+    await page.getByLabel("Synthetic XLSX").setInputFiles({name:"synthetic.xlsx",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",buffer:Buffer.from(await b.xlsx.writeBuffer())});
+    await page.getByLabel("Worksheet",{exact:true}).selectOption("Plan");
+    await page.getByRole("button",{name:"Review worksheet"}).click();
+    await expect(page.getByRole("checkbox")).toBeDisabled();
+    await page.getByLabel("Column 4: Source notes").selectOption("exclude");
+    await expect(page.getByRole("status")).toContainText("Review ready");
+    await expect(page.getByRole("checkbox")).toBeEnabled();
+    await expect(page.getByText("2 explicitly excluded cells",{exact:false})).toBeVisible();
+    await page.getByRole("button",{name:"Start from scratch"}).click();
+    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    await expect(page.getByText("Source review — Plan")).toHaveCount(0);
+  });
+});
