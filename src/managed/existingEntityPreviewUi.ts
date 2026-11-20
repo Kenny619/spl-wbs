@@ -61,7 +61,7 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
    owner:owner.value,workstream:workstream.value};
  }
  function renderValidation(){
-  revision++;result.textContent="";review.checked=false;validation.replaceChildren();
+  revision++;busy=false;result.textContent="";review.checked=false;validation.replaceChildren();
   if(!tasks.length){button.disabled=true;return;}
   const selected=tasks.find(t=>t.id===parent.value);
   suggestion.textContent="Suggested code: "+suggestWbsCode(tasks,selected?.wbsCode??null);
@@ -82,7 +82,7 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
   if(control===parent)wbs.value="";
   renderValidation();
  });
- review.addEventListener("change",()=>{result.textContent="";button.disabled=!canVerify();});
+ review.addEventListener("change",()=>{revision++;busy=false;result.textContent="";button.disabled=!canVerify();});
  button.addEventListener("click",()=>{
   if(!canVerify())return;
   busy=true;const token=++revision;button.disabled=true;
