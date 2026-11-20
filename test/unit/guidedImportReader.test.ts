@@ -111,4 +111,31 @@ describe("guided XLSX source reader",()=>{
    row:2, field:"AssignedTo", code:"invalid-text",
   });
  });
+ it("generates reviewed hierarchical WBS codes from explicit source IDs when no WBS column exists", async () => {
+  const book = new ExcelJS.Workbook();
+  const sheet = book.addWorksheet("Plan");
+  sheet.addRow(["Title", "ID", "Parent ID", "Predecessors"]);
+  sheet.addRow(["Prepare", "first", "root"]);
+  sheet.addRow(["Independent", "other"]);
+  sheet.addRow(["Delivery", "root"]);
+  sheet.addRow(["Finish", "last", "root", "first"]);
+  const grid = await readGuidedSource(await bytes(book));
+  if (grid.kind !== "grid") throw new Error("Expected worksheet");
+  const preview = prepareGuidedPreview(grid, {});
+  expect(preview.corePreviewValid).toBe(true);
+  expect(preview.normalized.drafts.map(({id,wbsCode,parentId,predecessorIds}) =>
+   [id, wbsCode, parentId, predecessorIds])).toEqual([
+   ["first","2.1","root",[]], ["other","1",null,[]],
+   ["root","2",null,[]], ["last","2.2","root",["first"]],
+  ]);
+  expect(preview.normalized.review).toContainEqual({row:2,field:"WBSCode",reason:"generated",value:"2.1"});
+
+  sheet.getCell("D1").value = "Predecessor WBS";
+  sheet.getCell("D5").value = "2.1";
+  const missingSourceCodes = await readGuidedSource(await bytes(book));
+  if (missingSourceCodes.kind !== "grid") throw new Error("Expected worksheet");
+  expect(prepareGuidedPreview(missingSourceCodes, {}).normalized.issues).toContainEqual({
+   row:5,field:"PredecessorWBS",code:"invalid-dependency",
+  });
+ });
 });
