@@ -77,7 +77,7 @@ export function mountOnboardingPreview(root:HTMLElement){
    check.checked=reviewed;const status=el("p",reviewed?"Review acknowledged. Saving remains disabled.":"Review not acknowledged.");
    const name=el("input"),actor=el("input"),proof=el("p");
    name.maxLength=160;actor.maxLength=160;
-   proof.setAttribute("role","status");
+   proof.setAttribute("aria-live","polite");
    let revision=0;
    const verifyButton=button("Verify disposable populated workbook",()=>{
      if(!verify||!reviewed||!name.value.trim()||!actor.value.trim())return;
