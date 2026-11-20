@@ -30,7 +30,12 @@ describe("guided archive bounded preparation",()=>{
   const normalized=await archive({"é":"x","é":"y"});
   await expect(prepareBoundedGuidedArchive(normalized,limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
- it("rejects invisible and bidirectional Unicode path controls",async()=>{\n  for(const name of ["xl/\\u202eworkbook.xml","xl/\\u200bworkbook.xml","xl/\\u2066workbook.xml"]){\n   await expect(prepareBoundedGuidedArchive(await archive({[name]:"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});\n  }\n });\n it("rejects file/directory ancestor conflicts before rebuilding",async()=>{
+ it("rejects invisible and bidirectional Unicode path controls",async()=>{
+  for(const name of ["xl/\u202eworkbook.xml","xl/\u200bworkbook.xml","xl/\u2066workbook.xml"]){
+   await expect(prepareBoundedGuidedArchive(await archive({[name]:"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
+  }
+ });
+ it("rejects file/directory ancestor conflicts before rebuilding",async()=>{
   await expect(prepareBoundedGuidedArchive(await archive({"xl":"file","xl/workbook.xml":"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
   await expect(prepareBoundedGuidedArchive(await archive({"XL":"file","xl/workbook.xml":"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
