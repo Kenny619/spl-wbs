@@ -21,6 +21,15 @@ describe("guided archive bounded preparation",()=>{
   await expect(prepareBoundedGuidedArchive(await archive({"xl/../workbook.xml":"x"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
   await expect(prepareBoundedGuidedArchive(await archive({"one":"a","ONE":"b"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
+ it("rejects non-UTF8-flagged high-bit names and Unicode-normalization collisions",async()=>{
+  const legacy=await archive({"a":"x"});
+  const v=new DataView(legacy.buffer,legacy.byteOffset,legacy.byteLength);
+  const central=v.getUint32(legacy.length-22+16,true);
+  legacy[30]=0xe9;legacy[central+46]=0xe9;
+  await expect(prepareBoundedGuidedArchive(legacy,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+  const normalized=await archive({"é":"x","é":"y"});
+  await expect(prepareBoundedGuidedArchive(normalized,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+ });
  it("rejects a forged smaller declared size rather than trusting metadata",async()=>{
   const source=await archive({"big":"x".repeat(2000)});
   const view=new DataView(source.buffer,source.byteOffset,source.byteLength);
