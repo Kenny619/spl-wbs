@@ -73,7 +73,10 @@ function directory(bytes: Uint8Array, limits: Limits) {
     }
     const raw=bytes.subarray(at+46,at+46+n);
     if(raw.some((b,j)=>b!==bytes[local+30+j])) reject();
-    const name=decoder.decode(raw), lower=name.toLowerCase();
+    // ZIP without the UTF-8 flag uses a legacy code page. Reject non-ASCII
+    // names in that mode rather than letting JSZip and this parser disagree.
+    if(!(flag & 0x0800) && raw.some(byte=>byte>=0x80)) reject();
+    const name=decoder.decode(raw), lower=name.normalize("NFC").toLowerCase();
     if(!name || name.startsWith("/") || /[\\:\u0000-\u001f]/.test(name) ||
        name.split("/").some((s,j,a)=>s==="."||s===".."||(!s&&j!==a.length-1)) ||
        folded.has(lower)) reject();
