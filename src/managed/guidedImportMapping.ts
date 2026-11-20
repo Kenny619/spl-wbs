@@ -99,6 +99,7 @@ export function previewMappedRows(headers: readonly string[], records: readonly 
   const issues = [...plan.issues];
   const rows: PreviewRow[] = [];
   const skippedBlankRows: number[] = [];
+  const excludedCells: { row: number; column: number; header: string }[] = [];
   const seen = new Set<number>();
   for (const record of records) {
     const { excelRow, cells } = record;
@@ -118,10 +119,13 @@ export function previewMappedRows(headers: readonly string[], records: readonly 
     for (const column of plan.unmapped) {
       if (!blank(cells[column])) issues.push({ code: "unmapped-data", row: excelRow, columns: [column] });
     }
+    for (const column of plan.excluded) {
+      if (!blank(cells[column])) excludedCells.push({ row: excelRow, column, header: headers[column] });
+    }
     for (let col = headers.length; col < cells.length; col++) {
       if (!blank(cells[col])) issues.push({ code: "extra-cell", row: excelRow, columns: [col] });
     }
     rows.push({ excelRow, values });
   }
-  return { plan, rows, skippedBlankRows, issues, mappingReady: issues.length === 0 };
+  return { plan, rows, skippedBlankRows, excludedCells, issues, mappingReady: issues.length === 0 };
 }

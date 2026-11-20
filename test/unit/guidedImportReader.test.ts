@@ -15,6 +15,12 @@ describe("guided XLSX source reader",()=>{
   expect(p.corePreviewValid).toBe(true);
   expect(p.sourceItemCount).toBe(2);
   expect(p.mapping.skippedBlankRows).toEqual([3]);
+  expect(p.normalized.review.filter(entry => entry.row === 4)).toEqual([
+   {row:4,field:"ID",reason:"generated",value:ids[4]},
+   {row:4,field:"WBSCode",reason:"generated",value:"2"},
+   {row:4,field:"TaskStatus",reason:"defaulted",value:"Not Started"},
+   {row:4,field:"TaskType",reason:"defaulted",value:"Task"},
+  ]);
   expect(p.persistenceReady).toBe(false);
   expect(input).toEqual(copy);
  });
@@ -59,5 +65,50 @@ describe("guided XLSX source reader",()=>{
  });
  it("rejects unreadable bytes",async()=>{
   expect((await readGuidedSource(new Uint8Array([1,2,3]))).kind).toBe("rejected");
+ });
+ it("accounts for explicit exclusions without losing source rows or sheet provenance", async () => {
+  const book = new ExcelJS.Workbook();
+  const sheet = book.addWorksheet("Plan");
+  sheet.addRow(["Title", "ID", "WBS", "Predecessors", "Source notes"]);
+  sheet.addRow(["Delivery", "old-parent", "1", null, "Keep in source"]);
+  sheet.addRow(["Prepare", "old-first", "1.1"]);
+  sheet.addRow(["Finish", "old-last", "1.2", "old-first", "Review before omission"]);
+  book.addWorksheet("Reference notes").addRow(["Outside selected source"]);
+  const input = await bytes(book);
+  const original = input.slice();
+  const grid = await readGuidedSource(input, "Plan");
+  if (grid.kind !== "grid") throw new Error("Expected selected worksheet");
+  expect(prepareGuidedPreview(grid, {}).corePreviewValid).toBe(false);
+  const preview = prepareGuidedPreview(grid, {}, [{column:4,field:null}]);
+  expect(preview).toMatchObject({
+   corePreviewValid:true, persistenceReady:false, sourceSheet:"Plan",
+   otherSheets:["Reference notes"], sourceItemCount:3,
+  });
+  expect(preview.mapping.excludedCells).toEqual([
+   {row:2,column:4,header:"Source notes"}, {row:4,column:4,header:"Source notes"},
+  ]);
+  expect(preview.normalized.drafts[2]).toMatchObject({
+   id:"old-last", parentId:"old-parent", predecessorIds:["old-first"],
+  });
+  expect(preview.normalized.review).toEqual(expect.arrayContaining([
+   {row:2,field:"TaskType",reason:"inferred",value:"Summary"},
+   {row:4,field:"ParentTaskID",reason:"inferred",value:"old-parent"},
+  ]));
+  expect(input).toEqual(original);
+ });
+ it("rejects an empty import and numeric ownership instead of creating a partial preview", async () => {
+  const book = new ExcelJS.Workbook();
+  const sheet = book.addWorksheet("Plan");
+  sheet.addRow(["Title", "Owner"]);
+  const empty = await readGuidedSource(await bytes(book));
+  if (empty.kind !== "grid") throw new Error("Expected worksheet");
+  expect(prepareGuidedPreview(empty, {}).corePreviewValid).toBe(false);
+
+  sheet.addRow(["Prepare", 301]);
+  const populated = await readGuidedSource(await bytes(book));
+  if (populated.kind !== "grid") throw new Error("Expected worksheet");
+  expect(prepareGuidedPreview(populated, ids).normalized.issues).toContainEqual({
+   row:2, field:"AssignedTo", code:"invalid-text",
+  });
  });
 });

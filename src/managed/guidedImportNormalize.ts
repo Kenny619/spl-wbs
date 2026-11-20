@@ -9,6 +9,12 @@ import { type PreviewRow, type ImportField } from "./guidedImportMapping";
  * Inputs are scalar values or typed CellValue objects from a future adapter. */
 type Scalar = string | number | null;
 type Issue = {row: number; field: ImportField; code: string};
+type Review = {
+  row: number;
+  field: "ID" | "WBSCode" | "TaskType" | "TaskStatus" | "ParentTaskID";
+  reason: "generated" | "defaulted" | "inferred";
+  value: string;
+};
 type Options = {date1904: boolean; progressScale?: "percent-points" | "fraction";
   generatedIds: Readonly<Record<number, string>>};
 type Draft = {sourceRow: number; id: string; title: string; wbsCode: string;
@@ -82,6 +88,9 @@ export function normalizeGuidedRows(rows: readonly PreviewRow[], opts: Options) 
     typed.set(row.excelRow, values);
     const title = typeof values.Title === "string" ? values.Title : "";
     if (!title || !safeText(title)) fail("Title","invalid-title");
+    for (const field of ["AssignedTo", "Workstream"] as const) {
+      if (values[field] != null && typeof values[field] !== "string") fail(field, "invalid-text");
+    }
     const generated = values.ID == null;
     const id = generated ? opts.generatedIds[row.excelRow] ?? "" : identity(values.ID) ?? "";
     if (!id || (generated && !UUID.test(id))) fail("ID","invalid-id");
@@ -188,6 +197,20 @@ export function normalizeGuidedRows(rows: readonly PreviewRow[], opts: Options) 
       else {d.plannedStart ??= d.plannedEnd; d.plannedEnd ??= d.plannedStart;}
     }
   }
-  // Core diagnostic only: explicit source review and B2 persistence are separate.
-  return {drafts,issues,coreValid:issues.length===0};
+  const review: Review[] = [];
+  for (const draft of drafts) {
+    const row = draft.sourceRow;
+    const source = typed.get(row)!;
+    if (source.ID == null) review.push({ row, field: "ID", reason: "generated", value: draft.id });
+    if (allCodesAbsent) review.push({ row, field: "WBSCode", reason: "generated", value: draft.wbsCode });
+    if (source.TaskStatus == null) review.push({ row, field: "TaskStatus", reason: "defaulted", value: draft.status });
+    if (source.TaskType == null) {
+      const reason = draft.taskType === "Summary" ? "inferred" : "defaulted";
+      review.push({ row, field: "TaskType", reason, value: draft.taskType });
+    }
+    if (draft.parentId && source.ParentTaskID == null && source.ParentWBS == null) {
+      review.push({ row, field: "ParentTaskID", reason: "inferred", value: draft.parentId });
+    }
+  }
+  return {drafts,issues,review,coreValid:issues.length===0};
 }
