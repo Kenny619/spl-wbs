@@ -78,7 +78,7 @@ function directory(bytes: Uint8Array, limits: Limits) {
     if(!(flag & 0x0800) && raw.some(byte=>byte>=0x80)) reject();
     const name=decoder.decode(raw), lower=name.normalize("NFC").toLowerCase();
     // Reject invisible/bidirectional formatting characters that can disguise paths.
-    if(!name || name.startsWith("/") || /[\\\\:\\u0000-\\u001f\\u007f-\\u009f\\u200b-\\u200f\\u202a-\\u202e\\u2060\\u2066-\\u2069\\ufeff]/u.test(name) ||
+    if(!name || name.startsWith("/") || /[\\:\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ufeff]/u.test(name) ||
        name.split("/").some((s,j,a)=>s==="."||s===".."||(!s&&j!==a.length-1)) ||
        folded.has(lower)) reject();
     if(name.endsWith("/") && (packed!==0 || plain!==0)) reject();
