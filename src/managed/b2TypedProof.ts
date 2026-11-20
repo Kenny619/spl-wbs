@@ -1,4 +1,7 @@
 import { B2_CREATE_FIELDS, planB2TaskCreateAudit, type B2CreateField, type B2SnapshotValue } from "./b2CreateAuditPlan";
+import { KNOWN_STATUSES, TASK_TYPES } from "../data/types";
+import { sanitizeItemUrl } from "../data/normalize";
+import { SHAREPOINT_HOSTS } from "../config/decisions";
 import { MANIFEST_FIELD, parseCreateManifest, validateTaskContinuity } from "./b2ContinuityProof";
 
 type CreateRow = Parameters<typeof validateTaskContinuity>[0][number];
@@ -50,8 +53,10 @@ function encode(field:B2CreateField,value:unknown,id:string):string|undefined{
   if(field==="PlannedStart"||field==="PlannedEnd"){
     if(value&&(!/^\d{4}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value+"T00:00:00Z"))||new Date(value+"T00:00:00Z").toISOString().slice(0,10)!==value))return undefined;
   }
-  // Reuse existing enums and canonical Create planner for the remaining
-  // field-level rules, rather than adding incompatible status/type values.
+  if(field==="TaskType"&&!TASK_TYPES.some(v=>v===value))return undefined;
+  if(field==="TaskStatus"&&value&&!KNOWN_STATUSES.some(v=>v===value))return undefined;
+  if(field==="ItemURL"&&value&&sanitizeItemUrl(value,SHAREPOINT_HOSTS)!==value)return undefined;
+  if(field==="Modified"&&value&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)||!Number.isFinite(Date.parse(value))||new Date(value).toISOString()!==value))return undefined;
   return value;
 }
 
@@ -63,6 +68,7 @@ export function validateTypedB2Groups(groups:readonly (readonly CreateRow[])[],h
   const errors:string[]=[];
   const seenEvents=new Set(priorEventIds.map(normalizeId)), seenTasks=new Set<string>();
   const blockTimes=new Map<string,string>();
+  const createTransactions=new Map<string,string>();
   for(const row of history){
     const key=normalizeId(row.ChangeSetID), known=blockTimes.get(key);
     if(known!==undefined && known!==row.TimestampUTC)errors.push("inconsistent-edit-block-time");
@@ -75,6 +81,12 @@ export function validateTypedB2Groups(groups:readonly (readonly CreateRow[])[],h
     const id=root.TaskID, key=normalizeId(id);
     if(!UUID.test(id) || seenTasks.has(key))errors.push("duplicate-or-invalid-create-task");
     seenTasks.add(key);
+    const transaction=normalizeId(root.ChangeSetID);
+    const metadata=JSON.stringify([root.ChangeSetID,root.TimestampUTC,root.ActorLabel,root.ActorProvenance,root.Source,root.AppVersion,manifest.historyBoundary]);
+    const previous=createTransactions.get(transaction);
+    if(previous!==undefined&&previous!==metadata)errors.push("inconsistent-create-transaction");
+    if(blockTimes.has(transaction))errors.push("create-edit-id-reuse");
+    createTransactions.set(transaction,metadata);
     const snapshot=current.get(id);
     if(!snapshot){errors.push("missing-current-task");continue;}
     const values:Snapshot={}, eventIds:string[]=[];

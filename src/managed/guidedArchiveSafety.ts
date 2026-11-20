@@ -3,6 +3,16 @@ import JSZip from "jszip";
 // Proposed conservative external-import limits; not a general ZIP validator.
 export const GUIDED_ARCHIVE_LIMITS = { entries: 256, partBytes: 16 * 1024 * 1024, totalBytes: 64 * 1024 * 1024 };
 type Limits = typeof GUIDED_ARCHIVE_LIMITS;
+// JSZip 3.10 exposes internalStream at runtime but omits it from its bundled
+// declaration for JSZipObject. Narrow the runtime API rather than using any.
+interface ByteStream {
+  on(event:"data", handler:(chunk:Uint8Array)=>void):ByteStream;
+  on(event:"error", handler:(error:Error)=>void):ByteStream;
+  on(event:"end", handler:()=>void):ByteStream;
+  pause():ByteStream;
+  resume():ByteStream;
+}
+interface StreamableZipEntry { internalStream(type:"uint8array"):ByteStream; }
 export class GuidedArchiveError extends Error {
   constructor(public readonly code: string) { super(code); }
 }
@@ -64,11 +74,13 @@ export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limit
   for(const [name,expected] of declared){
     const entry=zip.files[name];
     if(!entry) reject();
-    if(entry.dir){clean.folder(name);continue;}
+    if(entry.dir){clean.file(name,new Uint8Array(0),{dir:true,createFolders:false});continue;}
     const data=await new Promise<Uint8Array>((resolve,rejectPromise)=>{
       const chunks:Uint8Array[]=[];
       let length=0, stopped=false;
-      const stream=entry.internalStream("uint8array");
+      const streamable=entry as unknown as Partial<StreamableZipEntry>;
+      if(typeof streamable.internalStream!=="function"){rejectPromise(new GuidedArchiveError("archive-stream-unavailable"));return;}
+      const stream=streamable.internalStream("uint8array");
       stream.on("data",(chunk:Uint8Array)=>{
         if(stopped)return;
         length+=chunk.length; total+=chunk.length;

@@ -28,7 +28,7 @@ function columns(s:ExcelJS.Worksheet,recognized:readonly string[],mandatory:read
   s.getRow(1).eachCell({includeEmpty:false},(cell,index)=>{
     if(typeof cell.value!=="string"||cell.isMerged)fail("invalid-header:"+s.name);
     const name=recognized.find(f=>f.toLowerCase()===String(cell.value).trim().toLowerCase());
-    if(!name)fail("unsupported-header:"+s.name);
+    if(!name)return fail("unsupported-header:"+s.name);
     if(result.has(name))fail("duplicate-header:"+name);
     result.set(name,index);
   });
@@ -101,10 +101,15 @@ export function verifyB2WorkbookReadback(original:ExcelJS.Workbook,candidate:Exc
     const allGroups=new Map<string,Group[number][]>();
     const priorEventIds:string[]=[];
     const priorTaskIds=new Set<string>();
+    const originalIds=new Set<string>();
     const originalWbs=sheet(original,"ProjectWBS");
     if(originalWbs){
       const originalColumns=columns(originalWbs,B2_CREATE_FIELDS,required);
-      for(const row of rows(originalWbs))priorTaskIds.add(idKey(identity(value(row,originalColumns,"ID"))));
+      for(const row of rows(originalWbs)){
+        const key=idKey(identity(value(row,originalColumns,"ID")));
+        if(originalIds.has(key))return fail("duplicate-original-wbs-id");
+        originalIds.add(key);priorTaskIds.add(key);
+      }
     }
     const originalAudit=sheet(original,"ProjectAudit");
     const prefixCount=rows(originalAudit).length;
@@ -138,7 +143,9 @@ export function verifyB2WorkbookReadback(original:ExcelJS.Workbook,candidate:Exc
       const id=identity(value(row,wCols,"ID")),key=idKey(id);
       if(seen.has(key))return fail("duplicate-wbs-id");
       seen.add(key);
-      const group=allGroups.get(key);if(!group)continue;
+      const group=allGroups.get(key);
+      if(!originalIds.has(key)&&!newTasks.has(key))return fail("untracked-new-task");
+      if(!group)continue;
       const manifestRow=group.find(r=>r.Field===MANIFEST_FIELD);
       const manifest=manifestRow&&parseCreateManifest(manifestRow.NewValue);
       if(!manifest)return fail("invalid-manifest");
@@ -155,6 +162,7 @@ export function verifyB2WorkbookReadback(original:ExcelJS.Workbook,candidate:Exc
       current.set(id,snapshot);
     }
     for(const key of newTasks)if(!seen.has(key))return fail("missing-created-task");
+    for(const key of originalIds)if(!seen.has(key))return fail("missing-original-task");
     return validateTypedB2Groups([...allGroups.values()],edits,current,priorEventIds);
   }catch(error){return {ok:false,errors:[error instanceof Error?error.message:"invalid-workbook"]};}
 }

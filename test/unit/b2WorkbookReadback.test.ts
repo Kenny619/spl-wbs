@@ -51,4 +51,12 @@ describe("physical B2 workbook readback proof",()=>{
   const {original,candidate}=await fixture();candidate.getWorksheet("ProjectWBS")!.addRow([id.toUpperCase(),"Duplicate","3","Task",0]);
   expect(verifyB2WorkbookReadback(original,await reopen(candidate)).ok).toBe(false);
  });
+ it("rejects a new task without a matching Create record",async()=>{
+  const {original,candidate}=await fixture();candidate.getWorksheet("ProjectWBS")!.addRow([uuid(200),"Unaudited","3","Task",0]);
+  expect(verifyB2WorkbookReadback(original,await reopen(candidate))).toMatchObject({ok:false,errors:["untracked-new-task"]});
+ });
+ it("rejects disappearance of an original task",async()=>{
+  const {original,candidate}=await fixture();candidate.getWorksheet("ProjectWBS")!.spliceRows(2,1);
+  expect(verifyB2WorkbookReadback(original,await reopen(candidate))).toMatchObject({ok:false,errors:["missing-original-task"]});
+ });
 });
