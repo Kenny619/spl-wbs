@@ -28,4 +28,20 @@ describe("guided archive bounded preparation",()=>{
   view.setUint32(22,100,true);view.setUint32(central+24,100,true);
   await expect(prepareBoundedGuidedArchive(source,limits)).rejects.toBeDefined();
  });
+ it("rejects mismatched CRC even if both declared CRC fields agree",async()=>{
+  const source=await archive({"part":"abc"});
+  const view=new DataView(source.buffer,source.byteOffset,source.byteLength);
+  const central=view.getUint32(source.length-22+16,true);
+  view.setUint32(14,0,true);view.setUint32(central+16,0,true);
+  await expect(prepareBoundedGuidedArchive(source,limits)).rejects.toMatchObject({code:"archive-crc-mismatch"});
+ });
+ it("accepts a normal signed streaming data descriptor and refuses a modified descriptor",async()=>{
+  const z=new JSZip();z.file("part","abc",{createFolders:false});
+  const source=await z.generateAsync({type:"uint8array",compression:"DEFLATE",streamFiles:true});
+  expect(await (await JSZip.loadAsync(await prepareBoundedGuidedArchive(source,limits))).file("part")!.async("string")).toBe("abc");
+  const view=new DataView(source.buffer,source.byteOffset,source.byteLength);
+  const central=view.getUint32(source.length-22+16,true);
+  view.setUint32(central-4,123,true);
+  await expect(prepareBoundedGuidedArchive(source,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+ });
 });

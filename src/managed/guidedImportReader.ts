@@ -4,6 +4,8 @@ import { interpretExcelDate, interpretExcelTimestamp } from "../calendar/dateOnl
 import { previewMappedRows, type HeaderOverride, type SourceRecord } from "./guidedImportMapping";
 import { normalizeGuidedRows } from "./guidedImportNormalize";
 import { prepareGuidedTargetIdentity } from "./guidedImportIdentity";
+import {prepareBoundedGuidedArchive,GuidedArchiveError} from "./guidedArchiveSafety";
+import {verifyGuidedXmlLimits} from "./guidedXmlLimits";
 
 type ReadIssue = {code: string; row?: number; column?: number};
 type Grid = {kind:"grid"; sheetName:string; otherSheets:string[]; date1904:boolean; headers:string[]; records:SourceRecord[]; issues:ReadIssue[]};
@@ -34,17 +36,18 @@ function adapt(value:ExcelJS.CellValue, format:string|null, date1904:boolean):un
   return unsupported("unsupported-cell");
 }
 /** Read only. Existing managed/legacy-extension books must not be
- * accidentally converted and lose history. Limits bound post-load traversal,
- * not XLSX decompression; untrusted-file resource hardening remains separate. */
+ * accidentally converted and lose history. Archive and structural limits
+ * run before ExcelJS, with a second grid limit after parsing. */
 export async function readGuidedSource(bytes:Uint8Array, selected?:string):Promise<ReadResult> {
   if (!bytes.length || bytes.length > MAX_BYTES) return {kind:"rejected",issues:[{code:"file-size-limit"}]};
   try {
-    const zip = await JSZip.loadAsync(bytes);
+    let prepared=await prepareBoundedGuidedArchive(bytes);
+    const zip=await JSZip.loadAsync(prepared);
+    await verifyGuidedXmlLimits(zip);
     if (Object.keys(zip.files).some(name=>/vbaProject\.bin$/i.test(name))) return {kind:"rejected",issues:[{code:"macro-workbook"}]};
     const entry = zip.file("xl/workbook.xml");
     if (!entry) return {kind:"rejected",issues:[{code:"invalid-xlsx"}]};
     const xml = await entry.async("string");
-    let prepared = bytes;
     if (/date1904\s*=\s*["']true["']/i.test(xml)) {
       zip.file("xl/workbook.xml",xml.replace(/date1904\s*=\s*["']true["']/gi,'date1904="1"'));
       prepared=await zip.generateAsync({type:"uint8array"});
@@ -79,7 +82,7 @@ export async function readGuidedSource(bytes:Uint8Array, selected?:string):Promi
       records.push({excelRow:row,cells});
     }
     return {kind:"grid",sheetName:sheet.name,otherSheets:names.filter(name => name !== sheet.name),date1904,headers,records,issues};
-  } catch {return {kind:"rejected",issues:[{code:"unreadable-xlsx"}]};}
+  } catch(error) {return {kind:"rejected",issues:[{code:error instanceof GuidedArchiveError?error.code:"unreadable-xlsx"}]};}
 }
 export function prepareGuidedPreview(grid:Grid, generatedIds:Readonly<Record<number,string>>,
   overrides:readonly HeaderOverride[]=[], progressScale?:"percent-points"|"fraction"){

@@ -2,7 +2,6 @@ import {prepareProjectOnboarding} from "./projectOnboarding";
 import {readGuidedSource,prepareGuidedPreview} from "./guidedImportReader";
 import {IMPORT_FIELDS,planImportHeaders,type HeaderOverride,type ImportField} from "./guidedImportMapping";
 import {starterTemplateCatalog,type StarterTemplateId} from "./starterProjectTemplates";
-import {prepareBoundedGuidedArchive} from "./guidedArchiveSafety";
 import {MANAGED_APP_VERSION} from "./version";
 import {preparePopulatedProjectProof} from "./populatedProjectProof";
 import type {BlankProjectInput} from "./blankProjectCandidate";
@@ -167,9 +166,9 @@ export function mountOnboardingPreview(root:HTMLElement){
      if(!file)return;
      if(!/\.xlsx$/i.test(file.name)||file.size===0||file.size>LIMIT){message.textContent="Select an XLSX no larger than 25 MiB.";return;}
      message.textContent="Checking the archive…";
-     void file.arrayBuffer().then(bytes=>prepareBoundedGuidedArchive(new Uint8Array(bytes))).then(bytes=>{
+     void file.arrayBuffer().then(buffer=>{
        if(!current(token))return;
-       source=bytes;void readSheet(undefined);
+       source=new Uint8Array(buffer);void readSheet(undefined);
      }).catch(e=>{if(current(token))message.textContent="Archive refused: "+(e instanceof Error?e.message:"invalid archive");});
    });
    const sheetControls=el("div");

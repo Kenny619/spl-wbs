@@ -1,3 +1,4 @@
+import JSZip from "jszip";
 import ExcelJS from "exceljs";
 import { describe, it, expect } from "vitest";
 import { readGuidedSource,prepareGuidedPreview } from "../../src/managed/guidedImportReader";
@@ -137,5 +138,22 @@ describe("guided XLSX source reader",()=>{
   expect(prepareGuidedPreview(missingSourceCodes, {}).normalized.issues).toContainEqual({
    row:5,field:"PredecessorWBS",code:"invalid-dependency",
   });
+ });
+ it("refuses extreme sparse row and column references before workbook loading",async()=>{
+   const b=new ExcelJS.Workbook();b.addWorksheet("Plan").addRow(["Title"]);
+   const zip=await JSZip.loadAsync(await bytes(b)),path="xl/worksheets/sheet1.xml";
+   const initial=await zip.file(path)!.async("string");
+   zip.file(path,initial.replace(/<row r="1"/,'<row r="999999"'));
+   expect(await readGuidedSource(await zip.generateAsync({type:"uint8array"}))).toMatchObject({kind:"rejected",issues:[{code:"grid-size-limit"}]});
+   zip.file(path,initial.replace(/<c r="A1"/,'<c r="XFD1"'));
+   expect(await readGuidedSource(await zip.generateAsync({type:"uint8array"}))).toMatchObject({kind:"rejected",issues:[{code:"grid-size-limit"}]});
+ });
+ it("refuses merged ranges and DTD declarations before workbook loading",async()=>{
+   const b=new ExcelJS.Workbook();const w=b.addWorksheet("Plan");w.addRow(["Title"]);w.mergeCells("A1:B2");
+   expect(await readGuidedSource(await bytes(b))).toMatchObject({kind:"rejected",issues:[{code:"merged-source-unsupported"}]});
+   const zip=await JSZip.loadAsync(await bytes(b)),path="xl/workbook.xml";
+   const initial=await zip.file(path)!.async("string");
+   zip.file(path,initial.replace(/<workbook /,'<!DOCTYPE workbook><workbook '));
+   expect(await readGuidedSource(await zip.generateAsync({type:"uint8array"}))).toMatchObject({kind:"rejected",issues:[{code:"unsupported-xml"}]});
  });
 });
