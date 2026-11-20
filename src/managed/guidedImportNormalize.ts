@@ -134,8 +134,10 @@ export function normalizeGuidedRows(rows: readonly PreviewRow[], opts: Options) 
       sortOrder:sortOrder !== null && Number.isFinite(sortOrder) ? sortOrder : null,modified,itemUrl,original:{...row.values}};
     if (byId.has(id)) fail("ID","duplicate-id");
     else byId.set(id,d);
-    if (byWbs.has(wbsCode)) fail("WBSCode","duplicate-wbs");
-    else byWbs.set(wbsCode,d);
+    if (!allCodesAbsent) {
+      if (byWbs.has(wbsCode)) fail("WBSCode","duplicate-wbs");
+      else byWbs.set(wbsCode,d);
+    }
     drafts.push(d);
   }
   for (const d of drafts) {
@@ -159,7 +161,6 @@ export function normalizeGuidedRows(rows: readonly PreviewRow[], opts: Options) 
         if (typed.get(parent.sourceRow)?.TaskType == null) parent.taskType = "Summary";
         else if (parent.taskType !== "Summary") fail("ParentTaskID","parent-not-summary");
         if (!allCodesAbsent && parent.wbsCode !== prefix) fail("WBSCode","conflicting-parent-code");
-        if (allCodesAbsent) fail("WBSCode","hierarchical-codes-require-review");
       }
     }
     if (v.PredecessorIDs != null && v.PredecessorWBS != null) fail("PredecessorIDs","ambiguous-reference-mode");
@@ -188,6 +189,27 @@ export function normalizeGuidedRows(rows: readonly PreviewRow[], opts: Options) 
   }
   cycleCheck("ParentTaskID",d=>d.parentId?[d.parentId]:[]);
   cycleCheck("PredecessorIDs",d=>d.predecessorIds);
+  if (allCodesAbsent && issues.length === 0) {
+    const children = new Map<string | null, Draft[]>();
+    for (const draft of drafts) {
+      const siblings = children.get(draft.parentId) ?? [];
+      siblings.push(draft);
+      children.set(draft.parentId, siblings);
+    }
+    const parents: (Draft | null)[] = [null];
+    for (const parent of parents) {
+      const siblings = children.get(parent?.id ?? null) ?? [];
+      for (const [index, draft] of siblings.entries()) {
+        const code = parent ? `${parent.wbsCode}.${index + 1}` : String(index + 1);
+        if (code.length > 32767) {
+          issues.push({row:draft.sourceRow,field:"WBSCode",code:"generated-code-too-long"});
+          continue;
+        }
+        draft.wbsCode = code;
+        parents.push(draft);
+      }
+    }
+  }
   for (const d of drafts) {
     const fail = (field: ImportField, code: string) => issues.push({row:d.sourceRow,field,code});
     if (d.taskType === "Summary" && (d.plannedStart || d.plannedEnd || d.progress !== null)) fail("TaskType","summary-derived-values-require-review");
