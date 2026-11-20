@@ -10,7 +10,7 @@ function input(source:Uint8Array){
  timestampUTC:stamp,actorLabel:"Synthetic PM",appVersion:"test",generateEventId:()=>id(++n)};
 }
 async function fixture(){
- const b=new ExcelJS.Workbook();await b.xlsx.load(await projectDataWorkbook());
+ const b=new ExcelJS.Workbook();await b.xlsx.load(new Uint8Array(await projectDataWorkbook()) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
  const wbs=b.getWorksheet("ProjectWBS")!;wbs.getCell("K1").value="PredecessorIDs";
  return new Uint8Array(await b.xlsx.writeBuffer());
 }
