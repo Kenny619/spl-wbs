@@ -151,9 +151,12 @@ describe("guided XLSX source reader",()=>{
  it("refuses merged ranges and DTD declarations before workbook loading",async()=>{
    const b=new ExcelJS.Workbook();const w=b.addWorksheet("Plan");w.addRow(["Title"]);w.mergeCells("A1:B2");
    expect(await readGuidedSource(await bytes(b))).toMatchObject({kind:"rejected",issues:[{code:"merged-source-unsupported"}]});
-   const zip=await JSZip.loadAsync(await bytes(b)),path="xl/workbook.xml";
+   const unmerged=new ExcelJS.Workbook();unmerged.addWorksheet("Plan").addRow(["Title"]);
+   const zip=await JSZip.loadAsync(await bytes(unmerged)),path="xl/workbook.xml";
    const initial=await zip.file(path)!.async("string");
-   zip.file(path,initial.replace(/<workbook /,'<!DOCTYPE workbook><workbook '));
+   const modified=initial.replace(/<workbook /,'<!DOCTYPE workbook><workbook ');
+   expect(modified).not.toBe(initial);
+   zip.file(path,modified);
    expect(await readGuidedSource(await zip.generateAsync({type:"uint8array"}))).toMatchObject({kind:"rejected",issues:[{code:"unsupported-xml"}]});
  });
 });

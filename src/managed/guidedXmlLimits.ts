@@ -29,7 +29,7 @@ export async function verifyGuidedXmlLimits(zip:JSZip){
        continue;
      }
      const coordinate=attribute("r");
-     if(!coordinate)fail("unsupported-grid-coordinate");
+     if(!coordinate)return fail("unsupported-grid-coordinate");
      if(kind==="row"){
        if(!/^[1-9]\d{0,4}$/.test(coordinate)||Number(coordinate)>GUIDED_GRID_LIMITS.rows)fail("grid-size-limit");
        maxRow=Math.max(maxRow,Number(coordinate));continue;
