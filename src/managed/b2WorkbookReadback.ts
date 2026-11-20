@@ -117,10 +117,15 @@ export function verifyB2WorkbookReadback(original:ExcelJS.Workbook,candidate:Exc
     const historyBoundary=rows(historyBefore).length;
     const newTasks=new Set<string>();
     const auditRows=rows(audit);
+    const appendedVersionRows:ExcelJS.Row[]=[];
     for(let index=0;index<auditRows.length;index++){
       const row=auditRows[index],get=(f:string)=>value(row,aCols,f);
       if(get("EntityType")!=="Task"||get("Action")!=="Create"){
         priorEventIds.push(text(get("EventID")));
+        if(index>=prefixCount){
+          if(get("EntityType")!=="ProjectMeta"||get("Action")!=="Update"||get("EntityID")!=="ProjectDataSchemaVersion"||get("Field")!=="ProjectDataSchemaVersion"||get("TaskID")!==null||get("OldValue")!=="0.1.2"||get("NewValue")!=="0.1.3")return fail("unexpected-appended-audit");
+          appendedVersionRows.push(row);
+        }
         const task=get("TaskID"); if(task!==null&&task!=="")priorTaskIds.add(idKey(identity(task)));
         if(get("Field")===MANIFEST_FIELD)return fail("manifest-outside-create");
         continue;
@@ -131,6 +136,19 @@ export function verifyB2WorkbookReadback(original:ExcelJS.Workbook,candidate:Exc
       const group=allGroups.get(key)??[];
       group.push(raw);allGroups.set(key,group);
     }
+    const version=(book:ExcelJS.Workbook)=>{
+      const meta=sheet(book,"ProjectMeta");if(!meta)return null;
+      const versions=rows(meta).filter(row=>row.getCell(1).value==="ProjectDataSchemaVersion");
+      if(versions.length!==1)return fail("invalid-project-version");
+      return versions[0].getCell(2).value;
+    };
+    const previousVersion=version(original),nextVersion=version(candidate);
+    if(previousVersion==="0.1.2"&&nextVersion==="0.1.3"){
+      if(appendedVersionRows.length!==1||!newTasks.size)return fail("missing-version-audit");
+      const row=appendedVersionRows[0];
+      const roots=[...newTasks].map(k=>allGroups.get(k)?.find(r=>r.Field===MANIFEST_FIELD));
+      if(roots.some(root=>!root||(["ChangeSetID","TimestampUTC","ActorLabel","ActorProvenance","Source","AppVersion"] as const).some(f=>value(row,aCols,f)!==root[f])))return fail("version-audit-transaction-mismatch");
+    }else if(previousVersion!==nextVersion||appendedVersionRows.length)return fail("unexpected-version-transition");
     const edits:Edit[]=rows(history).map(row=>{
       const get=(f:string)=>value(row,hCols,f);
       const field=text(get("Field")) as B2CreateField;

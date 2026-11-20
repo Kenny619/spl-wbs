@@ -66,7 +66,8 @@ function encode(field:B2CreateField,value:unknown,id:string):string|undefined{
 export function validateTypedB2Groups(groups:readonly (readonly CreateRow[])[],history:readonly TypedEdit[],
   current: ReadonlyMap<string,Snapshot>, priorEventIds:readonly string[]=[]){
   const errors:string[]=[];
-  const seenEvents=new Set(priorEventIds.map(normalizeId)), seenTasks=new Set<string>();
+  const seenEvents=new Set<string>(), seenTasks=new Set<string>();
+  for(const id of priorEventIds){const key=normalizeId(id);if(!UUID.test(id)||seenEvents.has(key))errors.push("duplicate-or-invalid-prior-event");seenEvents.add(key);}
   const blockTimes=new Map<string,string>();
   const createTransactions=new Map<string,string>();
   for(const row of history){
