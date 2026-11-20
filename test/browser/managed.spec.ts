@@ -2517,3 +2517,43 @@ test("Stage C review is not exposed in ordinary managed mode",async({page})=>{
  await page.locator(".managed-project-menu summary").click();
  await expect(page.getByRole("button",{name:"New project — preview…"})).toHaveCount(0);
 });
+
+
+test("Stage C existing-project entity preview verifies a new task without writing to the active workbook",async({page})=>{
+ const fixture=new ExcelJS.Workbook();
+ await fixture.xlsx.load(new Uint8Array(await projectDataWorkbook()) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+ fixture.getWorksheet("ProjectWBS")!.getCell("K1").value="PredecessorIDs";
+ const encoded=Buffer.from(await fixture.xlsx.writeBuffer()).toString("base64");
+ await openManaged(page,encoded,1,"Synthetic shared project",true);
+ const snapshot=()=>page.evaluate(()=>{
+  const files=(window as unknown as {__managedFixtureFiles:Map<string,Uint8Array>}).__managedFixtureFiles;
+  return [...files].map(([name,bytes])=>[name,Array.from(bytes)]);
+ });
+ const before=await snapshot();
+ await page.locator(".managed-project-menu summary").click();
+ await page.getByRole("button",{name:"Add entity — preview…"}).click();
+ const modal=page.getByRole("dialog",{name:"Stage C entity creation"});
+ await expect(modal).toBeVisible();
+ await modal.getByLabel("Task title").fill("New synthetic deliverable");
+ await modal.getByLabel("Predecessors (optional, multiple)").selectOption(["501"]);
+ await modal.getByLabel("Local actor (unverified)").fill("Synthetic PM");
+ await expect(modal.getByRole("status")).toContainText("Valid draft");
+ const verify=modal.getByRole("button",{name:"Verify disposable entity candidate"});
+ await expect(verify).toBeDisabled();
+ await modal.getByRole("checkbox").check();
+ await expect(verify).toBeEnabled();
+ await verify.click();
+ await expect(modal.getByText(/Verified in memory: 2 tasks \(one newly created\)/)).toBeVisible();
+ await modal.getByLabel("Task title").fill("Modified without verification");
+ await expect(modal.getByRole("checkbox")).not.toBeChecked();
+ await expect(verify).toBeDisabled();
+ await modal.getByRole("button",{name:"Close entity preview"}).click();
+ await expect(modal).toHaveCount(0);
+ await expect(page.locator(".task-row")).toHaveCount(1);
+ expect(await snapshot()).toEqual(before);
+});
+test("Stage C entity creation is hidden in ordinary managed mode",async({page})=>{
+ await openManaged(page);
+ await page.locator(".managed-project-menu summary").click();
+ await expect(page.getByRole("button",{name:"Add entity — preview…"})).toHaveCount(0);
+});
