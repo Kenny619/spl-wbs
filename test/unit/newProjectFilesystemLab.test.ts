@@ -57,7 +57,7 @@ describe("test-only exclusive disk feasibility lab",()=>{
   await expect(proveExclusiveNewProjectDiskLab(input)).rejects.toThrow("lab-collision");
   expect((await readdir(directory)).sort()).toEqual(["Fictional project.pending.json","Fictional project.stage.xlsx"].sort());
  });
- it("rejects a symlink destination without changing its target",async()=>{
+ it.skipIf(process.platform==="win32")("rejects a symlink destination without changing its target",async()=>{
   const {directory,input}=await setup();
   const target=join(directory,"unrelated.txt");
   await writeFile(target,Buffer.from([2,4]));
