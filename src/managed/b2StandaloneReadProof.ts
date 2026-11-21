@@ -37,7 +37,7 @@ export async function inspectStandaloneInitialB2Proof(bytes:Uint8Array){
   return reject("expected-0.1.3-candidate");
  const audit=book.getWorksheet("ProjectAudit"),wbs=book.getWorksheet("ProjectWBS"),
        history=book.getWorksheet("UpdateHistory");
- if(!audit||!wbs||!history)return reject("missing-sheets");
+ if(!audit||!wbs)return reject("missing-sheets");
  if(AUDIT.some((f,i)=>audit.getRow(1).getCell(i+1).value!==f)||
    audit.columnCount!==AUDIT.length)return reject("audit-headers");
  const at=(row:ExcelJS.Row,field:typeof AUDIT[number])=>row.getCell(AUDIT.indexOf(field)+1).value;
@@ -80,7 +80,7 @@ export async function inspectStandaloneInitialB2Proof(bytes:Uint8Array){
  }
  if(!transition||!createCount||ids.size!==manifests.size)return reject("incomplete-create-record");
  let physicalHistoryCount=0;
- history.eachRow({includeEmpty:false},(row,i)=>{if(i>1)physicalHistoryCount++;});
+ history?.eachRow({includeEmpty:false},(row,i)=>{if(i>1)physicalHistoryCount++;});
  if([...manifests.values()].some(boundary=>boundary!==physicalHistoryCount))
    return reject("unsupported-post-create-edit");
  const predecessor=await open(source);
