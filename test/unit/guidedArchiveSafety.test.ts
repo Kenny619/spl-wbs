@@ -27,6 +27,17 @@ describe("guided archive bounded preparation",()=>{
   await expect(prepareBoundedGuidedArchive(corrupted,limits)).rejects.toMatchObject({code:"unsupported-archive"});
   expect(corrupted).toEqual(before); // failure must never mutate the supplied workbook bytes
  });
+ it("rejects empty or truncated central filenames before ZIP interpretation",async()=>{
+  const original=await archive({"part":"ok"});
+  const central=new DataView(original.buffer,original.byteOffset,original.byteLength).getUint32(original.length-22+16,true);
+  for(const length of [0,0xffff]){
+   const forged=original.slice();
+   new DataView(forged.buffer,forged.byteOffset,forged.byteLength).setUint16(central+28,length,true);
+   const before=forged.slice();
+   await expect(prepareBoundedGuidedArchive(forged,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+   expect(forged).toEqual(before);
+  }
+ });
  it("rejects non-byte inputs without leaking native TypeErrors",async()=>{
   for(const invalid of [null,undefined,"not a zip",{},new ArrayBuffer(8),[1,2,3]]){
     await expect(prepareBoundedGuidedArchive(invalid as unknown as Uint8Array,limits)).rejects.toMatchObject({code:"unsupported-archive"});

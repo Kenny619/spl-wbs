@@ -40,6 +40,9 @@ function directory(bytes: Uint8Array, limits: Limits) {
     if(at+46>end || u32(at)!==0x02014b50) reject();
     const flag=u16(at+8), method=u16(at+10), crc=u32(at+16), packed=u32(at+20), plain=u32(at+24);
     const n=u16(at+28), x=u16(at+30), c=u16(at+32), local=u32(at+42);
+    // Validate the complete central entry before inspecting filename bytes or attributes.
+    // A zero-length filename is never a valid managed workbook part.
+    if(n===0 || at+46+n+x+c>end) reject();
     // Reject Unix symlinks and special files instead of reinterpreting them as workbook parts.
     const unixMode=u16(at+40);
     if(bytes[at+5]===3 && unixMode && ![0x8000,0x4000].includes(unixMode&0xf000)) reject();
