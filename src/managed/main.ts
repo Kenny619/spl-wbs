@@ -258,7 +258,7 @@ export class ManagedEditor {
         const close=element(doc,"button","managed-action","Close entity preview");
         close.type="button";close.addEventListener("click",()=>modal.close());
         modal.append(close,content);
-        const mounted=mountExistingEntityPreview(content,this.loadedBytes);
+        const mounted=mountExistingEntityPreview(content,this.loadedBytes,this.settings.getTimeZone());
         modal.addEventListener("close",()=>{
           mounted.dispose();modal.remove();
           doc.querySelector<HTMLElement>(".managed-project-menu summary")?.focus();

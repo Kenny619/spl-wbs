@@ -6,10 +6,12 @@ import {preflightManagedWorkbook} from "./preflight";
 import {prepareNewEntity,suggestWbsCode,type NewEntityInput} from "./creationDraft";
 import {prepareExistingEntityProof} from "./existingEntityProof";
 import {MANAGED_APP_VERSION} from "./version";
+import {prepareCombinedHistoryProof} from "./combinedHistoryProof";
+import {renderCandidateHistoryReview} from "./candidateHistoryReviewUi";
 
 /** Explicit opt-in, in-memory Stage C authoring review. No Save, download,
  * session replacement or source workbook mutation is accessible from here. */
-export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Array){
+export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Array,timeZone="Asia/Tokyo"){
  const doc=root.ownerDocument,source=loadedSource.slice();
  let alive=true,revision=0,busy=false,taskId:string=crypto.randomUUID(),tasks:Task[]=[];
  const make=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string)=>{
@@ -26,7 +28,8 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
   const e=make("option",text);e.value=value;return e;
  };
  const section=make("section"),status=make("p","Validating existing workbook…"),validation=make("ul");
- const result=make("p"),review=make("input"),button=make("button","Verify disposable entity candidate");
+ const result=make("p"),historyReview=make("section"),review=make("input"),button=make("button","Verify disposable entity candidate");
+ historyReview.setAttribute("aria-label","Candidate creation history");
  const title=make("input"),type=make("select"),parent=make("select"),wbs=make("input"),
        start=make("input"),finish=make("input"),owner=make("input"),workstream=make("input"),
        predecessors=make("select"),actor=make("input"),suggestion=make("p");
@@ -51,7 +54,7 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
  );
  root.replaceChildren(make("h2","Add entity — development preview"),
   make("p","In-memory verification of a new task against the loaded workbook. No file will be saved, downloaded or activated."),
-  status,section,validation,result);
+  status,section,validation,result,historyReview);
  section.hidden=true;
  const controls=[title,type,parent,wbs,start,finish,owner,workstream,predecessors,actor];
  function input():NewEntityInput{
@@ -61,7 +64,7 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
    owner:owner.value,workstream:workstream.value};
  }
  function renderValidation(){
-  revision++;busy=false;result.textContent="";review.checked=false;validation.replaceChildren();
+  revision++;busy=false;result.textContent="";historyReview.replaceChildren();review.checked=false;validation.replaceChildren();
   if(!tasks.length){button.disabled=true;return;}
   const selected=tasks.find(t=>t.id===parent.value);
   suggestion.textContent="Suggested code: "+suggestWbsCode(tasks,selected?.wbsCode??null);
@@ -82,7 +85,7 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
   if(control===parent)wbs.value="";
   renderValidation();
  });
- review.addEventListener("change",()=>{revision++;busy=false;result.textContent="";button.disabled=!canVerify();});
+ review.addEventListener("change",()=>{revision++;busy=false;result.textContent="";historyReview.replaceChildren();button.disabled=!canVerify();});
  button.addEventListener("click",()=>{
   if(!canVerify())return;
   busy=true;const token=++revision;button.disabled=true;
@@ -91,8 +94,12 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
   result.textContent="Checking a disposable candidate and complete B2 creation audit…";
   void prepareExistingEntityProof({source:source.slice(),draft,taskId,
    changeSetId:crypto.randomUUID(),timestampUTC:new Date().toISOString(),
-   actorLabel,appVersion:MANAGED_APP_VERSION}).then(candidate=>{
+   actorLabel,appVersion:MANAGED_APP_VERSION}).then(async candidate=>{
+    // Read both source sheets and reconcile the exact candidate, never the
+    // live History/Report reader or a potentially overwritten active workbook.
+    const instants=await prepareCombinedHistoryProof(source,candidate.bytes);
     if(!alive||revision!==token)return;
+    renderCandidateHistoryReview(historyReview,instants,timeZone);
     busy=false;
     result.textContent="Verified in memory: "+candidate.taskCount+
      " tasks (one newly created), "+candidate.taskAuditRows+" creation audit rows. No file saved.";
@@ -100,6 +107,7 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
   }).catch(error=>{
     if(!alive||revision!==token)return;
     busy=false;
+    historyReview.replaceChildren();
     result.textContent="Candidate rejected: "+(error instanceof Error?error.message:"Unverified candidate");
     button.disabled=!canVerify();
   });
@@ -123,5 +131,5 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
    if(alive){status.textContent="Creation review unavailable: "+(error instanceof Error?error.message:"Invalid workbook");section.hidden=true;}
   }
  })();
- return {dispose(){alive=false;revision++;taskId="";source.fill(0);root.replaceChildren();}};
+ return {dispose(){alive=false;revision++;taskId="";source.fill(0);historyReview.replaceChildren();root.replaceChildren();}};
 }

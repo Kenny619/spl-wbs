@@ -2544,8 +2544,20 @@ test("Stage C existing-project entity preview verifies a new task without writin
  await expect(verify).toBeEnabled();
  await verify.click();
  await expect(modal.getByText(/Verified in memory: 2 tasks \(one newly created\)/)).toBeVisible();
+ const creation=modal.getByRole("region",{name:"Candidate creation history"});
+ await expect(creation.getByRole("heading",{name:"Creation history preview"})).toBeVisible();
+ await expect(creation).toContainText("1 created entity");
+ await expect(creation).toContainText("1 logical transaction");
+ await expect(creation).toContainText("Created 2 · New synthetic deliverable");
+ await expect(creation.getByText("Candidate-only reconciliation. No workbook saved, loaded or activated.")).toBeVisible();
+ await creation.getByText("Inspect complete candidate audit evidence").click();
+ await creation.getByText("Initial field snapshot").click();
+ await expect(creation).toContainText("PredecessorIDs: [\"501\"]");
+ await expect(creation).toContainText("Event ");
+
  await modal.getByLabel("Task title").fill("Modified without verification");
  await expect(modal.getByRole("checkbox")).not.toBeChecked();
+ await expect(creation).toBeEmpty();
  await expect(verify).toBeDisabled();
  await modal.getByRole("button",{name:"Close entity preview"}).click();
  await expect(modal).toHaveCount(0);
