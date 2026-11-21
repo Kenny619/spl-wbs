@@ -86,9 +86,15 @@ export async function inspectStandaloneInitialB2Proof(bytes:Uint8Array){
  const predecessor=await open(source);
  const oldAudit=predecessor.getWorksheet("ProjectAudit")!;
  if(oldAudit.rowCount!==audit.rowCount)return reject("readback-shape");
- oldAudit.spliceRows(transition,oldAudit.rowCount-transition+1);
- // ExcelJS may retain materialized but empty rows after spliceRows. Count
- // actual stored audit evidence rather than relying on worksheet rowCount.
+ // Preserve the accepted prefix without shifting ExcelJS's materialized
+ // rows. SpliceRows can retain or relocate cells when the removed tail is long.
+ const auditLastRow=oldAudit.rowCount;
+ for(let i=auditLastRow;i>=transition;i--)oldAudit.getRow(i).values=[];
+ // Verify every retained prefix cell against the immutable opened candidate.
+ for(let i=1;i<transition;i++)for(let c=1;c<=AUDIT.length;c++){
+   if(oldAudit.getRow(i).getCell(c).value!==audit.getRow(i).getCell(c).value)
+     return reject("audit-prefix-mutated");
+ }
  let retainedPrefixCount=0;
  oldAudit.eachRow({includeEmpty:false},(_,index)=>{if(index>1)retainedPrefixCount++;});
  if(retainedPrefixCount!==priorAuditCount)return reject("audit-prefix-structure");

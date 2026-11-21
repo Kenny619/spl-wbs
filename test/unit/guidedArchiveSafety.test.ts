@@ -94,7 +94,7 @@ describe("guided archive bounded preparation",()=>{
    {"xl":"file","xl/":""},
    {"XL":"file","xl/":""},
    {"xl":"file","XL/":""},
-  ]){
+  ] as Record<string,string>[]){
    await expect(prepareBoundedGuidedArchive(await archive(entries),limits)).rejects.toMatchObject({code:"unsupported-archive"});
   }
   const valid=await prepareBoundedGuidedArchive(await archive({"xl/":"","xl/workbook.xml":"ok"}),limits);
