@@ -40,6 +40,9 @@ function directory(bytes: Uint8Array, limits: Limits) {
     if(at+46>end || u32(at)!==0x02014b50) reject();
     const flag=u16(at+8), method=u16(at+10), crc=u32(at+16), packed=u32(at+20), plain=u32(at+24);
     const n=u16(at+28), x=u16(at+30), c=u16(at+32), local=u32(at+42);
+    // Reject Unix symlinks and special files instead of reinterpreting them as workbook parts.
+    const unixMode=u16(at+40);
+    if(bytes[at+5]===3 && unixMode && ![0x8000,0x4000].includes(unixMode&0xf000)) reject();
     // No encryption, split disks, ZIP64, or unsupported compression methods.
     if((flag & ~0x080e)!==0 || (method!==0 && method!==8) || u16(at+34)!==0 ||
        packed===0xffffffff || plain===0xffffffff || at+46+n+x+c>end ||

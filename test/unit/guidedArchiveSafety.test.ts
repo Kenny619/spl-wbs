@@ -38,9 +38,9 @@ describe("guided archive bounded preparation",()=>{
   await expect(prepareBoundedGuidedArchive(normalized,limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
  it("accepts matching Unicode Path extras and rejects a forged alias",async()=>{
-  const original=await archive({"xl/caf\\u00e9.xml":"ok"});
+  const original=await archive({"xl/caf\u00e9.xml":"ok"});
   const good=await prepareBoundedGuidedArchive(original,limits);
-  expect(await (await JSZip.loadAsync(good)).file("xl/caf\\u00e9.xml")!.async("string")).toBe("ok");
+  expect(await (await JSZip.loadAsync(good)).file("xl/caf\u00e9.xml")!.async("string")).toBe("ok");
   const forged=original.slice(), view=new DataView(forged.buffer,forged.byteOffset,forged.byteLength);
   const central=view.getUint32(forged.length-22+16,true);
   const nameLength=view.getUint16(central+28,true);
@@ -96,6 +96,20 @@ describe("guided archive bounded preparation",()=>{
   }
   const safe=await prepareBoundedGuidedArchive(await archive({"xl/worksheets/sheet1.xml":"ok"}),limits);
   expect(await (await JSZip.loadAsync(safe)).file("xl/worksheets/sheet1.xml")!.async("string")).toBe("ok");
+ });
+ it("rejects Unix symlink and special-file archive entries before decompression",async()=>{
+  const ordinary=await archive({"xl/workbook.xml":"ok"});
+  const central=new DataView(ordinary.buffer,ordinary.byteOffset,ordinary.byteLength).getUint32(ordinary.length-22+16,true);
+  for(const mode of [0xa000,0x2000,0x6000]){
+   const forged=ordinary.slice(),view=new DataView(forged.buffer,forged.byteOffset,forged.byteLength);
+   forged[central+5]=3; // Unix creator platform
+   view.setUint16(central+40,mode,true); // high half of external attributes
+   await expect(prepareBoundedGuidedArchive(forged,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+  }
+  const regular=ordinary.slice(),view=new DataView(regular.buffer,regular.byteOffset,regular.byteLength);
+  regular[central+5]=3;
+  view.setUint16(central+40,0x8000,true);
+  expect(await (await JSZip.loadAsync(await prepareBoundedGuidedArchive(regular,limits))).file("xl/workbook.xml")!.async("string")).toBe("ok");
  });
  it("rejects a forged smaller declared size rather than trusting metadata",async()=>{
   const source=await archive({"big":"x".repeat(2000)});
