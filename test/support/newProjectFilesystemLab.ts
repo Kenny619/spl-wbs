@@ -51,7 +51,7 @@ async function proveCandidate(candidate:Uint8Array,
  const current=new ExcelJS.Workbook();
  await current.xlsx.load(candidate as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
  const domain=await importWorkbook(candidate,{paletteStorage:null});
- if(!domain.ok)reject("lab-invalid-domain-readback");
+ if(!domain.ok)throw new Error("lab-invalid-domain-readback");
  const history=await readManagedHistoryWithPresence(candidate);
  if(!history.present)reject("lab-missing-history");
  if(mode==="blank-0.1.2"){
@@ -64,7 +64,7 @@ async function proveCandidate(candidate:Uint8Array,
       reject("lab-invalid-blank-project");
    return;
  }
- if(mode!=="populated-0.1.3"||!predecessor)reject("lab-missing-b2-predecessor");
+ if(mode!=="populated-0.1.3"||!predecessor)throw new Error("lab-missing-b2-predecessor");
  await preflightManagedWorkbook(predecessor);
  const before=new ExcelJS.Workbook();
  await before.xlsx.load(predecessor as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
