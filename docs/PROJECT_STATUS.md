@@ -1,11 +1,11 @@
 # SPT-WBS | Project Status & Roadmap
 
-**Updated:** 2026-11-18 JST  
+**Updated:** 2026-11-21 JST  
 **Audience:** Product Owner, sponsors, executives, delivery stakeholders  
 **Owner:** Delivery Management Office  
 **Purpose:** One business-readable description of what has been accepted, what is next, and what remains before a beta. Feature contracts, development PRs and acceptance records remain linked below.
 
-> **CURRENT POSITION — STAGE A ACCEPTED; STAGE B USABILITY ACCEPTED AND RAG SPECIFICATION FROZEN; STAGE C AUTHORING IS NEXT.** The application is verified in the tested **personal Windows/Edge environment**. No corporate deployment, live shared-workbook multiwriter certification, beta, or production release has been approved.
+> **CURRENT POSITION — STAGE A ACCEPTED; STAGE B USABILITY ACCEPTED AND RAG SPECIFICATION FROZEN; STAGE C AUTHORING IN DRAFT IMPLEMENTATION/QA.** The application is verified in the tested **personal Windows/Edge environment**. No corporate deployment, live shared-workbook multiwriter certification, beta, or production release has been approved.
 
 ## Executive snapshot
 
@@ -14,11 +14,11 @@
 | **What is SPT-WBS?** | A project schedule / work-breakdown application that keeps **Excel as the shared project-owned source of truth**, supports a PM's controlled editing and delivers schedule, exceptions, Meeting Review and stakeholder reports. |
 | **What is complete?** | **Stage A — Excel-managed foundation**, Product Owner accepted **15 Nov 2026**, including safe local edits, Save/Save As, backups/recovery, workbook ProjectData, Calendar, accepted historical Under Watch, Meeting Review, Reports and Recent Projects. |
 | **Which Stage B outcomes are accepted?** | **Needs Attention / severity** owner 3/3 UAT PASS, integrated [PR #92](https://github.com/Kenny619/spl-wbs/pull/92); **PGCM/header accessibility** owner 3/3 UAT PASS, integrated [PR #98](https://github.com/Kenny619/spl-wbs/pull/98). **Manual PM-owned RAG policy** frozen **18 Nov 2026** as [HW-FUNC-1.0](specifications/HEALTH_LIFECYCLE_FUNCTIONAL_FREEZE_CANDIDATE.md), documentation merged [PR #84](https://github.com/Kenny619/spl-wbs/pull/84). **The RAG feature is NOT implemented yet**. |
-| **What is underway?** | **Stage C — Project Authoring**: safe creation of project WBS entities, then blank-project onboarding and reusable templates ([#23](https://github.com/Kenny619/spl-wbs/issues/23), [#24](https://github.com/Kenny619/spl-wbs/issues/24)). **B2 Task Create audit architecture approved by the Product Owner**; draft technical contract covers the existing ProjectAudit sheet and versioned backward compatibility. **Not yet implemented/accepted.** |
+| **What is underway?** | **Stage C — Project Authoring**: draft [PR #110](https://github.com/Kenny619/spl-wbs/pull/110) implements opt-in *development-only* previews for Task/Summary/Milestone creation, blank onboarding, guided Excel import and templates. Populated workbook and B2 creation-audit readback, combined History/Report candidate review, backward compatibility and protected-import checks have targeted automated coverage. **No persistent Stage C Create workflow, live 0.1.3 reader/writer, protected merge or Owner acceptance is authorized/completed.** |
 | **What is mandatory before beta?** | (1) Implementation/independent QA/Owner UAT of the already-frozen manual RAG + versioned Report 1.1 integration, **after Stage C authoring**. (2) One **holistic cross-view UX/UI consistency and usability acceptance**. Then a separate beta go/no-go review. |
 | **Primary known constraints?** | Corporate Edge `file://` folder permission restrictions; real shared-workbook concurrency and user permissions; two inherited moderate dependency advisories; CI cost controls. None are waived by personal-PC functional acceptance. |
 | **Committed delivery date?** | **Not yet committed.** No reliable date for Stage C completion or beta until new-authoring scope and evidence are agreed. |
-| **Immediate owner decision?** | **No new B2 architecture decision.** The next technical gates are precise versioned audit encoding, compatibility verification and Stage C first-slice UX; there is **no workbook-writing or beta authorization**. |
+| **Immediate owner decision?** | **None for current development-only work.** Next authorization gate is the exact versioned B2 workbook contract and safe persistent creation/distribution path, with independent QA and targeted owner acceptance. Draft previews do not authorize real workbook writing, beta or release. |
 
 ## Delivery roadmap
 
@@ -27,8 +27,8 @@
 | **Stage A — Excel-managed foundation** | WBS task edit, managed Excel persistence, guarded Save/Save As, history, Calendar, reports, Recent Projects | **Accepted — 15 Nov** | Completed targeted E1–E17 and MRU-01–03 personal Windows/Edge acceptance; no repeat physical UAT without code impact |
 | **Stage B — Daily operational usability** | Actionable Needs Attention and severity, compact accessible header, browser-local PGCM preferences | **Owner-accepted and integrated** | PRs [#92](https://github.com/Kenny619/spl-wbs/pull/92) and [#98](https://github.com/Kenny619/spl-wbs/pull/98), targeted 6/6 physical checks PASS |
 | **Stage B — Health/RAG business specification** | Explicit manual PM assessment independent from task/schedule status | **Functional specification frozen — 18 Nov** | [Issue #82](https://github.com/Kenny619/spl-wbs/issues/82), [HW-FUNC-1.0](specifications/HEALTH_LIFECYCLE_FUNCTIONAL_FREEZE_CANDIDATE.md), [merged PR #84](https://github.com/Kenny619/spl-wbs/pull/84); **software not yet built** |
-| **Stage C1 — Create WBS entities** | Add valid Task/Summary/Milestone to existing workbook with permanent identity, hierarchy/dependency consistency and auditable Save | **B2 audit architecture approved; design/preflight underway** | Finalize exact versioned ProjectAudit Task/Create contract, then controlled implementation and focused independent QA/Owner UAT |
-| **Stage C2 — New-project onboarding** | Blank workbook, chosen save location/download fallback and validated starter templates | **Design/preflight underway; follows C1** | Compatible generated workbooks, no overwrite/data loss, readable in PM and readonly views; targeted QA/Owner UAT |
+| **Stage C1 — Create WBS entities** | Add valid Task/Summary/Milestone to existing workbook with permanent identity, hierarchy/dependency consistency and auditable Save | **Opt-in review and B2 in-memory creation proof implemented; unmerged** | Finalize exact versioned ProjectAudit Task/Create contract, then controlled implementation and focused independent QA/Owner UAT |
+| **Stage C2 — New-project onboarding** | Blank workbook, chosen save location/download fallback and validated starter templates | **Blank, template and guided-import development previews implemented; Save/download not enabled** | Compatible generated workbooks, no overwrite/data loss, readable in PM and readonly views; targeted QA/Owner UAT |
 | **Pre-beta gate 1 — RAG and reports** | PM-only manual RAG with required Impact/Path-to-Green/Resolution, audit, cross-view status and Report 1.1 update | **Specification approved; implementation later** | Versioned compatible Excel model, secure edit workflow, independent QA + focused Owner UAT |
 | **Pre-beta gate 2 — Holistic UX** | One consistent DES-012-derived visual/interaction system across Schedule, Task Detail, Meeting Review, Reports, Settings and new authoring | **Audit/design underway** | Integrated owner experience review and cross-view acceptance |
 | **Beta decision** | Controlled candidate with support, build/recovery/rollback/security readiness | **Not authorized** | Separate Product Owner go/no-go after all mandatory gates |
@@ -48,8 +48,8 @@
 
 ## Current delivery focus
 
-1. **Stage C #23:** the Product Owner selected **B2** (explicit Task/Create rows in the existing ProjectAudit) on 18 Nov 2026. Complete the versioned, backward-compatible audit contract and source-column-safe snapshot; retain immutable IDs, WBS, parent/dependency relationships and guarded Save recovery. Current code in [PR #105](https://github.com/Kenny619/spl-wbs/pull/105) is **validation and audit planning only**, not an Excel writer. [Stage C architecture record](https://github.com/Kenny619/spl-wbs/issues/23#issuecomment-6970324100).
-2. **Stage C #24:** reuse #23 creation engine for blank-project initialization and approved starter templates; support download fallback for restricted folder picker.
+1. **Stage C #23:** B2 Task/Create is the approved audit architecture. [Draft PR #110](https://github.com/Kenny619/spl-wbs/pull/110) now has an **opt-in existing-project Add Entity UI and in-memory 0.1.3 candidate with audited readback**. Finish precise versioned schema/alias/continuity review, independent security QA and guarded persistence architecture before any live Create or protected merge. [Architecture record](https://github.com/Kenny619/spl-wbs/issues/23#issuecomment-6970324100).
+2. **Stage C #24:** current development previews cover blank initialization, three templates, guided spreadsheet import and populated candidate history. Finish safe file-distribution/folder fallback without overwrites, then run only the necessary fictional end-to-end UAT. Source ZIP/XML resource hardening is under targeted QA.
 3. **Cost-controlled QA:** keep synthetic targeted domain/browser cases for new behavior only. Do not rerun the accepted MRU and Stage B physical scenarios. Current three-tier CI misclassifies `docs/specifications/*.md` as expensive full Windows changes; corrective DMO action [Issue #73](https://github.com/Kenny619/spl-wbs/issues/73).
 4. **After Stage C:** implement frozen RAG with new versioned workbook data and approved PM controls, then Report 1.1 parity, followed by holistic UX and separate beta assessment.
 
@@ -58,7 +58,7 @@
 - Stage A accepted: [Epic #1](https://github.com/Kenny619/spl-wbs/issues/1), [Recent Projects #21](https://github.com/Kenny619/spl-wbs/issues/21).
 - Stage B usability accepted: [PR #92](https://github.com/Kenny619/spl-wbs/pull/92), [PR #98](https://github.com/Kenny619/spl-wbs/pull/98). Latest approved fictional UAT material remains linked **once** from [README](../README.md), not duplicated here.
 - Stage B manual RAG spec frozen: [Issue #82](https://github.com/Kenny619/spl-wbs/issues/82), [PR #84](https://github.com/Kenny619/spl-wbs/pull/84), HW-FUNC-1.0.
-- Stage C: [Issue #23](https://github.com/Kenny619/spl-wbs/issues/23), [Issue #24](https://github.com/Kenny619/spl-wbs/issues/24), [PR #94](https://github.com/Kenny619/spl-wbs/pull/94).
+- Stage C: [Issue #23](https://github.com/Kenny619/spl-wbs/issues/23), [Issue #24](https://github.com/Kenny619/spl-wbs/issues/24), **current draft [PR #110](https://github.com/Kenny619/spl-wbs/pull/110)**. Last verified full CI checkpoint [#44777861188](https://github.com/Kenny619/spl-wbs/actions/runs/44777861188) passed 395 unit tests, both builds and Windows browser regression; later draft commits require their own verification.
 - UI: [Issue #25](https://github.com/Kenny619/spl-wbs/issues/25). CI: [Issue #73](https://github.com/Kenny619/spl-wbs/issues/73). Corporate Edge restrictions: [Issue #11](https://github.com/Kenny619/spl-wbs/issues/11).
 
 **Change discipline:** Release, corporate deployment, modified frozen Excel schema, implementation of the health model, and beta require their own explicit approval and independent evidence. Documentation freeze alone is not deployed code. This roadmap tracks accepted stage gates without promising unverified delivery dates.
