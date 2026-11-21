@@ -37,7 +37,7 @@ describe("guided archive bounded preparation",()=>{
   const normalized=await archive({"é":"x","é":"y"});
   await expect(prepareBoundedGuidedArchive(normalized,limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
- it("rejects malformed UTF-8 filenames with a controlled archive error",async()=>{
+ it("rejects a single non-NFC path while preserving composed Unicode",async()=>{\n  await expect(prepareBoundedGuidedArchive(await archive({"xl/cafe\\u0301.xml":"x"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});\n  const good=await prepareBoundedGuidedArchive(await archive({"xl/caf\\u00e9.xml":"x"}),limits);\n  expect(await (await JSZip.loadAsync(good)).file("xl/caf\\u00e9.xml")!.async("string")).toBe("x");\n });\n it("rejects malformed UTF-8 filenames with a controlled archive error",async()=>{
   for(const malformed of [0xc0,0xff,0x80]){
    const bytes=await archive({"a":"ok"});
    const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
