@@ -81,6 +81,11 @@ function directory(bytes: Uint8Array, limits: Limits) {
     if(!name || name.startsWith("/") || /[\\:\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ufeff]/u.test(name) ||
        name.split("/").some((s,j,a)=>s==="."||s===".."||(!s&&j!==a.length-1)) ||
        folded.has(lower)) reject();
+    // Windows trims trailing dots/spaces and interprets device names even with
+    // extensions. Reject such aliases before any cross-platform workbook read.
+    const segments=name.split("/").filter(Boolean);
+    if(segments.some(segment => /[. ]$/.test(segment) ||
+       /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\\.|$)/i.test(segment))) reject();
     if(name.endsWith("/") && (packed!==0 || plain!==0)) reject();
     names.set(name,{size:plain,crc}); folded.add(lower); spans.push([local,spanEnd]); at+=46+n+x+c;
   }

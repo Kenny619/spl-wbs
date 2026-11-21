@@ -39,6 +39,13 @@ describe("guided archive bounded preparation",()=>{
   await expect(prepareBoundedGuidedArchive(await archive({"xl":"file","xl/workbook.xml":"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
   await expect(prepareBoundedGuidedArchive(await archive({"XL":"file","xl/workbook.xml":"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
+ it("rejects Windows path aliases but preserves ordinary workbook parts",async()=>{
+  for(const name of ["xl/sheet.xml ","xl/sheet.xml.","xl/CON.xml","xl/lpt1.txt","AUX/data.xml"]){
+   await expect(prepareBoundedGuidedArchive(await archive({[name]:"x"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
+  }
+  const safe=await prepareBoundedGuidedArchive(await archive({"xl/worksheets/sheet1.xml":"ok"}),limits);
+  expect(await (await JSZip.loadAsync(safe)).file("xl/worksheets/sheet1.xml")!.async("string")).toBe("ok");
+ });
  it("rejects a forged smaller declared size rather than trusting metadata",async()=>{
   const source=await archive({"big":"x".repeat(2000)});
   const view=new DataView(source.buffer,source.byteOffset,source.byteLength);
