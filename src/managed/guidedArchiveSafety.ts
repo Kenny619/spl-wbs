@@ -40,6 +40,9 @@ function directory(bytes: Uint8Array, limits: Limits) {
     if(at+46>end || u32(at)!==0x02014b50) reject();
     const flag=u16(at+8), method=u16(at+10), crc=u32(at+16), packed=u32(at+20), plain=u32(at+24);
     const n=u16(at+28), x=u16(at+30), c=u16(at+32), local=u32(at+42);
+    // Reject Unix symlinks and special files instead of reinterpreting them as workbook parts.
+    const unixMode=u16(at+40);
+    if(bytes[at+5]===3 && unixMode && ![0x8000,0x4000].includes(unixMode&0xf000)) reject();
     // No encryption, split disks, ZIP64, or unsupported compression methods.
     if((flag & ~0x080e)!==0 || (method!==0 && method!==8) || u16(at+34)!==0 ||
        packed===0xffffffff || plain===0xffffffff || at+46+n+x+c>end ||
@@ -50,13 +53,23 @@ function directory(bytes: Uint8Array, limits: Limits) {
        (!(flag&8) && (u32(local+14)!==crc || u32(local+18)!==packed || u32(local+22)!==plain))) reject();
     // Permit ordinary timestamp and platform attributes, not size or path
     // overrides that could make the decompressor disagree with the raw parser.
+    // Unicode Path extra fields are emitted by JSZip for non-ASCII names.
+    // Accept only a faithful UTF-8 copy of the raw filename, never an override.
+    const rawName=bytes.subarray(at+46,at+46+n);
     function extras(offset:number,length:number){
       const endExtra=offset+length;const seen=new Set<number>();
       while(offset<endExtra){
         if(offset+4>endExtra)reject();
-        const kind=u16(offset),len=u16(offset+2);
-        if(seen.has(kind)||![0x5455,0x000a,0x7875].includes(kind)||offset+4+len>endExtra)reject();
-        seen.add(kind);offset+=4+len;
+        const kind=u16(offset),len=u16(offset+2),data=offset+4;
+        if(seen.has(kind)||![0x5455,0x000a,0x7875,0x7075].includes(kind)||data+len>endExtra)reject();
+        if(kind===0x7075){
+          if(!(flag&0x0800)||len<5||bytes[data]!==1)reject();
+          const expectedCrc=(crc32(rawName,0xffffffff)^0xffffffff)>>>0;
+          if(u32(data+1)!==expectedCrc)reject();
+          const alias=bytes.subarray(data+5,data+len);
+          if(alias.length!==rawName.length||alias.some((value,j)=>value!==rawName[j]))reject();
+        }
+        seen.add(kind);offset=data+len;
       }
     }
     extras(at+46+n,x);extras(local+30+ln,lx);
@@ -73,12 +86,41 @@ function directory(bytes: Uint8Array, limits: Limits) {
     }
     const raw=bytes.subarray(at+46,at+46+n);
     if(raw.some((b,j)=>b!==bytes[local+30+j])) reject();
-    const name=decoder.decode(raw), lower=name.toLowerCase();
-    if(!name || name.startsWith("/") || /[\\:\u0000-\u001f]/.test(name) ||
+    // ZIP without the UTF-8 flag uses a legacy code page. Reject non-ASCII
+    // names in that mode rather than letting JSZip and this parser disagree.
+    if(!(flag & 0x0800) && raw.some(byte=>byte>=0x80)) reject();
+    // Normalize malformed UTF-8 to a controlled unsupported-archive failure.
+    let name: string;
+    try { name=decoder.decode(raw); } catch { reject(); }
+    // Refuse decomposed Unicode even without a second colliding entry.
+    if(name!==name.normalize("NFC")) reject();
+    const lower=name.toLowerCase();
+    // Reject default-ignorable Unicode characters (including format controls), including soft hyphen, Arabic
+    // letter mark and bidi controls; an allowlist of code points misses aliases.
+    if(!name || name.startsWith("/") || /[\\:\u0000-\u001f\u007f-\u009f\p{Default_Ignorable_Code_Point}]/u.test(name) ||
        name.split("/").some((s,j,a)=>s==="."||s===".."||(!s&&j!==a.length-1)) ||
        folded.has(lower)) reject();
+    // Windows trims trailing dots/spaces and interprets device names even with
+    // extensions. Reject such aliases before any cross-platform workbook read.
+    const segments=name.split("/").filter(Boolean);
+    if(segments.some(segment => /[. ]$/.test(segment) ||
+       /[<>"|?*]/.test(segment) ||
+       /^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i.test(segment))) reject();
     if(name.endsWith("/") && (packed!==0 || plain!==0)) reject();
     names.set(name,{size:plain,crc}); folded.add(lower); spans.push([local,spanEnd]); at+=46+n+x+c;
+  }
+  // A file cannot simultaneously be a parent directory of another entry.
+  // Compare folded paths to avoid case and normalization aliases across entries.
+  for (const name of names.keys()) {
+    // A directory entry and a file with the same path are distinct ZIP names,
+    // but resolve to the same filesystem path on extraction. Fail closed.
+    if(name.endsWith("/") && folded.has(name.slice(0,-1).normalize("NFC").toLowerCase()))reject();
+    if(!name.endsWith("/") && folded.has(name.normalize("NFC").toLowerCase()+"/"))reject();
+    const parts=name.normalize("NFC").toLowerCase().split("/");
+    for(let i=1;i<parts.length;i++){
+      const parent=parts.slice(0,i).join("/");
+      if(folded.has(parent))reject();
+    }
   }
   spans.sort((a,b)=>a[0]-b[0]);
   if(at!==end || spans[0]?.[0]!==0 || spans.at(-1)?.[1]!==start || spans.some((s,i)=>i>0 && s[0]!==spans[i-1][1])) reject();
@@ -96,8 +138,13 @@ function crc32(bytes:Uint8Array,initial:number){
  * archive so ExcelJS never receives the original compressed input. No mutation
  * of source bytes. XML/parser complexity needs a separate structural gate. */
 export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limits=GUIDED_ARCHIVE_LIMITS):Promise<Uint8Array>{
+  // Bound the compressed container itself before ZIP parsing or decompression.
+  // Allow modest per-entry ZIP metadata overhead beyond the expanded-byte cap.
+  if(bytes.byteLength > limits.totalBytes + limits.entries * 1024) reject("archive-input-limit");
   const declared=directory(bytes,limits);
-  const zip=await JSZip.loadAsync(bytes);
+  // Convert decoder failures to the same fail-closed import diagnostic.
+  let zip: JSZip;
+  try { zip=await JSZip.loadAsync(bytes); } catch { reject(); }
   const clean=new JSZip();
   let total=0;
   if(Object.keys(zip.files).length!==declared.size) reject();
@@ -122,7 +169,7 @@ export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limit
         crc=crc32(chunk,crc);
         chunks.push(chunk);
       });
-      stream.on("error",(error:Error)=>{if(!stopped){stopped=true;rejectPromise(error);}});
+      stream.on("error",(_error:Error)=>{if(!stopped){stopped=true;rejectPromise(new GuidedArchiveError("unsupported-archive"));}});
       stream.on("end",()=>{
         if(stopped)return;
         if(length!==expected){rejectPromise(new GuidedArchiveError("unsupported-archive"));return;}
