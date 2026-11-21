@@ -148,6 +148,9 @@ export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limit
   // Otherwise a finite but enormous override defeats the resource boundary.
   // Runtime callers may bypass TypeScript; missing/null options must fail closed
   // with the same diagnostic rather than throwing before validation.
+  // Reject non-byte inputs before reading length, buffer, or ZIP headers.
+  // JavaScript callers can bypass the TypeScript Uint8Array contract.
+  if (!(bytes instanceof Uint8Array)) reject("unsupported-archive");
   if (limits === null || typeof limits !== "object") reject("archive-invalid-limits");
   if (![["entries", limits.entries], ["partBytes", limits.partBytes], ["totalBytes", limits.totalBytes]].every(
     ([key, value]) => typeof value === "number" && Number.isSafeInteger(value) &&

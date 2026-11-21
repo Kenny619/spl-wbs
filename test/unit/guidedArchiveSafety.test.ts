@@ -27,6 +27,13 @@ describe("guided archive bounded preparation",()=>{
   await expect(prepareBoundedGuidedArchive(corrupted,limits)).rejects.toMatchObject({code:"unsupported-archive"});
   expect(corrupted).toEqual(before); // failure must never mutate the supplied workbook bytes
  });
+ it("rejects non-byte inputs without leaking native TypeErrors",async()=>{
+  for(const invalid of [null,undefined,"not a zip",{},new ArrayBuffer(8),[1,2,3]]){
+    await expect(prepareBoundedGuidedArchive(invalid as Uint8Array,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+  }
+  const source=await archive({"part":"ok"});
+  expect(await (await JSZip.loadAsync(await prepareBoundedGuidedArchive(source,limits))).file("part")!.async("string")).toBe("ok");
+ });
  it("rejects unsafe resource-limit overrides before reading archive bytes",async()=>{
   const source=await archive({"part":"ok"});
   const before=source.slice();
