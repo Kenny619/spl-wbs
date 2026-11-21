@@ -1,4 +1,7 @@
 import ExcelJS from "exceljs";
+import JSZip from "jszip";
+import {prepareBoundedGuidedArchive} from "./guidedArchiveSafety";
+import {verifyGuidedXmlLimits} from "./guidedXmlLimits";
 import {preflightManagedWorkbook} from "./preflight";
 import {inspectProjectData} from "./projectDataInspector";
 import {mapB2WbsColumns} from "./b2HeaderMapping";
@@ -23,7 +26,11 @@ async function open(bytes:Uint8Array){
  * later edits and production 0.1.3 reading require their own full contract.
  * No writer, active viewer or Save logic imports this experimental proof. */
 export async function inspectStandaloneInitialB2Proof(bytes:Uint8Array){
- const source=bytes.slice();
+ const original=bytes.slice();
+ // Reject ZIP amplification, CRC inconsistency and sparse XML before ExcelJS.
+ // Re-encode to a bounded STORE archive; original caller bytes stay untouched.
+ const source=await prepareBoundedGuidedArchive(original);
+ await verifyGuidedXmlLimits(await JSZip.loadAsync(source));
  await preflightManagedWorkbook(source);
  const book=await open(source),project=inspectProjectData(book);
  if(project.kind!=="unsupported_future"||project.schemaVersion!=="0.1.3")
