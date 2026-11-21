@@ -13,7 +13,7 @@ describe("guided archive bounded preparation",()=>{
   expect(source).toEqual(original);
   expect(await (await JSZip.loadAsync(rebuilt)).file("xl/workbook.xml")!.async("string")).toBe("abc");
  });
- it("rejects declared individual and aggregate expansion beyond limits",async()=>{
+ it("rejects oversized ZIP container metadata before parsing",async()=>{\n  const z=new JSZip();z.file("part","ok",{createFolders:false});\n  const oversized=await z.generateAsync({type:"uint8array",compression:"DEFLATE",comment:"x".repeat(10000)});\n  await expect(prepareBoundedGuidedArchive(oversized,limits)).rejects.toMatchObject({code:"archive-input-limit"});\n  const ordinary=await z.generateAsync({type:"uint8array",compression:"DEFLATE"});\n  expect(await (await JSZip.loadAsync(await prepareBoundedGuidedArchive(ordinary,limits))).file("part")!.async("string")).toBe("ok");\n });\n it("rejects declared individual and aggregate expansion beyond limits",async()=>{
   await expect(prepareBoundedGuidedArchive(await archive({"big":"x".repeat(1025)}),limits)).rejects.toMatchObject({code:"archive-expanded-limit"});
   await expect(prepareBoundedGuidedArchive(await archive({"one":"x".repeat(800),"two":"y".repeat(800)}),limits)).rejects.toMatchObject({code:"archive-expanded-limit"});
  });

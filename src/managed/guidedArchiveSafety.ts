@@ -118,7 +118,7 @@ function crc32(bytes:Uint8Array,initial:number){
  * archive so ExcelJS never receives the original compressed input. No mutation
  * of source bytes. XML/parser complexity needs a separate structural gate. */
 export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limits=GUIDED_ARCHIVE_LIMITS):Promise<Uint8Array>{
-  const declared=directory(bytes,limits);
+  // Bound the compressed container itself before ZIP parsing or decompression.\n  // Allow modest per-entry ZIP metadata overhead beyond the expanded-byte cap.\n  if(bytes.byteLength > limits.totalBytes + limits.entries * 1024) reject("archive-input-limit");\n  const declared=directory(bytes,limits);
   const zip=await JSZip.loadAsync(bytes);
   const clean=new JSZip();
   let total=0;
