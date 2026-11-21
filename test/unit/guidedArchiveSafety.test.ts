@@ -13,6 +13,18 @@ describe("guided archive bounded preparation",()=>{
   expect(source).toEqual(original);
   expect(await (await JSZip.loadAsync(rebuilt)).file("xl/workbook.xml")!.async("string")).toBe("abc");
  });
+ it("normalizes JSZip parser failures after central-directory preflight",async()=>{
+  // A valid ZIP structure with an invalid compression stream must not leak
+  // JSZip-specific errors into the guided-import review flow.
+  const source=await archive({"part":"a".repeat(120)});
+  const view=new DataView(source.buffer,source.byteOffset,source.byteLength);
+  const central=view.getUint32(source.length-22+16,true);
+  const packed=view.getUint32(central+20,true);
+  expect(packed).toBeGreaterThan(0);
+  const corrupted=source.slice();
+  corrupted[30+"part".length]=0xff; // first DEFLATE byte
+  await expect(prepareBoundedGuidedArchive(corrupted,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+ });
  it("rejects oversized ZIP container metadata before parsing",async()=>{
   const z=new JSZip();z.file("part","ok",{createFolders:false});
   const oversized=await z.generateAsync({type:"uint8array",compression:"DEFLATE",comment:"x".repeat(10000)});

@@ -142,7 +142,7 @@ export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limit
   // Allow modest per-entry ZIP metadata overhead beyond the expanded-byte cap.
   if(bytes.byteLength > limits.totalBytes + limits.entries * 1024) reject("archive-input-limit");
   const declared=directory(bytes,limits);
-  const zip=await JSZip.loadAsync(bytes);
+  // Convert decoder failures to the same fail-closed import diagnostic.\n  let zip: JSZip;\n  try { zip=await JSZip.loadAsync(bytes); } catch { reject(); }
   const clean=new JSZip();
   let total=0;
   if(Object.keys(zip.files).length!==declared.size) reject();
@@ -167,7 +167,7 @@ export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limit
         crc=crc32(chunk,crc);
         chunks.push(chunk);
       });
-      stream.on("error",(error:Error)=>{if(!stopped){stopped=true;rejectPromise(error);}});
+      stream.on("error",(_error:Error)=>{if(!stopped){stopped=true;rejectPromise(new GuidedArchiveError("unsupported-archive"));}});
       stream.on("end",()=>{
         if(stopped)return;
         if(length!==expected){rejectPromise(new GuidedArchiveError("unsupported-archive"));return;}
