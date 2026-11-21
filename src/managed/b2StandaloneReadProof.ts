@@ -11,7 +11,7 @@ import {prepareCombinedHistoryProof} from "./combinedHistoryProof";
 import {importWorkbook} from "../data/normalize";
 
 const AUDIT=["EventID","ChangeSetID","TimestampUTC","EntityType","EntityID","TaskID","Action","Field","OldValue","NewValue","ActorLabel","ActorProvenance","Source","AppVersion"] as const;
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const reject=(message:string):never=>{throw Error("b2-standalone:"+message);};
 async function open(bytes:Uint8Array){
  const book=new ExcelJS.Workbook();
@@ -80,7 +80,7 @@ export async function inspectStandaloneInitialB2Proof(bytes:Uint8Array){
  }
  if(!transition||!createCount||ids.size!==manifests.size)return reject("incomplete-create-record");
  let physicalHistoryCount=0;
- history?.eachRow({includeEmpty:false},(row,i)=>{if(i>1)physicalHistoryCount++;});
+ history?.eachRow({includeEmpty:false},(_,i)=>{if(i>1)physicalHistoryCount++;});
  if([...manifests.values()].some(boundary=>boundary!==physicalHistoryCount))
    return reject("unsupported-post-create-edit");
  const predecessor=await open(source);
