@@ -95,8 +95,9 @@ export function mountExistingEntityPreview(root:HTMLElement,loadedSource:Uint8Ar
   void prepareExistingEntityProof({source:source.slice(),draft,taskId,
    changeSetId:crypto.randomUUID(),timestampUTC:new Date().toISOString(),
    actorLabel,appVersion:MANAGED_APP_VERSION}).then(async candidate=>{
-    // Read both source sheets and reconcile the exact candidate, never the
-    // live History/Report reader or a potentially overwritten active workbook.
+    // Closing the dialog or changing a field invalidates this attempt before
+    // starting the second, potentially expensive workbook readback.
+    if(!alive||revision!==token)return;
     const instants=await prepareCombinedHistoryProof(source,candidate.bytes);
     if(!alive||revision!==token)return;
     renderCandidateHistoryReview(historyReview,instants,timeZone);

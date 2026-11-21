@@ -229,7 +229,7 @@ export class ManagedEditor {
         close.type = "button";
         close.addEventListener("click", () => modal.close());
         modal.append(close, content);
-        const mounted = mountOnboardingPreview(content);
+        const mounted = mountOnboardingPreview(content,this.settings.getTimeZone());
         modal.addEventListener("close", () => {
           mounted.dispose();
           modal.remove();

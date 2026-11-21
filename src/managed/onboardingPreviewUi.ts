@@ -5,6 +5,8 @@ import {starterTemplateCatalog,type StarterTemplateId} from "./starterProjectTem
 import {MANAGED_APP_VERSION} from "./version";
 import {preparePopulatedProjectProof} from "./populatedProjectProof";
 import type {BlankProjectInput} from "./blankProjectCandidate";
+import {prepareCombinedHistoryProof} from "./combinedHistoryProof";
+import {renderCandidateHistoryReview} from "./candidateHistoryReviewUi";
 
 type Grid=Extract<Awaited<ReturnType<typeof readGuidedSource>>,{kind:"grid"}>;
 type Route="scratch"|"import"|"template";
@@ -13,7 +15,7 @@ const LIMIT=25*1024*1024;
 const PAGE=50;
 const makeId=()=>crypto.randomUUID();
 
-export function mountOnboardingPreview(root:HTMLElement){
+export function mountOnboardingPreview(root:HTMLElement,timeZone="Asia/Tokyo"){
  const doc=root.ownerDocument;
  let generation=0,route:Route="scratch",grid:Grid|null=null,source:Uint8Array|null=null;
  let allocated:Record<number,string>={},overrides:HeaderOverride[]=[],page=0;
@@ -74,7 +76,8 @@ export function mountOnboardingPreview(root:HTMLElement){
  function confirmation(valid:boolean,verify?:(project:BlankProjectInput,changeSetId:string)=>ReturnType<typeof preparePopulatedProjectProof>){
    const holder=el("div"),check=el("input");check.type="checkbox";check.disabled=!valid;
    check.checked=reviewed;const status=el("p",reviewed?"Review acknowledged. Saving remains disabled.":"Review not acknowledged.");
-   const name=el("input"),actor=el("input"),proof=el("p");
+   const name=el("input"),actor=el("input"),proof=el("p"),historyView=el("section");
+   historyView.setAttribute("aria-label","Candidate creation history");
    name.maxLength=160;actor.maxLength=160;
    proof.setAttribute("aria-live","polite");
    let revision=0;
@@ -85,18 +88,29 @@ export function mountOnboardingPreview(root:HTMLElement){
      proof.textContent="Constructing and reopening a disposable candidate…";
      const project:BlankProjectInput={projectId:makeId(),projectName:name.value.trim(),actorLabel:actor.value.trim(),
        changeSetId:makeId(),timestampUTC:new Date().toISOString(),appVersion:MANAGED_APP_VERSION};
-     void verify(project,makeId()).then(candidate=>{
+     void verify(project,makeId()).then(async candidate=>{
        if(!current(token)||ticket!==revision||!reviewed)return;
+       if(candidate.taskCount<=100){
+         const instants=await prepareCombinedHistoryProof(candidate.predecessorBytes,candidate.bytes);
+         if(!current(token)||ticket!==revision||!reviewed)return;
+         renderCandidateHistoryReview(historyView,instants,timeZone);
+       }else{
+         // Audit completeness is already verified; do not render an unbounded
+         // detail DOM or silently truncate records for large guided imports.
+         historyView.replaceChildren(el("p","All "+candidate.taskCount+
+           " tasks passed B2 candidate readback. Detailed inline history is limited to 100 tasks; no audit rows were removed."));
+       }
        proof.textContent="Disposable workbook verified: "+candidate.taskCount+" tasks, "+candidate.auditRows+" task audit rows. No file saved.";
        verifyButton.disabled=false;
      }).catch(error=>{
        if(!current(token)||ticket!==revision||!reviewed)return;
+       historyView.replaceChildren();
        proof.textContent="Candidate refused: "+(error instanceof Error?error.message:"Unexpected verification failure");
        verifyButton.disabled=false;
      });
    });
    function syncProof(){
-     revision++;proof.textContent="";
+     revision++;proof.textContent="";historyView.replaceChildren();
      verifyButton.disabled=!valid||!reviewed||!name.value.trim()||!actor.value.trim();
      name.disabled=!valid||!reviewed;actor.disabled=!valid||!reviewed;
    }
@@ -108,7 +122,7 @@ export function mountOnboardingPreview(root:HTMLElement){
    holder.append(labeled("I have reviewed the proposed project and its diagnostics.",check),status);
    if(verify){
      name.addEventListener("input",syncProof);actor.addEventListener("input",syncProof);
-     holder.append(labeled("Candidate project name",name),labeled("Candidate local actor (unverified)",actor),verifyButton,proof);
+     holder.append(labeled("Candidate project name",name),labeled("Candidate local actor (unverified)",actor),verifyButton,proof,historyView);
      syncProof();
    }
    return holder;

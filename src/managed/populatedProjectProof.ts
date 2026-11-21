@@ -97,5 +97,6 @@ export async function preparePopulatedProjectProof(request:Request){
      return fail("domain-relationship-readback");
  }
  return {kind:"synthetic-populated-proof" as const,taskCount:read.tasks.length,
-   auditRows:snapshots.length*(fields.length+1),schemaVersion:"0.1.3" as const,persistenceReady:false as const,bytes};
+   auditRows:snapshots.length*(fields.length+1),schemaVersion:"0.1.3" as const,persistenceReady:false as const,
+   predecessorBytes:blank.bytes,bytes};
 }

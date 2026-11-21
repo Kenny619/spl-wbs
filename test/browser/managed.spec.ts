@@ -2505,6 +2505,13 @@ test("Stage C opt-in managed integration closes without changing workbook or act
  await modal.getByLabel("Candidate local actor (unverified)").fill("Synthetic PM");
  await modal.getByRole("button",{name:"Verify disposable populated workbook"}).click();
  await expect(modal.getByText("Disposable workbook verified: 3 tasks, 57 task audit rows. No file saved.")).toBeVisible();
+ const history=modal.getByRole("region",{name:"Candidate creation history"});
+ await expect(history.getByRole("heading",{name:"Creation history preview"})).toBeVisible();
+ await expect(history).toContainText("3 created entities");
+ await expect(history).toContainText("1 logical transaction");
+ await history.getByText("Inspect complete candidate audit evidence").click();
+ await expect(history).toContainText("Created 1 ·");
+
  await modal.getByRole("button",{name:"Close preview"}).click();
  await expect(modal).toHaveCount(0);
  await expect(page.locator("#title")).toHaveText("synthetic-demo");
@@ -2548,7 +2555,7 @@ test("Stage C existing-project entity preview verifies a new task without writin
  await expect(creation.getByRole("heading",{name:"Creation history preview"})).toBeVisible();
  await expect(creation).toContainText("1 created entity");
  await expect(creation).toContainText("1 logical transaction");
- await expect(creation).toContainText("Created 2 · New synthetic deliverable");
+ await expect(creation).toContainText("Created 1 · New synthetic deliverable");
  await expect(creation.getByText("Candidate-only reconciliation. No workbook saved, loaded or activated.")).toBeVisible();
  await creation.getByText("Inspect complete candidate audit evidence").click();
  await creation.getByText("Initial field snapshot").click();
