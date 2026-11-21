@@ -1,13 +1,13 @@
 import {constants} from "node:fs";
 import {open,readdir,lstat} from "node:fs/promises";
 import {join} from "node:path";
-import {managedFileNames,sha256} from "../../src/managed/directSave";
+import {managedFileNames,sha256} from "../../../src/managed/directSave";
 import ExcelJS from "exceljs";
-import {preflightManagedWorkbook} from "../../src/managed/preflight";
-import {inspectProjectData} from "../../src/managed/projectDataInspector";
-import {verifyB2WorkbookReadback} from "../../src/managed/b2WorkbookReadback";
-import {readManagedHistoryWithPresence} from "../../src/managed/history";
-import {importWorkbook} from "../../src/data/normalize";
+import {preflightManagedWorkbook} from "../../../src/managed/preflight";
+import {inspectProjectData} from "../../../src/managed/projectDataInspector";
+import {verifyB2WorkbookReadback} from "../../../src/managed/b2WorkbookReadback";
+import {readManagedHistoryWithPresence} from "../../../src/managed/history";
+import {importWorkbook} from "../../../src/data/normalize";
 
 /** TEST-ONLY filesystem feasibility lab. This is intentionally NOT a
  * SyntheticExclusivePort and must never be wired to the managed app:

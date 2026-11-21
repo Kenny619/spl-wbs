@@ -6,7 +6,7 @@ import {sha256} from "../../src/managed/directSave";
 import {prepareBlankProject} from "../../src/managed/blankProjectCandidate";
 import {preparePopulatedProjectProof} from "../../src/managed/populatedProjectProof";
 import ExcelJS from "exceljs";
-import {inspectNewProjectDiskLab,proveExclusiveNewProjectDiskLab} from "../support/newProjectFilesystemLab";
+import {inspectNewProjectDiskLab,proveExclusiveNewProjectDiskLab} from "./support/newProjectFilesystemLab";
 const dirs:string[]=[];
 afterEach(async()=>{for(const d of dirs.splice(0))await rm(d,{recursive:true,force:true});});
 async function setup(){
