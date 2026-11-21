@@ -44,7 +44,7 @@ test.beforeAll(async () => {
   ))).toString("base64");
 }, { timeout: 120000 });
 
-async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1, expectedTitle?: string) {
+async function openManaged(page: import("@playwright/test").Page, encoded = base64, expectedRows = 1, expectedTitle?: string, stageCPreview = false) {
   await page.addInitScript(({ encoded }) => {
     const decoded = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
     const files = new Map<string, Uint8Array>([["synthetic-demo.xlsx", decoded]]);
@@ -84,7 +84,7 @@ async function openManaged(page: import("@playwright/test").Page, encoded = base
       configurable: true, value: async () => dir,
     });
   }, { encoded });
-  await page.goto(fileUrl);
+  await page.goto(fileUrl + (stageCPreview ? "?stageCPreview=1" : ""));
   await expect(page.getByText("EXCEL MANAGED · DEVELOPMENT PREVIEW")).toBeVisible();
   await page.locator(".managed-project-menu summary").click();
   await page.getByRole("button", { name: "Choose project folder" }).click();
@@ -2425,4 +2425,154 @@ test("owner UAT: Meeting Exceptions combines recorded Watch, At Risk, Blocked an
   await expect(agenda.locator('.managed-meeting-task[data-task-id="504"]')).toContainText("Overdue");
   await expect(agenda).toContainText("status/date exceptions");
   await expect(agenda).toContainText("no automatic Green or clearance inferred");
+});
+
+
+test.describe("Stage C isolated onboarding review",()=>{
+  let server:import("vite").ViteDevServer;
+  let url:string;
+  test.beforeAll(async()=>{
+    const {createServer}=await import("vite");
+    server=await createServer({server:{host:"127.0.0.1",port:0},clearScreen:false});
+    await server.listen();
+    const address=server.httpServer?.address();
+    if(!address||typeof address==="string")throw Error("Missing preview server address");
+    url="http://127.0.0.1:"+address.port+"/stage-c-onboarding-preview.html";
+  });
+  test.afterAll(async()=>{await server?.close();});
+  test("scratch review remains isolated and changing the name clears acknowledgment",async({page})=>{
+    await page.goto(url);
+    await page.getByLabel("Project name",{exact:true}).fill("Synthetic preview");
+    await page.getByLabel("Local actor label (unverified)").fill("Synthetic PM");
+    await page.getByRole("button",{name:"Prepare empty project"}).click();
+    await expect(page.getByRole("status")).toContainText("Empty candidate verified in memory");
+    const acknowledgment=page.getByRole("checkbox");
+    await acknowledgment.check();
+    await expect(page.getByText("Review acknowledged. Saving remains disabled.")).toBeVisible();
+    await page.getByLabel("Project name",{exact:true}).fill("Changed project");
+    await expect(acknowledgment).toHaveCount(0);
+    await expect(page.getByRole("button",{name:/save|download/i})).toHaveCount(0);
+  });
+  test("template requires milestone date and previews task relationships",async({page})=>{
+    await page.goto(url);
+    await page.getByRole("button",{name:"Use a starter template"}).click();
+    await page.getByLabel("Template",{exact:true}).selectOption("milestone-led-delivery");
+    await page.getByRole("button",{name:"Preview template"}).click();
+    await expect(page.getByRole("status")).toHaveText("Template needs correction.");
+    await page.getByLabel("Milestone date").fill("2026-12-01");
+    await page.getByRole("button",{name:"Preview template"}).click();
+    await expect(page.locator("tbody tr")).toHaveCount(3);
+    await expect(page.getByText("Launch decision",{exact:true})).toBeVisible();
+    await expect(page.getByRole("checkbox")).toBeEnabled();
+  });
+  test("guided import selects worksheet, accounts for exclusions, and cancels on switching route",async({page})=>{
+    const b=new ExcelJS.Workbook(),s=b.addWorksheet("Plan");
+    s.addRow(["Title","ID","WBS","Source notes"]);s.addRow(["Delivery","old-parent","1","retain in source"]);s.addRow(["Prepare","old-child","1.1","review omission"]);
+    b.addWorksheet("Notes").addRow(["Unselected"]);
+    await page.goto(url);
+    await page.getByRole("button",{name:"Import Excel"}).click();
+    await page.getByLabel("Synthetic XLSX").setInputFiles({name:"synthetic.xlsx",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",buffer:Buffer.from(await b.xlsx.writeBuffer())});
+    await page.getByLabel("Worksheet",{exact:true}).selectOption("Plan");
+    await page.getByRole("button",{name:"Review worksheet"}).click();
+    await expect(page.getByRole("checkbox")).toBeDisabled();
+    await page.getByLabel("Column 4: Source notes").selectOption("exclude");
+    await expect(page.getByRole("status")).toContainText("Review ready");
+    await expect(page.getByRole("checkbox")).toBeEnabled();
+    await expect(page.getByText("2 explicitly excluded cells",{exact:false})).toBeVisible();
+    await page.getByRole("button",{name:"Start from scratch"}).click();
+    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    await expect(page.getByText("Source review — Plan")).toHaveCount(0);
+  });
+});
+
+
+test("Stage C opt-in managed integration closes without changing workbook or active task",async({page})=>{
+ await openManaged(page,base64,1,undefined,true);
+ const snapshot=()=>page.evaluate(()=>{
+  const files=(window as unknown as {__managedFixtureFiles:Map<string,Uint8Array>}).__managedFixtureFiles;
+  return [...files].map(([name,bytes])=>[name,Array.from(bytes)]);
+ });
+ const before=await snapshot();
+ await page.locator(".managed-project-menu summary").click();
+ await page.getByRole("button",{name:"New project — preview…"}).click();
+ const modal=page.getByRole("dialog",{name:"Stage C project preparation"});
+ await expect(modal).toBeVisible();
+ await modal.getByRole("button",{name:"Use a starter template"}).click();
+ await modal.getByRole("button",{name:"Preview template"}).click();
+ await expect(modal.locator("tbody tr")).toHaveCount(3);
+ await modal.getByRole("checkbox").check();
+ await modal.getByLabel("Candidate project name").fill("Synthetic new project");
+ await modal.getByLabel("Candidate local actor (unverified)").fill("Synthetic PM");
+ await modal.getByRole("button",{name:"Verify disposable populated workbook"}).click();
+ await expect(modal.getByText("Disposable workbook verified: 3 tasks, 57 task audit rows. No file saved.")).toBeVisible();
+ const history=modal.getByRole("region",{name:"Candidate creation history"});
+ await expect(history.getByRole("heading",{name:"Creation history preview"})).toBeVisible();
+ await expect(history).toContainText("3 created entities");
+ await expect(history).toContainText("1 logical transaction");
+ await history.getByText("Inspect complete candidate audit evidence").click();
+ await expect(history).toContainText("Created 1 ·");
+
+ await modal.getByRole("button",{name:"Close preview"}).click();
+ await expect(modal).toHaveCount(0);
+ await expect(page.locator("#title")).toHaveText("synthetic-demo");
+ await expect(page.locator(".task-row")).toHaveCount(1);
+ await expect(page.getByRole("button",{name:"Edit task"})).toBeEnabled();
+ expect(await snapshot()).toEqual(before);
+});
+test("Stage C review is not exposed in ordinary managed mode",async({page})=>{
+ await openManaged(page);
+ await page.locator(".managed-project-menu summary").click();
+ await expect(page.getByRole("button",{name:"New project — preview…"})).toHaveCount(0);
+});
+
+
+test("Stage C existing-project entity preview verifies a new task without writing to the active workbook",async({page})=>{
+ const fixture=new ExcelJS.Workbook();
+ await fixture.xlsx.load(new Uint8Array(await projectDataWorkbook()) as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+ fixture.getWorksheet("ProjectWBS")!.getCell("K1").value="PredecessorIDs";
+ const encoded=Buffer.from(await fixture.xlsx.writeBuffer()).toString("base64");
+ await openManaged(page,encoded,1,"Synthetic shared project",true);
+ const snapshot=()=>page.evaluate(()=>{
+  const files=(window as unknown as {__managedFixtureFiles:Map<string,Uint8Array>}).__managedFixtureFiles;
+  return [...files].map(([name,bytes])=>[name,Array.from(bytes)]);
+ });
+ const before=await snapshot();
+ await page.locator(".managed-project-menu summary").click();
+ await page.getByRole("button",{name:"Add entity — preview…"}).click();
+ const modal=page.getByRole("dialog",{name:"Stage C entity creation"});
+ await expect(modal).toBeVisible();
+ await modal.getByLabel("Task title").fill("New synthetic deliverable");
+ await modal.getByLabel("Predecessors (optional, multiple)").selectOption(["501"]);
+ await modal.getByLabel("Local actor (unverified)").fill("Synthetic PM");
+ await expect(modal.getByRole("status")).toContainText("Valid draft");
+ const verify=modal.getByRole("button",{name:"Verify disposable entity candidate"});
+ await expect(verify).toBeDisabled();
+ await modal.getByRole("checkbox").check();
+ await expect(verify).toBeEnabled();
+ await verify.click();
+ await expect(modal.getByText(/Verified in memory: 2 tasks \(one newly created\)/)).toBeVisible();
+ const creation=modal.getByRole("region",{name:"Candidate creation history"});
+ await expect(creation.getByRole("heading",{name:"Creation history preview"})).toBeVisible();
+ await expect(creation).toContainText("1 created entity");
+ await expect(creation).toContainText("1 logical transaction");
+ await expect(creation).toContainText("Created 1 · New synthetic deliverable");
+ await expect(creation.getByText("Candidate-only reconciliation. No workbook saved, loaded or activated.")).toBeVisible();
+ await creation.getByText("Inspect complete candidate audit evidence").click();
+ await creation.getByText("Initial field snapshot").click();
+ await expect(creation).toContainText("PredecessorIDs: [\"501\"]");
+ await expect(creation).toContainText("Event ");
+
+ await modal.getByLabel("Task title").fill("Modified without verification");
+ await expect(modal.getByRole("checkbox")).not.toBeChecked();
+ await expect(creation).toBeEmpty();
+ await expect(verify).toBeDisabled();
+ await modal.getByRole("button",{name:"Close entity preview"}).click();
+ await expect(modal).toHaveCount(0);
+ await expect(page.locator(".task-row")).toHaveCount(1);
+ expect(await snapshot()).toEqual(before);
+});
+test("Stage C entity creation is hidden in ordinary managed mode",async({page})=>{
+ await openManaged(page);
+ await page.locator(".managed-project-menu summary").click();
+ await expect(page.getByRole("button",{name:"Add entity — preview…"})).toHaveCount(0);
 });

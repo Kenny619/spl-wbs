@@ -11,6 +11,8 @@ import { collectTaskChanges, hasTaskChanges, initialTaskDraft, type TaskDraft } 
 import { captureManagedSourceHash, inspectManagedSave, saveManagedAsCopy, saveManagedDirect, saveManagedProjectDirect, sha256 } from "./directSave";
 import { preflightManagedWorkbook } from "./preflight";
 import { openManagedHistory } from "./historyUi";
+import { mountOnboardingPreview } from "./onboardingPreviewUi";
+import { mountExistingEntityPreview } from "./existingEntityPreviewUi";
 import { ManagedSettings } from "./settingsUi";
 import { ManagedReports } from "./reportsUi";
 import { mountManagedShell } from "./shell";
@@ -208,6 +210,63 @@ export class ManagedEditor {
       if (file) void this.previewWorkbook(file);
     });
     actions.prepend(previewButton, previewInput);
+    // Explicit development-only opt-in. No ordinary Project action or
+    // persisted setting enables Stage C; the existing writer stays unchanged.
+    if (new URLSearchParams(doc.defaultView?.location.search ?? "").get("stageCPreview") === "1") {
+      const launch = element(doc, "button", "managed-action", "New project — preview…");
+      launch.type = "button";
+      launch.addEventListener("click", () => {
+        if (this.busy || doc.querySelector("dialog[open]")) return;
+        if (this.isDirty()) {
+          this.message = "Finish or discard the existing draft before opening project preparation.";
+          this.render();
+          return;
+        }
+        const modal = element(doc, "dialog", "managed-dialog stage-c-onboarding-dialog");
+        modal.setAttribute("aria-label", "Stage C project preparation");
+        const content = element(doc, "div", "stage-c-onboarding-content");
+        const close = element(doc, "button", "managed-action", "Close preview");
+        close.type = "button";
+        close.addEventListener("click", () => modal.close());
+        modal.append(close, content);
+        const mounted = mountOnboardingPreview(content,this.settings.getTimeZone());
+        modal.addEventListener("close", () => {
+          mounted.dispose();
+          modal.remove();
+          doc.querySelector<HTMLElement>(".managed-project-menu summary")?.focus();
+        }, { once: true });
+        doc.body.append(modal);
+        modal.showModal();
+        close.focus();
+      });
+      actions.prepend(launch);
+      const addEntity = element(doc,"button","managed-action","Add entity — preview…");
+      addEntity.type="button";
+      addEntity.addEventListener("click",()=>{
+        if(this.busy || doc.querySelector("dialog[open]"))return;
+        if(this.isDirty()){
+          this.message="Finish or discard existing drafts before preparing an entity.";
+          this.render();return;
+        }
+        if(!this.loadedBytes){
+          this.message="Open a verified, disposable project workbook before preparing a new entity.";
+          this.render();return;
+        }
+        const modal=element(doc,"dialog","managed-dialog stage-c-onboarding-dialog");
+        modal.setAttribute("aria-label","Stage C entity creation");
+        const content=element(doc,"div","stage-c-onboarding-content");
+        const close=element(doc,"button","managed-action","Close entity preview");
+        close.type="button";close.addEventListener("click",()=>modal.close());
+        modal.append(close,content);
+        const mounted=mountExistingEntityPreview(content,this.loadedBytes,this.settings.getTimeZone());
+        modal.addEventListener("close",()=>{
+          mounted.dispose();modal.remove();
+          doc.querySelector<HTMLElement>(".managed-project-menu summary")?.focus();
+        },{once:true});
+        doc.body.append(modal);modal.showModal();close.focus();
+      });
+      actions.prepend(addEntity);
+    }
     const inspectButton = element(doc, "button", "managed-action", "Inspect Save State");
     inspectButton.type = "button";
     inspectButton.addEventListener("click", () => {

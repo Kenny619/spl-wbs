@@ -657,3 +657,20 @@ body.spt-managed[data-managed-theme="dark"] .dep-layer path {
   stroke-width:2 !important;
   filter:drop-shadow(0 0 1px #07182a);
 }
+
+/* Stage C opt-in preview only. Never changes existing Schedule/Reports layout. */
+.managed-dialog.stage-c-onboarding-dialog {width:min(1060px, calc(100vw - 48px));max-width:calc(100vw - 24px);max-height:85vh;overflow:auto;box-sizing:border-box}
+.stage-c-onboarding-content {color:var(--ink);line-height:1.5}
+.stage-c-onboarding-content :is(nav,section) {margin:12px 0}
+.stage-c-onboarding-content nav {display:flex;gap:8px;flex-wrap:wrap}
+.stage-c-onboarding-content :is(button,input,select) {font:inherit;padding:6px 9px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:5px;max-width:100%;box-sizing:border-box}
+.stage-c-onboarding-content button[aria-pressed=true] {outline:2px solid #2683bf;font-weight:600}
+.stage-c-onboarding-content :is(button,input,select):disabled {opacity:.55}
+.stage-c-onboarding-content label {display:block;margin:9px 0;overflow-wrap:anywhere}
+.stage-c-onboarding-content label[hidden] {display:none}
+.stage-c-onboarding-content .review-table {overflow:auto;max-height:42vh}
+.stage-c-onboarding-content .mapping {max-height:30vh;overflow:auto}
+.stage-c-onboarding-content table {width:100%;border-collapse:collapse}
+.stage-c-onboarding-content :is(th,td) {text-align:left;padding:6px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.stage-c-onboarding-content details {margin:6px 0}
+.stage-c-onboarding-content ul {overflow:auto;max-height:20vh;overflow-wrap:anywhere}

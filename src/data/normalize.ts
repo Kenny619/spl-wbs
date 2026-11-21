@@ -71,6 +71,13 @@ const ALIASES: Record<string, Field> = {
   url: "itemUrl",
 };
 
+/** Shared read-only alias lookup for candidate adapters. Keep native import's
+ * accepted vocabulary authoritative instead of maintaining a second alias set. */
+export function resolveWbsSourceField(header: string): Field | undefined {
+  const key = headerKey(header);
+  return Object.prototype.hasOwnProperty.call(ALIASES, key) ? ALIASES[key] : undefined;
+}
+
 const REQUIRED: Field[] = ["id", "taskName", "wbsCode", "taskType"];
 
 export async function importWorkbook(
@@ -216,7 +223,7 @@ function mapHeaders(headers: string[]): { columns: ColumnMap; issues: ImportIssu
   const columns: ColumnMap = {};
   const issues: ImportIssue[] = [];
   headers.forEach((header, index) => {
-    const field = ALIASES[headerKey(header)];
+    const field = resolveWbsSourceField(header);
     if (!field) return;
     if (columns[field] != null) {
       issues.push({
