@@ -58,7 +58,7 @@ describe("guided archive bounded preparation",()=>{
   expect(await (await JSZip.loadAsync(valid)).file("xl/workbook.xml")!.async("string")).toBe("ok");
  });
  it("rejects Windows path aliases but preserves ordinary workbook parts",async()=>{
-  for(const name of ["xl/sheet.xml ","xl/sheet.xml.","xl/CON.xml","xl/lpt1.txt","AUX/data.xml","xl/PRN.txt","xl/NUL","xl/com9.bin","xl/LPT2.csv"]){
+  for(const name of ["xl/sheet.xml ","xl/sheet.xml.","xl/CON.xml","xl/lpt1.txt","AUX/data.xml","xl/PRN.txt","xl/NUL","xl/com9.bin","xl/LPT2.csv","xl/COM¹.txt","xl/LPT³.xml","xl/a?b.xml","xl/a*b.xml","xl/a|b.xml","xl/a<b.xml","xl/a>b.xml","xl/a\"b.xml"]){
    await expect(prepareBoundedGuidedArchive(await archive({[name]:"x"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
   }
   for(const name of ["xl/console.xml","xl/com10.xml","xl/auxiliary.xml"]){

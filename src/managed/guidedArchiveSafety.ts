@@ -85,7 +85,8 @@ function directory(bytes: Uint8Array, limits: Limits) {
     // extensions. Reject such aliases before any cross-platform workbook read.
     const segments=name.split("/").filter(Boolean);
     if(segments.some(segment => /[. ]$/.test(segment) ||
-       /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(segment))) reject();
+       /[<>"|?*]/.test(segment) ||
+       /^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i.test(segment))) reject();
     if(name.endsWith("/") && (packed!==0 || plain!==0)) reject();
     names.set(name,{size:plain,crc}); folded.add(lower); spans.push([local,spanEnd]); at+=46+n+x+c;
   }
