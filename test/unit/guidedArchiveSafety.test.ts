@@ -31,6 +31,8 @@ describe("guided archive bounded preparation",()=>{
   const source=await archive({"part":"ok"});
   const before=source.slice();
   for(const invalid of [
+    null as unknown as typeof limits,
+    {} as typeof limits,
     {...limits,entries:0},
     {...limits,entries:Infinity},
     {...limits,partBytes:NaN},

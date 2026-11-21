@@ -146,6 +146,9 @@ export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limit
   // caller overrides rather than allowing NaN/Infinity to disable comparisons.
   // Callers may tighten, never raise, the approved external-import ceilings.
   // Otherwise a finite but enormous override defeats the resource boundary.
+  // Runtime callers may bypass TypeScript; missing/null options must fail closed
+  // with the same diagnostic rather than throwing before validation.
+  if (limits === null || typeof limits !== "object") reject("archive-invalid-limits");
   if (![["entries", limits.entries], ["partBytes", limits.partBytes], ["totalBytes", limits.totalBytes]].every(
     ([key, value]) => typeof value === "number" && Number.isSafeInteger(value) &&
       value > 0 && value <= GUIDED_ARCHIVE_LIMITS[key as keyof Limits]
