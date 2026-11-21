@@ -138,6 +138,11 @@ function crc32(bytes:Uint8Array,initial:number){
  * archive so ExcelJS never receives the original compressed input. No mutation
  * of source bytes. XML/parser complexity needs a separate structural gate. */
 export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limits=GUIDED_ARCHIVE_LIMITS):Promise<Uint8Array>{
+  // Limits are a security boundary: reject non-finite, fractional or negative
+  // caller overrides rather than allowing NaN/Infinity to disable comparisons.
+  if (![limits.entries, limits.partBytes, limits.totalBytes].every(
+    value => Number.isSafeInteger(value) && value > 0
+  )) reject("archive-invalid-limits");
   // Bound the compressed container itself before ZIP parsing or decompression.
   // Allow modest per-entry ZIP metadata overhead beyond the expanded-byte cap.
   if(bytes.byteLength > limits.totalBytes + limits.entries * 1024) reject("archive-input-limit");

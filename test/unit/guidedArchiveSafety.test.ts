@@ -27,6 +27,21 @@ describe("guided archive bounded preparation",()=>{
   await expect(prepareBoundedGuidedArchive(corrupted,limits)).rejects.toMatchObject({code:"unsupported-archive"});
   expect(corrupted).toEqual(before); // failure must never mutate the supplied workbook bytes
  });
+ it("rejects unsafe resource-limit overrides before reading archive bytes",async()=>{
+  const source=await archive({"part":"ok"});
+  const before=source.slice();
+  for(const invalid of [
+    {...limits,entries:0},
+    {...limits,entries:Infinity},
+    {...limits,partBytes:NaN},
+    {...limits,totalBytes:-1},
+    {...limits,totalBytes:1.5},
+    {...limits,totalBytes:Number.MAX_SAFE_INTEGER+1},
+  ]){
+    await expect(prepareBoundedGuidedArchive(source,invalid)).rejects.toMatchObject({code:"archive-invalid-limits"});
+  }
+  expect(source).toEqual(before);
+ });
  it("rejects oversized ZIP container metadata before parsing",async()=>{
   const z=new JSZip();z.file("part","ok",{createFolders:false});
   const oversized=await z.generateAsync({type:"uint8array",compression:"DEFLATE",comment:"x".repeat(10000)});
