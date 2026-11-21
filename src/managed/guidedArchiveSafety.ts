@@ -43,6 +43,10 @@ function directory(bytes: Uint8Array, limits: Limits) {
     // Reject Unix symlinks and special files instead of reinterpreting them as workbook parts.
     const unixMode=u16(at+40);
     if(bytes[at+5]===3 && unixMode && ![0x8000,0x4000].includes(unixMode&0xf000)) reject();
+    // A Unix directory/file type must agree with the ZIP path convention.
+    // Otherwise the raw preflight and JSZip may assign different entry types.
+    if(bytes[at+5]===3 && unixMode && ((unixMode&0xf000)===0x4000) !==
+       (bytes[at+46+n-1]===0x2f)) reject();
     // No encryption, split disks, ZIP64, or unsupported compression methods.
     if((flag & ~0x080e)!==0 || (method!==0 && method!==8) || u16(at+34)!==0 ||
        packed===0xffffffff || plain===0xffffffff || at+46+n+x+c>end ||

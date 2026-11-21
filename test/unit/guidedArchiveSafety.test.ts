@@ -138,6 +138,18 @@ describe("guided archive bounded preparation",()=>{
    view.setUint16(central+40,mode,true); // high half of external attributes
    await expect(prepareBoundedGuidedArchive(forged,limits)).rejects.toMatchObject({code:"unsupported-archive"});
   }
+  // A forged Unix directory mode on a file path must not be interpreted
+  // as an ordinary file, nor may a regular-file mode label a directory path.
+  const mismatched=ordinary.slice(), mismatchView=new DataView(mismatched.buffer,mismatched.byteOffset,mismatched.byteLength);
+  mismatched[central+5]=3;
+  mismatchView.setUint16(central+40,0x4000,true);
+  await expect(prepareBoundedGuidedArchive(mismatched,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+  const directoryArchive=await archive({"xl/":""});
+  const directoryView=new DataView(directoryArchive.buffer,directoryArchive.byteOffset,directoryArchive.byteLength);
+  const directoryCentral=directoryView.getUint32(directoryArchive.length-22+16,true);
+  directoryArchive[directoryCentral+5]=3;
+  directoryView.setUint16(directoryCentral+40,0x8000,true);
+  await expect(prepareBoundedGuidedArchive(directoryArchive,limits)).rejects.toMatchObject({code:"unsupported-archive"});
   const regular=ordinary.slice(),view=new DataView(regular.buffer,regular.byteOffset,regular.byteLength);
   regular[central+5]=3;
   view.setUint16(central+40,0x8000,true);
