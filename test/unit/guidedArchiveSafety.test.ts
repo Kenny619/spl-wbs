@@ -23,7 +23,9 @@ describe("guided archive bounded preparation",()=>{
   expect(packed).toBeGreaterThan(0);
   const corrupted=source.slice();
   corrupted[30+"part".length]=0xff; // first DEFLATE byte
+  const before=corrupted.slice();
   await expect(prepareBoundedGuidedArchive(corrupted,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+  expect(corrupted).toEqual(before); // failure must never mutate the supplied workbook bytes
  });
  it("rejects oversized ZIP container metadata before parsing",async()=>{
   const z=new JSZip();z.file("part","ok",{createFolders:false});

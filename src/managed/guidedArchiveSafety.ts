@@ -142,7 +142,9 @@ export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limit
   // Allow modest per-entry ZIP metadata overhead beyond the expanded-byte cap.
   if(bytes.byteLength > limits.totalBytes + limits.entries * 1024) reject("archive-input-limit");
   const declared=directory(bytes,limits);
-  // Convert decoder failures to the same fail-closed import diagnostic.\n  let zip: JSZip;\n  try { zip=await JSZip.loadAsync(bytes); } catch { reject(); }
+  // Convert decoder failures to the same fail-closed import diagnostic.
+  let zip: JSZip;
+  try { zip=await JSZip.loadAsync(bytes); } catch { reject(); }
   const clean=new JSZip();
   let total=0;
   if(Object.keys(zip.files).length!==declared.size) reject();
