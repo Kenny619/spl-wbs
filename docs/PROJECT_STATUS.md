@@ -46,6 +46,14 @@
 
 **UI authority.** [DES-012 consolidated Review08](https://github.com/Kenny619/spl-wbs/blob/design/ui-overhaul-foundations-v0.1/design/concepts/DES-012-consolidated-review08-task-detail.html) is the sole owner-approved cross-view visual source. Preserve the accepted Reports style, layout and workstream grouping. Existing frozen Report 1.1 remains operational until a separately approved versioned health/report delta.
 
+## Stage C engineering evidence — 21 Nov 2026
+
+**Current verified baseline:** [draft PR #110](https://github.com/Kenny619/spl-wbs/pull/110) has passed 401 unit tests, two application builds and Windows browser regression at [CI #44849937821](https://github.com/Kenny619/spl-wbs/actions/runs/44849937821). Subsequent persistence-integrity and experimental standalone B2 read-only changes are being checked separately and must not be described as accepted until their own exact-head verification.
+
+**What's new:** The disposable filesystem proof now checks the actual XLSX package, canonical 0.1.2 blank-project metadata/history or proposed 0.1.3 B2 audit against a reviewed predecessor before and after disk creation; hash equality alone is not sufficient. An experimental read-only proof independently reopens a single initial B2 Create transaction and refuses unsupported follow-on edits or ambiguous history. This **does not** provide the complete live 0.1.3 reader or production-safe persistence.
+
+**Next gate:** Finalize the versioned schema, verify supported-host no-clobber and recovery semantics, independent security QA, and only then the minimum owner UAT. [Persistence decision record](specifications/STAGE_C_PERSISTENCE_SAFETY_DECISION_2026_11_21.md) explains why test-only Node disk checks and browser downloads are not equivalent to a verified committed workbook.
+
 ## Current delivery focus
 
 1. **Stage C #23:** B2 Task/Create is the approved audit architecture. [Draft PR #110](https://github.com/Kenny619/spl-wbs/pull/110) now has an **opt-in existing-project Add Entity UI and in-memory 0.1.3 candidate with audited readback**. Finish precise versioned schema/alias/continuity review, independent security QA and guarded persistence architecture before any live Create or protected merge. [Architecture record](https://github.com/Kenny619/spl-wbs/issues/23#issuecomment-6970324100).
