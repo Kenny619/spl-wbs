@@ -39,6 +39,17 @@ describe("guided archive bounded preparation",()=>{
   await expect(prepareBoundedGuidedArchive(await archive({"xl":"file","xl/workbook.xml":"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
   await expect(prepareBoundedGuidedArchive(await archive({"XL":"file","xl/workbook.xml":"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
+ it("rejects directory/file aliases with identical normalized paths",async()=>{
+  for(const entries of [
+   {"xl":"file","xl/":""},
+   {"XL":"file","xl/":""},
+   {"xl":"file","XL/":""},
+  ]){
+   await expect(prepareBoundedGuidedArchive(await archive(entries),limits)).rejects.toMatchObject({code:"unsupported-archive"});
+  }
+  const valid=await prepareBoundedGuidedArchive(await archive({"xl/":"","xl/workbook.xml":"ok"}),limits);
+  expect(await (await JSZip.loadAsync(valid)).file("xl/workbook.xml")!.async("string")).toBe("ok");
+ });
  it("rejects Windows path aliases but preserves ordinary workbook parts",async()=>{
   for(const name of ["xl/sheet.xml ","xl/sheet.xml.","xl/CON.xml","xl/lpt1.txt","AUX/data.xml","xl/PRN.txt","xl/NUL","xl/com9.bin","xl/LPT2.csv"]){
    await expect(prepareBoundedGuidedArchive(await archive({[name]:"x"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});

@@ -92,6 +92,10 @@ function directory(bytes: Uint8Array, limits: Limits) {
   // A file cannot simultaneously be a parent directory of another entry.
   // Compare folded paths to avoid case and normalization aliases across entries.
   for (const name of names.keys()) {
+    // A directory entry and a file with the same path are distinct ZIP names,
+    // but resolve to the same filesystem path on extraction. Fail closed.
+    if(name.endsWith("/") && folded.has(name.slice(0,-1).normalize("NFC").toLowerCase()))reject();
+    if(!name.endsWith("/") && folded.has(name.normalize("NFC").toLowerCase()+"/"))reject();
     const parts=name.normalize("NFC").toLowerCase().split("/");
     for(let i=1;i<parts.length;i++){
       const parent=parts.slice(0,i).join("/");
