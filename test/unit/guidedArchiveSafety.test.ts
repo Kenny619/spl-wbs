@@ -29,7 +29,7 @@ describe("guided archive bounded preparation",()=>{
  });
  it("rejects non-byte inputs without leaking native TypeErrors",async()=>{
   for(const invalid of [null,undefined,"not a zip",{},new ArrayBuffer(8),[1,2,3]]){
-    await expect(prepareBoundedGuidedArchive(invalid as Uint8Array,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+    await expect(prepareBoundedGuidedArchive(invalid as unknown as Uint8Array,limits)).rejects.toMatchObject({code:"unsupported-archive"});
   }
   const source=await archive({"part":"ok"});
   expect(await (await JSZip.loadAsync(await prepareBoundedGuidedArchive(source,limits))).file("part")!.async("string")).toBe("ok");
