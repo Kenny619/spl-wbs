@@ -79,7 +79,9 @@ function directory(bytes: Uint8Array, limits: Limits) {
     // Normalize malformed UTF-8 to a controlled unsupported-archive failure.
     let name: string;
     try { name=decoder.decode(raw); } catch { reject(); }
-    // Refuse decomposed Unicode even without a second colliding entry.\n    if(name!==name.normalize("NFC")) reject();\n    const lower=name.toLowerCase();
+    // Refuse decomposed Unicode even without a second colliding entry.
+    if(name!==name.normalize("NFC")) reject();
+    const lower=name.toLowerCase();
     // Reject default-ignorable Unicode characters (including format controls), including soft hyphen, Arabic
     // letter mark and bidi controls; an allowlist of code points misses aliases.
     if(!name || name.startsWith("/") || /[\\:\u0000-\u001f\u007f-\u009f\p{Default_Ignorable_Code_Point}]/u.test(name) ||
