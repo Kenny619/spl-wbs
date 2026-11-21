@@ -77,8 +77,9 @@ function directory(bytes: Uint8Array, limits: Limits) {
     // names in that mode rather than letting JSZip and this parser disagree.
     if(!(flag & 0x0800) && raw.some(byte=>byte>=0x80)) reject();
     const name=decoder.decode(raw), lower=name.normalize("NFC").toLowerCase();
-    // Reject all Unicode format controls (Cf), including soft hyphen, Arabic\n    // letter mark and bidi controls; an allowlist of code points misses aliases.
-    if(!name || name.startsWith("/") || /[\\:\u0000-\u001f\u007f-\u009f\p{Cf}]/u.test(name) ||
+    // Reject default-ignorable Unicode characters (including format controls), including soft hyphen, Arabic
+    // letter mark and bidi controls; an allowlist of code points misses aliases.
+    if(!name || name.startsWith("/") || /[\\:\u0000-\u001f\u007f-\u009f\p{Default_Ignorable_Code_Point}]/u.test(name) ||
        name.split("/").some((s,j,a)=>s==="."||s===".."||(!s&&j!==a.length-1)) ||
        folded.has(lower)) reject();
     // Windows trims trailing dots/spaces and interprets device names even with
