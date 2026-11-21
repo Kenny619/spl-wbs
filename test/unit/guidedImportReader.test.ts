@@ -159,4 +159,17 @@ describe("guided XLSX source reader",()=>{
    zip.file(path,modified);
    expect(await readGuidedSource(await zip.generateAsync({type:"uint8array"}))).toMatchObject({kind:"rejected",issues:[{code:"unsupported-xml"}]});
  });
+ it("rejects forged sparse worksheet dimension before ExcelJS allocation",async()=>{
+   const b=new ExcelJS.Workbook(),sheet=b.addWorksheet("Plan");
+   sheet.addRow(["Title"]);
+   const zip=await JSZip.loadAsync(await bytes(b));
+   const path="xl/worksheets/sheet1.xml";
+   const initial=await zip.file(path)!.async("string");
+   const modified=initial.replace(/<dimension ref="[^"]+"/,'<dimension ref="A1:XFD1048576"');
+   expect(modified).not.toBe(initial);
+   zip.file(path,modified);
+   expect(await readGuidedSource(await zip.generateAsync({type:"uint8array"})))
+     .toMatchObject({kind:"rejected",issues:[{code:"grid-size-limit"}]});
+ });
+
 });
