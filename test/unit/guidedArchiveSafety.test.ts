@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import {describe,it,expect} from "vitest";
-import {prepareBoundedGuidedArchive} from "../../src/managed/guidedArchiveSafety";
+import {GUIDED_ARCHIVE_LIMITS,prepareBoundedGuidedArchive} from "../../src/managed/guidedArchiveSafety";
 const limits={entries:8,partBytes:1024,totalBytes:1536};
 async function archive(entries:Record<string,string>){
  const z=new JSZip();for(const [name,value] of Object.entries(entries))z.file(name,value,{createFolders:false});
@@ -37,6 +37,9 @@ describe("guided archive bounded preparation",()=>{
     {...limits,totalBytes:-1},
     {...limits,totalBytes:1.5},
     {...limits,totalBytes:Number.MAX_SAFE_INTEGER+1},
+    {...limits,entries:GUIDED_ARCHIVE_LIMITS.entries+1},
+    {...limits,partBytes:GUIDED_ARCHIVE_LIMITS.partBytes+1},
+    {...limits,totalBytes:GUIDED_ARCHIVE_LIMITS.totalBytes+1},
   ]){
     await expect(prepareBoundedGuidedArchive(source,invalid)).rejects.toMatchObject({code:"archive-invalid-limits"});
   }

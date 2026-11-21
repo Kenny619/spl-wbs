@@ -140,8 +140,11 @@ function crc32(bytes:Uint8Array,initial:number){
 export async function prepareBoundedGuidedArchive(bytes:Uint8Array, limits:Limits=GUIDED_ARCHIVE_LIMITS):Promise<Uint8Array>{
   // Limits are a security boundary: reject non-finite, fractional or negative
   // caller overrides rather than allowing NaN/Infinity to disable comparisons.
-  if (![limits.entries, limits.partBytes, limits.totalBytes].every(
-    value => Number.isSafeInteger(value) && value > 0
+  // Callers may tighten, never raise, the approved external-import ceilings.
+  // Otherwise a finite but enormous override defeats the resource boundary.
+  if (![["entries", limits.entries], ["partBytes", limits.partBytes], ["totalBytes", limits.totalBytes]].every(
+    ([key, value]) => typeof value === "number" && Number.isSafeInteger(value) &&
+      value > 0 && value <= GUIDED_ARCHIVE_LIMITS[key as keyof Limits]
   )) reject("archive-invalid-limits");
   // Bound the compressed container itself before ZIP parsing or decompression.
   // Allow modest per-entry ZIP metadata overhead beyond the expanded-byte cap.
