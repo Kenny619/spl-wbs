@@ -38,7 +38,7 @@ describe("guided archive bounded preparation",()=>{
   await expect(prepareBoundedGuidedArchive(normalized,limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
  it("rejects invisible and bidirectional Unicode path controls",async()=>{
-  for(const name of ["xl/\u202eworkbook.xml","xl/\u200bworkbook.xml","xl/\u2066workbook.xml"]){
+  for(const name of ["xl/\u202eworkbook.xml","xl/\u200bworkbook.xml","xl/\u2066workbook.xml","xl/\u00adworkbook.xml","xl/\u061cworkbook.xml","xl/\u2063workbook.xml"]){
    await expect(prepareBoundedGuidedArchive(await archive({[name]:"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
   }
  });
