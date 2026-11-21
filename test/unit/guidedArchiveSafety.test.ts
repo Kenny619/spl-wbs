@@ -37,6 +37,19 @@ describe("guided archive bounded preparation",()=>{
   const normalized=await archive({"é":"x","é":"y"});
   await expect(prepareBoundedGuidedArchive(normalized,limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
+ it("accepts matching Unicode Path extras and rejects a forged alias",async()=>{
+  const original=await archive({"xl/caf\\u00e9.xml":"ok"});
+  const good=await prepareBoundedGuidedArchive(original,limits);
+  expect(await (await JSZip.loadAsync(good)).file("xl/caf\\u00e9.xml")!.async("string")).toBe("ok");
+  const forged=original.slice(), view=new DataView(forged.buffer,forged.byteOffset,forged.byteLength);
+  const central=view.getUint32(forged.length-22+16,true);
+  const nameLength=view.getUint16(central+28,true);
+  const extra=central+46+nameLength;
+  // JSZip emits a 0x7075 Unicode Path extra with a CRC and UTF-8 alias.
+  expect(view.getUint16(extra,true)).toBe(0x7075);
+  forged[extra+9]^=1;
+  await expect(prepareBoundedGuidedArchive(forged,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+ });
  it("rejects a single non-NFC path while preserving composed Unicode",async()=>{
   await expect(prepareBoundedGuidedArchive(await archive({"xl/cafe\u0301.xml":"x"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
   const good=await prepareBoundedGuidedArchive(await archive({"xl/caf\u00e9.xml":"x"}),limits);

@@ -50,13 +50,23 @@ function directory(bytes: Uint8Array, limits: Limits) {
        (!(flag&8) && (u32(local+14)!==crc || u32(local+18)!==packed || u32(local+22)!==plain))) reject();
     // Permit ordinary timestamp and platform attributes, not size or path
     // overrides that could make the decompressor disagree with the raw parser.
+    // Unicode Path extra fields are emitted by JSZip for non-ASCII names.
+    // Accept only a faithful UTF-8 copy of the raw filename, never an override.
+    const rawName=bytes.subarray(at+46,at+46+n);
     function extras(offset:number,length:number){
       const endExtra=offset+length;const seen=new Set<number>();
       while(offset<endExtra){
         if(offset+4>endExtra)reject();
-        const kind=u16(offset),len=u16(offset+2);
-        if(seen.has(kind)||![0x5455,0x000a,0x7875].includes(kind)||offset+4+len>endExtra)reject();
-        seen.add(kind);offset+=4+len;
+        const kind=u16(offset),len=u16(offset+2),data=offset+4;
+        if(seen.has(kind)||![0x5455,0x000a,0x7875,0x7075].includes(kind)||data+len>endExtra)reject();
+        if(kind===0x7075){
+          if(!(flag&0x0800)||len<5||bytes[data]!==1)reject();
+          const expectedCrc=(crc32(rawName,0xffffffff)^0xffffffff)>>>0;
+          if(u32(data+1)!==expectedCrc)reject();
+          const alias=bytes.subarray(data+5,data+len);
+          if(alias.length!==rawName.length||alias.some((value,j)=>value!==rawName[j]))reject();
+        }
+        seen.add(kind);offset=data+len;
       }
     }
     extras(at+46+n,x);extras(local+30+ln,lx);
