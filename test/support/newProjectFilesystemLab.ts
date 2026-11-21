@@ -2,6 +2,12 @@ import {constants} from "node:fs";
 import {open,readdir,lstat} from "node:fs/promises";
 import {join} from "node:path";
 import {managedFileNames,sha256} from "../../src/managed/directSave";
+import ExcelJS from "exceljs";
+import {preflightManagedWorkbook} from "../../src/managed/preflight";
+import {inspectProjectData} from "../../src/managed/projectDataInspector";
+import {verifyB2WorkbookReadback} from "../../src/managed/b2WorkbookReadback";
+import {readManagedHistoryWithPresence} from "../../src/managed/history";
+import {importWorkbook} from "../../src/data/normalize";
 
 /** TEST-ONLY filesystem feasibility lab. This is intentionally NOT a
  * SyntheticExclusivePort and must never be wired to the managed app:
@@ -17,6 +23,7 @@ const safeName=(fileName:string)=>{
  return managedFileNames(fileName);
 };
 type Request={directory:string;destinationName:string;candidate:Uint8Array;
+ candidateMode:"blank-0.1.2"|"populated-0.1.3";predecessor?:Uint8Array;
  confirmedHash:string;transactionId:string;abortBeforeWrite?:boolean;
  /** Test-only fault injection, not a user-level recovery API. */
  failAfter?:"receipt"|"stage"|"destination"};
@@ -34,6 +41,42 @@ async function readPinnedFile(path:string){
   return new Uint8Array(await handle.readFile());
  }finally{await handle.close();}
 }
+
+/** A sealed candidate is more than bytes with a matching checksum. Validate
+ * the actual XLSX and authoring contract before *and after* the disk lab
+ * transaction. This is research-only, not a 0.1.3 production reader. */
+async function proveCandidate(candidate:Uint8Array,
+ mode:Request["candidateMode"],predecessor?:Uint8Array){
+ await preflightManagedWorkbook(candidate);
+ const current=new ExcelJS.Workbook();
+ await current.xlsx.load(candidate as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+ const domain=await importWorkbook(candidate,{paletteStorage:null});
+ if(!domain.ok)reject("lab-invalid-domain-readback");
+ const history=await readManagedHistoryWithPresence(candidate);
+ if(!history.present)reject("lab-missing-history");
+ if(mode==="blank-0.1.2"){
+   if(predecessor)reject("lab-unexpected-predecessor");
+   const info=inspectProjectData(current);
+   if(info.kind!=="valid"||info.schemaVersion!=="0.1.2"||
+      domain.tasks.length!==0||history.events.length!==0||
+      current.getWorksheet("ProjectWBS")?.rowCount!==1||
+      current.getWorksheet("ProjectAudit")?.rowCount!==4)
+      reject("lab-invalid-blank-project");
+   return;
+ }
+ if(mode!=="populated-0.1.3"||!predecessor)reject("lab-missing-b2-predecessor");
+ await preflightManagedWorkbook(predecessor);
+ const before=new ExcelJS.Workbook();
+ await before.xlsx.load(predecessor as unknown as Parameters<ExcelJS.Xlsx["load"]>[0]);
+ const oldInfo=inspectProjectData(before);
+ const nextInfo=inspectProjectData(current);
+ if(oldInfo.kind!=="valid"||oldInfo.schemaVersion!=="0.1.2"||
+    nextInfo.kind!=="unsupported_future"||nextInfo.schemaVersion!=="0.1.3"||
+    !domain.tasks.length)reject("lab-invalid-b2-version");
+ const verified=verifyB2WorkbookReadback(before,current);
+ if(!verified.ok)reject("lab-b2-audit-readback:"+verified.errors.join(","));
+}
+
 async function writeExclusive(directory:string,name:string,content:Uint8Array){
  const handle=await open(join(directory,name),
   constants.O_WRONLY|constants.O_CREAT|constants.O_EXCL|constants.O_NOFOLLOW,0o600);
@@ -70,6 +113,7 @@ export async function proveExclusiveNewProjectDiskLab(input:Request){
  const snapshot=candidate.slice();
  if(!snapshot.length||await sha256(snapshot)!==confirmedHash)reject("changed-lab-candidate");
  if(input.abortBeforeWrite)reject("lab-cancelled-before-write");
+ await proveCandidate(snapshot,input.candidateMode,input.predecessor?.slice());
  if((await inspectNewProjectDiskLab(directory,destinationName)).kind!=="empty")reject("lab-collision");
  // A second process can still win a case-folded name race on a POSIX FS;
  // final O_EXCL protects the exact destination, not that stronger promise.
@@ -84,6 +128,7 @@ export async function proveExclusiveNewProjectDiskLab(input:Request){
  if(input.failAfter==="destination")return reject("lab-fault-after-destination");
  const observed=await readPinnedFile(join(directory,names.source));
  if(await sha256(observed)!==confirmedHash)reject("lab-final-verification-failed");
+ await proveCandidate(observed,input.candidateMode,input.predecessor?.slice());
  return {kind:"verified-test-only" as const,destinationName,
   destinationHash:confirmedHash,activationReady:false as const,recoveryEvidenceRetained:true as const};
 }
