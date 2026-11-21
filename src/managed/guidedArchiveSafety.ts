@@ -76,7 +76,10 @@ function directory(bytes: Uint8Array, limits: Limits) {
     // ZIP without the UTF-8 flag uses a legacy code page. Reject non-ASCII
     // names in that mode rather than letting JSZip and this parser disagree.
     if(!(flag & 0x0800) && raw.some(byte=>byte>=0x80)) reject();
-    const name=decoder.decode(raw), lower=name.normalize("NFC").toLowerCase();
+    // Normalize malformed UTF-8 to a controlled unsupported-archive failure.
+    let name: string;
+    try { name=decoder.decode(raw); } catch { reject(); }
+    const lower=name.normalize("NFC").toLowerCase();
     // Reject default-ignorable Unicode characters (including format controls), including soft hyphen, Arabic
     // letter mark and bidi controls; an allowlist of code points misses aliases.
     if(!name || name.startsWith("/") || /[\\:\u0000-\u001f\u007f-\u009f\p{Default_Ignorable_Code_Point}]/u.test(name) ||

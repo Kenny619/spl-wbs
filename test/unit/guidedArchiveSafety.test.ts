@@ -37,6 +37,17 @@ describe("guided archive bounded preparation",()=>{
   const normalized=await archive({"é":"x","é":"y"});
   await expect(prepareBoundedGuidedArchive(normalized,limits)).rejects.toMatchObject({code:"unsupported-archive"});
  });
+ it("rejects malformed UTF-8 filenames with a controlled archive error",async()=>{
+  for(const malformed of [0xc0,0xff,0x80]){
+   const bytes=await archive({"a":"ok"});
+   const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+   const central=view.getUint32(bytes.length-22+16,true);
+   view.setUint16(6,view.getUint16(6,true)|0x0800,true);
+   view.setUint16(central+8,view.getUint16(central+8,true)|0x0800,true);
+   bytes[30]=malformed;bytes[central+46]=malformed;
+   await expect(prepareBoundedGuidedArchive(bytes,limits)).rejects.toMatchObject({code:"unsupported-archive"});
+  }
+ });
  it("rejects invisible and bidirectional Unicode path controls",async()=>{
   for(const name of ["xl/\u202eworkbook.xml","xl/\u200bworkbook.xml","xl/\u2066workbook.xml","xl/\u00adworkbook.xml","xl/\u061cworkbook.xml","xl/\u2063workbook.xml","xl/\u034fworkbook.xml","xl/\ufe0fworkbook.xml"]){
    await expect(prepareBoundedGuidedArchive(await archive({[name]:"xml"}),limits)).rejects.toMatchObject({code:"unsupported-archive"});
