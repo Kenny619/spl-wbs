@@ -87,7 +87,11 @@ export async function inspectStandaloneInitialB2Proof(bytes:Uint8Array){
  const oldAudit=predecessor.getWorksheet("ProjectAudit")!;
  if(oldAudit.rowCount!==audit.rowCount)return reject("readback-shape");
  oldAudit.spliceRows(transition,oldAudit.rowCount-transition+1);
- if(oldAudit.rowCount-1!==priorAuditCount)return reject("audit-prefix-structure");
+ // ExcelJS may retain materialized but empty rows after spliceRows. Count
+ // actual stored audit evidence rather than relying on worksheet rowCount.
+ let retainedPrefixCount=0;
+ oldAudit.eachRow({includeEmpty:false},(_,index)=>{if(index>1)retainedPrefixCount++;});
+ if(retainedPrefixCount!==priorAuditCount)return reject("audit-prefix-structure");
  const oldWbs=predecessor.getWorksheet("ProjectWBS")!,mapped=mapB2WbsColumns(oldWbs);
  const idColumn=mapped.get("ID");if(!idColumn)return reject("missing-id-column");
  const removed=new Set<string>();
